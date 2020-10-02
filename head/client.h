@@ -1,8 +1,9 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
+#include "config.h"
+
 #define LOCAL_HOST		"127.0.0.1"
-#define FILE_NAME_MAX_LEN	256
 #define PORT_CACHE_FILE		"./.cache_port"
 #define MAX_PORT_NUM		65536
 

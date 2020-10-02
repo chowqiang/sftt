@@ -10,6 +10,7 @@
 #include "random_port.h"
 #include "config.h"
 #include "client.h"
+#include "encrypt.h"
 
 int is_dir(char *file_name) {
 	struct stat file_stat;
@@ -81,8 +82,9 @@ int get_cache_port() {
 	if (len < 2) {
 		return -1;
 	}
+
 	if (str[len - 1] == '\n') {
-		str[len - 1] = 0;
+		str[--len] = 0;
 	}
 
 	int port = atoi(str);
@@ -158,18 +160,36 @@ int main(int argc, char **argv) {
 	int read_count = 0;
 	char buffer[BUFFER_SIZE];
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
+		
+	sftt_client_config client_config;
+	int ret = get_sftt_client_config(&client_config);
+	if (ret == -1) {
+		printf("get client config failed!\n");
+		return -1;
+	}
 
+	sprintf(buffer, "%d", client_config.block_size);
+	printf("client block size is : %d\n", client_config.block_size);
+	send(sock, buffer, BUFFER_SIZE, 0);
+	recv(sock, buffer, BUFFER_SIZE, 0); 
+	printf("consulted block size is: %d\n", atoi(buffer));
+	return 0;
+		
 	// send file name first.
-	strcpy(buffer, target);	
+	strcpy(buffer, BLOCK_TYPE_FILE_NAME); 	
+	strcpy(buffer + strlen(BLOCK_TYPE_FILE_NAME), target);	
+	sftt_encrypt_func((char *)buffer); 
 	send(sock, buffer, strlen(buffer), 0);
 	usleep(1000);
 
 	// send file content later.
 	do {
-		read_count = fis->get_next_buffer(fis, buffer, BUFFER_SIZE);
+		strcpy(buffer, BLOCK_TYPE_DATA);
+		read_count = fis->get_next_buffer(fis, buffer + strlen(BLOCK_TYPE_DATA), BUFFER_SIZE - strlen(BLOCK_TYPE_DATA));
 		if (read_count < 1) {
 			break;
 		}  
+		sftt_encrypt_func((char *)buffer); 
 		send(sock, buffer, read_count, 0);
 		sleep(60);
 	} while (read_count == BUFFER_SIZE);
