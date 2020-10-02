@@ -175,7 +175,7 @@ int consult_block_size_with_server(int sock, sftt_client_config *client_config) 
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
 	sprintf(buffer, "%d", client_config->block_size);
 	//printf("client block size is : %d\n", client_config.block_size);
-	sftt_encrypt_func((char *)buffer, strlen(buffer)); 
+	sftt_encrypt_func((char *)buffer, BUFFER_SIZE); 
 	
 	int ret = send(sock, buffer, BUFFER_SIZE, 0);
 	if (ret <= 0) {
@@ -205,7 +205,7 @@ int send_single_file(int sock, char *buffer, int block_size, path_entry *pe) {
 
 	memset(buffer, 0, sizeof(char) * block_size);
 	sprintf(buffer, "%s%s", BLOCK_TYPE_FILE_NAME, pe->rel_path);
-	sftt_encrypt_func(buffer, strlen(buffer));
+	sftt_encrypt_func(buffer, block_size);
 	int ret = send(sock, buffer, block_size, 0);
 	if (ret <= 0) {
 		printf("send file name block failed!\n");
@@ -236,7 +236,8 @@ int send_single_file(int sock, char *buffer, int block_size, path_entry *pe) {
 		printf("\n\n\n");
 		usleep(1000);
 	} while (read_count == (block_size - prefix_len));
-	usleep(10000);
+	//usleep(10000);
+	sleep(1);
 
 	//strcpy(buffer, BLOCK_TYPE_FILE_END);
 	//sftt_encrypt_func((char *)buffer); 
@@ -393,7 +394,7 @@ int main(int argc, char **argv) {
 		
 		memset(buffer, 0, sizeof(char) * consulted_block_size);
 		strcpy(buffer, BLOCK_TYPE_SEND_COMPLETE);
-		sftt_encrypt_func((char *)buffer, strlen(buffer)); 
+		sftt_encrypt_func((char *)buffer, consulted_block_size); 
 		ret = send(sock, buffer, consulted_block_size, 0); 
 		if (ret <= 0) {
 			printf("send complete end failed!\n");

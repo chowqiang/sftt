@@ -100,8 +100,10 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 		printf("创建缓冲区失败");
 	}
 	memset(block_buff,'\0',consulted_block_size);
-	while (1){
+	int connected = 1;
+	while (connected){
 		FILE * fd;
+		int i = 0 ;
 		char *data_buff = (char *) malloc(consulted_block_size * sizeof(char));
 		memset(data_buff,'\0',consulted_block_size);
 		while(1) {
@@ -110,34 +112,49 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 			//char * tmp_buff = block_buff;
 			//数据解密
 			block_buff = sftt_decrypt_func(block_buff,trans_len);
-			int i = 0;
-			printf("第 %d 的内容为: %s\n",i,block_buff);
+			//int i = 0;
+			//printf("trans_len is %d\n",trans_len);
+			printf("第 %d 次 的内容为: %x\n",i,block_buff);
+			//sleep(1);
 			printf("=======================================================================\n");
 			if (trans_len <= 0) {
-				printf("断开连接");
+				fclose(fd);
+				printf("断开连接\n");
+				connected = 0;
+				break;
 			}
 			if (strncmp(block_buff,BLOCK_TYPE_FILE_NAME,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
 				//创建传输文件
 
 				fd = server_creat_file(block_buff,init_conf,data_buff);
 				memset(block_buff,'\0',consulted_block_size);
+				printf("到 1 区   \n");
+				i++;
 			} else if (strncmp(block_buff,BLOCK_TYPE_DATA,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
 				//接收数据 写入数据
 				server_transport_data_to_file(fd,trans_len,block_buff);
 				memset(block_buff,'\0',consulted_block_size);
+				printf("到 2 区   \n");
+				i++;
 
 			}else if (strncmp(block_buff,BLOCK_TYPE_FILE_END,strlen(BLOCK_TYPE_FILE_END)) == 0) {
 				//一次文件传输完成
 				printf("一次文件传输完成");
+				printf("到 3 区   \n");
+				i++;
 				fclose(fd);
 				break;
 			}else if (strncmp(block_buff,BLOCK_TYPE_SEND_COMPLETE,strlen(BLOCK_TYPE_SEND_COMPLETE)) == 0) {
 				//整个传输过程结束
 				printf("数据过程传输结束");
+				printf("到 4 区   \n");
+				i++;
 				exit(0);
 			}else{
 				//格式错误
 				printf("传输格式有误");
+				printf("到 5 区   \n");
+				i++;
 				exit(0);
 			}
 		}
@@ -150,7 +167,8 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 void server_transport_data_to_file(FILE * fd,int size, char * block_buff ){
 	char * tmp_buff = block_buff;
 	int str_len = strlen(BLOCK_TYPE_DATA);
-	fwrite(tmp_buff + str_len, 1, size - str_len, fd);
+	int write_len=fwrite(tmp_buff + str_len, 1, size - str_len, fd);
+	printf("write len is %d", write_len);
 
 }
 
@@ -162,31 +180,49 @@ FILE * server_creat_file(char * block_buff, sftt_server_config  init_conf,char *
 	int i;
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
-	for (i = 0; i < str_len; i++) {
-		//if (block_buff[i] == '\0') {
-	//		break;
-	//	}
-		if (i >= strlen(BLOCK_TYPE_FILE_NAME)) {
-			strcat(data_buff,tmp_file);
-			break;
-		}else {
-			tmp_file++;
-			continue;
-	  	}
-	}
+	strcat(data_buff,tmp_file + strlen(BLOCK_TYPE_FILE_NAME));
+			
 	//file_buff  = data_buff;
 	//fd = fopen(data_buff,"r+");
+	is_exit(data_buff);
 
 	fd = fopen(data_buff,"w+");
 	if (fd == NULL) {
-		printf("文件创建失败");	
+		printf("文件创建失败\n %s",data_buff);	
 	}else{
-		printf("%s 创建成功!",data_buff);
+		printf("%s 创建成功!\n",data_buff);
 	
 	}
 	return fd;
 }
 
+void  is_exit(char * filepath){
+	char * tmp_path = (char * ) malloc (strlen(filepath)*sizeof(char));
+	strcpy(tmp_path,filepath);
+	int str_len = strlen(filepath);
+	int i ;
+	for (i = 0; i <= str_len; i ++ ) {
+		
+		if (tmp_path[i] == '/'){ 
+			tmp_path[i+1] = '\0';
+			if (access(tmp_path, F_OK) == -1) {
+				int status = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+				if (status == -1) {
+                        		printf("%s 目录创建失败！\n",tmp_path);
+                		}
+			}else {
+				printf("%s 目录已经存在\n", tmp_path);
+			}
+			memset(tmp_path,'\0',str_len);
+                        strcpy(tmp_path,filepath);
+                        continue;
+			
+		}
+		
+	}
+
+
+}
 
 int main(){
 	int	socket_fd = sftt_server();
