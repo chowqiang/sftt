@@ -9,8 +9,10 @@
 #define CONFIG_NAME_MAX_LEN 	256
 #define CONFIG_VALUE_MAX_LEN	512
 
-#define BLOCK_TYPE_FILE_NAME	"FILE:"
-#define BLOCK_TYPE_DATA		"DATA:"
+#define BLOCK_TYPE_FILE_NAME		"FILE:"
+#define BLOCK_TYPE_DATA			"DATA:"
+#define BLOCK_TYPE_FILE_END		"FEND:"
+#define BLOCK_TYPE_SEND_COMPLETE 	"SCOM:"			
 
 typedef struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];

@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <libgen.h> 
 #include <malloc.h>
 #include <netinet/in.h>
 #include "random_port.h"
@@ -12,6 +14,36 @@
 #include "client.h"
 #include "encrypt.h"
 
+typedef struct path_entry {
+	char abs_path[FILE_NAME_MAX_LEN];
+	char rel_path[FILE_NAME_MAX_LEN];
+} path_entry;
+
+typedef struct path_entry_list {
+	path_entry entry;
+	struct path_entry_list *next;
+} path_entry_list;
+
+path_entry *get_file_path_entry(char *file_name) {
+	path_entry *pe = (path_entry *)malloc(sizeof(path_entry));
+	if (pe == NULL) {
+		return NULL;
+	}	
+	realpath(file_name, pe->abs_path);
+	char *p = basename(pe->abs_path);
+	strcpy(pe->rel_path, p);
+	
+	return pe;
+}
+
+void free_path_entry_list(path_entry_list *head) {
+	path_entry_list *p = head, *q = head;
+	while (p) {
+		q = p->next;
+		free(p);
+		p = q;
+	}
+}
 int is_dir(char *file_name) {
 	struct stat file_stat;
 	stat(file_name, &file_stat);	
@@ -137,6 +169,159 @@ void destory_file_input_stream(file_input_stream *fis) {
 	}
 }
 
+int consult_block_size_with_server(int sock, sftt_client_config *client_config) {
+	char buffer[BUFFER_SIZE];
+		
+	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
+	sprintf(buffer, "%d", client_config->block_size);
+	//printf("client block size is : %d\n", client_config.block_size);
+	sftt_encrypt_func((char *)buffer, strlen(buffer)); 
+	
+	int ret = send(sock, buffer, BUFFER_SIZE, 0);
+	if (ret <= 0) {
+		return -1;
+	}
+	
+	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
+	ret = recv(sock, buffer, BUFFER_SIZE, 0); 
+	if (ret <= 0) {
+		return -1;
+	}
+	sftt_decrypt_func(buffer, ret);
+	int consulted_block_size = atoi(buffer);
+	//printf("consulted block size is: %d\n", consulted_block_size);
+	
+	return consulted_block_size; 
+}
+
+int send_single_file(int sock, char *buffer, int block_size, path_entry *pe) {
+	FILE *fp = fopen(pe->abs_path, "rb");
+	if (fp == NULL) {
+		printf("Error. cannot open file: %s\n", pe->abs_path);
+		return -1;
+	}
+	
+	printf("sending file %s\n", pe->abs_path);
+
+	memset(buffer, 0, sizeof(char) * block_size);
+	sprintf(buffer, "%s%s", BLOCK_TYPE_FILE_NAME, pe->rel_path);
+	sftt_encrypt_func(buffer, strlen(buffer));
+	int ret = send(sock, buffer, block_size, 0);
+	if (ret <= 0) {
+		printf("send file name block failed!\n");
+		return -1;
+	} 
+	usleep(10000);
+
+	int read_count = 0, i = 0, j = 0;
+	int prefix_len = strlen(BLOCK_TYPE_DATA);
+	do {
+		printf("%d-th transport ...\n", ++j);
+		memset(buffer, 0, sizeof(char) * block_size);
+		strcpy(buffer, BLOCK_TYPE_DATA);
+		read_count = fread(buffer + prefix_len, 1, block_size - prefix_len, fp);		
+		printf("read block size: %d\n", read_count);
+		if (read_count < 1) {
+			break;
+		}
+		for (i = 0; i < read_count + prefix_len; ++i) {
+			printf("%c", buffer[i]);
+		}
+		sftt_encrypt_func((char *)buffer, read_count + prefix_len); 
+		ret = send(sock, buffer, read_count + prefix_len, 0);
+		if (ret <= 0) {
+			printf("send data block failed!\n");
+			return -1;
+		}
+		printf("\n\n\n");
+		usleep(1000);
+	} while (read_count == (block_size - prefix_len));
+	usleep(10000);
+
+	//strcpy(buffer, BLOCK_TYPE_FILE_END);
+	//sftt_encrypt_func((char *)buffer); 
+	//send(sock, buffer, read_count, 0);
+
+	printf("sending %s done!\n", pe->abs_path);
+
+	return 0;
+}
+
+path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
+	/*
+	path_entry_list *head = (path_entry_list *)malloc(sizeof(path_entry_list));
+	if (head == NULL) {
+		return NULL;
+	}
+	*/
+	path_entry_list *head = NULL;
+	path_entry_list *current_entry = NULL;
+	path_entry_list *sub_list = NULL;
+
+	char dir_abs_path[FILE_NAME_MAX_LEN];
+	char dir_rel_path[FILE_NAME_MAX_LEN];
+	char tmp_path[FILE_NAME_MAX_LEN];
+
+	realpath(file_name, dir_abs_path);
+	char *p = basename(dir_abs_path);
+	sprintf(dir_rel_path, "%s/%s", prefix, p);
+		
+	DIR *dp;
+	struct dirent *entry;
+	struct stat statbuf;
+ 
+	if ((dp = opendir(file_name)) == NULL) {
+		printf("cannot open dir: %s\n", file_name);
+		return NULL;
+	}
+	
+	chdir(file_name);
+	while ((entry = readdir(dp)) != NULL) {
+		sprintf(tmp_path, "%s/%s", dir_abs_path, entry->d_name);
+		lstat(tmp_path, &statbuf);
+		if (S_ISDIR(statbuf.st_mode)) {
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
+			//printf("dir tmp path: %s\n", tmp_path);
+			sub_list = get_dir_path_entry_list(tmp_path, dir_rel_path);	
+			if (sub_list == NULL) {
+				continue;	
+			}
+
+			if (current_entry == NULL) {
+				current_entry = head = sub_list;
+			} else {
+				current_entry->next = sub_list;
+			}
+
+			while (current_entry->next) {
+				current_entry = current_entry->next;
+			}				
+				
+		} else {
+			path_entry_list *node = (path_entry_list *)malloc(sizeof(path_entry_list));
+			if (node == NULL) {
+				continue;
+			}
+
+			sprintf(node->entry.abs_path, "%s/%s", dir_abs_path, entry->d_name);
+			sprintf(node->entry.rel_path, "%s/%s", dir_rel_path, entry->d_name);
+			//printf("file: %s\n", node->entry.abs_path);
+			node->next = NULL;
+
+			if (current_entry == NULL) {
+				current_entry = head = node;
+			} else {
+				current_entry->next = node;
+				current_entry = node;
+			}
+		}
+	}
+	closedir(dp);	
+
+	return head;
+}
 int main(int argc, char **argv) {
 	if (argc < 2) {
 		printf("Error. Usage: %s file|dir\n", argv[0]);
@@ -148,58 +333,76 @@ int main(int argc, char **argv) {
 		return -1;
 	} 
 
-	file_input_stream *fis = create_file_input_stream(target);
-	if (fis == NULL) {
-		printf("create file input stream object failed!\n");
+	int sock = create_client();
+	if (sock == -1) {
+		printf("Error. create client failed!\n");
 		return -1;
+	} else {
+		printf("create client successfully!\n");
 	}
 
-	int sock = create_client();
-	printf("begin to send file content ...\n");
 
-	int read_count = 0;
-	char buffer[BUFFER_SIZE];
-	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
-		
+	printf("reading config ...\n");
 	sftt_client_config client_config;
 	int ret = get_sftt_client_config(&client_config);
 	if (ret == -1) {
 		printf("get client config failed!\n");
 		return -1;
 	}
+	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
 
-	sprintf(buffer, "%d", client_config.block_size);
-	printf("client block size is : %d\n", client_config.block_size);
-	send(sock, buffer, BUFFER_SIZE, 0);
-	recv(sock, buffer, BUFFER_SIZE, 0); 
-	printf("consulted block size is: %d\n", atoi(buffer));
-	return 0;
+	printf("consulting block size with server ...\n");
+	int consulted_block_size = consult_block_size_with_server(sock, &client_config);
+	if (consulted_block_size < 1) {
+		printf("consult block size with server failed!\n");
+		return -1;
+	}
+	printf("consulting block size done!\nconsulted block size is: %d\n", consulted_block_size);	
+
+	char *buffer = (char *)malloc(sizeof(char) * consulted_block_size);
+	if (buffer == NULL) {
+		printf("create buffer for transporting failed!\n");
+		return -1;
+	}
+
+	if (is_file(target)) {
+		path_entry *pe = get_file_path_entry(argv[1]);	
+		if (pe == NULL) {
+			printf("get file path entry failed!\n");
+			return -1;
+		}
+
+		send_single_file(sock, buffer, consulted_block_size, pe);
+
+		free(pe);
+
+	} else if (is_dir(target)) {
+		char prefix[1] = {0};
+		path_entry_list *pes = get_dir_path_entry_list(argv[1], prefix);
+		if (pes == NULL) {
+			printf("get dir path entry list failed!\n");
+			return -1;
+		}
 		
-	// send file name first.
-	strcpy(buffer, BLOCK_TYPE_FILE_NAME); 	
-	strcpy(buffer + strlen(BLOCK_TYPE_FILE_NAME), target);	
-	sftt_encrypt_func((char *)buffer); 
-	send(sock, buffer, strlen(buffer), 0);
-	usleep(1000);
+		path_entry_list *p = pes;
+		while (p) {
+			send_single_file(sock, buffer, consulted_block_size, &(p->entry));
 
-	// send file content later.
-	do {
-		strcpy(buffer, BLOCK_TYPE_DATA);
-		read_count = fis->get_next_buffer(fis, buffer + strlen(BLOCK_TYPE_DATA), BUFFER_SIZE - strlen(BLOCK_TYPE_DATA));
-		if (read_count < 1) {
-			break;
-		}  
-		sftt_encrypt_func((char *)buffer); 
-		send(sock, buffer, read_count, 0);
-		sleep(60);
-	} while (read_count == BUFFER_SIZE);
+			p = p->next;
+		}
+		
+		memset(buffer, 0, sizeof(char) * consulted_block_size);
+		strcpy(buffer, BLOCK_TYPE_SEND_COMPLETE);
+		sftt_encrypt_func((char *)buffer, strlen(buffer)); 
+		ret = send(sock, buffer, consulted_block_size, 0); 
+		if (ret <= 0) {
+			printf("send complete end failed!\n");
+		}	
+			
+		free_path_entry_list(pes);
+	}
 
-	printf("done!\n", buffer);
-   
-    	//关闭套接字
         close(sock);
 
-	destory_file_input_stream(fis);
-
-	return 0;	
+	return 0;
 }

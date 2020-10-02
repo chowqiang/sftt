@@ -18,17 +18,14 @@ void print_bytes(char * aim) {
 
 
 
-char * sftt_encrypt_func(char * source){
+char * sftt_encrypt_func(char * source , int size){
 
 //	print_bytes(source);
-	int len = strlen(source);
+	
 	int i;
-	for(i = 0; i < len; i++){
-		if (source[i] != '\0'){
-			source[i] = source[i] + i + 5;
-		} else {
-			break;
-		}
+	for(i = 0; i < size; i++){
+		source[i] = source[i] + i + 5;
+		
 	}
 	
 	return source;
@@ -43,16 +40,11 @@ char * sftt_encrypt_func(char * source){
 
 
 
-char * sftt_decrypt_func(char * aim){
-	int len = strlen(aim);
+char * sftt_decrypt_func(char * aim, int size){
 	int i;
-	for(i = 0; i < len; i++ ){
-		if (aim[i] !=  '\0'){
-			aim[i] = aim[i] - i - 5;
-		} else{
-			break;
-		}
-	
+	for(i = 0; i < size; i++ ){
+		aim[i] = aim[i] - i - 5;
+		
 	}
 //	print_bytes(aim);
 	return aim;
