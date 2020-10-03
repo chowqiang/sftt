@@ -1,5 +1,5 @@
 INCL=-I ./head/
-all: server client
+all: server client install_conf
 
 net_trans.o:
 	gcc -o ./src/net_trans.o ${INCL} -c ./src/net_trans.c
@@ -18,6 +18,12 @@ client: random_port.o config.o encrypt.o net_trans.o
 
 server: random_port.o config.o encrypt.o net_trans.o
 	gcc -o ./server/server ${INCL} ./server/server.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
+
+install_conf:
+	@if [ ! -d "/etc/sftt/" ]; then \
+		mkdir -p /etc/sftt; \
+	fi; \
+	cp ./conf/* /etc/sftt/
 
 clean:
 	rm ./src/*.o
