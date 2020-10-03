@@ -94,9 +94,10 @@ int get_sftt_server_config(sftt_server_config *ssc) {
         getcwd(buf,sizeof(buf));   
       	printf("current working directory: %s\n", buf);   
 */
-	FILE *fp = fopen("../conf/sftt_server.conf", "r");
+	char *server_config_path = "/etc/sftt/sftt_server.conf"; 
+	FILE *fp = fopen(server_config_path, "r");
 	if (fp == NULL) {
-		printf("open config file failed!\n");
+		printf("open config file failed: %s\n", server_config_path);
 		goto ERR_RET;	
 	}
 
@@ -202,9 +203,10 @@ int get_sftt_client_config(sftt_client_config *scc) {
         getcwd(buf,sizeof(buf));   
       	printf("current working directory: %s\n", buf);   
 */
-	FILE *fp = fopen("../conf/sftt_client.conf", "r");
+	char *client_config_path = "/etc/sftt/sftt_client.conf";
+	FILE *fp = fopen(client_config_path, "r");
 	if (fp == NULL) {
-		printf("open config file failed!\n");
+		printf("open config file failed: %s\n", client_config_path);
 		goto ERR_RET;	
 	}
 

@@ -337,15 +337,6 @@ int main(int argc, char **argv) {
 		return -1;
 	} 
 
-	int sock = create_client();
-	if (sock == -1) {
-		printf("Error. create client failed!\n");
-		return -1;
-	} else {
-		printf("create client successfully!\n");
-	}
-
-
 	printf("reading config ...\n");
 	sftt_client_config client_config;
 	int ret = get_sftt_client_config(&client_config);
@@ -354,6 +345,14 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
+
+	int sock = create_client();
+	if (sock == -1) {
+		printf("Error. create client failed!\n");
+		return -1;
+	} else {
+		printf("create client successfully!\n");
+	}
 
 	//sftt_packet *sp = malloc_sftt_packet(BUFFER_SIZE);
 	

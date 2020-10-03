@@ -59,7 +59,7 @@ get empty config line!
 conf  block_size is 10240
 store path: /usr/local/sftt/
 
-ps：数据默认在/usr/local/sftp  可以再conf/sftt_server.conf中配置
+ps：数据默认在/usr/local/sftp  可以再/etc/sftt/sftt_server.conf中配置
 
 
 客户端传输数据:

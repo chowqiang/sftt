@@ -264,38 +264,6 @@ int main(){
 			consulted_block_size = server_consult_block_size(connect_fd,buff,init_conf.block_size);
 			printf("consulted_block_size : %d\n",consulted_block_size);
 			server_file_resv(connect_fd, consulted_block_size,init_conf );
-			//trans_len = recv(connect_fd, buff, BUFFER_SIZE, 0);
-			//if (trans_len <= 0) {
-			//	printf("客户端断开连接\n")	
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//}
-			
-			//while(1){
-                	//	printf("正在传输数据：\n");
-			//	trans_len = recv(connect_fd, buff, BUFFER_SIZE, 0);
-			//	printf("translen is  %d\n", trans_len);
-			//	if(trans_len <= 0){
-			//		printf("客户端断开连接\n");
-			//		break;
-			//	}
-			//	buff[trans_len] = '\0';  
-			//	printf("recv msg from client: %s\n", buff); 
-			//	if(strcmp(buff, quit) == 0){
-			//		close(connect_fd);
-			//		break;
-			//	}
-			//:}
 			
 		
 		} else if (pid < 0 ){
@@ -304,8 +272,7 @@ int main(){
 
 		} else {
 
-			//waitpid(pid);
-			;
+			wait(NULL);
 		}
 		
 	}
