@@ -1,16 +1,53 @@
 # sftt
-Simple and Security File Transport Tool
+Simple and Security File Transport Tool (简单并且安全的文件传输工具)
 
 
-传输过程：
+支持:
+a) 字符文件传输与二进制文件传输
+b) 支持目录文件传输
+c）产生随机端口传输(避免监听数据)
+d）支持数据分块加密传输
+f) 服务端支持多进程接收文件
 
-    1、客户端和服务端相继启动，根据当前时间hash计算出服务端监听的随机端口，计算过程：
-        1）port = hash(time)，并且满足：当time2 - time1 < x 秒时，hash(y) 恒等于z，其中 y 属于区间[time1, time2]，支持x可配置。 
-        2）当客户端和服务端在相对比较短的时间内同时启动时，服务端和客户端计算出来的端口值一致，服务端用这个端口启动服务，客户端向服务端的这个端口建立连接。
-    2、客户端根据命令行参数对文件内容进行读取、加密、传输。
-    3、服务端收到文件内容后，对内容进行解密、写入文件。    
-    
-缺点：
 
-    1、每次传文件的时候，都要重新启动服务端，以便更换端口，比较适合手动传文件的场景。   
-    2、客户端可能因为启动时间差过长，导致计算出的端口与服务端不一致，无法连接，此时需要重启服务端。
+后续上线功能：
+a) 客户端支持多连接同时发送数据
+b) 客户端支持数据压缩功能
+c）服务端支持解压缩功能
+d）sftt服务支持断点续传
+e）使用更安全的数据加密算法
+f）支持超大文件的同时分块传输
+
+使用方法：
+
+#git clone https://github.com/chowqiang/sftt.git
+
+#cd sftt/
+#ls
+bin     conf   Dockerfile  lib   Makefile   server  test
+client  debug  head        logs  README.md  src     tool
+
+# make
+gcc -o ./src/random_port.o -I ./head/ -c ./src/random_port.c
+gcc -o ./src/config.o -I ./head/ -c ./src/config.c
+gcc -o ./src/encrypt.o -I ./head/ -c ./src/encrypt.c
+gcc -o ./src/net_trans.o -I ./head/ -c ./src/net_trans.c
+gcc -o ./server/server -I ./head/ ./server/server.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
+gcc -o ./client/client -I ./head/ ./client/client.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
+
+服务端:
+进入server目录起动server服务：./server
+port is 12556
+开始等待数据传输。。。。。
+get empty config line!
+conf  block_size is 10240
+store path: /usr/local/sftt/
+
+ps：数据默认在/usr/local/sftp  可以再conf/sftt_server.conf中配置
+
+
+客户端传输数据:
+进入client目录带起动参数传输
+	传输文件：./client   文件名
+	传输目录: ./client   目录名
+
