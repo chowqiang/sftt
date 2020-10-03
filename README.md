@@ -21,7 +21,8 @@
 ### f）支持超大文件的同时分块传输
 
 # 使用方法：
-'''
+
+```
 #git clone https://github.com/chowqiang/sftt.git
 #cd sftt/
 #ls
@@ -53,4 +54,4 @@ ps：数据默认在/usr/local/sftp  可以再conf/sftt_server.conf中配置
 	传输文件：./client   文件名
 	传输目录: ./client   目录名
 
-'''
+```
