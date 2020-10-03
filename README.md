@@ -1,8 +1,10 @@
 # sftt
+
 Simple and Security File Transport Tool (简单并且安全的文件传输工具)
 
 
 支持:
+
 a) 字符文件传输与二进制文件传输
 b) 支持目录文件传输
 c）产生随机端口传输(避免监听数据)
@@ -19,9 +21,7 @@ e）使用更安全的数据加密算法
 f）支持超大文件的同时分块传输
 
 使用方法：
-
 #git clone https://github.com/chowqiang/sftt.git
-
 #cd sftt/
 #ls
 bin     conf   Dockerfile  lib   Makefile   server  test
@@ -34,6 +34,7 @@ gcc -o ./src/encrypt.o -I ./head/ -c ./src/encrypt.c
 gcc -o ./src/net_trans.o -I ./head/ -c ./src/net_trans.c
 gcc -o ./server/server -I ./head/ ./server/server.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
 gcc -o ./client/client -I ./head/ ./client/client.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
+
 
 服务端:
 进入server目录起动server服务：./server
