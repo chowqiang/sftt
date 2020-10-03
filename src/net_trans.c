@@ -82,7 +82,7 @@ int recv_sftt_packet(int sock, sftt_packet *sp) {
 	sftt_decrypt_func(sp->content, sp->data_len);
 	if (strcmp(sp->type, BLOCK_TYPE_FILE_NAME) == 0) {
 		printf("decrypted file name: %s\n", sp->content);
-		sleep(1);
+		//sleep(1);
 	}
 		
 	return 0;

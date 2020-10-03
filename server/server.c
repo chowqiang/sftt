@@ -128,7 +128,6 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 			//int i = 0;
 			//printf("trans_len is %d\n",trans_len);
 			printf("第 %d 次 的内容为: %x\n",i,sp->content);
-			//sleep(1);
 			printf("=======================================================================\n");
 			if (trans_len <= 0) {
 				fclose(fd);
@@ -214,7 +213,6 @@ FILE * server_creat_file(sftt_packet *sp, sftt_server_config  init_conf,char * d
 void  is_exit(char * filepath){
 	char * tmp_path = (char * ) malloc (strlen(filepath)*sizeof(char));
 	printf("%s ======file_path\n",filepath);
-	sleep(1);
 	memset(tmp_path,'\0',strlen(filepath));
 	strcpy(tmp_path,filepath);
 	printf("tmp_path == %s ",tmp_path);
