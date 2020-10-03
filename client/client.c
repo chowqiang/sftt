@@ -13,6 +13,7 @@
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
+#include "net_trans.h"
 
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
@@ -194,7 +195,7 @@ int consult_block_size_with_server(int sock, sftt_client_config *client_config) 
 	return consulted_block_size; 
 }
 
-int send_single_file(int sock, char *buffer, int block_size, path_entry *pe) {
+int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	FILE *fp = fopen(pe->abs_path, "rb");
 	if (fp == NULL) {
 		printf("Error. cannot open file: %s\n", pe->abs_path);
@@ -203,45 +204,47 @@ int send_single_file(int sock, char *buffer, int block_size, path_entry *pe) {
 	
 	printf("sending file %s\n", pe->abs_path);
 
-	memset(buffer, 0, sizeof(char) * block_size);
-	sprintf(buffer, "%s%s", BLOCK_TYPE_FILE_NAME, pe->rel_path);
-	sftt_encrypt_func(buffer, block_size);
-	int ret = send(sock, buffer, block_size, 0);
-	if (ret <= 0) {
+	strcpy(sp->type, BLOCK_TYPE_FILE_NAME);
+	sp->data_len = strlen(pe->rel_path);
+	strcpy(sp->content, pe->rel_path);
+	int ret = send_sftt_packet(sock, sp);
+	if (ret == -1) {
 		printf("send file name block failed!\n");
 		return -1;
-	} 
-	usleep(10000);
-
+	}
+	
 	int read_count = 0, i = 0, j = 0;
 	int prefix_len = strlen(BLOCK_TYPE_DATA);
 	do {
 		printf("%d-th transport ...\n", ++j);
-		memset(buffer, 0, sizeof(char) * block_size);
-		strcpy(buffer, BLOCK_TYPE_DATA);
-		read_count = fread(buffer + prefix_len, 1, block_size - prefix_len, fp);		
+		strcpy(sp->type, BLOCK_TYPE_DATA);
+		read_count = fread(sp->content, 1, sp->block_size, fp);		
 		printf("read block size: %d\n", read_count);
 		if (read_count < 1) {
 			break;
 		}
-		for (i = 0; i < read_count + prefix_len; ++i) {
+
+		/*
+		for (i = 0; i < read_count; ++i) {
 			printf("%c", buffer[i]);
 		}
-		sftt_encrypt_func((char *)buffer, read_count + prefix_len); 
-		ret = send(sock, buffer, read_count + prefix_len, 0);
-		if (ret <= 0) {
+		*/
+		sp->data_len = read_count;
+		ret = send_sftt_packet(sock, sp);
+		if (ret == -1) {
 			printf("send data block failed!\n");
 			return -1;
 		}
-		printf("\n\n\n");
-		usleep(1000);
-	} while (read_count == (block_size - prefix_len));
-	//usleep(10000);
-	sleep(1);
+	
+	} while (read_count == sp->block_size);
 
-	//strcpy(buffer, BLOCK_TYPE_FILE_END);
-	//sftt_encrypt_func((char *)buffer); 
-	//send(sock, buffer, read_count, 0);
+	strcpy(sp->type, BLOCK_TYPE_FILE_END);
+	sp->data_len = 0;
+	ret = send_sftt_packet(sock, sp);
+	if (ret == -1) {
+		printf("send file end block failed!\n");
+		return -1;
+	}
 
 	printf("sending %s done!\n", pe->abs_path);
 
@@ -352,6 +355,8 @@ int main(int argc, char **argv) {
 	}
 	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
 
+	//sftt_packet *sp = malloc_sftt_packet(BUFFER_SIZE);
+	
 	printf("consulting block size with server ...\n");
 	int consulted_block_size = consult_block_size_with_server(sock, &client_config);
 	if (consulted_block_size < 1) {
@@ -360,9 +365,16 @@ int main(int argc, char **argv) {
 	}
 	printf("consulting block size done!\nconsulted block size is: %d\n", consulted_block_size);	
 
+	/*
 	char *buffer = (char *)malloc(sizeof(char) * consulted_block_size);
 	if (buffer == NULL) {
 		printf("create buffer for transporting failed!\n");
+		return -1;
+	}
+	*/
+	sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
+	if (sp == NULL) {
+		printf("malloc sftt packet failed!\n");
 		return -1;
 	}
 
@@ -373,7 +385,7 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 
-		send_single_file(sock, buffer, consulted_block_size, pe);
+		send_single_file(sock, sp, pe);
 
 		free(pe);
 
@@ -387,22 +399,22 @@ int main(int argc, char **argv) {
 		
 		path_entry_list *p = pes;
 		while (p) {
-			send_single_file(sock, buffer, consulted_block_size, &(p->entry));
-
+			send_single_file(sock, sp, &(p->entry));
 			p = p->next;
 		}
 		
-		memset(buffer, 0, sizeof(char) * consulted_block_size);
-		strcpy(buffer, BLOCK_TYPE_SEND_COMPLETE);
-		sftt_encrypt_func((char *)buffer, consulted_block_size); 
-		ret = send(sock, buffer, consulted_block_size, 0); 
-		if (ret <= 0) {
-			printf("send complete end failed!\n");
+		
+		strcpy(sp->type, BLOCK_TYPE_SEND_COMPLETE);
+		sp->data_len = 0;
+		int ret = send_sftt_packet(sock, sp);
+		if (ret == -1) {
+			printf("send complete end block failed!\n");
 		}	
 			
 		free_path_entry_list(pes);
 	}
 
+	free_sftt_packet(&sp);
         close(sock);
 
 	return 0;
