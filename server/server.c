@@ -12,6 +12,7 @@
 #include<sys/types.h> 
 #include<sys/stat.h>  
 #include "encrypt.h"
+//#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
 
@@ -95,26 +96,38 @@ int  sftt_server(){
 
 void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_config init_conf){
 	int trans_len;
-	char * block_buff = (char *) malloc(consulted_block_size * sizeof(char));
-	if (block_buff == NULL ) {
-		printf("创建缓冲区失败");
-	}
-	memset(block_buff,'\0',consulted_block_size);
+	//char * block_buff = (char *) malloc(consulted_block_size * sizeof(char));
+	//if (block_buff == NULL ) {
+	//	printf("创建缓冲区失败");
+	//}
+	//memset(block_buff,'\0',consulted_block_size);
+	sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
 	int connected = 1;
 	while (connected){
 		FILE * fd;
 		int i = 0 ;
+		int j = 0 ; 
 		char *data_buff = (char *) malloc(consulted_block_size * sizeof(char));
 		memset(data_buff,'\0',consulted_block_size);
 		while(1) {
-			
-			trans_len = recv(connect_fd, block_buff, consulted_block_size, 0);
+		
+			 	
+			if (j >= 5) {
+				printf("server 等待 5次 结束进程！\n");
+				exit(0);
+			}
+			//trans_len = recv(connect_fd, block_buff, consulted_block_size, 0);
+			if (recv_sftt_packet(connect_fd, sp) != 0) {
+				printf("数据传输失败 并等待");
+				j ++ ;
+				continue;
+			}
 			//char * tmp_buff = block_buff;
 			//数据解密
-			block_buff = sftt_decrypt_func(block_buff,trans_len);
+			//block_buff = sftt_decrypt_func(block_buff,trans_len);
 			//int i = 0;
 			//printf("trans_len is %d\n",trans_len);
-			printf("第 %d 次 的内容为: %x\n",i,block_buff);
+			printf("第 %d 次 的内容为: %x\n",i,sp->content);
 			//sleep(1);
 			printf("=======================================================================\n");
 			if (trans_len <= 0) {
@@ -123,28 +136,30 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 				connected = 0;
 				break;
 			}
-			if (strncmp(block_buff,BLOCK_TYPE_FILE_NAME,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
+			if (strncmp(sp->type,BLOCK_TYPE_FILE_NAME,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
 				//创建传输文件
 
-				fd = server_creat_file(block_buff,init_conf,data_buff);
-				memset(block_buff,'\0',consulted_block_size);
+				fd = server_creat_file(sp,init_conf,data_buff);
+				//memset(block_buff,'\0',consulted_block_size);
+				memset(data_buff,'\0',consulted_block_size);
 				printf("到 1 区   \n");
 				i++;
-			} else if (strncmp(block_buff,BLOCK_TYPE_DATA,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
+			} else if (strncmp(sp->type,BLOCK_TYPE_DATA,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
 				//接收数据 写入数据
-				server_transport_data_to_file(fd,trans_len,block_buff);
-				memset(block_buff,'\0',consulted_block_size);
+				server_transport_data_to_file(fd,sp);
+				//memset(block_buff,'\0',consulted_block_size);
 				printf("到 2 区   \n");
 				i++;
 
-			}else if (strncmp(block_buff,BLOCK_TYPE_FILE_END,strlen(BLOCK_TYPE_FILE_END)) == 0) {
+			}else if (strncmp(sp->type,BLOCK_TYPE_FILE_END,strlen(BLOCK_TYPE_FILE_END)) == 0) {
 				//一次文件传输完成
 				printf("一次文件传输完成");
+				server_transport_data_to_file(fd,sp);
 				printf("到 3 区   \n");
 				i++;
 				fclose(fd);
 				break;
-			}else if (strncmp(block_buff,BLOCK_TYPE_SEND_COMPLETE,strlen(BLOCK_TYPE_SEND_COMPLETE)) == 0) {
+			}else if (strncmp(sp->type,BLOCK_TYPE_SEND_COMPLETE,strlen(BLOCK_TYPE_SEND_COMPLETE)) == 0) {
 				//整个传输过程结束
 				printf("数据过程传输结束");
 				printf("到 4 区   \n");
@@ -164,23 +179,23 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 }
 
 
-void server_transport_data_to_file(FILE * fd,int size, char * block_buff ){
-	char * tmp_buff = block_buff;
-	int str_len = strlen(BLOCK_TYPE_DATA);
-	int write_len=fwrite(tmp_buff + str_len, 1, size - str_len, fd);
+void server_transport_data_to_file(FILE * fd,sftt_packet * sp ){
+	//char * tmp_buff = block_buff;
+	//int str_len = strlen(BLOCK_TYPE_DATA);
+	int write_len=fwrite(sp->content, 1, sp->data_len, fd);
 	printf("write len is %d", write_len);
 
 }
 
 
-FILE * server_creat_file(char * block_buff, sftt_server_config  init_conf,char * data_buff){
-	int str_len = strlen(block_buff);
+FILE * server_creat_file(sftt_packet *sp, sftt_server_config  init_conf,char * data_buff){
+	//int str_len = strlen(block_buff);
 	//const char * file_buff;
-	char * tmp_file = block_buff;
+	//char * tmp_file = sp->content;;
 	int i;
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
-	strcat(data_buff,tmp_file + strlen(BLOCK_TYPE_FILE_NAME));
+	strcat(data_buff,sp->content);
 			
 	//file_buff  = data_buff;
 	//fd = fopen(data_buff,"r+");
@@ -198,7 +213,11 @@ FILE * server_creat_file(char * block_buff, sftt_server_config  init_conf,char *
 
 void  is_exit(char * filepath){
 	char * tmp_path = (char * ) malloc (strlen(filepath)*sizeof(char));
+	printf("%s ======file_path\n",filepath);
+	sleep(1);
+	memset(tmp_path,'\0',strlen(filepath));
 	strcpy(tmp_path,filepath);
+	printf("tmp_path == %s ",tmp_path);
 	int str_len = strlen(filepath);
 	int i ;
 	for (i = 0; i <= str_len; i ++ ) {
@@ -215,6 +234,7 @@ void  is_exit(char * filepath){
 			}
 			memset(tmp_path,'\0',str_len);
                         strcpy(tmp_path,filepath);
+			printf("%s=====",tmp_path);
                         continue;
 			
 		}
