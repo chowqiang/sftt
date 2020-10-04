@@ -14,6 +14,7 @@
 #include "client.h"
 #include "encrypt.h"
 #include "net_trans.h"
+#include "validate.h"
 
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
@@ -69,12 +70,12 @@ int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size
 	return 0;
 }
 
-int create_client() {
+int create_client(char *ip) {
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;  //使用IPv4地址
-    	serv_addr.sin_addr.s_addr = inet_addr(LOCAL_HOST);  //具体的IP地址
+    	serv_addr.sin_addr.s_addr = inet_addr(ip);  //具体的IP地址
 	int ret = -1;
 	int port = get_cache_port();
 	printf("cache port is %d\n", port);
@@ -327,13 +328,20 @@ path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
 	return head;
 }
 int main(int argc, char **argv) {
-	if (argc < 2) {
-		printf("Error. Usage: %s file|dir\n", argv[0]);
+	if (argc < 3) {
+		printf("Error. Usage: %s ip file|dir\n", argv[0]);
 		return -1;
 	}
-	char *target = argv[1];
+
+	char *ip = argv[1];
+	if (!is_valid_ipv4(ip)) {
+		printf("Error. ip is invalid: %s\n", ip);
+		return -1;
+	}
+
+	char *target = argv[2];
 	if (strlen(target) > FILE_NAME_MAX_LEN) {
-		printf("Error. File name too long: %s\n", argv[1]);
+		printf("Error. File name too long: %s\n", target);
 		return -1;
 	} 
 
@@ -346,7 +354,7 @@ int main(int argc, char **argv) {
 	}
 	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
 
-	int sock = create_client();
+	int sock = create_client(ip);
 	if (sock == -1) {
 		printf("Error. create client failed!\n");
 		return -1;
@@ -378,7 +386,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (is_file(target)) {
-		path_entry *pe = get_file_path_entry(argv[1]);	
+		path_entry *pe = get_file_path_entry(target);	
 		if (pe == NULL) {
 			printf("get file path entry failed!\n");
 			return -1;
@@ -390,7 +398,7 @@ int main(int argc, char **argv) {
 
 	} else if (is_dir(target)) {
 		char prefix[1] = {0};
-		path_entry_list *pes = get_dir_path_entry_list(argv[1], prefix);
+		path_entry_list *pes = get_dir_path_entry_list(target, prefix);
 		if (pes == NULL) {
 			printf("get dir path entry list failed!\n");
 			return -1;
