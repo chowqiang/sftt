@@ -80,6 +80,8 @@ sftt_client *create_client(char *ip) {
 	if (client == NULL) {
 		return NULL;
 	}
+	memset(client, 0, sizeof(sftt_client));
+
 	printf("server ip is: %s\n", ip);
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	struct sockaddr_in serv_addr;
@@ -92,7 +94,6 @@ sftt_client *create_client(char *ip) {
 
 	if (port != -1) {
 		serv_addr.sin_port = htons(port);  //端口
-
 		ret = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 	}
 	
@@ -100,7 +101,6 @@ sftt_client *create_client(char *ip) {
 		port = get_random_port();
 		printf("random port is %d\n", port);
 		serv_addr.sin_port = htons(port);	
-		 	
 	 	ret = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 	} 
 	
@@ -112,6 +112,10 @@ sftt_client *create_client(char *ip) {
 		return NULL;
 	}
 	
+	strcpy(client->ip, ip);
+	client->port = port;
+	client->socks[client->socks_num++] = sock;
+ 
 	set_cache_port(port);
 
 	return client;
@@ -351,19 +355,44 @@ void destory_sftt_client(sftt_client *client) {
 		close(client->socks[i]);
 	}
 }
+
+void usage(char *exec_file) {
+	fprintf (stdout, "\nUsage: %s -h ip <input_file>\n\n", exec_file);
+}
+
 int main(int argc, char **argv) {
-	if (argc < 3) {
-		printf("Error. Usage: %s ip file|dir\n", argv[0]);
+	if (argc < 4) {
+		//printf("Error. Usage: %s ip file|dir\n", argv[0]);
+		usage(argv[0]);
 		return -1;
 	}
 
-	char *ip = argv[1];
-	if (!is_valid_ipv4(ip)) {
-		printf("Error. ip is invalid: %s\n", ip);
+	char *ip = NULL;
+	char *target = NULL; 
+
+	int i = 1;
+	for (; i < argc; ++i) {
+		if (strcmp(argv[i], "-h") == 0) {
+			++i;
+			if (i >= argc) {
+				goto PARAMS_ERROR;
+			}	
+			ip = argv[i]; 
+			continue;
+		} 
+		if (i == argc - 1) {
+			target = argv[i];	
+		}
+	}
+
+	if (ip == NULL || !is_valid_ipv4(ip)) {
+		printf("Error. ip is invalid: %s\n", (ip == NULL) ? "NULL" : ip);
 		return -1;
 	}
 
-	char *target = argv[2];
+	if (target == NULL) {
+		goto PARAMS_ERROR;
+	}
 	if (strlen(target) > FILE_NAME_MAX_LEN) {
 		printf("Error. File name too long: %s\n", target);
 		return -1;
@@ -439,4 +468,9 @@ int main(int argc, char **argv) {
 	destory_sftt_client(client);
 
 	return 0;
+
+PARAMS_ERROR:
+	usage(argv[0]);
+
+	return -1;
 }
