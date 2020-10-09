@@ -11,12 +11,15 @@
 #include <malloc.h>
 #endif
 #include <netinet/in.h>
+#include <errno.h>
 #include "random_port.h"
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
 #include "net_trans.h"
 #include "validate.h"
+
+extern int errno;
 
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
@@ -72,12 +75,17 @@ int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size
 	return 0;
 }
 
-int create_client(char *ip) {
+sftt_client *create_client(char *ip) {
+	sftt_client *client = (sftt_client *)malloc(sizeof(sftt_client));
+	if (client == NULL) {
+		return NULL;
+	}
+	printf("server ip is: %s\n", ip);
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;  //使用IPv4地址
-    	serv_addr.sin_addr.s_addr = inet_addr(ip);  //具体的IP地址
+    serv_addr.sin_addr.s_addr = inet_addr(ip);  //具体的IP地址
 	int ret = -1;
 	int port = get_cache_port();
 	printf("cache port is %d\n", port);
@@ -97,12 +105,16 @@ int create_client(char *ip) {
 	} 
 	
 	if (ret == -1) {
-		return -1;
+		fprintf(stderr, "Value of errno: %d\n", errno);
+		fprintf(stderr, "Error opening file: %s\n", strerror(errno));
+		free(client);
+
+		return NULL;
 	}
 	
 	set_cache_port(port);
 
-	return sock;
+	return client;
 }
 
 int get_cache_port() {
@@ -329,6 +341,16 @@ path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
 
 	return head;
 }
+
+void destory_sftt_client(sftt_client *client) {
+	if (client == NULL) {
+		return ;
+	}
+	int i = 0;
+	for (i = 0; i < client->socks_num; ++i) {
+		close(client->socks[i]);
+	}
+}
 int main(int argc, char **argv) {
 	if (argc < 3) {
 		printf("Error. Usage: %s ip file|dir\n", argv[0]);
@@ -356,31 +378,22 @@ int main(int argc, char **argv) {
 	}
 	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
 
-	int sock = create_client(ip);
-	if (sock == -1) {
+	sftt_client *client = create_client(ip);
+	if (client == NULL) {
 		printf("Error. create client failed!\n");
 		return -1;
 	} else {
 		printf("create client successfully!\n");
 	}
 
-	//sftt_packet *sp = malloc_sftt_packet(BUFFER_SIZE);
-	
 	printf("consulting block size with server ...\n");
-	int consulted_block_size = consult_block_size_with_server(sock, &client_config);
+	int consulted_block_size = consult_block_size_with_server(client->socks[0], &client_config);
 	if (consulted_block_size < 1) {
 		printf("consult block size with server failed!\n");
 		return -1;
 	}
 	printf("consulting block size done!\nconsulted block size is: %d\n", consulted_block_size);	
 
-	/*
-	char *buffer = (char *)malloc(sizeof(char) * consulted_block_size);
-	if (buffer == NULL) {
-		printf("create buffer for transporting failed!\n");
-		return -1;
-	}
-	*/
 	sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
 	if (sp == NULL) {
 		printf("malloc sftt packet failed!\n");
@@ -394,7 +407,7 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 
-		send_single_file(sock, sp, pe);
+		send_single_file(client->socks[0], sp, pe);
 
 		free(pe);
 
@@ -408,14 +421,13 @@ int main(int argc, char **argv) {
 		
 		path_entry_list *p = pes;
 		while (p) {
-			send_single_file(sock, sp, &(p->entry));
+			send_single_file(client->socks[0], sp, &(p->entry));
 			p = p->next;
 		}
 		
-		
 		strcpy(sp->type, BLOCK_TYPE_SEND_COMPLETE);
 		sp->data_len = 0;
-		int ret = send_sftt_packet(sock, sp);
+		int ret = send_sftt_packet(client->socks[0], sp);
 		if (ret == -1) {
 			printf("send complete end block failed!\n");
 		}	
@@ -424,7 +436,7 @@ int main(int argc, char **argv) {
 	}
 
 	free_sftt_packet(&sp);
-        close(sock);
+	destory_sftt_client(client);
 
 	return 0;
 }
