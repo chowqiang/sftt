@@ -1,6 +1,9 @@
 #include <stdlib.h>
+#if __linux__ 
 #include <malloc.h>
+#endif
 #include <sys/socket.h>
+#include <stdio.h>
 #include "net_trans.h"
 #include "config.h"
 #include "encrypt.h"
@@ -10,7 +13,7 @@ sftt_packet *malloc_sftt_packet(int block_size) {
 	if (sp == NULL) {
 		return NULL;
 	}	
-	memset(sp, 0, sizeof(sp));
+	memset(sp, 0, sizeof(*sp));
 
 	sp->content = (char *)malloc(sizeof(char) * block_size);
 	if (sp->content == NULL) {

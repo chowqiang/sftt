@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <libgen.h> 
+#if __linux__
 #include <malloc.h>
+#endif
 #include <netinet/in.h>
 #include "random_port.h"
 #include "config.h"

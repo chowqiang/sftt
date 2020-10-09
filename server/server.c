@@ -127,7 +127,7 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 			//block_buff = sftt_decrypt_func(block_buff,trans_len);
 			//int i = 0;
 			//printf("trans_len is %d\n",trans_len);
-			printf("第 %d 次 的内容为: %x\n",i,sp->content);
+			printf("第%d次传输开始\n",i);
 			printf("=======================================================================\n");
 			if (trans_len <= 0) {
 				fclose(fd);
