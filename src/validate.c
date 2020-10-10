@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "validate.h"
 
 char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid) {

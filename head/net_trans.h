@@ -1,5 +1,5 @@
 #ifndef _NET_TRANS_H_
-#define _NET_TRNAS_H_
+#define _NET_TRANS_H_
 
 #include "config.h"
 
