@@ -8,7 +8,17 @@
 #define MAX_PORT_NUM			65536
 
 #define IPV4_MAX_LEN			16	
-#define CLIENT_SOCKETS_MAX_NUM	16
+#define CLIENT_MAX_CONNECT_NUM		4	
+
+typedef struct path_entry {
+	char abs_path[FILE_NAME_MAX_LEN];
+	char rel_path[FILE_NAME_MAX_LEN];
+} path_entry;
+
+typedef struct path_entry_list {
+	path_entry entry;
+	struct path_entry_list *next;
+} path_entry_list;
 
 typedef struct file_input_stream {
 	char target[FILE_NAME_MAX_LEN + 1];
@@ -18,11 +28,27 @@ typedef struct file_input_stream {
 } file_input_stream;
 
 typedef struct {
+	int sock;
+	int block_size;
+} sock_connect;
+
+typedef struct {
 	char ip[IPV4_MAX_LEN];
 	int port;	
-	int socks[CLIENT_SOCKETS_MAX_NUM];
-	int socks_num;
+	int configured_block_size;
+	sock_connect connects[CLIENT_MAX_CONNECT_NUM];
+	int connects_num;
 } sftt_client;
+
+typedef struct {
+	sock_connect connect;
+	int index;
+	int step;
+	path_entry *pes;
+	int pe_count;
+} thread_input_params;
+
+path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
 
@@ -40,7 +66,7 @@ int get_cache_port();
 
 void set_cache_port(int port);
 
-sftt_client *create_client(char *ip);
+sftt_client *create_client(char *ip, sftt_client_config *config, int connects_num); 
 
 void destory_sftt_client(sftt_client *client);
 
