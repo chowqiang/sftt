@@ -1,7 +1,7 @@
 .idea
 .cache_port
-./src/*.o
-./client/*.o
-./server/*.o
-./client/client
-./server/server
+src/*.o
+client/*.o
+server/*.o
+client/client
+server/server
