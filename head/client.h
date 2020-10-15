@@ -48,6 +48,19 @@ typedef struct {
 	int pe_count;
 } thread_input_params;
 
+typedef struct {
+       char ip[IPV4_MAX_LEN];
+       int block_size;
+       int block_index;
+       char *md5;
+} file_trans_session;
+
+typedef struct {
+       char ip[IPV4_MAX_LEN];
+       file_trans_session *fts;
+       int count;
+} dir_trans_session;
+
 path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
