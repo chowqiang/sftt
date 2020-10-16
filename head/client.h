@@ -49,19 +49,27 @@ typedef struct {
 } thread_input_params;
 
 typedef struct {
-       char ip[IPV4_MAX_LEN];
-       int block_size;
-       int block_index;
-       char *md5;
+        char ip[IPV4_MAX_LEN];
+        int block_size;
+        int block_index;
+        char md5;
+	path_entry pe;
 } file_trans_session;
 
 typedef struct {
-       char ip[IPV4_MAX_LEN];
-       file_trans_session *fts;
-       int count;
+        char ip[IPV4_MAX_LEN];
+        file_trans_session *fts;
+        int fts_count;
+	path_entry pe;
 } dir_trans_session;
 
 path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
+
+void unknow_session();
+
+int start_file_trans_session();
+
+int start_dir_trans_session();
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
 
