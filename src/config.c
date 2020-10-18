@@ -30,6 +30,38 @@ void strip(char *line) {
 	}
 }
 
+int split(char *line, char delimiter, char **items, int max_item, int item_max_len) {
+	int i = 0, j = 0, k = 0;
+	int len = strlen(line);
+	if (len < 2) {
+		return -1;
+	} 
+	if (line == NULL || items == NULL) {
+		return -1;
+	}
+	for (i = 0; i < max_item; ++i) {
+		if (items[i] == NULL) {
+			return -1;
+		}
+	}
+	
+	while (i < len && j < max_item) {
+		while (i < len && line[i] == ' ') {
+			++i;
+		}
+		k = 0;
+		while (i < len && k < item_max_len && line[i] != delimiter) {
+			items[j][k] = line[i];
+			++k;
+		}
+		items[j][k] = 0;
+		++j;
+	} 
+	while (i < len && line[i] == ' ') {
+		++i;				
+	}
+	
+}
 
 int deal_server_config_line(char *line, sftt_server_config *ssc) {
 	strip(line);

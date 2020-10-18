@@ -3,12 +3,15 @@
 
 #include "config.h"
 
-#define LOCAL_HOST				"127.0.0.1"
+#define LOCAL_HOST			"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
 
 #define IPV4_MAX_LEN			16	
 #define CLIENT_MAX_CONNECT_NUM		4	
+
+#define SESSION_TYPE_FILE		1
+#define SESSION_TYPE_DIR		2
 
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
@@ -38,6 +41,9 @@ typedef struct {
 	int configured_block_size;
 	sock_connect connects[CLIENT_MAX_CONNECT_NUM];
 	int connects_num;
+	char session_file[FILE_NAME_MAX_LEN];
+	int session_type;
+	void *trans_session;
 } sftt_client;
 
 typedef struct {
@@ -50,8 +56,7 @@ typedef struct {
 
 typedef struct {
         char ip[IPV4_MAX_LEN];
-        int block_size;
-        int block_index;
+        int index;
         char md5;
 	path_entry pe;
 } file_trans_session;
@@ -65,11 +70,13 @@ typedef struct {
 
 path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
 
-void unknow_session();
+int find_unfinished_session(path_entry *pe, char *ip);
 
-int start_file_trans_session();
+int file_trans_session_diff(file_trans_session *old_session, file_trans_session *new_seesion);
 
-int start_dir_trans_session();
+int dir_trans_session_diff(dir_trans_session *old_session, dir_trans_session *new_session);
+
+int save_trans_session(sftt_client *client);
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
 

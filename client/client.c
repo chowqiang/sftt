@@ -487,6 +487,24 @@ int send_multiple_file(sftt_client *client, path_entry *pes, int count) {
 	return 0;
 }
 
+int find_unfinished_session(path_entry *pe, char *ip) {
+		
+
+}
+
+int file_trans_session_diff(file_trans_session *old_session, file_trans_session *new_seesion) {
+
+}
+
+int dir_trans_session_diff(dir_trans_session *old_session, dir_trans_session *new_session) {
+
+}
+
+int save_trans_session(sftt_client *client) {
+
+}
+
+
 int main(int argc, char **argv) {
 	if (argc < 4) {
 		usage(argv[0]);
