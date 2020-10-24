@@ -31,11 +31,7 @@ void strip(char *line) {
 }
 
 int split(char *line, char delimiter, char **items, int max_item, int item_max_len) {
-	int i = 0, j = 0, k = 0;
-	int len = strlen(line);
-	if (len < 2) {
-		return -1;
-	} 
+	int i = 0;
 	if (line == NULL || items == NULL) {
 		return -1;
 	}
@@ -44,23 +40,31 @@ int split(char *line, char delimiter, char **items, int max_item, int item_max_l
 			return -1;
 		}
 	}
+
+	int j = 0, k = 0;
+	int len = strlen(line);
+	if (len < 1) {
+		return -1;
+	} 
 	
+	i = 0;	
 	while (i < len && j < max_item) {
-		while (i < len && line[i] == ' ') {
+		while (i < len && isspace(line[i])) {
 			++i;
 		}
 		k = 0;
 		while (i < len && k < item_max_len && line[i] != delimiter) {
 			items[j][k] = line[i];
 			++k;
+			++i;
 		}
 		items[j][k] = 0;
 		++j;
+		++i;
 	} 
-	while (i < len && line[i] == ' ') {
-		++i;				
-	}
 	
+	printf("%d\n", j);
+	return j;
 }
 
 int deal_server_config_line(char *line, sftt_server_config *ssc) {
@@ -281,3 +285,17 @@ ERR_RET:
 
 	return -1;
 }
+
+#if 1
+int main(void) {
+	char *line = " a, b, c ";
+	char items[3][8];
+	
+	int i = 0, j = split(line, ',', (char **)items, 3, 8);
+	for (i = 0; i < j; ++i) {
+		printf("%s\n", items[i]);
+	}
+	
+	return 0;
+}
+#endif
