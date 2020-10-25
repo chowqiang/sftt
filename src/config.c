@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "config.h"
+#include "strings.h"
 
 void strip(char *line) {
 	int len = strlen(line);
@@ -30,41 +31,63 @@ void strip(char *line) {
 	}
 }
 
-int split(char *line, char delimiter, char **items, int max_item, int item_max_len) {
-	int i = 0;
-	if (line == NULL || items == NULL) {
-		return -1;
+strings *split(char *line, char delimiter) {
+	if (line == NULL) {
+		return NULL;
 	}
-	for (i = 0; i < max_item; ++i) {
-		if (items[i] == NULL) {
-			return -1;
-		}
+	int len = strlen(line);
+	//printf("%d\n", len);
+	
+	strings *ss = create_strings();
+	if (ss == NULL) {
+		return NULL;
 	}
 
-	int j = 0, k = 0;
-	int len = strlen(line);
-	if (len < 1) {
-		return -1;
-	} 
-	
-	i = 0;	
-	while (i < len && j < max_item) {
+	int i = 0, j = 0, ret = 0;;
+	while (i < len) {
+		//skip to blank char.
 		while (i < len && isspace(line[i])) {
 			++i;
+		}	
+
+		//add a string to store chars.
+		ret = add_string(ss);
+		//printf("line: %d, ret: %d\n", __LINE__, ret);
+		if (ret == -1) {
+			goto ERROR_RET;
 		}
-		k = 0;
-		while (i < len && k < item_max_len && line[i] != delimiter) {
-			items[j][k] = line[i];
-			++k;
+		
+		//copy chars until encounter a delimiter or consume all chars. 
+		while (i < len && line[i] != delimiter) {
+			ret = append_char(ss, j, line[i]);
+			//printf("line: %d, ret: %d\n", __LINE__, ret);
+			if (ret == -1) {
+				goto ERROR_RET;
+			}
 			++i;
 		}
-		items[j][k] = 0;
+		//move string cursor to next.
 		++j;
+
+		//check whether the line ends with ",\0".
+		//append an empty string in this situation.
+		if (line[i] == delimiter && i + 1 == len) {
+			ret = add_string(ss);
+			//printf("line: %d, ret: %d\n", __LINE__, ret);
+			if (ret == -1) {
+				goto ERROR_RET;
+			}
+
+		}
+		//skip to delimiter or move to next.
 		++i;
-	} 
-	
-	printf("%d\n", j);
-	return j;
+	}
+
+	return ss;
+
+ERROR_RET:
+	free_strings(&ss);
+	return NULL;
 }
 
 int deal_server_config_line(char *line, sftt_server_config *ssc) {
@@ -286,14 +309,16 @@ ERR_RET:
 	return -1;
 }
 
-#if 1
+#if 0
 int main(void) {
-	char *line = " a, b, c ";
-	char items[3][8];
+	char *line = "a,0,0,,";
+	int i = 0;
 	
-	int i = 0, j = split(line, ',', (char **)items, 3, 8);
-	for (i = 0; i < j; ++i) {
-		printf("%s\n", items[i]);
+	strings *ss = split(line, ',');
+	int num = get_string_num(ss);
+	printf("num: %d\n", num);
+	for (i = 0; i < num; ++i) {
+		printf("%s\n", get_string(ss, i));
 	}
 	
 	return 0;

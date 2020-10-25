@@ -3,5 +3,6 @@
 src/*.o
 client/*.o
 server/*.o
+src/a.out
 client/client
 server/server

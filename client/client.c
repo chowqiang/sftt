@@ -488,20 +488,19 @@ int send_multiple_file(sftt_client *client, path_entry *pes, int count) {
 }
 
 int find_unfinished_session(path_entry *pe, char *ip) {
-		
-
+	return 0;		
 }
 
 int file_trans_session_diff(file_trans_session *old_session, file_trans_session *new_seesion) {
-
+	return 0;
 }
 
 int dir_trans_session_diff(dir_trans_session *old_session, dir_trans_session *new_session) {
-
+	return 0;
 }
 
 int save_trans_session(sftt_client *client) {
-
+	return 0;
 }
 
 
