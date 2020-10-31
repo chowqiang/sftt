@@ -266,8 +266,8 @@ void show_int(void *data) {
 	}
 	printf("%d ", (int)(data));
 }
-#if 1
 
+#if 0
 int main(void) {
 	dlist list;
 	dlist_init(&list, destroy_int);

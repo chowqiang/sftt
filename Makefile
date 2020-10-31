@@ -1,43 +1,33 @@
-INCL=-I ./head/
-all: server client install_conf
+CC=gcc
+ROOT_DIR=$(shell pwd)
+CFLAG=-I$(ROOT_DIR)/head -lpthread
+OBJS_DIR=$(ROOT_DIR)/src
+OBJS=src
+SERVER_BIN=server
+CLIENT_BIN=client
 
-strings.o:
-	gcc -o ./src/strings.o ${INCL} -c ./src/strings.c
-md5.o:
-	gcc -o ./src/md5.o ${INCL} -c ./src/md5.c
-	
-validate.o:
-	gcc -o ./src/validate.o ${INCL} -c ./src/validate.c
+export CC ROOT_DIR CFLAG SERVER_BIN CLIENT_BIN OBJS_DIR
 
-net_trans.o:
-	gcc -o ./src/net_trans.o ${INCL} -c ./src/net_trans.c
+all:$(SERVER_BIN) $(CLIENT_BIN) $(OBJS)
 
-encrypt.o:
-	gcc -o ./src/encrypt.o ${INCL} -c ./src/encrypt.c
+$(OBJS):ECHO
+	make -C $@
 
-config.o:
-	gcc -o ./src/config.o ${INCL} -c ./src/config.c
+$(SERVER_BIN):$(OBJS) ECHO
+	make -C $@
 
-random_port.o:
-	gcc -o ./src/random_port.o ${INCL} -c ./src/random_port.c
+$(CLIENT_BIN):$(OBJS) ECHO
+	make -C $@
 
-client: random_port.o config.o encrypt.o net_trans.o validate.o md5.o
-	gcc -o ./client/client ${INCL} ./client/client.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o ./src/validate.o ./src/md5.o ./src/strings.o -lpthread
+ECHO:
+	@echo $(OBJS) $(SERVER_BIN) $(CLIENT_BIN)
 
-server: random_port.o config.o encrypt.o net_trans.o md5.o
-	gcc -o ./server/server ${INCL} ./server/server.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o ./src/md5.o ./src/strings.o
-
-install_conf:
-	@if [ ! -d "/etc/sftt/" ]; then \
-		mkdir -p /etc/sftt; \
-	fi; \
-	cp ./conf/* /etc/sftt/
 
 .PHONY: clean
 
 clean:
-	rm ./src/*.o
-	rm ./client/*.o
-	rm ./server/*.o
-	
-	 
+	@rm $(ROOT_DIR)/src/*.o
+	@rm $(ROOT_DIR)/client/*.o
+	@rm $(ROOT_DIR)/client/client
+	@rm $(ROOT_DIR)/server/*.o
+	@rm $(ROOT_DIR)/server/server

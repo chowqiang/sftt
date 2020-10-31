@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include "compress.h"
 #include "dlist.h"
 
@@ -47,11 +49,11 @@ btree *generate_huffman_tree(int *char_freq) {
 	memset(visited, 0, sizeof(visited));
 	int min_index = 0;
 	unsigned char min_freq_char = 0;
-	dlist list;
-	dlist_init(&list);
+	//dlist list;
+	//dlist_init(&list);
 	
 	for (;;) {
-		min_index = get_min_freq_char(r_freq, visited);
+		min_index = get_min_freq_char(char_freq, visited);
 		
 		if (min_index == -1) {
 			break;
@@ -65,7 +67,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 	if (input == NULL || input_len < 1) {
 		return -1;
 	}
-	if (output == NULL || *output == NULL || output_len == NULL) {
+	if (output == NULL || *output == NULL) {
 		return -1;
 	}
 	
@@ -83,7 +85,7 @@ int huffman_decompress(unsigned char *input, int input_len, unsigned char **outp
 	if (input == NULL || input_len < 1) {
 		return -1;
 	}
-	if (output == NULL || *output == NULL || output_len == NULL) {
+	if (output == NULL || *output == NULL) {
 		return -1;
 	}
 

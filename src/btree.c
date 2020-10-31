@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "btree.h"
 
 void btree_destroy(btree *tree) {
