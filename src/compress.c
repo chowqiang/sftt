@@ -1,9 +1,10 @@
 #include "compress.h"
+#include "dlist.h"
 
 #define CHARSET_SIZE	256
 
 typedef struct {
-
+	int val;
 } char_stat;
 
 typedef struct btree {
@@ -40,19 +41,24 @@ int get_min_freq_char(int *char_freq, char *visited) {
 
 	return min_index;
 }
+
 btree *generate_huffman_tree(int *char_freq) {
 	char visited[CHARSET_SIZE];
 	memset(visited, 0, sizeof(visited));
 	int min_index = 0;
 	unsigned char min_freq_char = 0;
+	dlist list;
+	dlist_init(&list);
+	
 	for (;;) {
-		min_index = get_min_freq_char(char_freq, visited);
+		min_index = get_min_freq_char(r_freq, visited);
+		
 		if (min_index == -1) {
 			break;
 		}			
 	}
 		
-
+	return NULL;
 }
 
 int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
@@ -69,7 +75,8 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 		return -1;
 	}
 	btree *root = generate_huffman_tree(char_freq);	
-		
+	
+	return 0;	
 }
 
 int huffman_decompress(unsigned char *input, int input_len, unsigned char **output) {
@@ -80,6 +87,7 @@ int huffman_decompress(unsigned char *input, int input_len, unsigned char **outp
 		return -1;
 	}
 
+	return 0;
 }
 
 

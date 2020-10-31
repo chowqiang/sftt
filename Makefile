@@ -33,6 +33,8 @@ install_conf:
 	fi; \
 	cp ./conf/* /etc/sftt/
 
+.PHONY: clean
+
 clean:
 	rm ./src/*.o
 	rm ./client/*.o
