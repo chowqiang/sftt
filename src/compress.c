@@ -55,7 +55,7 @@ btree *generate_huffman_tree(int *char_freq) {
 
 }
 
-int huffman_compress(unsigned char *input, int input_len, unsigned char **output, int *output_len) {
+int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
 	if (input == NULL || input_len < 1) {
 		return -1;
 	}
@@ -72,7 +72,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 		
 }
 
-int huffman_decompress(unsigned char *input, int input_len, unsigned char **output, int *output_len) {
+int huffman_decompress(unsigned char *input, int input_len, unsigned char **output) {
 	if (input == NULL || input_len < 1) {
 		return -1;
 	}
