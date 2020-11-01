@@ -12,6 +12,8 @@ typedef struct _btree {
 	btree_node *root;
 } btree;
 
+btree_node *btree_node_create(void *data); 
+
 void btree_init(btree *tree, void (*destroy) (void *data));
 
 void btree_destroy(btree *tree);
@@ -30,6 +32,10 @@ btree_node *btree_root(btree *tree);
 
 int btree_is_leaf(btree_node *node);
 
-void btree_data(btree_node *node);
+void *btree_data(btree_node *node);
+
+int btree_is_empty(btree *tree);
+
+btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *right);
 
 #endif
