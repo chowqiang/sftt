@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dlist.h"
+#include "destroy.h"
 
 dlist_node *dlist_node_create(void *data) {
 	dlist_node *node = (dlist_node *)malloc(sizeof(dlist_node));
@@ -35,7 +36,9 @@ void dlist_destroy(dlist *list) {
 	dlist_node *p = list->head;
 	dlist_node *q = NULL;
 	while (p) {
-		list->destroy(p->data);	
+		if (list->destroy) {
+			list->destroy(p->data);	
+		}
 		q = p->next;
 		free(p);
 		p = q;
@@ -256,10 +259,6 @@ void dlist_show(dlist *list) {
 	printf(" )\n");
 }
 
-void destroy_int(void *data) {
-	return ;
-}
-
 void show_int(void *data) {
 	if (data == NULL) {
 		return ;
@@ -267,6 +266,18 @@ void show_int(void *data) {
 	printf("%d ", (int)(data));
 }
 
+int dlist_is_empty(dlist *list) {
+	if (list == NULL) {
+		return 1;
+	}
+	if (list->size == 0) {
+		assert(list->head == NULL && list->tail == NULL);
+		return 1;
+	}
+
+	assert(list->head != NULL && list->tail != NULL);
+	return 0;	
+}
 #if 0
 int main(void) {
 	dlist list;

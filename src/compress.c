@@ -1,20 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "compress.h"
 #include "dlist.h"
+#include "btree.h"
 
 #define CHARSET_SIZE	256
 
 typedef struct {
 	int val;
 } char_stat;
-
-typedef struct btree {
-	int freq;
-	unsigned char c;
-	struct btree *left;
-	struct btree *right;
-} btree;
 
 int calc_char_freq(unsigned char *input, int input_len, int *char_freq) {
 	if (input == NULL || input_len < 1) {
@@ -44,23 +39,58 @@ int get_min_freq_char(int *char_freq, char *visited) {
 	return min_index;
 }
 
-btree *generate_huffman_tree(int *char_freq) {
-	char visited[CHARSET_SIZE];
-	memset(visited, 0, sizeof(visited));
-	int min_index = 0;
-	unsigned char min_freq_char = 0;
-	//dlist list;
-	//dlist_init(&list);
-	
-	for (;;) {
-		min_index = get_min_freq_char(char_freq, visited);
-		
-		if (min_index == -1) {
-			break;
-		}			
+btree_node *fetch_min_btree_node(dlist *list) {
+	if (list == NULL || dlist_is_empty(list)) {
+		return NULL;
 	}
-		
-	return NULL;
+	dlist_node *p = list->head;
+	dlist_node *l_node = NULL;
+	btree_node *min_t_node = (btree_node *)p->data;
+	btree_node *t_node = NULL;
+	p = p->next;	
+	while (p) {
+		t_node = (btree_node *)p->data;
+		if ((int)t_node->data < (int)min_t_node->data) {
+			min_t_node = t_node;
+			l_node = p;
+		}
+		p = p->next;
+	}
+	dlist_remove(list, l_node, NULL);
+ 
+	return min_t_node;		
+}
+btree *generate_huffman_tree(int *char_freq) {
+	if (char_freq == NULL) {
+		return NULL;
+	}
+	dlist list;
+	dlist_init(&list, NULL);
+	btree_node *t_node = NULL, *t_node1 = NULL, *t_node2 = NULL;
+	
+	int i = 0;
+	int sum = 0;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_freq[i] == 0) {
+			continue;
+		}
+		t_node = btree_node_create((void *)char_freq[i]);
+		assert(t_node != NULL);
+		dlist_append(&list, (void *)t_node);	
+	}
+	for (;;) {
+		t_node1 = fetch_min_btree_node(&list);
+		assert(t_node1 != NULL);
+		t_node2 = fetch_min_btree_node(&list);
+		if (t_node2 == NULL) {
+			break;
+		}
+		sum = (int)t_node1->data + (int)t_node2->data;	
+		t_node = btree_node_gen_parent((void *)sum, t_node1, t_node2);
+		assert(t_node != NULL);
+		dlist_append(&list, (void *)t_node);
+	}
+	btree_node *root = t_node1;	
 }
 
 int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
@@ -76,7 +106,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 	if (ret == -1) {
 		return -1;
 	}
-	btree *root = generate_huffman_tree(char_freq);	
+	btree *tree = generate_huffman_tree(char_freq);	
 	
 	return 0;	
 }

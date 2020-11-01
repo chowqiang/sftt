@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "btree.h"
+#include "destroy.h"
 
 btree_node *btree_node_create(void *data) {
 	btree_node *node = (btree_node *)malloc(sizeof(btree_node));
@@ -141,9 +142,10 @@ void *btree_data(btree_node *node) {
 	return node == NULL ? NULL : node->data;
 }
 
-void destroy_int(void *data) {
-	return ;
+void btree_show_bfs(btree *tree) {
+
 }
+
 #if 0
 int main(void) {
 	btree tree;

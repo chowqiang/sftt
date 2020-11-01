@@ -38,4 +38,6 @@ int btree_is_empty(btree *tree);
 
 btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *right);
 
+void btree_show_bfs(btree *tree);
+
 #endif
