@@ -47,6 +47,9 @@ btree_node *fetch_min_btree_node(dlist *list) {
 	dlist_node *l_node = NULL;
 	btree_node *min_t_node = (btree_node *)p->data;
 	btree_node *t_node = NULL;
+	dlist_for_each(list, p) {
+		continue;
+	}
 	p = p->next;	
 	while (p) {
 		t_node = (btree_node *)p->data;

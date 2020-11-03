@@ -56,4 +56,7 @@ void dlist_set_show(dlist *list, void (*show) (void *data));
 void dlist_show(dlist *list);
  
 int dlist_is_empty(dlist *list);
+
+#define dlist_for_each(dlist, node) \
+	for (; node != NULL; node = node->next)
 #endif
