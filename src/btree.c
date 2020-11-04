@@ -142,8 +142,20 @@ void *btree_data(btree_node *node) {
 	return node == NULL ? NULL : node->data;
 }
 
-void btree_show_bfs(btree *tree) {
+int btree_show_bfs(btree *tree, void **array) {
+	if (tree == NULL || array == NULL) {
+		return 0;
+	}
+	
 
+}
+
+int btree_node_count(btree_node *node) {
+	if (node == NULL) {
+		return 0;
+	} else {
+		return btree_node_count(node->left) + btree_node_count(node->right) + 1;
+	}
 }
 
 #if 0

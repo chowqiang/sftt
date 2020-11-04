@@ -8,8 +8,27 @@
 #define CHARSET_SIZE	256
 
 typedef struct {
-	int val;
-} char_stat;
+	int ch;
+	int freq;
+} char_stat_node;
+
+char_stat_node *create_char_stat_node(unsigned char ch, int freq) {
+	char_stat_node *node = (char_stat_node *)malloc(sizeof(char_stat_node));
+	//assert(node != NULL);
+	if (node == NULL) {
+		return NULL;
+	}
+	node->ch = ch;
+	node->freq = freq;
+
+	return node;
+}
+
+void free_char_stata_node(char_stat_node *node) {
+	if (node) {
+		free(node);
+	}
+}
 
 int calc_char_freq(unsigned char *input, int input_len, int *char_freq) {
 	if (input == NULL || input_len < 1) {
@@ -63,13 +82,14 @@ btree_node *fetch_min_btree_node(dlist *list) {
  
 	return min_t_node;		
 }
-btree *generate_huffman_tree(int *char_freq) {
+btree_node *generate_huffman_tree(int *char_freq) {
 	if (char_freq == NULL) {
 		return NULL;
 	}
 	dlist list;
 	dlist_init(&list, NULL);
 	btree_node *t_node = NULL, *t_node1 = NULL, *t_node2 = NULL;
+	char_stat_node *cs_node = NULL;
 	
 	int i = 0;
 	int sum = 0;
@@ -77,7 +97,9 @@ btree *generate_huffman_tree(int *char_freq) {
 		if (char_freq[i] == 0) {
 			continue;
 		}
-		t_node = btree_node_create((void *)char_freq[i]);
+		cs_node = create_char_stat_node(i, char_freq[i]);
+		assert(cs_node != NULL); 
+		t_node = btree_node_create(cs_node);
 		assert(t_node != NULL);
 		dlist_append(&list, (void *)t_node);	
 	}
@@ -89,11 +111,13 @@ btree *generate_huffman_tree(int *char_freq) {
 			break;
 		}
 		sum = (int)t_node1->data + (int)t_node2->data;	
-		t_node = btree_node_gen_parent((void *)sum, t_node1, t_node2);
+		cs_node = create_char_stat_node(-1, sum); 
+		t_node = btree_node_gen_parent((void *)cs_node, t_node1, t_node2);
 		assert(t_node != NULL);
 		dlist_append(&list, (void *)t_node);
 	}
-	btree_node *root = t_node1;	
+
+	return t_node1;	
 }
 
 int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
@@ -109,7 +133,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 	if (ret == -1) {
 		return -1;
 	}
-	btree *tree = generate_huffman_tree(char_freq);	
+	btree_node *tree = generate_huffman_tree(char_freq);	
 	
 	return 0;	
 }

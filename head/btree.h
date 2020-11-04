@@ -1,5 +1,6 @@
 #ifndef _BTREE_H_
 #define _BTREE_H_
+
 typedef struct _btree_node {
 	void *data;
 	struct _btree_node *left;
@@ -38,6 +39,9 @@ int btree_is_empty(btree *tree);
 
 btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *right);
 
-void btree_show_bfs(btree *tree);
+
+int btree_show_bfs(btree *tree, void **array); 
+
+int btree_node_count(btree_node *node);
 
 #endif
