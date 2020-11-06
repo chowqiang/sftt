@@ -1,7 +1,7 @@
 #include "memory_pool.h"
 
 int mp_init(memory_pool *mp) {
-
+	return 0;
 }
 void *mp_malloc(memory_pool *mp, size_t n) {
 

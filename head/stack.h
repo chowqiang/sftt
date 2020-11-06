@@ -1,5 +1,8 @@
 #ifndef _STACK_H_
 #define _STACK_H_
+typedef struct {
+	
+} stack;
 void stack_init(stack *s, void (*destroy) (void *data));
 void stack_destroy(stack *s);
 int stack_push(stack *s, void *data);
