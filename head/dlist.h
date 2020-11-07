@@ -59,6 +59,8 @@ void dlist_show(dlist *list);
  
 int dlist_is_empty(dlist *list);
 
+void dlist_sort(int (*cmp)(void *a, void *b), int asc); 
+
 #define dlist_for_each(dlist, node) \
 	for (; node != NULL; node = node->next)
 #endif

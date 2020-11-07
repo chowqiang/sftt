@@ -285,6 +285,11 @@ int dlist_is_empty(dlist *list) {
 	assert(list->head != NULL && list->tail != NULL);
 	return 0;	
 }
+
+void dlist_sort(int (*cmp)(void *a, void *b), int asc) {
+
+} 
+
 #if 0
 int main(void) {
 	dlist list;
