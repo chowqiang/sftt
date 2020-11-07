@@ -16,6 +16,13 @@ dlist_node *dlist_node_create(void *data) {
 	return node;
 }
 
+dlist *dlist_create(void (*destroy)(void *data)) {
+	dlist *list = (dlist *)malloc(sizeof(dlist));
+	dlist_init(list, destroy);
+
+	return list;
+}
+
 void dlist_init(dlist *list, void (*destroy) (void *data)) {	
 	if (list == NULL) {
 		return ;

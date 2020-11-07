@@ -17,6 +17,8 @@ typedef struct _dlist {
 
 dlist_node *dlist_node_create(void *data); 
 
+dlist *dlist_create(void (*destroy)(void *data)); 
+
 void dlist_init(dlist *list, void (*destroy) (void *data));
 
 void dlist_destroy(dlist *list);

@@ -1,9 +1,9 @@
 #ifndef _QUEUE_H_
 #define _QUEUE_H_
+#include "dlist.h"
 typedef struct {
-	void *buffer;
-	int head;
-	int tail;
+	dlist *list;
+	void (*destroy)(void);
 } queue;
 void queue_init(queue *q, void (*destroy)(void *data));
 void queue_destroy(queue *q);
