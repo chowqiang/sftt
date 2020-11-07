@@ -1,5 +1,6 @@
 .idea
 .cache_port
+tags
 src/*.o
 client/*.o
 server/*.o

@@ -31,7 +31,7 @@ int dlist_append(dlist *list, void *data);
 
 int dlist_prepend(dlist *list, void *data);
 
-int dlist_remove(dlist *list, dlist_node *elem, void **data);
+int dlist_remove(dlist *list, dlist_node *elem, void **data, int need_free);
 
 int dlist_size(dlist *list);
 
@@ -59,8 +59,13 @@ void dlist_show(dlist *list);
  
 int dlist_is_empty(dlist *list);
 
-void dlist_sort(int (*cmp)(void *a, void *b), int asc); 
+void dlist_sort(dlist *list, int (*cmp)(void *a, void *b), int asc);
 
-#define dlist_for_each(dlist, node) \
-	for (; node != NULL; node = node->next)
+dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b));
+
+dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b));
+
+#define dlist_for_each(list, node) \
+	for (node = list->head; node != NULL; node = node->next)
+
 #endif

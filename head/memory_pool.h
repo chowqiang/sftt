@@ -1,6 +1,8 @@
 #ifndef _MEMORY_POOL_H_
 #define _MEMORY_POOL_H_
+
 #include <stddef.h>
+#include "dlist.h"
 
 typedef struct {
 	size_t size;
@@ -11,9 +13,9 @@ typedef struct {
 
 typedef struct {
 	dlist *list;
-	size_t node_cnt;	
 } memory_pool;
 
+memory_pool *mp_create();
 int mp_init(memory_pool *mp);
 void *mp_malloc(memory_pool *mp, size_t n);
 void mp_free(memory_pool *mp, void *p);
