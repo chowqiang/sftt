@@ -63,6 +63,19 @@ void stack_show(const stack *s, void (*show)(void *data)) {
 	dlist_show(s->list);
 }
 
+int stack_is_empty(const stack *s) {
+	return s == NULL || s->list == NULL ? 1 : dlist_size(s->list) == 0;
+}
+
+void stack_peek_all(const stack *s, void **array) {
+	int i = 0;
+	dlist_node *node = NULL;
+	dlist_for_each(s->list, node) {
+		array[i] = node->data;
+		++i;
+	} 
+}
+
 #if 0
 int main(void) {
 	stack *s = stack_create(NULL);

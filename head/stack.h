@@ -12,5 +12,7 @@ int stack_push(stack *s, void *data);
 int stack_pop(stack *s, void **data);
 void *stack_peek(const stack *s);
 int stack_size(const stack *s);
+int stack_is_empty(const stack *s);
+void stack_peek_all(const stack *s, void **array);
 
 #endif

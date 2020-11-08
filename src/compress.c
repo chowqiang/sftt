@@ -5,6 +5,8 @@
 #include "compress.h"
 #include "dlist.h"
 #include "btree.h"
+#include "stack.h"
+#include "map.h"
 
 #define CHARSET_SIZE	256
 
@@ -149,6 +151,84 @@ btree *generate_huffman_tree(int *char_freq) {
 	return tree;	
 }
 
+char *get_char_code(stack *s) {
+	int len = stack_size(s);
+	void **array = (void **)malloc(sizeof(void *) * len); 
+	char *code = (char *)malloc(sizeof(char) * (len + 1));
+	if (array == NULL || code == NULL) {
+		return NULL;
+	}
+
+	stack_peek_all(s, array);
+	int i = 0;
+	for (i = 0; i < len; ++i) {
+		code[i] = (char)array[i];
+	}	
+	code[len] = 0;	
+
+	free(array);
+
+	return code;	
+}
+
+int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
+	int i = 0;
+	void *data = NULL;
+	if (tree == NULL || tree->root == NULL || char_codes == NULL) {
+		return -1;
+	}
+	map *m = map_create();
+	btree_node *root = tree->root;
+	btree_node *tn = NULL;
+	char_stat_node *csn = NULL;
+
+	stack *sc = stack_create(NULL);
+	stack *stn = stack_create(NULL);
+	stack_push(stn, root->right);
+
+
+	while (!stack_is_empty(stn)) {
+		stack_pop(stn, (void **)&tn);
+		if (tn == NULL) {
+			continue;
+		}
+		if (tn->left) {
+			if (map_find(m, tn->left, NULL) == -1) {
+				stack_push(sc, (void *)'1');
+				stack_push(stn, tn->left);
+				map_add(m, (void *)tn->left, NULL);
+			} else {
+				stack_pop(sc, NULL);
+			}
+		} else if (tn->right) { 
+			if (map_find(m, tn->right, NULL) == -1) {
+				stack_push(sc, (void *)'0');
+				stack_push(stn, tn->right);
+				map_add(m, (void *)tn->right, NULL);
+			} else {
+				stack_pop(sc, NULL);
+			}
+		} else {
+			csn = (char_stat_node *)tn->data;
+			char_codes[csn->ch] = get_char_code(sc);
+			printf("%c: %s\n", csn->ch, char_codes[csn->ch]);
+			stack_pop(sc, NULL);
+		}
+		
+	}
+
+	return 0;
+}
+
+void free_char_codes(char *char_codes[CHARSET_SIZE]) {
+	int i = 0;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_codes[i]) {
+			free(char_codes[i]);
+			char_codes[i] = NULL;
+		}
+	}
+}
 
 int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
 	if (input == NULL || input_len < 1) {
@@ -170,10 +250,16 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 	if (tree == NULL) {
 		return -1;
 	}
+	char *char_codes[CHARSET_SIZE];
+	memset(char_codes, 0, sizeof(char_codes));
+	get_char_codes(tree, char_codes);
+#if DEBUG
 	dlist *bfs_list = btree_bfs(tree);
 	dlist_set_show(bfs_list, show_char_stat_by_btree_node);
 	dlist_show(bfs_list);
-	
+#endif
+	free_char_codes(char_codes);
+
 	return 0;	
 }
 
