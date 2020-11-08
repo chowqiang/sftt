@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "dlist.h"
 #include "destroy.h"
+#include "show.h"
 
 dlist_node *dlist_node_create(void *data) {
 	dlist_node *node = (dlist_node *)malloc(sizeof(dlist_node));
@@ -165,7 +166,7 @@ int dlist_remove(dlist *list, dlist_node *elem, void **data, int need_free) {
 		list->tail = prev;	
 	}
 
-	if (data && *data) {
+	if (data) {
 		*data = elem->data;
 	}
 	if (need_free) {
@@ -269,13 +270,6 @@ void dlist_show(dlist *list) {
 		p = p->next;
 	}
 	printf(" )\n");
-}
-
-void show_int(void *data) {
-	if (data == NULL) {
-		return ;
-	}
-	printf("%d ", (int)(data));
 }
 
 int dlist_is_empty(dlist *list) {

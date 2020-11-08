@@ -21,6 +21,8 @@ dlist *dlist_create(void (*destroy)(void *data));
 
 void dlist_init(dlist *list, void (*destroy) (void *data));
 
+void dlist_set_destroy(dlist *list, void (*destroy)(void *data));
+
 void dlist_destroy(dlist *list);
 
 int dlist_ins_next(dlist *list, dlist_node *elem, void *data);

@@ -1,6 +1,21 @@
 #include <assert.h> 
 #include <stdlib.h>
 #include "queue.h"
+#include "show.h"
+
+queue *queue_create(void (*destroy)(void *data)) {
+	queue *q = (queue *)malloc(sizeof(queue));
+	if (q == NULL) {
+		return NULL;
+	}
+	q->list = dlist_create(destroy);
+	if (q->list == NULL) {
+		free(q);
+		return NULL;
+	}
+
+	return q;
+}
 
 void queue_init(queue *q, void (*destroy)(void *data)) {
 	assert(q != NULL);
@@ -37,3 +52,37 @@ int queue_size(queue *q) {
 
 	return dlist_size(q->list);
 }
+
+void queue_show(queue *q, void (*show)(void *data)) {
+	assert(q != NULL);
+	
+	dlist_set_show(q->list, show);
+	dlist_show(q->list); 
+}
+
+#if 0
+int main(void) {
+	queue *q = queue_create(NULL);
+
+	queue_enqueue(q, (void *)1);
+	queue_enqueue(q, (void *)2);
+	queue_enqueue(q, (void *)3);
+
+	queue_show(q, show_int);
+
+	void *data = NULL;
+	queue_dequeue(q, &data);
+	printf("%d\n", (int)data);
+	queue_show(q, show_int);
+
+	queue_dequeue(q, &data);
+	printf("%d\n", (int)data);
+	queue_show(q, show_int);
+	
+	queue_dequeue(q, &data);
+	printf("%d\n", (int)data);
+	queue_show(q, show_int);
+		
+	return 0;
+}
+#endif
