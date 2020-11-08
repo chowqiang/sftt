@@ -70,4 +70,7 @@ dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b));
 #define dlist_for_each(list, node) \
 	for (node = list->head; node != NULL; node = node->next)
 
+#define dlist_for_each_pos(node) \
+	for (; node != NULL; node = node->next)
+
 #endif

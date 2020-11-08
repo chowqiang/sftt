@@ -14,5 +14,6 @@ int queue_enqueue(queue *q, void *data);
 int queue_dequeue(queue *q, void **data);
 void *queue_peek(queue *q);
 int queue_size(queue *q);
+int queue_is_empty(queue *q);
 
 #endif

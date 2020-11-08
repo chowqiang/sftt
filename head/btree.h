@@ -1,6 +1,8 @@
 #ifndef _BTREE_H_
 #define _BTREE_H_
 
+#include "dlist.h"
+
 typedef struct _btree_node {
 	void *data;
 	struct _btree_node *left;
@@ -14,6 +16,8 @@ typedef struct _btree {
 } btree;
 
 btree_node *btree_node_create(void *data); 
+
+btree *btree_create(void (*destroy)(void *data)); 
 
 void btree_init(btree *tree, void (*destroy) (void *data));
 
@@ -39,9 +43,10 @@ int btree_is_empty(btree *tree);
 
 btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *right);
 
-
-int btree_show_bfs(btree *tree, void **array); 
+dlist *btree_bfs(btree *tree); 
 
 int btree_node_count(btree_node *node);
+
+void btree_set_root(btree *tree, btree_node *root);
 
 #endif

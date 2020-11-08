@@ -60,6 +60,10 @@ void queue_show(queue *q, void (*show)(void *data)) {
 	dlist_show(q->list); 
 }
 
+int queue_is_empty(queue *q) {
+	return q == NULL || q->list == NULL ? 0 : dlist_is_empty(q->list);
+}
+
 #if 0
 int main(void) {
 	queue *q = queue_create(NULL);

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "btree.h"
+#include "queue.h"
 #include "destroy.h"
 
 btree_node *btree_node_create(void *data) {
@@ -15,6 +16,15 @@ btree_node *btree_node_create(void *data) {
 
 	return node;
 }
+btree *btree_create(void (*destroy)(void *data)) {
+	btree *tree = (btree *)malloc(sizeof(btree));
+	if (tree == NULL) {
+		return NULL;
+	}
+	btree_init(tree, destroy);
+		
+	return tree;	
+}
 
 void btree_init(btree *tree, void (*destroy) (void *data)) {
 	if (tree == NULL) {
@@ -23,6 +33,14 @@ void btree_init(btree *tree, void (*destroy) (void *data)) {
 	tree->size = 0;
 	tree->destroy = destroy;
 	tree->root = NULL;
+}
+
+void btree_set_root(btree *tree, btree_node *root) {
+	if (tree == NULL) {
+		return ;
+	}
+	tree->root = root;
+	tree->size = btree_node_count(root); 
 }
 
 int btree_node_destroy(btree_node *node, void (*destroy) (void *data)) {
@@ -142,12 +160,31 @@ void *btree_data(btree_node *node) {
 	return node == NULL ? NULL : node->data;
 }
 
-int btree_show_bfs(btree *tree, void **array) {
-	if (tree == NULL || array == NULL) {
-		return 0;
+dlist *btree_bfs(btree *tree) {
+	if (tree == NULL) {
+		return NULL;
 	}
-	
 
+	dlist *list = dlist_create(NULL);
+	if (list == NULL) {
+		return NULL;
+	}
+
+	btree_node *node = NULL;
+	queue *q = queue_create(NULL);
+	queue_enqueue(q, tree->root);
+	while (!queue_is_empty(q)) {
+		queue_dequeue(q, (void **)&node);
+		dlist_append(list, node);
+		if (node->left) {
+			queue_enqueue(q, node->left);
+		}
+		if (node->right) {
+			queue_enqueue(q, node->right);
+		}
+	}
+
+	return list;
 }
 
 int btree_node_count(btree_node *node) {
