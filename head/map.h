@@ -16,6 +16,6 @@ map *map_create();
 int map_add(map *m, void *key, void *value);
 int map_find(map *m, void *key, void **value);
 int map_remove(map *m, void *key, void **value);
-void *map_destroy(map *m);
+void map_destroy(map *m);
 
 #endif

@@ -6,7 +6,7 @@ map *map_create(){
 	if (m == NULL) {
 		return NULL;
 	}
-	m->list = dlist_create(NULL);
+	m->list = dlist_create(free);
 	if (m->list == NULL) {
 		free(m);
 		return NULL;
@@ -74,5 +74,10 @@ int map_remove(map *m, void *key, void **value){
 	}
 }
 
-void *map_destroy(map *m){
+void map_destroy(map *m){
+	if (m == NULL || m->list == NULL) {
+		return ;
+	} 	
+
+	dlist_destroy(m->list);
 }
