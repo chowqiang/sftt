@@ -110,8 +110,8 @@ btree *generate_huffman_tree(int *char_freq) {
 	if (char_freq == NULL) {
 		return NULL;
 	}
-	dlist list;
-	dlist_init(&list, NULL);
+	dlist *list = dlist_create(NULL);
+	assert(list != NULL);
 	btree_node *t_node = NULL, *t_node1 = NULL, *t_node2 = NULL;
 	char_stat_node *cs_node = NULL;
 	
@@ -125,16 +125,13 @@ btree *generate_huffman_tree(int *char_freq) {
 		assert(cs_node != NULL); 
 		t_node = btree_node_create(cs_node);
 		assert(t_node != NULL);
-		dlist_append(&list, (void *)t_node);	
+		dlist_append(list, (void *)t_node);	
 	}
-#if DEBUG
-	dlist_set_show(&list, show_char_stat_by_btree_node);
-	dlist_show(&list);
-#endif
+
 	for (;;) {
-		t_node1 = fetch_min_btree_node(&list);
+		t_node1 = fetch_min_btree_node(list);
 		assert(t_node1 != NULL);
-		t_node2 = fetch_min_btree_node(&list);
+		t_node2 = fetch_min_btree_node(list);
 		if (t_node2 == NULL) {
 			break;
 		}
@@ -142,7 +139,7 @@ btree *generate_huffman_tree(int *char_freq) {
 		cs_node = create_char_stat_node(-1, sum); 
 		t_node = btree_node_gen_parent((void *)cs_node, t_node1, t_node2);
 		assert(t_node != NULL);
-		dlist_append(&list, (void *)t_node);
+		dlist_append(list, (void *)t_node);
 	}
 
 	btree *tree = btree_create(NULL);
@@ -162,13 +159,21 @@ char *get_char_code(stack *s) {
 	stack_peek_all(s, array);
 	int i = 0;
 	for (i = 0; i < len; ++i) {
-		code[i] = (char)array[i];
+		code[len - 1 - i] = (char)array[i];
 	}	
 	code[len] = 0;	
 
 	free(array);
 
 	return code;	
+}
+
+void show_char_stat_node(char *prefix, char_stat_node *csn) {
+	if (csn->ch == -1) {
+		printf("%s: %d, %d\n", prefix, csn->ch, csn->freq);
+	} else {
+		printf("%s: %c, %d\n", prefix, csn->ch, csn->freq);
+	}
 }
 
 int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
@@ -184,34 +189,39 @@ int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
 
 	stack *sc = stack_create(NULL);
 	stack *stn = stack_create(NULL);
-	stack_push(stn, root->right);
-
+	stack_push(stn, root);
 
 	while (!stack_is_empty(stn)) {
 		stack_pop(stn, (void **)&tn);
 		if (tn == NULL) {
 			continue;
 		}
-		if (tn->left) {
-			if (map_find(m, tn->left, NULL) == -1) {
-				stack_push(sc, (void *)'1');
-				stack_push(stn, tn->left);
-				map_add(m, (void *)tn->left, NULL);
-			} else {
-				stack_pop(sc, NULL);
-			}
-		} else if (tn->right) { 
-			if (map_find(m, tn->right, NULL) == -1) {
-				stack_push(sc, (void *)'0');
-				stack_push(stn, tn->right);
-				map_add(m, (void *)tn->right, NULL);
-			} else {
-				stack_pop(sc, NULL);
-			}
-		} else {
+		if (btree_is_leaf(tn)) {
 			csn = (char_stat_node *)tn->data;
 			char_codes[csn->ch] = get_char_code(sc);
 			printf("%c: %s\n", csn->ch, char_codes[csn->ch]);
+			stack_pop(sc, NULL);
+			continue;
+		}
+#ifdef DEBUG
+		//csn = (char_stat_node *)tn->data;
+		//show_char_stat_node("pop root", csn);
+#endif
+		if (tn->left && map_find(m, tn->left, NULL) == -1) {
+			stack_push(sc, (void *)'1');
+			stack_push(stn, tn);
+			stack_push(stn, tn->left);
+			map_add(m, (void *)tn->left, NULL);
+			//else {
+			//	show_char_stat_node("pop left", tn->data);
+			//	stack_pop(sc, NULL);
+			//}
+		} else if (tn->right && map_find(m, tn->right, NULL) == -1) { 
+			stack_push(sc, (void *)'0');
+			stack_push(stn, tn->right);
+			map_add(m, (void *)tn->right, NULL);
+		} else {
+			//show_char_stat_node("pop right", tn->data);
 			stack_pop(sc, NULL);
 		}
 		
@@ -257,6 +267,13 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 	dlist *bfs_list = btree_bfs(tree);
 	dlist_set_show(bfs_list, show_char_stat_by_btree_node);
 	dlist_show(bfs_list);
+	int i = 0;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_codes[i] == NULL) {
+			continue;
+		}
+		printf("%c: %s\n", i, char_codes[i]);
+	}
 #endif
 	free_char_codes(char_codes);
 

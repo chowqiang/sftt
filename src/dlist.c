@@ -316,7 +316,7 @@ void dlist_sort(dlist *list, int (*cmp)(void *a, void *b), int asc) {
 
 dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b)) {
 	if (list == NULL || cmp == NULL) {
-		return ;
+		return NULL;
 	}
 	dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {
@@ -334,7 +334,7 @@ dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b)) {
 
 dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b)) {
 	if (list == NULL || cmp == NULL) {
-		return ;
+		return NULL;
 	}
 	dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {

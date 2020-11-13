@@ -72,6 +72,7 @@ int map_remove(map *m, void *key, void **value){
 			return 0;
 		}
 	}
+	return -1;
 }
 
 void map_destroy(map *m){
