@@ -7,8 +7,11 @@
 #include "btree.h"
 #include "stack.h"
 #include "map.h"
+#include "bits.h"
+#include "file.h"
 
 #define CHARSET_SIZE	256
+#define CHAR_BIT_LEN	8
 
 typedef struct {
 	int ch;
@@ -51,16 +54,30 @@ void free_char_stata_node(char_stat_node *node) {
 
 int calc_char_freq(unsigned char *input, int input_len, int *char_freq) {
 	if (input == NULL || input_len < 1) {
-		printf("params error! func: %a, line: %d\n", __func__, __LINE__);
+		printf("params error! func: %s, line: %d\n", __func__, __LINE__);
 		return -1;
 	}
 	memset(char_freq, 0, sizeof(int) * CHARSET_SIZE);
+
 	int i = 0;
 	for (i = 0; i < input_len; ++i) {
 		char_freq[input[i]]++;
 	}
 	
 	return 0;
+}
+
+void show_char_freq(int *char_freq) {
+	int i = 0, j = 0;
+	int sum = 0;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_freq[i]) {
+			printf("%c: %d\n", i, char_freq[i]);
+			++j;
+			sum += char_freq[i];
+		}
+	}
+	printf("char freq summary: char count: %d, freq count: %d\n", j, sum);
 }
 
 int get_min_freq_char(int *char_freq, char *visited) {
@@ -110,8 +127,10 @@ btree *generate_huffman_tree(int *char_freq) {
 	if (char_freq == NULL) {
 		return NULL;
 	}
+
 	dlist *list = dlist_create(NULL);
 	assert(list != NULL);
+
 	btree_node *t_node = NULL, *t_node1 = NULL, *t_node2 = NULL;
 	char_stat_node *cs_node = NULL;
 	
@@ -121,26 +140,52 @@ btree *generate_huffman_tree(int *char_freq) {
 		if (char_freq[i] == 0) {
 			continue;
 		}
+
 		cs_node = create_char_stat_node(i, char_freq[i]);
 		assert(cs_node != NULL); 
+
 		t_node = btree_node_create(cs_node);
 		assert(t_node != NULL);
+
 		dlist_append(list, (void *)t_node);	
 	}
 
+	int ch1 = 0, ch2 = 0;
+	int freq1 = 0, freq2 = 0;
 	for (;;) {
 		t_node1 = fetch_min_btree_node(list);
 		assert(t_node1 != NULL);
+		
+		ch1 = ((char_stat_node *)t_node1->data)->ch;
+		freq1 = ((char_stat_node *)t_node1->data)->freq;	
+		if (ch1 == -1) {
+			printf("%d(%d),", ch1, freq1);
+		} else {
+			printf("%c(%d),", ch1, freq1);  
+		}
+
 		t_node2 = fetch_min_btree_node(list);
 		if (t_node2 == NULL) {
 			break;
 		}
+		ch2 = ((char_stat_node *)t_node2->data)->ch;
+		freq2 = ((char_stat_node *)t_node2->data)->freq;	
+		if (ch2 == -1) {
+			printf("%d(%d)\n", ch2, freq2);
+		} else {
+			printf("%c(%d)\n", ch2, freq2);  
+		}
+
 		sum = ((char_stat_node *)t_node1->data)->freq + ((char_stat_node *)t_node2->data)->freq;	
 		cs_node = create_char_stat_node(-1, sum); 
+		assert(cs_node != NULL);
+
 		t_node = btree_node_gen_parent((void *)cs_node, t_node1, t_node2);
 		assert(t_node != NULL);
+
 		dlist_append(list, (void *)t_node);
 	}
+	printf("\n");
 
 	btree *tree = btree_create(NULL);
 	btree_set_root(tree, t_node1);
@@ -177,11 +222,10 @@ void show_char_stat_node(char *prefix, char_stat_node *csn) {
 }
 
 int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
-	int i = 0;
-	void *data = NULL;
 	if (tree == NULL || tree->root == NULL || char_codes == NULL) {
 		return -1;
 	}
+
 	map *m = map_create();
 	btree_node *root = tree->root;
 	btree_node *tn = NULL;
@@ -203,28 +247,22 @@ int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
 			stack_pop(sc, NULL);
 			continue;
 		}
-#ifdef DEBUG
-		//csn = (char_stat_node *)tn->data;
-		//show_char_stat_node("pop root", csn);
-#endif
+
 		if (tn->left && map_find(m, tn->left, NULL) == -1) {
 			stack_push(sc, (void *)'1');
 			stack_push(stn, tn);
 			stack_push(stn, tn->left);
 			map_add(m, (void *)tn->left, NULL);
-			//else {
-			//	show_char_stat_node("pop left", tn->data);
-			//	stack_pop(sc, NULL);
-			//}
+
 		} else if (tn->right && map_find(m, tn->right, NULL) == -1) { 
 			stack_push(sc, (void *)'0');
+			stack_push(stn, tn);
 			stack_push(stn, tn->right);
 			map_add(m, (void *)tn->right, NULL);
+
 		} else {
-			//show_char_stat_node("pop right", tn->data);
 			stack_pop(sc, NULL);
 		}
-		
 	}
 
 	return 0;
@@ -240,12 +278,52 @@ void free_char_codes(char *char_codes[CHARSET_SIZE]) {
 	}
 }
 
-int huffman_compress(unsigned char *input, int input_len, unsigned char **output) {
+int copy_char_freq(unsigned char *pos, int *char_freq) {
+	int i = 0;
+	int cnt = 0;
+	unsigned char *head = pos++;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_freq[i]) {
+			*(pos++) = (unsigned char)i;
+			memcpy(pos, &char_freq[i], sizeof(int)); 
+			pos += sizeof(int);
+			++cnt;
+		}
+	}
+	*head = (unsigned char)cnt;
+
+	return (pos - head); 
+}
+
+int huffman_encode(unsigned char *input, int input_len, char *char_codes[CHARSET_SIZE], unsigned char *pos) {
+	printf("huffman_encode input_len: %d\n", input_len);
+
+	int i = 0, j = 0, index = CHAR_BIT_LEN;
+	unsigned char *head = pos;
+	memcpy(head, &input_len, sizeof(int));
+	pos += sizeof(int);
+
+	char *tmp = NULL;
+	for (i = 0; i < input_len; ++i) {
+		tmp = char_codes[input[i]];
+		for (j = 0; tmp[j]; ++j) {
+			if (index == 0) {	
+				++pos;
+				index = CHAR_BIT_LEN;
+			}
+			set_bit(pos, index--, tmp[j] == '0' ? 0 : 1);
+		}	
+	}	
+
+	return (pos - head + 1);
+}
+
+int huffman_compress(unsigned char *input, int input_len, unsigned char *output) {
 	if (input == NULL || input_len < 1) {
 		printf("params error!\n");
 		return -1;
 	}
-	if (output == NULL || *output == NULL) {
+	if (output == NULL) {
 		printf("params error!\n");
 		return -1;
 	}
@@ -256,13 +334,23 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 		printf("calc char freq failed!\n");
 		return -1;
 	}
+	show_char_freq(char_freq);
+
 	btree *tree = generate_huffman_tree(char_freq);	
 	if (tree == NULL) {
 		return -1;
 	}
+
 	char *char_codes[CHARSET_SIZE];
 	memset(char_codes, 0, sizeof(char_codes));
 	get_char_codes(tree, char_codes);
+
+	unsigned char *pos = output;
+	int char_freq_len = copy_char_freq(pos, char_freq);	
+	printf("char freq block size: %d\n", char_freq_len);
+
+	int char_code_len = huffman_encode(input, input_len, char_codes, pos + char_freq_len);	
+
 #if DEBUG
 	dlist *bfs_list = btree_bfs(tree);
 	dlist_set_show(bfs_list, show_char_stat_by_btree_node);
@@ -277,29 +365,130 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char **output
 #endif
 	free_char_codes(char_codes);
 
-	return 0;	
+	return char_freq_len + char_code_len;
 }
 
-int huffman_decompress(unsigned char *input, int input_len, unsigned char **output) {
-	if (input == NULL || input_len < 1) {
-		return -1;
+unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos) {
+	if (char_freq == NULL || pos == NULL) {
+		printf("get_char_freq params error!\n");
+		return NULL;
 	}
-	if (output == NULL || *output == NULL) {
-		return -1;
-	}
+	memset(char_freq, 0, CHARSET_SIZE * sizeof(int));
 
-	return 0;
+	int i = 0;
+	unsigned char ch = 0;
+	int char_cnt = (int)(*pos++);
+	for (i = 0; i < char_cnt; ++i) {
+		ch = *pos++;
+		memcpy(&char_freq[ch], pos, sizeof(int));
+		pos += sizeof(int);	
+	}
+	
+	return pos;
 }
 
-#if 1
-int main(void) {
+int huffman_decode(btree *tree, unsigned char *input, int input_len, unsigned char *output) {
+	if (tree == NULL || tree->root == NULL || input == NULL || input_len < 1 || output == NULL) {
+		printf("huffman decode pararms error!\n");
+		return 0;
+	}	
+	btree_node *root = tree->root, *tn = NULL;
+	char_stat_node *csn = NULL;
+	int i = 0, j = 0, index = CHAR_BIT_LEN;
+	unsigned char *pos = input, bit = 0;
+
+	for (i = 0; i < input_len; ++i) {
+		tn = root;
+		while (!btree_is_leaf(tn)) {
+			if (index == 0) {
+				index = CHAR_BIT_LEN;
+				++pos;
+			}
+			bit = get_bit(*pos, index--);	
+			if (bit == 0) {
+				tn = tn->right;
+			} else {
+				tn = tn->left;
+			}
+		} 
+		csn = (char_stat_node *)tn->data;
+		output[j++] = (char)csn->ch;
+//		printf("%c", csn->ch);
+	}
+
+	return j;
+}
+
+int huffman_decompress(unsigned char *input, unsigned char *output) {
+	if (input == NULL || output == NULL) {
+		return -1;
+	}
+
+	int char_freq[CHARSET_SIZE];
+	unsigned char *pos = input;
+	pos = get_char_freq(char_freq, pos);
+	show_char_freq(char_freq);
+
+	btree *tree = generate_huffman_tree(char_freq);	
+	if (tree == NULL) {
+		return -1;
+	}
+
+	int input_len = *(int *)pos;
+	printf("encoded char count: %d\n", input_len);
+	pos += sizeof(int);
+
+	int out_len = huffman_decode(tree, pos, input_len, output);
+	
+	return out_len;
+}
+
+void test_basic(void) {
 	unsigned char *text = "aaaabbbccd";
 	int text_len = strlen(text);
-	unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * 16);
+	unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * 1024);
 	
-	huffman_compress(text, text_len, &output);
+	int out_len = huffman_compress(text, text_len, output);
+	int i = 0;
+	for (i = 0; i < out_len; ++i) {
+		printf("%0x", output[i]);
+	}
+	printf("\n");
+}
 
-	return 0;
+void test_file(void) {
+	size_t file_size = 0;
+	unsigned char *contents = file_get_contents("./dlist.c", &file_size);
+	if (contents == NULL) {
+		printf("get file contents failed!\n");
+		return ;
+	}
+
+	unsigned char *encodes = (unsigned char *)malloc(CHARSET_SIZE * sizeof(int) + 5 * file_size);
+	if (encodes == NULL) {
+		printf("alloc merroy for encode failed!\n");
+		return ;
+	}
+
+	int encode_len = huffman_compress(contents, file_size, encodes);
+	printf("compress: file_size: %d, encode_len: %d\n", file_size, encode_len);
+	
+	unsigned char *decodes = (unsigned char *)malloc(file_size + 1);
+	if (decodes == NULL) {
+		printf("alloc merroy for decode failed!\n");
+		return ;
+	}	
+	
+	int decode_len = huffman_decompress(encodes, decodes);
+	printf("decompress: encode_len: %d, decode_len: %d\n", encode_len, decode_len);
+
+	file_put_contents("./tmp.txt", decodes, (size_t)decode_len);
+
+	return ;	
+}
+#if 1
+int main(void) {
+	test_file();
 }
 #endif 
 
