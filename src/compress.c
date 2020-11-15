@@ -236,7 +236,7 @@ int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
 	stack_push(stn, root);
 
 	while (!stack_is_empty(stn)) {
-		stack_pop(stn, (void **)&tn);
+		tn = stack_peek(stn);
 		if (tn == NULL) {
 			continue;
 		}
@@ -245,23 +245,23 @@ int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
 			char_codes[csn->ch] = get_char_code(sc);
 			printf("%c: %s\n", csn->ch, char_codes[csn->ch]);
 			stack_pop(sc, NULL);
+			stack_pop(stn, NULL);
 			continue;
 		}
 
 		if (tn->left && map_find(m, tn->left, NULL) == -1) {
 			stack_push(sc, (void *)'1');
-			stack_push(stn, tn);
 			stack_push(stn, tn->left);
 			map_add(m, (void *)tn->left, NULL);
 
 		} else if (tn->right && map_find(m, tn->right, NULL) == -1) { 
 			stack_push(sc, (void *)'0');
-			stack_push(stn, tn);
 			stack_push(stn, tn->right);
 			map_add(m, (void *)tn->right, NULL);
 
 		} else {
 			stack_pop(sc, NULL);
+			stack_pop(stn, NULL);
 		}
 	}
 
