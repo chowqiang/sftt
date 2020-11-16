@@ -6,7 +6,7 @@
 typedef struct sftt_packet {
 	char type[BLOCK_TYPE_SIZE + 1];
 	int data_len;
-	char *content;
+	unsigned char *content;
 	int block_size;
 } sftt_packet;
 

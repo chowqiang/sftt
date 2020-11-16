@@ -10,9 +10,6 @@
 #include "bits.h"
 #include "file.h"
 
-#define CHARSET_SIZE	256
-#define CHAR_BIT_LEN	8
-
 typedef struct {
 	int ch;
 	int freq;

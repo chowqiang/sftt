@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #include "memory_pool.h"
 
+static memory_pool *g_mp = NULL;
+
+memory_pool *get_singleton_mp() {
+	if (g_mp) {
+		return g_mp;
+	}
+
+	g_mp = mp_create();
+
+	return g_mp;
+}
+
 memory_node *memory_node_create(size_t size) {
 	memory_node *p = (memory_node *)malloc(sizeof(memory_node));
 	if (p == NULL) {
