@@ -486,7 +486,7 @@ void test_file(void) {
 
 	return ;	
 }
-#if 1
+#if 0
 int main(void) {
 	test_file();
 }

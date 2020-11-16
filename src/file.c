@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/malloc.h>
 #include "file.h"
 
 size_t file_size(char *filename) {

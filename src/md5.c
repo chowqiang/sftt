@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "md5.h" 
 
 
@@ -161,7 +163,9 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
     state[3] += d;  
 }  
 
-void md5(char *file, char *ret) {
+void md5(char *file, char *digest) {
+    MD5_CTX context;
+    MD5Init(&context);
 	/* 计算文件MD5 */
 	FILE *fp = fopen(file, "r");
 	char *data = NULL;
@@ -183,6 +187,8 @@ void md5(char *file, char *ret) {
 		}
 		i++;
 	}
+    MD5Final(&context, digest);
+
 	fclose(fp);
 	free(data);
 }
