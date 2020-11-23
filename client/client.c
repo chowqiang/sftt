@@ -19,6 +19,7 @@
 #include "encrypt.h"
 #include "net_trans.h"
 #include "validate.h"
+#include "debug.h"
 
 extern int errno;
 
@@ -504,7 +505,7 @@ int save_trans_session(sftt_client *client) {
 }
 
 
-int main(int argc, char **argv) {
+int main2(int argc, char **argv) {
 	if (argc < 4) {
 		usage(argv[0]);
 		return -1;
@@ -610,4 +611,25 @@ PARAMS_ERROR:
 	usage(argv[0]);
 
 	return -1;
+}
+
+void execute_cmd(char *cmd, int flag) {
+	printf("%s\n", cmd);
+
+	DEBUG(("debug: %s\n", cmd));
+}
+int main(int argc, char **argv) {
+	char cmd[1024];
+	while (1) {
+		printf("sftt>>");
+		fgets(cmd, 1024, stdin);
+		cmd[strlen(cmd) - 1] = 0;
+		if (!strcmp(cmd, "quit")) {
+			exit(0);
+		} else {
+			execute_cmd(cmd, -1);
+		}
+	}
+	return 0;
+
 }
