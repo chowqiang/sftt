@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <errno.h>
 #include "math64.h"
 #include "strtox.h"
-#include "errno.h"
 #include "compiler.h"
 
 static inline int kstrtou32(const char *s, unsigned int base, u32 *res)
@@ -161,7 +161,7 @@ unsigned int _parse_integer(const char *s, unsigned int base, unsigned long long
     return rv;
 }
 
-#if 1
+#if 0
 int main(void) {
 	char *str[] = {"freq=1300", "memsize1=60", "memsize2=180"};
 	int freq = 0;
