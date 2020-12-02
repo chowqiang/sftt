@@ -2,6 +2,7 @@
 #define _CLIENT_H_
 
 #include "config.h"
+#include "connect.h"
 
 #define LOCAL_HOST			"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
@@ -30,10 +31,6 @@ typedef struct file_input_stream {
 	int (*get_next_buffer)(struct file_input_stream *fis, char *buffer, size_t size);
 } file_input_stream;
 
-typedef struct {
-	int sock;
-	int block_size;
-} sock_connect;
 
 typedef struct {
 	char ip[IPV4_MAX_LEN];
