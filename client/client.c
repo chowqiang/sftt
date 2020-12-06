@@ -618,8 +618,87 @@ void execute_cmd(char *cmd, int flag) {
 
 	DEBUG(("debug: %s\n", cmd));
 }
+
+const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind) {
+	if (optind >= argc) {
+		return NULL;
+	}
+	sftt_option *opt = sftt_opts;
+	for (;;) {
+		if (!opt->name) {
+			return NULL;
+		}
+		if (!strcmp(opt->name, argv[optind])) {
+			break;
+		}
+	}
+	(*optind)++;
+	if (opt->flags & HAS_ARG) {
+		if (optind >= argc) {
+			return NULL;
+		}
+		*optarg = argv[*optind];
+		(*optind)++;
+	}
+
+	return opt;
+}
+
+void get_passwd_input(char *passwd) {
+	int max_passwd_len = 32;
+	int i = 0;
+	for(i = 0; i < max_passwd_len; i++) {
+		passwd[i] = getch();
+        if (passwd[i] == '\x0d') {
+            passwd[i]='\0';
+            break;
+        }
+        printf("*");
+    }
+	printf("\n");
+}
+
 int main(int argc, char **argv) {
 	char cmd[1024];
+	int optind = 1;
+	char *optarg = NULL;
+	bool has_passwd_opt = false;
+	char user_name[1024];
+	char password[1024];
+	char host[1024];
+
+	memset(user_name, 0, sizeof(user_name));
+	memset(password, 0, sizeof(password));
+	memset(host, 0, sizeof(host));
+	for (;;) {
+		if (optind >= argc) {
+			break;
+		}
+		opt = lookup_opt(argc, argv, &optarg, &optind);
+		if (opt == NULL) {
+			printf("invalid option");
+			return -1;
+		}
+		switch (opt->index) {
+		case USER:
+			user_name_parse(optarg, user_name);
+			break;
+		case HOST:
+			host_parse(optarg, host);
+			break;
+		case PASSWORD:
+			has_passwd_opt = true;
+			break;
+		}
+	}
+	if (has_passwd_opt) {
+		get_passwd_input(password);
+	}
+
+	printf("host: %s\n", host);
+	printf("your name: %s\n", user_name);
+	printf("your password: %s\n", password);
+
 	while (1) {
 		printf("sftt>>");
 		fgets(cmd, 1024, stdin);

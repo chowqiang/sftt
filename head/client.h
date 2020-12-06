@@ -14,6 +14,28 @@
 #define SESSION_TYPE_FILE		1
 #define SESSION_TYPE_DIR		2
 
+#define NO_ARG					0x0000
+#define HAS_ARG					0x0001
+
+enum option_index {
+	USER,
+	HOST,
+	PASSWORD
+};
+
+typedef struct sftt_option {
+	const char *name;
+	enum option_index index;
+	int flags
+} sftt_option;
+
+sftt_option sftt_opts[] = {
+	{"-u", USER, HAS_ARG},
+	{"-h", HOST, HAS_ARG},
+	{"-p", PASSWORD, NO_ARG},
+	{NULL, -1, NO_ARG}
+};
+
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
