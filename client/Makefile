@@ -2,7 +2,7 @@ OBJS=$(OBJS_DIR)/*.o
 
 CUR_SOURCE=${wildcard *.c}
 CUR_OBJS=${patsubst %.c, %.o, $(CUR_SOURCE)}
-C_CFLAG=$(CFLAG)
+C_CFLAG=$(CFLAG) -lcurses
 
 all:$(CUR_OBJS) $(CLIENT_BIN)
 

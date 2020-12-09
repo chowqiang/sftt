@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <pthread.h>
+#include <curses.h>
 #include "random_port.h"
 #include "config.h"
 #include "client.h"
@@ -631,6 +632,7 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 		if (!strcmp(opt->name, argv[*optind])) {
 			break;
 		}
+		++opt;
 	}
 	(*optind)++;
 	if (opt->flags & HAS_ARG) {
@@ -644,29 +646,26 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 	return opt;
 }
 
-void get_passwd_input2(char *passwd) {
-	char *ret = getpass(">> ");
-	strcpy(passwd, ret);
-}
-
-void get_passwd_input(char *passwd) {
-	int max_passwd_len = 32;
+void get_passwd_input(char *passwd, int max_len) {
 	int i = 0;
 	char ch = 0;
-	system("stty -icanon");
-	while (i < max_passwd_len) {
-		ch = getchar();
+	initscr();
+	noecho();
+	while (i < max_len) {
+		ch = getch();
 		if (ch == '\n') {
 			break;
 		}
-		if (ch == 8 && i > 0) {
+		if ((ch == 8 || ch == 127) && i > 0) {
 			--i;
-			putchar('\b');	
+			echochar('\b');
+			echochar(' ');
 			continue;
 		}
 		passwd[i++] = ch;
-		putchar('*');
+		echochar('*');
 	}
+	endwin();
 	passwd[i] = 0;
 	printf("\n");
 }
@@ -732,8 +731,9 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
+	//printf("---------------");
 	if (has_passwd_opt) {
-		get_passwd_input(password);
+		get_passwd_input(password, 1024);
 	}
 
 	printf("host: %s\n", host);
