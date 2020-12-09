@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include "compress.h"
 #include "encrypt.h"

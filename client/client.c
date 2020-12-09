@@ -620,7 +620,7 @@ void execute_cmd(char *cmd, int flag) {
 }
 
 const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind) {
-	if (optind >= argc) {
+	if (*optind >= argc) {
 		return NULL;
 	}
 	sftt_option *opt = sftt_opts;
@@ -628,13 +628,13 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 		if (!opt->name) {
 			return NULL;
 		}
-		if (!strcmp(opt->name, argv[optind])) {
+		if (!strcmp(opt->name, argv[*optind])) {
 			break;
 		}
 	}
 	(*optind)++;
 	if (opt->flags & HAS_ARG) {
-		if (optind >= argc) {
+		if (*optind >= argc) {
 			return NULL;
 		}
 		*optarg = argv[*optind];
@@ -644,18 +644,49 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 	return opt;
 }
 
+void get_passwd_input2(char *passwd) {
+	char *ret = getpass(">> ");
+	strcpy(passwd, ret);
+}
+
 void get_passwd_input(char *passwd) {
 	int max_passwd_len = 32;
 	int i = 0;
-	for(i = 0; i < max_passwd_len; i++) {
-		passwd[i] = getch();
-        if (passwd[i] == '\x0d') {
-            passwd[i]='\0';
-            break;
-        }
-        printf("*");
-    }
+	char ch = 0;
+	system("stty -icanon");
+	while (i < max_passwd_len) {
+		ch = getchar();
+		if (ch == '\n') {
+			break;
+		}
+		if (ch == 8 && i > 0) {
+			--i;
+			putchar('\b');	
+			continue;
+		}
+		passwd[i++] = ch;
+		putchar('*');
+	}
+	passwd[i] = 0;
 	printf("\n");
+}
+
+bool user_name_parse(char *optarg, char *user_name, int max_len) {
+	if (strlen(optarg) >= max_len) {
+		return false;
+	}	
+	strcpy(user_name, optarg);
+
+	return true;
+}
+
+bool host_parse(char *optarg, char *host, int max_len) {
+	if (strlen(optarg) >= max_len) {
+		return false;
+	}
+	strcpy(host, optarg);
+
+	return true;
 }
 
 int main(int argc, char **argv) {
@@ -666,6 +697,8 @@ int main(int argc, char **argv) {
 	char user_name[1024];
 	char password[1024];
 	char host[1024];
+	const sftt_option *opt = NULL;	
+	bool ret = false;
 
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
@@ -681,10 +714,18 @@ int main(int argc, char **argv) {
 		}
 		switch (opt->index) {
 		case USER:
-			user_name_parse(optarg, user_name);
+			ret = user_name_parse(optarg, user_name, 1024);
+			if (!ret) {
+				printf("user name is invalid!\n");	
+				exit(-1);
+			}
 			break;
 		case HOST:
-			host_parse(optarg, host);
+			host_parse(optarg, host, 1024);
+			if (!ret) {
+				printf("host is invalid!\n");
+				exit(-1);
+			}
 			break;
 		case PASSWORD:
 			has_passwd_opt = true;

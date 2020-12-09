@@ -20,6 +20,12 @@
 
 #define PACKET_LEN_SIZE			4
 
+
+/*
+ * user info
+ * */
+#define MAX_NAME_LEN	32
+
 typedef struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];
 	int block_size;

@@ -23,10 +23,10 @@ enum option_index {
 	PASSWORD
 };
 
-typedef struct sftt_option {
+typedef struct {
 	const char *name;
 	enum option_index index;
-	int flags
+	int flags;
 } sftt_option;
 
 sftt_option sftt_opts[] = {
