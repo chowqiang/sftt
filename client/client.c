@@ -20,6 +20,7 @@
 #include "encrypt.h"
 #include "net_trans.h"
 #include "validate.h"
+#include "cmdline.h"
 #include "debug.h"
 
 extern int errno;
@@ -617,7 +618,7 @@ PARAMS_ERROR:
 void execute_cmd(char *cmd, int flag) {
 	printf("%s\n", cmd);
 
-	DEBUG(("debug: %s\n", cmd));
+	DEBUG((DEBUG_INFO, "%s\n", cmd));
 }
 
 const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind) {
@@ -644,30 +645,6 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 	}
 
 	return opt;
-}
-
-void get_passwd_input(char *passwd, int max_len) {
-	int i = 0;
-	char ch = 0;
-	initscr();
-	noecho();
-	while (i < max_len) {
-		ch = getch();
-		if (ch == '\n') {
-			break;
-		}
-		if ((ch == 8 || ch == 127) && i > 0) {
-			--i;
-			echochar('\b');
-			echochar(' ');
-			continue;
-		}
-		passwd[i++] = ch;
-		echochar('*');
-	}
-	endwin();
-	passwd[i] = 0;
-	printf("\n");
 }
 
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
@@ -698,6 +675,7 @@ int main(int argc, char **argv) {
 	char host[1024];
 	const sftt_option *opt = NULL;	
 	bool ret = false;
+	int passwd_len = 0;
 
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
@@ -733,7 +711,11 @@ int main(int argc, char **argv) {
 	}
 	//printf("---------------");
 	if (has_passwd_opt) {
-		get_passwd_input(password, 1024);
+		passwd_len = get_pass("password: ", password, 1024);
+		if (passwd_len <= 0) {
+			printf("password is invalid!\n");
+			exit(0);
+		}
 	}
 
 	printf("host: %s\n", host);

@@ -9,4 +9,4 @@ $(CUR_OBJS):%.o:%.c
 	$(CC) -c $^ $(CFLAG)
 
 $(SERVER_BIN):$(CUR_OBJS) $(OBJS)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(CFLAG)
