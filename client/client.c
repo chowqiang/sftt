@@ -648,7 +648,8 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 }
 
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
-	if (strlen(optarg) >= max_len) {
+	int len = strlen(optarg);
+	if (!(0 < len && len <= max_len )) {
 		return false;
 	}	
 	strcpy(user_name, optarg);
@@ -657,12 +658,26 @@ bool user_name_parse(char *optarg, char *user_name, int max_len) {
 }
 
 bool host_parse(char *optarg, char *host, int max_len) {
-	if (strlen(optarg) >= max_len) {
+	int len = strlen(optarg);
+	if (!(0 < len && len <= max_len)) {
 		return false;
 	}
 	strcpy(host, optarg);
 
 	return true;
+}
+
+static void version(void)
+{
+    printf("sftt version " SFTT_VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
+}
+
+static void help(int exitcode)
+{
+    version();
+	printf("usage: sftt [-u user] [-h host] [-p password] [-P port]\n"
+       "sftt -u root -h localhost -p\n");
+    exit(exitcode);
 }
 
 int main(int argc, char **argv) {
@@ -686,22 +701,22 @@ int main(int argc, char **argv) {
 		}
 		opt = lookup_opt(argc, argv, &optarg, &optind);
 		if (opt == NULL) {
-			printf("invalid option");
-			return -1;
+			printf("invalid option\n");
+			help(-1);
 		}
 		switch (opt->index) {
 		case USER:
 			ret = user_name_parse(optarg, user_name, 1024);
 			if (!ret) {
 				printf("user name is invalid!\n");	
-				exit(-1);
+				help(-1);
 			}
 			break;
 		case HOST:
-			host_parse(optarg, host, 1024);
+			ret = host_parse(optarg, host, 1024);
 			if (!ret) {
 				printf("host is invalid!\n");
-				exit(-1);
+				help(-1);
 			}
 			break;
 		case PASSWORD:
@@ -714,8 +729,18 @@ int main(int argc, char **argv) {
 		passwd_len = get_pass("password: ", password, 1024);
 		if (passwd_len <= 0) {
 			printf("password is invalid!\n");
-			exit(0);
+			help(-1);
 		}
+	}
+
+	if (strlen(user_name) == 0) {
+		printf("user name is invalid!\n");
+		help(-1);
+	}
+
+	if (strlen(host) == 0) {
+		printf("host is invalid!\n");
+		help(-1);
 	}
 
 	printf("host: %s\n", host);

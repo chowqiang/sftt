@@ -4,12 +4,13 @@
 #include "config.h"
 #include "connect.h"
 
-#define LOCAL_HOST			"127.0.0.1"
+#define SFTT_VERSION			"0.01"
+#define LOCAL_HOST				"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
 
 #define IPV4_MAX_LEN			16	
-#define CLIENT_MAX_CONNECT_NUM		4	
+#define CLIENT_MAX_CONNECT_NUM	4
 
 #define SESSION_TYPE_FILE		1
 #define SESSION_TYPE_DIR		2
