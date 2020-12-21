@@ -12,6 +12,7 @@
 #endif
 #include <netinet/in.h>
 #include <errno.h>
+#include <assert.h>
 #include <pthread.h>
 #include <curses.h>
 #include "random_port.h"
@@ -625,6 +626,7 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 	if (*optind >= argc) {
 		return NULL;
 	}
+
 	sftt_option *opt = sftt_opts;
 	for (;;) {
 		if (!opt->name) {
@@ -635,6 +637,7 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 		}
 		++opt;
 	}
+
 	(*optind)++;
 	if (opt->flags & HAS_ARG) {
 		if (*optind >= argc) {
@@ -667,6 +670,16 @@ bool host_parse(char *optarg, char *host, int max_len) {
 	return true;
 }
 
+bool port_parse(char *optarg, int *port) {
+	if (!isdigit(optarg)) {
+		return false;
+	}
+
+	*port = atoi(optarg);
+
+	return true;
+}
+
 static void version(void)
 {
     printf("sftt version " SFTT_VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
@@ -676,18 +689,65 @@ static void help(int exitcode)
 {
     version();
 	printf("usage: sftt [-u user] [-h host] [-p password] [-P port]\n"
-       "sftt -u root -h localhost -p\n");
+       "sftt -u root -h localhost [-P port] -p\n");
     exit(exitcode);
 }
 
+static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
+	assert(client);
+	if (port == -1) {
+		port = get_random_port();
+	}
+
+	client->conn_ctrl.sock = make_connect(client->host, port);
+	if (client->conn_ctrl.sock == -1) {
+		return -1;
+	}
+
+	client->conn_ctrl.type = CONN_TYPE_CTRL;
+	client->conn_ctrl.port = port;
+
+	return 0;
+}
+
+static int validate_user_info(sftt_client_v2 *client) {
+
+
+}
+
+static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
+	strncpy(client->host, host, HOST_MAX_LEN);
+	strncpy(client->user, user, USER_NAME_MAX_LEN);
+	strncpy(client->passwd, passwd, USER_PASSWD_MAX_LEN);
+
+	int ret = init_sftt_client_ctrl_conn(client, port);
+	if (ret == -1) {
+		return CONN_RET_CONNECT_FAILED;
+	}
+
+	ret = validate_user_info(client);
+	if (ret == -1) {
+		return CONN_RET_VALIDATE_FAILED;
+	}
+
+	return CONN_RET_CONNECT_SUCCESS;
+}
+
+static int show_options(char *host, char *user_name, char *password) {
+	printf("host: %s\n", host);
+	printf("your name: %s\n", user_name);
+	printf("your password: %s\n", password);
+}
+
 int main(int argc, char **argv) {
-	char cmd[1024];
+	char cmd[CMD_MAX_LEN];
 	int optind = 1;
 	char *optarg = NULL;
 	bool has_passwd_opt = false;
-	char user_name[1024];
-	char password[1024];
-	char host[1024];
+	char user_name[USER_NAME_MAX_LEN];
+	char password[USER_PASSWD_MAX_LEN];
+	char host[HOST_MAX_LEN];
+	int port = -1;
 	const sftt_option *opt = NULL;	
 	bool ret = false;
 	int passwd_len = 0;
@@ -706,16 +766,23 @@ int main(int argc, char **argv) {
 		}
 		switch (opt->index) {
 		case USER:
-			ret = user_name_parse(optarg, user_name, 1024);
+			ret = user_name_parse(optarg, user_name, sizeof(user_name));
 			if (!ret) {
 				printf("user name is invalid!\n");	
 				help(-1);
 			}
 			break;
 		case HOST:
-			ret = host_parse(optarg, host, 1024);
+			ret = host_parse(optarg, host, sizeof(host));
 			if (!ret) {
 				printf("host is invalid!\n");
+				help(-1);
+			}
+			break;
+		case PORT:
+			ret = port_parse(optarg, &port);
+			if (!ret) {
+				printf("port is invalid!\n");
 				help(-1);
 			}
 			break;
@@ -726,7 +793,7 @@ int main(int argc, char **argv) {
 	}
 	//printf("---------------");
 	if (has_passwd_opt) {
-		passwd_len = get_pass("password: ", password, 1024);
+		passwd_len = get_pass("password: ", password, sizeof(password));
 		if (passwd_len <= 0) {
 			printf("password is invalid!\n");
 			help(-1);
@@ -743,9 +810,32 @@ int main(int argc, char **argv) {
 		help(-1);
 	}
 
-	printf("host: %s\n", host);
-	printf("your name: %s\n", user_name);
-	printf("your password: %s\n", password);
+	show_options(host, user_name, password);
+	//connect server to validate
+
+	sftt_client_v2 client;
+	enum connect_result conn_ret = init_sftt_client_v2(&client, host, port, user_name, password);
+	switch (conn_ret) {
+	case CONN_RET_CONNECT_FAILED:
+		printf("connect to server failed!\n");
+		exit(-1);
+		break;
+	case CONN_RET_VALIDATE_FAILED:
+		printf("can not validate user and password!\n");
+		exit(-1);
+		break;
+	case CONN_RET_SERVER_BUSYING:
+		printf("server is busying, please reconnect later ...\n");
+		exit(-1);
+		break;
+	case CONN_RET_CONNECT_SUCCESS:
+		printf("connect server successfully!\n");
+		break;
+	default:
+		printf("unrecognized connect result!\n");
+		exit(-1);
+		break;
+	}
 
 	while (1) {
 		printf("sftt>>");

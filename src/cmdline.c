@@ -40,6 +40,7 @@ int get_pass(char *prompt, char *passwd, int max_len) {
     }
     passwd[i] = 0;
     endwin();
+	printf("\n");
 
     return i;
 }

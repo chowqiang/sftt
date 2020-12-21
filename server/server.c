@@ -1,17 +1,19 @@
-#include "server.h"
 #include <stdio.h>
 #include <sys/socket.h>  
+#include <signal.h>
 #include <netinet/in.h>  
-#include "random_port.h"
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <dirent.h>
-#include<sys/types.h> 
-#include<sys/stat.h>  
+#include <sys/types.h> 
+#include <sys/stat.h>  
+#include <stdbool.h>
+#include "server.h"
 #include "encrypt.h"
+#include "config.h"
+#include "random_port.h"
 //#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
@@ -242,7 +244,7 @@ void  is_exit(char * filepath){
 
 }
 
-int main(){
+int main_old(){
 	int	socket_fd = sftt_server();
 	int	connect_fd;
 	int	trans_len;
@@ -278,4 +280,25 @@ int main(){
 	}
 	close(socket_fd);
 
+}
+
+void sighandler(int signum) {
+   printf("Caught signal %d, coming out...\n", signum);
+}
+
+int main(int argc, char **args) {
+
+	printf("server is running on background ...\n");
+	signal(SIGINT, sighandler);
+	int ret = daemon(1, 1);
+	if (ret != 0) {
+		printf("server cannot running on background ...\n");
+		exit(-1);
+	}
+	while (true) {
+		sleep(1);
+		printf("message from background ...\n");
+	}
+
+	return 0;
 }

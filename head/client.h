@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "connect.h"
+#include "dlist.h"
 
 #define SFTT_VERSION			"0.01"
 #define LOCAL_HOST				"127.0.0.1"
@@ -18,9 +19,11 @@
 #define NO_ARG					0x0000
 #define HAS_ARG					0x0001
 
+
 enum option_index {
 	USER,
 	HOST,
+	PORT,
 	PASSWORD
 };
 
@@ -33,6 +36,7 @@ typedef struct {
 sftt_option sftt_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
+	{"-P", PORT, HAS_ARG},
 	{"-p", PASSWORD, NO_ARG},
 	{NULL, -1, NO_ARG}
 };
@@ -65,6 +69,14 @@ typedef struct {
 	int session_type;
 	void *trans_session;
 } sftt_client;
+
+typedef struct {
+	client_sock_conn conn_ctrl;
+	dlist *conn_data;
+	char host[HOST_MAX_LEN];
+	char user[USER_NAME_MAX_LEN];
+	char passwd[USER_PASSWD_MAX_LEN];
+} sftt_client_v2;
 
 typedef struct {
 	sock_connect connect;

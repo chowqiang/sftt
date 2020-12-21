@@ -20,11 +20,18 @@
 
 #define PACKET_LEN_SIZE			4
 
+#define CMD_MAX_LEN				1024
 
 /*
  * user info
  * */
-#define MAX_NAME_LEN	32
+#define USER_NAME_MAX_LEN	64
+#define USER_PASSWD_MAX_LEN	32
+
+/*
+ * host info
+ * */
+#define HOST_MAX_LEN		32
 
 typedef struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];
