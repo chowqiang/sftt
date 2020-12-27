@@ -627,7 +627,7 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind)
 		return NULL;
 	}
 
-	sftt_option *opt = sftt_opts;
+	sftt_option *opt = sftt_client_opts;
 	for (;;) {
 		if (!opt->name) {
 			return NULL;
@@ -682,13 +682,13 @@ bool port_parse(char *optarg, int *port) {
 
 static void version(void)
 {
-    printf("sftt version " SFTT_VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
+    printf("version " VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
 }
 
 static void help(int exitcode)
 {
     version();
-	printf("usage: sftt [-u user] [-h host] [-p password] [-P port]\n"
+	printf("usage: " PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
        "sftt -u root -h localhost [-P port] -p\n");
     exit(exitcode);
 }

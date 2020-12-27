@@ -286,9 +286,32 @@ void sighandler(int signum) {
    printf("Caught signal %d, coming out...\n", signum);
 }
 
-int main(int argc, char **args) {
+int start_background(void) {
 
-	printf("server is running on background ...\n");
+}
+
+static void version(void) {
+    printf("version " VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
+}
+
+static void help(int exitcode) {
+	version();
+	printf("usage: " PROC_NAME " [start restart stop] | [add user]\n");
+	exit(exitcode);
+}
+
+int main(int argc, char **args) {
+	int optind = 1;
+	char *optarg = NULL;
+	const sftt_option *opt = NULL;
+
+	if (argc < 2) {
+		help(-1);
+	}
+	for (;;) {
+	}
+	help(-1);
+	printf(PROC_NAME " is running on background ...\n");
 	signal(SIGINT, sighandler);
 	int ret = daemon(1, 1);
 	if (ret != 0) {

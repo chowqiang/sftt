@@ -4,8 +4,8 @@
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
+#include "option.h"
 
-#define SFTT_VERSION			"0.01"
 #define LOCAL_HOST				"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
@@ -16,24 +16,7 @@
 #define SESSION_TYPE_FILE		1
 #define SESSION_TYPE_DIR		2
 
-#define NO_ARG					0x0000
-#define HAS_ARG					0x0001
-
-
-enum option_index {
-	USER,
-	HOST,
-	PORT,
-	PASSWORD
-};
-
-typedef struct {
-	const char *name;
-	enum option_index index;
-	int flags;
-} sftt_option;
-
-sftt_option sftt_opts[] = {
+sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
 	{"-P", PORT, HAS_ARG},

@@ -5,7 +5,7 @@
 #include "config.h"
 
 typedef struct user_info {
-	char name[MAX_NAME_LEN];
+	char name[USER_NAME_MAX_LEN];
 	
 } user_info;
 
