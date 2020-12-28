@@ -10,7 +10,7 @@ sftt_option sftt_server_opts[] = {
 	{"start", START, NO_ARG},
 	{"restart", RESTART, NO_ARG},
 	{"stop", STOP, NO_ARG},
-	{"add", USER, HAS_ARG},
+	{"adduser", ADDUSER, HAS_ARG},
 	{NULL, -1, NO_ARG}
 };
 

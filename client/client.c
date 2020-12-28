@@ -622,34 +622,6 @@ void execute_cmd(char *cmd, int flag) {
 	DEBUG((DEBUG_INFO, "%s\n", cmd));
 }
 
-const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind) {
-	if (*optind >= argc) {
-		return NULL;
-	}
-
-	sftt_option *opt = sftt_client_opts;
-	for (;;) {
-		if (!opt->name) {
-			return NULL;
-		}
-		if (!strcmp(opt->name, argv[*optind])) {
-			break;
-		}
-		++opt;
-	}
-
-	(*optind)++;
-	if (opt->flags & HAS_ARG) {
-		if (*optind >= argc) {
-			return NULL;
-		}
-		*optarg = argv[*optind];
-		(*optind)++;
-	}
-
-	return opt;
-}
-
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len )) {
@@ -688,8 +660,8 @@ static void version(void)
 static void help(int exitcode)
 {
     version();
-	printf("usage: " PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
-       "sftt -u root -h localhost [-P port] -p\n");
+	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
+       "\t" PROC_NAME " -u root -h localhost [-P port] -p\n");
     exit(exitcode);
 }
 
@@ -759,7 +731,7 @@ int main(int argc, char **argv) {
 		if (optind >= argc) {
 			break;
 		}
-		opt = lookup_opt(argc, argv, &optarg, &optind);
+		opt = lookup_opt(argc, argv, &optarg, &optind, sftt_client_opts);
 		if (opt == NULL) {
 			printf("invalid option\n");
 			help(-1);

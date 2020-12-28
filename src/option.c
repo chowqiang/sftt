@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include "option.h"
 
 /**
  * skip_spaces - Removes leading whitespace from @str.
@@ -68,6 +69,34 @@ char *next_arg(char *args, char **param, char **val)
 
     /* Chew up trailing spaces. */
     return skip_spaces(next);
+}
+
+const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const sftt_option *sftt_opts) {
+	if (*optind >= argc) {
+		return NULL;
+	}
+
+	sftt_option *opt = sftt_opts;
+	for (;;) {
+		if (!opt->name) {
+			return NULL;
+		}
+		if (!strcmp(opt->name, argv[*optind])) {
+			break;
+		}
+		++opt;
+	}
+
+	(*optind)++;
+	if (opt->flags & HAS_ARG) {
+		if (*optind >= argc) {
+			return NULL;
+		}
+		*optarg = argv[*optind];
+		(*optind)++;
+	}
+
+	return opt;
 }
 
 #if 0

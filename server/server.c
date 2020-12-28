@@ -296,28 +296,56 @@ static void version(void) {
 
 static void help(int exitcode) {
 	version();
-	printf("usage: " PROC_NAME " [start restart stop] | [add user]\n");
+	printf("usage:\t" PROC_NAME " [option]\n"
+		"\t" PROC_NAME " [start|restart|stop]\n"
+		"\t" PROC_NAME " [add user]\n");
 	exit(exitcode);
 }
 
-int main(int argc, char **args) {
+int main(int argc, char **argv) {
 	int optind = 1;
 	char *optarg = NULL;
 	const sftt_option *opt = NULL;
+	bool ret = false;
 
 	if (argc < 2) {
 		help(-1);
 	}
+
 	for (;;) {
+		if (optind >= argc) {
+			break;
+		}
+		opt = lookup_opt(argc, argv, &optarg, &optind, sftt_server_opts);
+		if (opt == NULL) {
+			printf("invalid option\n");
+			help(-1);
+		}
+		switch (opt->index) {
+		case START:
+			break;
+		case RESTART:
+			break;
+		case STOP:
+			break;
+		case ADDUSER:
+			break;
+		}
 	}
-	help(-1);
+
+	if (optind < argc) {
+		printf("unknown parameters: %s\n", argv[optind]);
+		help(-1);
+	}
+
 	printf(PROC_NAME " is running on background ...\n");
 	signal(SIGINT, sighandler);
-	int ret = daemon(1, 1);
-	if (ret != 0) {
+
+	if (daemon(1, 1) != 0) {
 		printf("server cannot running on background ...\n");
 		exit(-1);
 	}
+
 	while (true) {
 		sleep(1);
 		printf("message from background ...\n");

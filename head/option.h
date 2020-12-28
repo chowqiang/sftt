@@ -11,7 +11,8 @@ enum option_index {
 	PASSWORD,
 	START,
 	RESTART,
-	STOP
+	STOP,
+	ADDUSER
 };
 
 typedef struct {
@@ -21,6 +22,8 @@ typedef struct {
 } sftt_option;
 
 char *next_arg(char *arg, char **param, char **value);
+
+const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const sftt_option *sftt_opts);
 
 #endif
 
