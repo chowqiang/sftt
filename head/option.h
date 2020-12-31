@@ -3,6 +3,7 @@
 
 #define NO_ARG					0x0000
 #define HAS_ARG					0x0001
+#define OPT_ARG					0x0010
 
 enum option_index {
 	USER,
@@ -12,7 +13,8 @@ enum option_index {
 	START,
 	RESTART,
 	STOP,
-	ADDUSER
+	ADDUSER,
+	UNKNOWN
 };
 
 typedef struct {

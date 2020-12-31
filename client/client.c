@@ -23,6 +23,7 @@
 #include "validate.h"
 #include "cmdline.h"
 #include "debug.h"
+#include "version.h"
 
 extern int errno;
 

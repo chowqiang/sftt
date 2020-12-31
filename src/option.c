@@ -72,11 +72,12 @@ char *next_arg(char *args, char **param, char **val)
 }
 
 const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const sftt_option *sftt_opts) {
+	*optarg = NULL;
 	if (*optind >= argc) {
 		return NULL;
 	}
 
-	sftt_option *opt = sftt_opts;
+	const sftt_option *opt = sftt_opts;
 	for (;;) {
 		if (!opt->name) {
 			return NULL;
@@ -89,11 +90,14 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind,
 
 	(*optind)++;
 	if (opt->flags & HAS_ARG) {
-		if (*optind >= argc) {
-			return NULL;
+		if (*optind < argc) {
+			*optarg = argv[*optind];
+			(*optind)++;
 		}
-		*optarg = argv[*optind];
-		(*optind)++;
+	} else if (opt->flags & OPT_ARG) {
+		if (*optind < argc) {
+			*optarg = argv[*optind];
+		}
 	}
 
 	return opt;

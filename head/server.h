@@ -6,13 +6,34 @@
 #include "option.h"
 //#include "encrypt.h"
 
+#define ASSERT_WORK_DIR_LEN(opt, path, len)	\
+do {	\
+	if (!(strlen(path) < len)) {	\
+				printf("%s: work directory \"%s\" too long! That should be less than %d.\n", opt, path, len);	\
+				exit(-1);	\
+			}	\
+} while (false)
+
+#define SFTT_SERVER_SHMKEY_FILE	"/var/lib/"PROC_NAME"/shmkey"
+
+#define SFTT_SERVER_SHM_SIZE	4096
+
 sftt_option sftt_server_opts[] = {
-	{"start", START, NO_ARG},
-	{"restart", RESTART, NO_ARG},
+	{"start", START, HAS_ARG},
+	{"restart", RESTART, OPT_ARG},
 	{"stop", STOP, NO_ARG},
-	{"adduser", ADDUSER, HAS_ARG},
 	{NULL, -1, NO_ARG}
 };
+
+enum sftt_server_status {
+	RUNNING,
+	NOT_RUNNING,
+};
+
+typedef struct {
+	pid_t pid;
+	enum sftt_server_status status;
+} sftt_server_info;
 
 void server_init_func();
 int  sftt_server();
