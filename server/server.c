@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <fcntl.h>
+#include <time.h>
 #include "server.h"
 #include "encrypt.h"
 #include "config.h"
@@ -65,38 +67,6 @@ int  server_consult_block_size(int connect_fd,char *buff,int server_block_size){
 	return min_block_size;
 
 }
-int  sftt_server(){
-	int		socket_fd;  
-	struct 		sockaddr_in     serveraddr;
-	int		port = get_random_port();
-	printf("port is %d\n", port);
-
-	if( (socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1 ){
-		printf("socket connetion filed ");
-		exit(0);
-	}
-	
-	memset(&serveraddr, 0 ,sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;  
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(port);
-
-	if( bind(socket_fd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
-		printf("bind error");  
-		exit(0);  
-	}
-	if( listen(socket_fd, 10) == -1){
-		printf("listen socket error\n");
-		exit(0);  
-	}  
-	
-
-	printf("init sftt server ...\n");
-
-	return socket_fd;
-}
-
-
 
 void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_config init_conf){
 	int trans_len;
@@ -210,7 +180,8 @@ void  is_exit(char * filepath){
 }
 
 int main_old(){
-	int	socket_fd = sftt_server();
+//	int	socket_fd = sftt_server();
+    int socket_fd = 0;
 	int	connect_fd;
 	int	trans_len;
 	pid_t   pid;
@@ -342,11 +313,89 @@ bool sftt_server_is_running(void) {
 	return ssi->status == RUNNING;
 }
 
-void main_loop(void) {
-	while (true) {
-		sleep(1);
-		//printf("message from background ...\n");
+void update_server(sftt_server *server) {
+	uint64_t current_ts = (uint64_t)time(NULL);
+	if ((current_ts - server->last_update_ts) >= server->update_th) {
+		;
 	}
+	server->last_update_ts = current_ts;
+}
+
+void main_loop(sftt_server *server) {
+	//create_main_socket;
+	//async accept;
+	int connect_fd = 0;
+	pid_t pid = 0;
+
+	while(1){
+		update_server(server);
+		connect_fd = accept(server->main_sock, (struct sockaddr *)NULL, NULL);
+		if (connect_fd == -1) {
+			usleep(100 * 1000);
+			continue;
+		}
+		pid = fork();
+		if (pid == 0){
+			/*
+			int consulted_block_size;
+			consulted_block_size = server_consult_block_size(connect_fd,buff,init_conf.block_size);
+			printf("consulted_block_size : %d\n",consulted_block_size);
+			server_file_resv(connect_fd, consulted_block_size,init_conf );
+			*/
+			printf("I'm child\n");
+		} else if (pid < 0 ){
+			printf("fork failed!\n");
+		} else {
+			wait(NULL);
+		}
+	}
+}
+
+int create_non_block_sock(void) {
+	int	sockfd;
+	struct sockaddr_in serveraddr;
+	int	port = get_random_port();
+	printf("random port is %d\n", port);
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		printf("create socket filed!\n");
+		return -1;
+	}
+
+	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
+		printf("set sockfd to non-block failed!\n");
+		return -1;
+	}
+
+	memset(&serveraddr, 0 ,sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serveraddr.sin_port = htons(port);
+
+	if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
+		printf("bind socket error!\n");
+		return -1;
+	}
+
+	if (listen(sockfd, 10) == -1){
+		printf("listen socket error\n");
+		return -1;
+	}
+
+	return sockfd;
+}
+
+bool create_sftt_server(sftt_server *server) {
+	int sockfd = create_non_block_sock();
+	if (sockfd == -1) {
+		return false;
+	}
+
+	server->main_sock = sockfd;
+	server->last_update_ts = (uint64_t)time(NULL);
+	server->update_th = 100;
+
+	return true;
 }
 
 int sftt_server_start(char *work_dir) {
@@ -370,11 +419,19 @@ int sftt_server_start(char *work_dir) {
 		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
 		exit(-1);
 	}
+
+	sftt_server server;
+	ret = create_sftt_server(&server);
+	if (!ret) {
+		printf(PROC_NAME " create server failed!\n");
+		exit(-1);
+	}
+
 	printf(PROC_NAME " is going to start in the background ...\n");
 
 	signal(SIGTERM, sftt_server_exit);
 
-	main_loop();
+	main_loop(&server);
 }
 
 int sftt_server_restart(char *work_dir) {

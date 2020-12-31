@@ -35,8 +35,13 @@ typedef struct {
 	enum sftt_server_status status;
 } sftt_server_info;
 
+typedef struct {
+	int main_sock;
+	uint64_t last_update_ts;
+	int update_th;
+} sftt_server;
+
 void server_init_func();
-int  sftt_server();
 int  server_consult_block_size(int connect_fd,char *buff,int server_block_size);
 void server_file_resv(int connect_fd , int consulted_block_size, sftt_server_config init_conf);
 FILE *server_creat_file(sftt_packet *sp ,sftt_server_config  init_conf, char * data_buff);
