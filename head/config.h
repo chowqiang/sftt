@@ -12,15 +12,6 @@
 #define CONFIG_NAME_MAX_LEN 	256
 #define CONFIG_VALUE_MAX_LEN	512
 
-#define BLOCK_TYPE_FILE_NAME	"FILE:"
-#define BLOCK_TYPE_DATA			"DATA:"
-#define BLOCK_TYPE_FILE_END		"FEND:"
-#define BLOCK_TYPE_SEND_COMPLETE	"SCOM:"
-
-#define BLOCK_TYPE_SIZE			(sizeof(BLOCK_TYPE_DATA) - 1)
-
-#define PACKET_LEN_SIZE			4
-
 #define CMD_MAX_LEN				1024
 
 /*

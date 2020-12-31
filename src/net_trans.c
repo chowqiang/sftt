@@ -46,7 +46,8 @@ void sftt_packet_send_header(int sock, sftt_packet *sp) {
 	int header_len = sizeof(header); 
 
 	// fill header
-	strcpy(header, sp->type);
+	//strcpy(header, sp->type);
+	memcpy(header, &(sp->type), BLOCK_TYPE_SIZE);
 	memcpy(header + BLOCK_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
 	memory_pool *mp = get_singleton_mp();
@@ -98,8 +99,8 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	int decoded_len = sftt_buffer_decode(header, header_len, buffer, false, true);
 	assert(decoded_len == header_len);
 
-	memcpy(sp->type, buffer, BLOCK_TYPE_SIZE);
-	sp->type[BLOCK_TYPE_SIZE] = 0;
+	memcpy(&(sp->type), buffer, BLOCK_TYPE_SIZE);
+	//sp->type[BLOCK_TYPE_SIZE] = 0;
     memcpy(&(sp->data_len), buffer + BLOCK_TYPE_SIZE, PACKET_LEN_SIZE);
 
 	mp_free(mp, buffer);
@@ -112,7 +113,7 @@ int sftt_packet_recv_content(int sock, sftt_packet *sp) {
 	int ret = recv(sock, sp->content, sp->data_len, 0);
 	assert(ret == sp->data_len);
 
-	if (strcmp(sp->type, BLOCK_TYPE_FILE_NAME) == 0) {
+	if (sp->type == BLOCK_TYPE_FILE_NAME) {
 		printf("decrypted file name: %s\n", sp->content);
 	}
 

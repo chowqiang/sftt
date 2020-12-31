@@ -22,6 +22,7 @@
 #include "net_trans.h"
 #include "validate.h"
 #include "cmdline.h"
+#include "packet.h"
 #include "debug.h"
 #include "version.h"
 
@@ -254,7 +255,8 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	
 	printf("sending file %s\n", pe->abs_path);
 
-	strcpy(sp->type, BLOCK_TYPE_FILE_NAME);
+//	strcpy(sp->type, BLOCK_TYPE_FILE_NAME);
+	sp->type = BLOCK_TYPE_FILE_NAME;
 	sp->data_len = strlen(pe->rel_path);
 	strcpy(sp->content, pe->rel_path);
 	int ret = send_sftt_packet(sock, sp);
@@ -264,10 +266,11 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	}
 	
 	int read_count = 0, i = 0, j = 0;
-	int prefix_len = strlen(BLOCK_TYPE_DATA);
+	int prefix_len = BLOCK_TYPE_SIZE;
 	do {
 		printf("%d-th transport ...\n", ++j);
-		strcpy(sp->type, BLOCK_TYPE_DATA);
+//		strcpy(sp->type, BLOCK_TYPE_DATA);
+		sp->type = BLOCK_TYPE_DATA;
 		read_count = fread(sp->content, 1, sp->block_size, fp);		
 		printf("read block size: %d\n", read_count);
 		if (read_count < 1) {
@@ -288,7 +291,8 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	
 	} while (read_count == sp->block_size);
 
-	strcpy(sp->type, BLOCK_TYPE_FILE_END);
+//	strcpy(sp->type, BLOCK_TYPE_FILE_END);
+	sp->type = BLOCK_TYPE_FILE_END;
 	sp->data_len = 0;
 	ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {
@@ -446,7 +450,8 @@ void *send_files_by_thread(void *args) {
 }
 
 int send_complete_end_packet(int sock, sftt_packet *sp) {
-	strcpy(sp->type, BLOCK_TYPE_SEND_COMPLETE);
+//	strcpy(sp->type, BLOCK_TYPE_SEND_COMPLETE);
+	sp->type = BLOCK_TYPE_SEND_COMPLETE;
 	sp->data_len = 0;
 	int ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {

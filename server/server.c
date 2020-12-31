@@ -96,36 +96,35 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 				connected = 0;
 				break;
 			}
-			if (strncmp(sp->type,BLOCK_TYPE_FILE_NAME,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
-
+			switch (sp->type) {
+			case BLOCK_TYPE_FILE_NAME:
 				fd = server_creat_file(sp,init_conf,data_buff);
 				memset(data_buff,'\0',consulted_block_size);
 				printf("get file name packet\n");
 				i++;
-			} else if (strncmp(sp->type,BLOCK_TYPE_DATA,strlen(BLOCK_TYPE_FILE_NAME)) == 0) {
+				break;
+			case BLOCK_TYPE_DATA:
 				server_transport_data_to_file(fd,sp);
 				printf("get file type packet\n");
 				i++;
-
-			}else if (strncmp(sp->type,BLOCK_TYPE_FILE_END,strlen(BLOCK_TYPE_FILE_END)) == 0) {
+				break;
+			case BLOCK_TYPE_FILE_END:
 				printf("get file end packet\n");
 				server_transport_data_to_file(fd,sp);
 				i++;
 				fclose(fd);
 				break;
-			}else if (strncmp(sp->type,BLOCK_TYPE_SEND_COMPLETE,strlen(BLOCK_TYPE_SEND_COMPLETE)) == 0) {
+			case BLOCK_TYPE_SEND_COMPLETE:
 				printf("get complete packet\n");
 				i++;
-				exit(0);
-			}else{
+				break;
+			default:
 				printf("get unknown packet!\n ");
 				i++;
-				exit(0);
+				break;
 			}
 		}
-
 	}
-
 }
 
 void server_transport_data_to_file(FILE * fd,sftt_packet * sp ){
