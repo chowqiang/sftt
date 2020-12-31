@@ -140,6 +140,8 @@ int deal_server_config_line(char *line, sftt_server_config *ssc) {
 		strcpy(ssc->store_path, config_value);
 	} else if (strcmp(config_name, "block_size") == 0) {
 		ssc->block_size = atoi(config_value);
+	} else if (strcmp(config_name, "update_threshold") == 0) {
+		ssc->update_th = atoi(config_value);
 	}
 	
 	return 0;

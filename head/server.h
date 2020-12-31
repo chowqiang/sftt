@@ -6,7 +6,7 @@
 #include "option.h"
 //#include "encrypt.h"
 
-#define ASSERT_WORK_DIR_LEN(opt, path, len)	\
+#define ASSERT_STORE_PATH_LEN(opt, path, len)	\
 do {	\
 	if (!(strlen(path) < len)) {	\
 				printf("%s: work directory \"%s\" too long! That should be less than %d.\n", opt, path, len);	\
@@ -19,7 +19,7 @@ do {	\
 #define SFTT_SERVER_SHM_SIZE	4096
 
 sftt_option sftt_server_opts[] = {
-	{"start", START, HAS_ARG},
+	{"start", START, OPT_ARG},
 	{"restart", RESTART, OPT_ARG},
 	{"stop", STOP, NO_ARG},
 	{NULL, -1, NO_ARG}
@@ -33,12 +33,13 @@ enum sftt_server_status {
 typedef struct {
 	pid_t pid;
 	enum sftt_server_status status;
+	char store_path[DIR_PATH_MAX_LEN];
 } sftt_server_info;
 
 typedef struct {
 	int main_sock;
 	uint64_t last_update_ts;
-	int update_th;
+	sftt_server_config conf;
 } sftt_server;
 
 void server_init_func();

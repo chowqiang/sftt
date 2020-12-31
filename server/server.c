@@ -216,11 +216,12 @@ void sighandler(int signum) {
    printf("Caught signal %d, coming out...\n", signum);
 }
 
-bool init_sftt_server_info(void) {
+bool init_sftt_server_info(sftt_server *server) {
 	sftt_server_info ssi = {
 		.pid = getpid(),
 		.status = RUNNING,
 	};
+	strcpy(ssi.store_path, server->conf.store_path);
 
 	return update_sftt_server_info(&ssi, 1);
 }
@@ -314,20 +315,29 @@ bool sftt_server_is_running(void) {
 }
 
 void update_server(sftt_server *server) {
+	int sock = 0;
 	uint64_t current_ts = (uint64_t)time(NULL);
-	if ((current_ts - server->last_update_ts) >= server->update_th) {
-		;
+	if ((current_ts - server->last_update_ts) >= server->conf.update_th) {
+		sock = create_non_block_sock();
+		if (sock != -1) {
+			close(server->main_sock);
+			server->main_sock = sock;
+		}
 	}
 	server->last_update_ts = current_ts;
 }
 
+void deal_client_session(int sock) {
+	while (1) {
+		;
+	}
+}
+
 void main_loop(sftt_server *server) {
-	//create_main_socket;
-	//async accept;
 	int connect_fd = 0;
 	pid_t pid = 0;
 
-	while(1){
+	while (1) {
 		update_server(server);
 		connect_fd = accept(server->main_sock, (struct sockaddr *)NULL, NULL);
 		if (connect_fd == -1) {
@@ -336,13 +346,8 @@ void main_loop(sftt_server *server) {
 		}
 		pid = fork();
 		if (pid == 0){
-			/*
-			int consulted_block_size;
-			consulted_block_size = server_consult_block_size(connect_fd,buff,init_conf.block_size);
-			printf("consulted_block_size : %d\n",consulted_block_size);
-			server_file_resv(connect_fd, consulted_block_size,init_conf );
-			*/
 			printf("I'm child\n");
+			deal_client_session(connect_fd);
 		} else if (pid < 0 ){
 			printf("fork failed!\n");
 		} else {
@@ -385,7 +390,7 @@ int create_non_block_sock(void) {
 	return sockfd;
 }
 
-bool create_sftt_server(sftt_server *server) {
+bool create_sftt_server(sftt_server *server, char *store_path) {
 	int sockfd = create_non_block_sock();
 	if (sockfd == -1) {
 		return false;
@@ -393,19 +398,31 @@ bool create_sftt_server(sftt_server *server) {
 
 	server->main_sock = sockfd;
 	server->last_update_ts = (uint64_t)time(NULL);
-	server->update_th = 100;
+	if (get_sftt_server_config(&(server->conf)) == -1) {
+		return false;
+	}
+
+	if (strlen(store_path)) {
+		strcpy(server->conf.store_path, store_path);
+	}
+
+	bool ret = init_sftt_server_info(server);
+	if (!ret) {
+		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
+		exit(-1);
+	}
 
 	return true;
 }
 
-int sftt_server_start(char *work_dir) {
+int sftt_server_start(char *store_path) {
 	if (sftt_server_is_running()) {
 		printf("cannot start " PROC_NAME ", because it has been running.\n");
 		exit(-1);
 	}
 
-	if (access(work_dir, W_OK)) {
-		printf("write %s: Operation not permitted!\n", work_dir);
+	if (access(store_path, W_OK)) {
+		printf("write %s: Operation not permitted!\n", store_path);
 		exit(-1);
 	}
 
@@ -414,14 +431,8 @@ int sftt_server_start(char *work_dir) {
 		exit(-1);
 	}
 
-	bool ret = init_sftt_server_info();
-	if (!ret) {
-		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
-		exit(-1);
-	}
-
 	sftt_server server;
-	ret = create_sftt_server(&server);
+	bool ret = create_sftt_server(&server, store_path);
 	if (!ret) {
 		printf(PROC_NAME " create server failed!\n");
 		exit(-1);
@@ -434,15 +445,15 @@ int sftt_server_start(char *work_dir) {
 	main_loop(&server);
 }
 
-int sftt_server_restart(char *work_dir) {
+int sftt_server_restart(char *store_path) {
 	if (!sftt_server_is_running()) {
 		printf("cannot restart " PROC_NAME ", because it is not running.\n");
 		exit(-1);
 	}
 
-	if (strlen(work_dir)) {
-		if (access(work_dir, W_OK)) {
-			printf("write %s: Operation not permitted!\n", work_dir);
+	if (strlen(store_path)) {
+		if (access(store_path, W_OK)) {
+			printf("write %s: Operation not permitted!\n", store_path);
 			exit(-1);
 		}
 	}
@@ -489,12 +500,12 @@ static void help(int exitcode) {
 	exit(exitcode);
 }
 
-bool parse_work_dir(char *optarg, char *work_dir, int max_len) {
-	if (!optarg || !work_dir) {
+bool parse_store_path(char *optarg, char *store_path, int max_len) {
+	if (!optarg || !store_path) {
 		return false;
 	}
 
-	strncpy(work_dir, optarg, max_len);
+	strncpy(store_path, optarg, max_len);
 
 	return true;
 }
@@ -504,14 +515,14 @@ int main(int argc, char **argv) {
 	char *optarg = NULL;
 	const sftt_option *opt = NULL;
 	bool ret = false;
-	char work_dir[DIR_PATH_MAX_LEN];
+	char store_path[DIR_PATH_MAX_LEN];
 	enum option_index opt_idx = UNKNOWN;
 
 	if (argc < 2) {
 		help(-1);
 	}
 
-	memset(work_dir, 0, sizeof(work_dir));
+	memset(store_path, 0, sizeof(store_path));
 	for (;;) {
 		if (optind >= argc) {
 			break;
@@ -523,18 +534,16 @@ int main(int argc, char **argv) {
 		}
 		switch (opt->index) {
 		case START:
-			if (optarg == NULL) {
-				printf("start: miss work directory!\n");
-				exit(-1);
+			if (optarg) {
+				ASSERT_STORE_PATH_LEN("start", optarg, DIR_PATH_MAX_LEN);
+				ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
+				opt_idx = START;
 			}
-			ASSERT_WORK_DIR_LEN("start", optarg, DIR_PATH_MAX_LEN);
-			ret = parse_work_dir(optarg, work_dir, DIR_PATH_MAX_LEN - 1);
-			opt_idx = START;
 			break;
 		case RESTART:
 			if (optarg) {
-				ASSERT_WORK_DIR_LEN("restart", optarg, DIR_PATH_MAX_LEN);
-				ret = parse_work_dir(optarg, work_dir, DIR_PATH_MAX_LEN - 1);
+				ASSERT_STORE_PATH_LEN("restart", optarg, DIR_PATH_MAX_LEN);
+				ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
 				++optind;
 			}
 			opt_idx = RESTART;
@@ -556,10 +565,10 @@ int main(int argc, char **argv) {
 
 	switch (opt_idx) {
 	case START:
-		sftt_server_start(work_dir);
+		sftt_server_start(store_path);
 		break;
 	case RESTART:
-		sftt_server_restart(work_dir);
+		sftt_server_restart(store_path);
 		break;
 	case STOP:
 		sftt_server_stop();
