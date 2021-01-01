@@ -19,6 +19,8 @@
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
+#include "memory_pool.h"
+#include "user.h"
 #include "net_trans.h"
 #include "validate.h"
 #include "cmdline.h"
@@ -689,14 +691,53 @@ static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
 }
 
 static int validate_user_info(sftt_client_v2 *client) {
+	sftt_packet *req = malloc_sftt_packet(1024);
+	req->type = BLOCK_TYPE_VALIDATE;
 
+	validate_req v_req;
+	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
+	v_req.name_len = strlen(tmp);
 
+	tmp = strncpy(v_req.passwd_md5, client->uinfo->passwd_md5, MD5_LEN);
+	v_req.passwd_len = strlen(tmp);
+
+	req->content = (char *)&v_req;
+	req->data_len = sizeof(validate_req);
+	req->block_size = 1024;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req);
+	if (ret == -1) {
+		return -1;
+	}
+
+	sftt_packet *resp = malloc_sftt_packet(1024);
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
+	if (ret == -1) {
+		return -1;
+	}
+
+	validate_resp *v_resp = (validate_resp *)resp->content;
+	if (v_resp->status != UVS_PASS) {
+		return -1;
+	}
+
+	client->uinfo->uid = v_resp->uid;
+
+	return 0;
 }
 
 static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
-	strncpy(client->host, host, HOST_MAX_LEN);
-	strncpy(client->user, user, USER_NAME_MAX_LEN);
-	strncpy(client->passwd, passwd, USER_PASSWD_MAX_LEN);
+	strncpy(client->host, host, HOST_MAX_LEN - 1);
+
+	client->mp = get_singleton_mp();
+	client->uinfo = mp_malloc(client->mp, sizeof(user_info));
+	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
+	strncpy(client->uinfo->passwd, passwd, USER_PASSWD_MAX_LEN - 1);
+	if (strlen(passwd)) {
+		md5_str(passwd, client->uinfo->passwd_md5);
+	} else {
+		client->uinfo->passwd_md5[0] = 0;
+	}
 
 	int ret = init_sftt_client_ctrl_conn(client, port);
 	if (ret == -1) {

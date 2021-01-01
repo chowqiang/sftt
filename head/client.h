@@ -4,7 +4,9 @@
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
+#include "memory_pool.h"
 #include "option.h"
+#include "user.h"
 
 #define LOCAL_HOST				"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
@@ -44,7 +46,7 @@ typedef struct file_input_stream {
 
 typedef struct {
 	char ip[IPV4_MAX_LEN];
-	int port;	
+	int port;
 	int configured_block_size;
 	sock_connect connects[CLIENT_MAX_CONNECT_NUM];
 	int connects_num;
@@ -56,9 +58,9 @@ typedef struct {
 typedef struct {
 	client_sock_conn conn_ctrl;
 	dlist *conn_data;
+	memory_pool *mp;
+	user_info *uinfo;
 	char host[HOST_MAX_LEN];
-	char user[USER_NAME_MAX_LEN];
-	char passwd[USER_PASSWD_MAX_LEN];
 } sftt_client_v2;
 
 typedef struct {

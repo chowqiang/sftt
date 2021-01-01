@@ -163,10 +163,9 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
     state[3] += d;  
 }  
 
-void md5(char *file, char *digest) {
+int md5_file(char *file, char *digest) {
     MD5_CTX context;
     MD5Init(&context);
-	/* 计算文件MD5 */
 	FILE *fp = fopen(file, "r");
 	char *data = NULL;
 	int ret = 0;
@@ -174,7 +173,7 @@ void md5(char *file, char *digest) {
 	if(!fp)
 	{
 		perror("fopen");
-		exit(-1);
+		return -1;
 	}
 	data = malloc(BLOCK_SIZE);
 	int i = 0;
@@ -191,4 +190,26 @@ void md5(char *file, char *digest) {
 
 	fclose(fp);
 	free(data);
+
+	return 0;
+}
+
+int md5_str(char *str, char *digest) {
+	MD5_CTX context;
+	MD5Init(&context);
+	int len = strlen(str);
+	int i = 0;
+
+	for (;;) {
+		if (len < BLOCK_SIZE) {
+			MD5Update(&context, str + i, len);
+			break;
+		}
+		MD5Update(&context, str + i, BLOCK_SIZE);
+		len -= BLOCK_SIZE;
+		i += BLOCK_SIZE;
+	}
+	MD5Final(&context, digest);
+
+	return 0;
 }
