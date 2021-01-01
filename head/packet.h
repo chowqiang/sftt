@@ -1,9 +1,11 @@
 #ifndef _PACKET_H_
 #define _PACKET_H_
 
+#include <stdint.h>
 #include "config.h"
+#include "md5.h"
 
-#define BLOCK_TYPE_SIZE			(sizeof(int))
+#define PACKET_TYPE_SIZE			(sizeof(int))
 #define PACKET_LEN_SIZE			(sizeof(int))	
 
 enum user_validate_status {
@@ -13,11 +15,11 @@ enum user_validate_status {
 };
 
 enum packet_type {
-	BLOCK_TYPE_VALIDATE,
-	BLOCK_TYPE_FILE_NAME,
-	BLOCK_TYPE_DATA,
-	BLOCK_TYPE_FILE_END,
-	BLOCK_TYPE_SEND_COMPLETE
+	PACKET_TYPE_VALIDATE,
+	PACKET_TYPE_FILE_NAME,
+	PACKET_TYPE_DATA,
+	PACKET_TYPE_FILE_END,
+	PACKET_TYPE_SEND_COMPLETE
 };
 
 typedef struct {

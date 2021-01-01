@@ -42,13 +42,13 @@ int sftt_packet_encode(sftt_packet *src, sftt_packet *dst) {
 }
 
 void sftt_packet_send_header(int sock, sftt_packet *sp) {
-	char header[BLOCK_TYPE_SIZE + PACKET_LEN_SIZE];
+	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header); 
 
 	// fill header
-	//strcpy(header, sp->type);
-	memcpy(header, &(sp->type), BLOCK_TYPE_SIZE);
-	memcpy(header + BLOCK_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
+	// strcpy(header, sp->type);
+	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
+	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
 	memory_pool *mp = get_singleton_mp();
 	unsigned char *buffer = mp_malloc(mp, header_len);
@@ -87,7 +87,7 @@ int sftt_packet_decode(sftt_packet *src, sftt_packet *dst) {
 }
 
 int sftt_packet_recv_header(int sock, sftt_packet *sp) {
-	char header[BLOCK_TYPE_SIZE + PACKET_LEN_SIZE];
+	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header); 
 
 	int ret = recv(sock, header, header_len, 0);
@@ -99,9 +99,9 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	int decoded_len = sftt_buffer_decode(header, header_len, buffer, false, true);
 	assert(decoded_len == header_len);
 
-	memcpy(&(sp->type), buffer, BLOCK_TYPE_SIZE);
-	//sp->type[BLOCK_TYPE_SIZE] = 0;
-    memcpy(&(sp->data_len), buffer + BLOCK_TYPE_SIZE, PACKET_LEN_SIZE);
+	memcpy(&(sp->type), buffer, PACKET_TYPE_SIZE);
+	// sp->type[PACKET_TYPE_SIZE] = 0;
+    memcpy(&(sp->data_len), buffer + PACKET_TYPE_SIZE, PACKET_LEN_SIZE);
 
 	mp_free(mp, buffer);
 
@@ -113,7 +113,7 @@ int sftt_packet_recv_content(int sock, sftt_packet *sp) {
 	int ret = recv(sock, sp->content, sp->data_len, 0);
 	assert(ret == sp->data_len);
 
-	if (sp->type == BLOCK_TYPE_FILE_NAME) {
+	if (sp->type == PACKET_TYPE_FILE_NAME) {
 		printf("decrypted file name: %s\n", sp->content);
 	}
 

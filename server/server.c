@@ -17,6 +17,7 @@
 #include "server.h"
 #include "encrypt.h"
 #include "config.h"
+#include "memory_pool.h"
 #include "random_port.h"
 #include "version.h"
 //#include "net_trans.h"
@@ -97,24 +98,24 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 				break;
 			}
 			switch (sp->type) {
-			case BLOCK_TYPE_FILE_NAME:
+			case PACKET_TYPE_FILE_NAME:
 				fd = server_creat_file(sp,init_conf,data_buff);
 				memset(data_buff,'\0',consulted_block_size);
 				printf("get file name packet\n");
 				i++;
 				break;
-			case BLOCK_TYPE_DATA:
+			case PACKET_TYPE_DATA:
 				server_transport_data_to_file(fd,sp);
 				printf("get file type packet\n");
 				i++;
 				break;
-			case BLOCK_TYPE_FILE_END:
+			case PACKET_TYPE_FILE_END:
 				printf("get file end packet\n");
 				server_transport_data_to_file(fd,sp);
 				i++;
 				fclose(fd);
 				break;
-			case BLOCK_TYPE_SEND_COMPLETE:
+			case PACKET_TYPE_SEND_COMPLETE:
 				printf("get complete packet\n");
 				i++;
 				break;
@@ -314,20 +315,61 @@ bool sftt_server_is_running(void) {
 
 void update_server(sftt_server *server) {
 	int sock = 0;
+	int port = 0;
 	uint64_t current_ts = (uint64_t)time(NULL);
 	if ((current_ts - server->last_update_ts) >= server->conf.update_th) {
-		sock = create_non_block_sock();
+		sock = create_non_block_sock(&port);
 		if (sock != -1) {
 			close(server->main_sock);
 			server->main_sock = sock;
+			server->main_port = port;
 		}
 	}
 	server->last_update_ts = current_ts;
 }
 
-void deal_client_session(int sock) {
+void validate_user_info(sftt_packet *req, sftt_packet *resp) {
+
+}
+
+void handle_client_session(int sock) {
+	memory_pool *mp = mp_create();
+	if (mp == NULL) {
+		return ;
+	}
+
+	sftt_packet *req = mp_malloc(mp, sizeof(sftt_packet));
+	sftt_packet *resp = mp_malloc(mp, sizeof(sftt_packet));
+	char *send_buf = mp_malloc(mp, BUFFER_SIZE);
+	char *recv_buf = mp_malloc(mp, BUFFER_SIZE);
+	if (!req || !resp || !send_buf || !recv_buf) {
+		return ;
+	}
+
+	req->content = recv_buf;
+	resp->content = send_buf;
+	int ret = 0;
+
 	while (1) {
-		;
+		ret = recv_sftt_packet(sock, req);
+		if (ret == -1) {
+			continue;
+		}
+		switch (req->type) {
+		case PACKET_TYPE_VALIDATE:
+			validate_user_info(req, resp);
+			break;
+		case PACKET_TYPE_FILE_NAME:
+			break;
+		case PACKET_TYPE_DATA:
+			break;
+		case PACKET_TYPE_FILE_END:
+			break;
+		case PACKET_TYPE_SEND_COMPLETE:
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -359,7 +401,7 @@ void main_loop(sftt_server *server) {
 		pid = fork();
 		if (pid == 0){
 			printf("I'm child\n");
-			deal_client_session(connect_fd);
+			handle_client_session(connect_fd);
 		} else if (pid < 0 ){
 			printf("fork failed!\n");
 		} else {
@@ -368,11 +410,11 @@ void main_loop(sftt_server *server) {
 	}
 }
 
-int create_non_block_sock(void) {
+int create_non_block_sock(int *pport) {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
-	int	port = get_random_port();
-	printf("random port is %d\n", port);
+	int rand_port = get_random_port();
+	printf("random port is %d\n", rand_port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("create socket filed!\n");
@@ -387,7 +429,7 @@ int create_non_block_sock(void) {
 	memset(&serveraddr, 0 ,sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(port);
+	serveraddr.sin_port = htons(rand_port);
 
 	if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
 		printf("bind socket error!\n");
@@ -399,17 +441,27 @@ int create_non_block_sock(void) {
 		return -1;
 	}
 
+	if (pport) {
+		*pport = rand_port;
+	}
+
 	return sockfd;
 }
 
+database *start_sftt_server_db(void) {
+	return (void *)-1;
+}
+
 bool create_sftt_server(sftt_server *server, char *store_path) {
-	int sockfd = create_non_block_sock();
+	int port = 0;
+	int sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
 		return false;
 	}
 
 	server->status = READY;
 	server->main_sock = sockfd;
+	server->main_port = port;
 	server->last_update_ts = (uint64_t)time(NULL);
 	if (get_sftt_server_config(&(server->conf)) == -1) {
 		return false;
@@ -417,6 +469,11 @@ bool create_sftt_server(sftt_server *server, char *store_path) {
 
 	if (strlen(store_path)) {
 		strcpy(server->conf.store_path, store_path);
+	}
+
+	if ((server->db = start_sftt_server_db()) == NULL) {
+		printf("cannot start " PROC_NAME " database!\n");
+		return false;
 	}
 
 	bool ret = init_sftt_server_info(server);
@@ -512,7 +569,8 @@ static void help(int exitcode) {
 	printf("usage:\t" PROC_NAME " [option]\n"
 		"\t" PROC_NAME " [start|restart dir]\n"
 		"\t" PROC_NAME " [stop]\n"
-		"\t" PROC_NAME " [status]\n");
+		"\t" PROC_NAME " [status]\n"
+		"\t" PROC_NAME " [db]\n");
 	exit(exitcode);
 }
 
@@ -570,13 +628,41 @@ void sftt_server_status(void) {
 		"\tprocess status: %s\n"
 		"\tstore path: %s\n"
 		"\tpid: %d\n"
-		"\tmain sock port: %d\n"
+		"\tmain port: %d\n"
+		"\tmain sock: %d\n"
 		"\tlast update time: %s\n",
 		status_desc(ssi->server.status),
 		ssi->server.conf.store_path,
 		ssi->pid,
+		ssi->server.main_port,
 		ssi->server.main_sock,
 		ts_buf);
+}
+
+void execute_sql(char *sql, int flag) {
+
+}
+
+void sftt_server_db(void) {
+	if (!sftt_server_is_running()) {
+		printf("cannot connect " PROC_NAME " database, because " PROC_NAME " is not running!\n");
+		printf("please start " PROC_NAME " first!\n");
+		return ;
+	}
+
+	char sql[1024];
+	sftt_server_info *ssi = get_sftt_server_info();
+
+	while (1) {
+		printf("sftt>>");
+		fgets(sql, 1024, stdin);
+		sql[strlen(sql) - 1] = 0;
+		if (!strcmp(sql, "quit")) {
+			exit(0);
+		} else {
+			execute_sql(sql, -1);
+		}
+	}
 }
 
 int main(int argc, char **argv) {
@@ -624,6 +710,9 @@ int main(int argc, char **argv) {
 		case STATUS:
 			opt_idx = STATUS;
 			break;
+		case DB:
+			opt_idx = DB;
+			break;
 		default:
 			printf("unknown parameter: %s\n", argv[optind]);
 			help(-1);
@@ -648,6 +737,9 @@ int main(int argc, char **argv) {
 		break;
 	case STATUS:
 		sftt_server_status();
+		break;
+	case DB:
+		sftt_server_db();
 		break;
 	}
 

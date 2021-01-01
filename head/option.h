@@ -14,6 +14,7 @@ enum option_index {
 	RESTART,
 	STOP,
 	STATUS,
+	DB,
 	ADDUSER,
 	UNKNOWN
 };

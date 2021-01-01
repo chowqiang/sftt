@@ -257,8 +257,8 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	
 	printf("sending file %s\n", pe->abs_path);
 
-//	strcpy(sp->type, BLOCK_TYPE_FILE_NAME);
-	sp->type = BLOCK_TYPE_FILE_NAME;
+//	strcpy(sp->type, PACKET_TYPE_FILE_NAME);
+	sp->type = PACKET_TYPE_FILE_NAME;
 	sp->data_len = strlen(pe->rel_path);
 	strcpy(sp->content, pe->rel_path);
 	int ret = send_sftt_packet(sock, sp);
@@ -268,11 +268,11 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	}
 	
 	int read_count = 0, i = 0, j = 0;
-	int prefix_len = BLOCK_TYPE_SIZE;
+	int prefix_len = PACKET_TYPE_SIZE;
 	do {
 		printf("%d-th transport ...\n", ++j);
-//		strcpy(sp->type, BLOCK_TYPE_DATA);
-		sp->type = BLOCK_TYPE_DATA;
+//		strcpy(sp->type, PACKET_TYPE_DATA);
+		sp->type = PACKET_TYPE_DATA;
 		read_count = fread(sp->content, 1, sp->block_size, fp);		
 		printf("read block size: %d\n", read_count);
 		if (read_count < 1) {
@@ -293,8 +293,8 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	
 	} while (read_count == sp->block_size);
 
-//	strcpy(sp->type, BLOCK_TYPE_FILE_END);
-	sp->type = BLOCK_TYPE_FILE_END;
+//	strcpy(sp->type, PACKET_TYPE_FILE_END);
+	sp->type = PACKET_TYPE_FILE_END;
 	sp->data_len = 0;
 	ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {
@@ -452,8 +452,8 @@ void *send_files_by_thread(void *args) {
 }
 
 int send_complete_end_packet(int sock, sftt_packet *sp) {
-//	strcpy(sp->type, BLOCK_TYPE_SEND_COMPLETE);
-	sp->type = BLOCK_TYPE_SEND_COMPLETE;
+//	strcpy(sp->type, PACKET_TYPE_SEND_COMPLETE);
+	sp->type = PACKET_TYPE_SEND_COMPLETE;
 	sp->data_len = 0;
 	int ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {
@@ -692,7 +692,7 @@ static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
 
 static int validate_user_info(sftt_client_v2 *client) {
 	sftt_packet *req = malloc_sftt_packet(1024);
-	req->type = BLOCK_TYPE_VALIDATE;
+	req->type = PACKET_TYPE_VALIDATE;
 
 	validate_req v_req;
 	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);

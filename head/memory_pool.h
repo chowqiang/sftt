@@ -15,8 +15,8 @@ typedef struct {
 	dlist *list;
 } memory_pool;
 
-memory_pool *mp_create();
-memory_pool *get_singleton_mp();
+memory_pool *mp_create(void);
+memory_pool *get_singleton_mp(void);
 int mp_init(memory_pool *mp);
 void *mp_malloc(memory_pool *mp, size_t n);
 void mp_free(memory_pool *mp, void *p);

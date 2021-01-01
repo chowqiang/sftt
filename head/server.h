@@ -4,6 +4,7 @@
 #include "config.h"
 #include "net_trans.h"
 #include "option.h"
+#include "db.h"
 //#include "encrypt.h"
 
 #define ASSERT_STORE_PATH_LEN(opt, path, len)	\
@@ -23,6 +24,7 @@ sftt_option sftt_server_opts[] = {
 	{"restart", RESTART, OPT_ARG},
 	{"stop", STOP, NO_ARG},
 	{"status", STATUS, NO_ARG},
+	{"db", DB, NO_ARG},
 	{NULL, -1, NO_ARG}
 };
 
@@ -34,9 +36,11 @@ enum sftt_server_status {
 
 typedef struct {
 	int main_sock;
+	int main_port;
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
 	sftt_server_config conf;
+	database *db;
 } sftt_server;
 
 typedef struct {
