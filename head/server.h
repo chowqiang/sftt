@@ -22,25 +22,27 @@ sftt_option sftt_server_opts[] = {
 	{"start", START, OPT_ARG},
 	{"restart", RESTART, OPT_ARG},
 	{"stop", STOP, NO_ARG},
+	{"status", STATUS, NO_ARG},
 	{NULL, -1, NO_ARG}
 };
 
 enum sftt_server_status {
+	READY,
 	RUNNING,
 	NOT_RUNNING,
 };
 
 typedef struct {
-	pid_t pid;
-	enum sftt_server_status status;
-	char store_path[DIR_PATH_MAX_LEN];
-} sftt_server_info;
-
-typedef struct {
 	int main_sock;
 	uint64_t last_update_ts;
+	enum sftt_server_status status;
 	sftt_server_config conf;
 } sftt_server;
+
+typedef struct {
+	pid_t pid;
+	sftt_server server;
+} sftt_server_info;
 
 void server_init_func();
 int  server_consult_block_size(int connect_fd,char *buff,int server_block_size);

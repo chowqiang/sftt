@@ -13,6 +13,7 @@ enum option_index {
 	START,
 	RESTART,
 	STOP,
+	STATUS,
 	ADDUSER,
 	UNKNOWN
 };

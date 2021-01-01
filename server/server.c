@@ -218,9 +218,8 @@ void sighandler(int signum) {
 bool init_sftt_server_info(sftt_server *server) {
 	sftt_server_info ssi = {
 		.pid = getpid(),
-		.status = RUNNING,
 	};
-	strcpy(ssi.store_path, server->conf.store_path);
+	memcpy(&ssi.server, server, sizeof(sftt_server));
 
 	return update_sftt_server_info(&ssi, 1);
 }
@@ -310,7 +309,7 @@ bool sftt_server_is_running(void) {
 		return false;
     }
 
-	return ssi->status == RUNNING;
+	return ssi->server.status == RUNNING;
 }
 
 void update_server(sftt_server *server) {
@@ -332,9 +331,23 @@ void deal_client_session(int sock) {
 	}
 }
 
+void sync_server_info(sftt_server *server) {
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		printf("get " PROC_NAME " info object failed!\n");
+		return ;
+	}
+
+	memcpy(&ssi->server, server, sizeof(sftt_server));
+	update_sftt_server_info(ssi, 0);
+}
+
 void main_loop(sftt_server *server) {
 	int connect_fd = 0;
 	pid_t pid = 0;
+
+	server->status = RUNNING;
+	sync_server_info(server);
 
 	while (1) {
 		update_server(server);
@@ -395,6 +408,7 @@ bool create_sftt_server(sftt_server *server, char *store_path) {
 		return false;
 	}
 
+	server->status = READY;
 	server->main_sock = sockfd;
 	server->last_update_ts = (uint64_t)time(NULL);
 	if (get_sftt_server_config(&(server->conf)) == -1) {
@@ -408,7 +422,7 @@ bool create_sftt_server(sftt_server *server, char *store_path) {
 	bool ret = init_sftt_server_info(server);
 	if (!ret) {
 		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
-		exit(-1);
+		return false;
 	}
 
 	return true;
@@ -420,9 +434,11 @@ int sftt_server_start(char *store_path) {
 		exit(-1);
 	}
 
-	if (access(store_path, W_OK)) {
-		printf("write %s: Operation not permitted!\n", store_path);
-		exit(-1);
+	if (strlen(store_path)) {
+		if (access(store_path, W_OK)) {
+			printf("write %s: Operation not permitted!\n", store_path);
+			exit(-1);
+		}
 	}
 
 	if (daemon(1, 1) != 0) {
@@ -495,7 +511,8 @@ static void help(int exitcode) {
 	version();
 	printf("usage:\t" PROC_NAME " [option]\n"
 		"\t" PROC_NAME " [start|restart dir]\n"
-		"\t" PROC_NAME " [stop]\n");
+		"\t" PROC_NAME " [stop]\n"
+		"\t" PROC_NAME " [status]\n");
 	exit(exitcode);
 }
 
@@ -507,6 +524,59 @@ bool parse_store_path(char *optarg, char *store_path, int max_len) {
 	strncpy(store_path, optarg, max_len);
 
 	return true;
+}
+
+const char *status_desc(enum sftt_server_status status) {
+	switch (status) {
+	case RUNNING:
+		return "running";
+	case NOT_RUNNING:
+		return "not running";
+	default:
+		return "unknown";
+	}
+}
+
+void ts_to_str(uint64_t ts, char *buf, int max_len) {
+	time_t t = (time_t)ts;
+    const char *format = "%Y-%m-%d %H:%M:%S";
+    struct tm lt;
+
+    (void) localtime_r(&t, &lt);
+    if (strftime(buf, max_len, format, &lt) == 0) {
+		strcpy(buf, "unknown");
+		return ;
+	}
+
+	return ;
+}
+
+void sftt_server_status(void) {
+	if (!sftt_server_is_running()) {
+		printf(PROC_NAME " is not running.\n");
+		return ;
+	}
+
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		printf("cannot get " PROC_NAME " status!\n");
+		return ;
+	}
+
+	char ts_buf[64];
+	ts_to_str(ssi->server.last_update_ts, ts_buf, 63);
+
+	printf(PROC_NAME " status:\n"
+		"\tprocess status: %s\n"
+		"\tstore path: %s\n"
+		"\tpid: %d\n"
+		"\tmain sock port: %d\n"
+		"\tlast update time: %s\n",
+		status_desc(ssi->server.status),
+		ssi->server.conf.store_path,
+		ssi->pid,
+		ssi->server.main_sock,
+		ts_buf);
 }
 
 int main(int argc, char **argv) {
@@ -536,8 +606,9 @@ int main(int argc, char **argv) {
 			if (optarg) {
 				ASSERT_STORE_PATH_LEN("start", optarg, DIR_PATH_MAX_LEN);
 				ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
-				opt_idx = START;
+				++optind;
 			}
+			opt_idx = START;
 			break;
 		case RESTART:
 			if (optarg) {
@@ -549,6 +620,9 @@ int main(int argc, char **argv) {
 			break;
 		case STOP:
 			opt_idx = STOP;
+			break;
+		case STATUS:
+			opt_idx = STATUS;
 			break;
 		default:
 			printf("unknown parameter: %s\n", argv[optind]);
@@ -571,6 +645,9 @@ int main(int argc, char **argv) {
 		break;
 	case STOP:
 		sftt_server_stop();
+		break;
+	case STATUS:
+		sftt_server_status();
 		break;
 	}
 

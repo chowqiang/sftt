@@ -167,13 +167,14 @@ int get_sftt_server_config(sftt_server_config *ssc) {
 	char *ret = NULL;
 	int len = 0;
 	int i = 0;
-	while (1) {
+	while (!feof(fp)) {
 		ret = fgets(line, CONFIG_LINE_MAX_SIZE, fp);
 		//printf("%d: %s\n", i, line);
 		//++i;
 		if (ret == NULL) {
-			printf("get empty config line!\n");
-			break;
+			//printf("get empty config line!\n");
+			//break;
+			continue ;
 		}
 
 		len = strlen(line);
@@ -276,13 +277,14 @@ int get_sftt_client_config(sftt_client_config *scc) {
 	char *ret = NULL;
 	int len = 0;
 	int i = 0;
-	while (1) {
+	while (!feof(fp)) {
 		ret = fgets(line, CONFIG_LINE_MAX_SIZE, fp);
 		//printf("%d: %s\n", i, line);
 		//++i;
 		if (ret == NULL) {
-			printf("get empty config line!\n");
-			break;
+			//printf("get empty config line!\n");
+			//break;
+			continue ;
 		}
 
 		len = strlen(line);

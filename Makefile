@@ -1,6 +1,6 @@
 CC=gcc
 ROOT_DIR=$(shell pwd)
-CFLAG=-I$(ROOT_DIR)/head -lpthread -lcurses -DDEBUG_ENABLE
+CFLAG=-g -I$(ROOT_DIR)/head -lpthread -lcurses -DDEBUG_ENABLE
 OBJS_DIR=$(ROOT_DIR)/src
 OBJS=src
 SERVER_DIR=$(ROOT_DIR)/server
