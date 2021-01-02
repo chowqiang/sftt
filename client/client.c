@@ -691,7 +691,7 @@ static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
 }
 
 static int validate_user_info(sftt_client_v2 *client) {
-	sftt_packet *req = malloc_sftt_packet(1024);
+	sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	req->type = PACKET_TYPE_VALIDATE;
 
 	validate_req v_req;
@@ -703,14 +703,14 @@ static int validate_user_info(sftt_client_v2 *client) {
 
 	req->content = (char *)&v_req;
 	req->data_len = sizeof(validate_req);
-	req->block_size = 1024;
+	req->block_size = VALIDATE_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->conn_ctrl.sock, req);
 	if (ret == -1) {
 		return -1;
 	}
 
-	sftt_packet *resp = malloc_sftt_packet(1024);
+	sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
 	if (ret == -1) {
 		return -1;

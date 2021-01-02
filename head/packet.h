@@ -5,8 +5,10 @@
 #include "config.h"
 #include "md5.h"
 
-#define PACKET_TYPE_SIZE			(sizeof(int))
+#define PACKET_TYPE_SIZE		(sizeof(int))
 #define PACKET_LEN_SIZE			(sizeof(int))	
+
+#define VALIDATE_PACKET_MIN_LEN		10240
 
 enum user_validate_status {
 	UVS_INVALID,

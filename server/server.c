@@ -20,6 +20,7 @@
 #include "memory_pool.h"
 #include "random_port.h"
 #include "version.h"
+#include "user.h"
 //#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
@@ -315,49 +316,72 @@ bool sftt_server_is_running(void) {
 
 void update_server(sftt_server *server) {
 	int sock = 0;
-	int port = 0;
 	uint64_t current_ts = (uint64_t)time(NULL);
-	if ((current_ts - server->last_update_ts) >= server->conf.update_th) {
+	int port = get_random_port();
+
+	if (server->main_port != port) {
 		sock = create_non_block_sock(&port);
+		printf("update main port and main sock. sock(%d -> %d), port(%d -> %d)\n",
+			server->main_sock, sock,
+			server->main_port, port);
+
 		if (sock != -1) {
 			close(server->main_sock);
 			server->main_sock = sock;
 			server->main_port = port;
+			server->last_update_ts = current_ts;
 		}
 	}
-	server->last_update_ts = current_ts;
 }
 
-void validate_user_info(sftt_packet *req, sftt_packet *resp) {
+void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
+	user_info *uinfo = (user_info *)req->content;
+	printf("receive validate request: \n"
+		"\tname: %s\n"
+		"\tpasswd: %s\n"
+		"\tpasswd_md5: %s\n",
+		uinfo->name,
+		uinfo->passwd,
+		uinfo->passwd_md5);
 
+	validate_resp *v = (validate_resp *)resp->content;
+	v->status = UVS_PASS;
+	v->uid = 19910930;
+	strncpy(v->name, uinfo->name, USER_NAME_MAX_LEN - 1);
+
+	int ret = send_sftt_packet(sock, resp);
+	if (ret == -1) {
+		printf("send validate response failed!\n");
+	}
+
+	return ;
 }
 
 void handle_client_session(int sock) {
 	memory_pool *mp = mp_create();
 	if (mp == NULL) {
+		printf("allocate memory pool in child process failed!\n");
 		return ;
 	}
 
-	sftt_packet *req = mp_malloc(mp, sizeof(sftt_packet));
-	sftt_packet *resp = mp_malloc(mp, sizeof(sftt_packet));
-	char *send_buf = mp_malloc(mp, BUFFER_SIZE);
-	char *recv_buf = mp_malloc(mp, BUFFER_SIZE);
-	if (!req || !resp || !send_buf || !recv_buf) {
+	sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!req || !resp) {
+		printf("cannot allocate resources from memory pool!\n");
 		return ;
 	}
 
-	req->content = recv_buf;
-	resp->content = send_buf;
 	int ret = 0;
-
+	printf("begin to communicate with client ...!\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
+		printf("recv ret: %d\n", ret);
 		if (ret == -1) {
 			continue;
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE:
-			validate_user_info(req, resp);
+			validate_user_info(sock, req, resp);
 			break;
 		case PACKET_TYPE_FILE_NAME:
 			break;
@@ -414,7 +438,7 @@ int create_non_block_sock(int *pport) {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
 	int rand_port = get_random_port();
-	printf("random port is %d\n", rand_port);
+	printf("\nrandom port is %d\n", rand_port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("create socket filed!\n");
