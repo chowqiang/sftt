@@ -26,6 +26,28 @@ static inline char *get_level_desc(int print_level) {
 	return "";
 }
 
+#define DEBUG_ASSERT(Expression, fmt, ...)		\
+	do {										\
+		if (!(Expression)) {					\
+			printf("[%s](%s|%d) assert(%s) failed! "fmt,			\
+				get_level_desc(DEBUG_INFO),		\
+				__func__,						\
+				__LINE__,						\
+				#Expression,					\
+				##__VA_ARGS__);					\
+			return -1;							\
+		}										\
+	} while (false)
+
+#define print_split_line				\
+	do {								\
+		int __i = 0;					\
+		for (; __i < 80; __i++) {		\
+			putchar('=');				\
+		}								\
+		putchar('\n');					\
+	} while (false)
+
 #define debug_print(print_level, fmt, ...)		\
 	if (print_level & DEBUG_PRINT_MASK) {		\
 		printf("[%s](%s|%d)"fmt,				\
@@ -43,5 +65,7 @@ static inline char *get_level_desc(int print_level) {
 #else
 	#define DEBUG(Expression)
 #endif
+
+#define DEBUG_POINT	DEBUG((DEBUG_INFO, "\n"))
 
 #endif

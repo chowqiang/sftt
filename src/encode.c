@@ -30,13 +30,13 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char *output, boo
 		return len;
 	}
 
+	if (decrypt) {
+		sftt_decrypt_func(input, len);
+	}
+
 	int unzip_len = len;
 	if (unzip) {
 		unzip_len = huffman_decompress(input, output);
-	}
-
-	if (decrypt) {
-		sftt_decrypt_func(output, unzip_len);
 	}
 
 	return unzip_len;

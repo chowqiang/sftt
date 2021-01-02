@@ -6,7 +6,6 @@
 //char * sftt_decrypt_func(char * aim);
 void  print_bytes(char *aim);
 
-
 void print_bytes(char * aim) {
 	int len = strlen(aim);
 	int j;
@@ -15,8 +14,6 @@ void print_bytes(char * aim) {
         }
         printf("\n");
 }
-
-
 
 char * sftt_encrypt_func(char * source , int size){
 
@@ -30,15 +27,7 @@ char * sftt_encrypt_func(char * source , int size){
 	
 	return source;
 
-
-
 }
-
-
-
-
-
-
 
 char * sftt_decrypt_func(char * aim, int size){
 	int i;
@@ -56,9 +45,5 @@ int main(){
 	char source[] = {255,'e','l','l','o','s','s','3','\0'};
 	char * tmp = sftt_encrypt_func(source);
 	sftt_decrypt_func(tmp);
-
-
 }
 */
-
-

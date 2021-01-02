@@ -692,6 +692,10 @@ static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
 
 static int validate_user_info(sftt_client_v2 *client) {
 	sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!req) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
 	req->type = PACKET_TYPE_VALIDATE;
 
 	validate_req v_req;
@@ -711,7 +715,13 @@ static int validate_user_info(sftt_client_v2 *client) {
 	}
 
 	sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!resp) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
 	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
+	printf("%d, ret: %d\n", __LINE__, ret);
 	if (ret == -1) {
 		return -1;
 	}
@@ -734,7 +744,9 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
 	strncpy(client->uinfo->passwd, passwd, USER_PASSWD_MAX_LEN - 1);
 	if (strlen(passwd)) {
-		md5_str(passwd, client->uinfo->passwd_md5);
+		md5_str(passwd, strlen(passwd), client->uinfo->passwd_md5);
+		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
+		show_md5(client->uinfo->passwd_md5);
 	} else {
 		client->uinfo->passwd_md5[0] = 0;
 	}

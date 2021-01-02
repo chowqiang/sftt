@@ -163,7 +163,7 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
     state[3] += d;  
 }  
 
-int md5_file(char *file, char *digest) {
+int md5_file(unsigned char *file, unsigned char *digest) {
     MD5_CTX context;
     MD5Init(&context);
 	FILE *fp = fopen(file, "r");
@@ -194,10 +194,9 @@ int md5_file(char *file, char *digest) {
 	return 0;
 }
 
-int md5_str(char *str, char *digest) {
+int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 	MD5_CTX context;
 	MD5Init(&context);
-	int len = strlen(str);
 	int i = 0;
 
 	for (;;) {
@@ -212,4 +211,14 @@ int md5_str(char *str, char *digest) {
 	MD5Final(&context, digest);
 
 	return 0;
+}
+
+void show_md5(unsigned char *digest) {
+	int i = 0;
+	printf("md5: ");
+    for(i = 0; i < 16; i++)
+    {
+        printf("%02x", digest[i]);
+    }
+    printf("\n");
 }

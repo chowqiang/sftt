@@ -2,6 +2,7 @@
 #define _USER_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "config.h"
 #include "md5.h"
 

@@ -21,6 +21,7 @@
 #include "random_port.h"
 #include "version.h"
 #include "user.h"
+#include "debug.h"
 //#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
@@ -335,19 +336,23 @@ void update_server(sftt_server *server) {
 }
 
 void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
-	user_info *uinfo = (user_info *)req->content;
+	validate_req *v_req = (validate_req *)req->content;
 	printf("receive validate request: \n"
-		"\tname: %s\n"
-		"\tpasswd: %s\n"
-		"\tpasswd_md5: %s\n",
-		uinfo->name,
-		uinfo->passwd,
-		uinfo->passwd_md5);
+		"\tname: %s\n\t", v_req->name);
+	show_md5(v_req->passwd_md5);
 
-	validate_resp *v = (validate_resp *)resp->content;
-	v->status = UVS_PASS;
-	v->uid = 19910930;
-	strncpy(v->name, uinfo->name, USER_NAME_MAX_LEN - 1);
+	validate_resp *v_resp = (validate_resp *)resp->content;
+	if (strcmp(v_req->name, "root") == 0) {
+		v_resp->status = UVS_PASS;
+		v_resp->uid = 19910930;
+	} else {
+		v_resp->status = UVS_BLOCK;
+		v_resp->uid = 9527;
+	}
+	strncpy(v_resp->name, v_req->name, USER_NAME_MAX_LEN - 1);
+
+	resp->type = PACKET_TYPE_VALIDATE;
+	resp->data_len = sizeof(validate_resp);
 
 	int ret = send_sftt_packet(sock, resp);
 	if (ret == -1) {
@@ -355,6 +360,11 @@ void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	}
 
 	return ;
+}
+
+void child_process_exception_handler(int sig) {
+	printf("I'm child process and encountered segmental fault!\n");
+	exit(-1);
 }
 
 void handle_client_session(int sock) {
@@ -371,13 +381,25 @@ void handle_client_session(int sock) {
 		return ;
 	}
 
+	signal(SIGSEGV, child_process_exception_handler);
+
+	//if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
+	//	printf("set sockfd to non-block failed!\n");
+	//		return -1;
+	//}
+
 	int ret = 0;
-	printf("begin to communicate with client ...!\n");
+	printf("begin to communicate with client ...\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
 		printf("recv ret: %d\n", ret);
 		if (ret == -1) {
-			continue;
+			printf("recv encountered unrecoverable error, child process is exiting ...\n");
+			exit(-1);
+		}
+		if (ret == 0) {
+			printf("client disconnected, child process is exiting ...\n");
+			exit(0);
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE:
@@ -424,6 +446,7 @@ void main_loop(sftt_server *server) {
 		}
 		pid = fork();
 		if (pid == 0){
+			print_split_line;
 			printf("I'm child\n");
 			handle_client_session(connect_fd);
 		} else if (pid < 0 ){

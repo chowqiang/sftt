@@ -421,6 +421,7 @@ int huffman_decode(btree *tree, unsigned char *input, int input_len, unsigned ch
 
 int huffman_decompress(unsigned char *input, unsigned char *output) {
 	if (input == NULL || output == NULL) {
+		printf("decompress: input and output cannot be NULL!\n");
 		return -1;
 	}
 
@@ -431,6 +432,7 @@ int huffman_decompress(unsigned char *input, unsigned char *output) {
 
 	btree *tree = generate_huffman_tree(char_freq);	
 	if (tree == NULL) {
+		printf("decompress: generate_huffman_tree failed!\n");
 		return -1;
 	}
 
