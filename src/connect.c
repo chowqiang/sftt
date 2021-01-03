@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <string.h>
 #include "connect.h"
 
 int make_connect(char *ip, int port) {

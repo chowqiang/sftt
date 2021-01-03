@@ -44,7 +44,8 @@ typedef struct {
 } sftt_server;
 
 typedef struct {
-	pid_t pid;
+	pid_t main_pid;
+	pid_t log_pid;
 	sftt_server server;
 } sftt_server_info;
 

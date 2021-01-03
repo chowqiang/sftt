@@ -137,11 +137,13 @@ int deal_server_config_line(char *line, sftt_server_config *ssc) {
 	//printf("config value: %s\n", config_value);
 		
 	if (strcmp(config_name, "store_path") == 0) {
-		strcpy(ssc->store_path, config_value);
+		strncpy(ssc->store_path, config_value, DIR_PATH_MAX_LEN);
 	} else if (strcmp(config_name, "block_size") == 0) {
 		ssc->block_size = atoi(config_value);
 	} else if (strcmp(config_name, "update_threshold") == 0) {
 		ssc->update_th = atoi(config_value);
+	} else if (strcmp(config_name, "log_dir") == 0) {
+		strncpy(ssc->log_dir, config_value, DIR_PATH_MAX_LEN);
 	}
 	
 	return 0;

@@ -1,0 +1,22 @@
+#ifndef _LOG_H_
+#define _LOG_H_
+
+#define LOG_STR_MAX_LEN	4096
+
+#define LOG_DEBUG	1
+#define LOG_INFO	2
+#define LOG_WARN	3
+#define LOG_ERROR	4
+
+#define LOG_MSG_TYPE	1
+
+#define PROC_NAME	"sfttd"
+#define SFTT_LOG_MSQKEY_FILE	"/var/lib/"PROC_NAME"/msgkey"
+
+void logger_daemon(char *dir, char *prefix);
+
+void logger_exit(int sig);
+
+int add_log(int level, const char *fmt, ...);
+
+#endif

@@ -27,6 +27,7 @@
 
 typedef struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];
+	char log_dir[DIR_PATH_MAX_LEN + 1];
 	int block_size;
 	int update_th;
 } sftt_server_config;

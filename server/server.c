@@ -22,6 +22,8 @@
 #include "version.h"
 #include "user.h"
 #include "debug.h"
+#include "log.h"
+#include "utils.h"
 //#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
@@ -218,9 +220,10 @@ void sighandler(int signum) {
    printf("Caught signal %d, coming out...\n", signum);
 }
 
-bool init_sftt_server_info(sftt_server *server) {
+bool init_sftt_server_info(sftt_server *server, pid_t log_pid) {
 	sftt_server_info ssi = {
-		.pid = getpid(),
+		.main_pid = getpid(),
+		.log_pid = log_pid,
 	};
 	memcpy(&ssi.server, server, sizeof(sftt_server));
 
@@ -495,8 +498,18 @@ int create_non_block_sock(int *pport) {
 	return sockfd;
 }
 
-database *start_sftt_server_db(void) {
+database *start_sftt_db_server(void) {
 	return (void *)-1;
+}
+
+pid_t start_sftt_log_server(sftt_server *server) {
+	pid_t pid = fork();
+	if (pid == 0) {
+		signal(SIGTERM, logger_exit);
+		logger_daemon(server->conf.log_dir, PROC_NAME);
+	} else {
+		return pid;
+	}
 }
 
 bool create_sftt_server(sftt_server *server, char *store_path) {
@@ -518,12 +531,18 @@ bool create_sftt_server(sftt_server *server, char *store_path) {
 		strcpy(server->conf.store_path, store_path);
 	}
 
-	if ((server->db = start_sftt_server_db()) == NULL) {
+	if ((server->db = start_sftt_db_server()) == NULL) {
 		printf("cannot start " PROC_NAME " database!\n");
 		return false;
 	}
 
-	bool ret = init_sftt_server_info(server);
+	pid_t log_pid = start_sftt_log_server(server);
+	if (log_pid < 0) {
+		printf("cannot start log server!\n");
+		return false;
+	}
+
+	bool ret = init_sftt_server_info(server, log_pid);
 	if (!ret) {
 		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
 		return false;
@@ -594,9 +613,13 @@ int sftt_server_stop(void) {
 		return -1;
 	}
 
-	printf(PROC_NAME " pid is: %d\n", ssi->pid);
+	printf(PROC_NAME " pid is: %d\n", ssi->main_pid);
 	printf(PROC_NAME " is going to stop ...\n");
-	kill(ssi->pid, SIGTERM);
+	kill(ssi->main_pid, SIGTERM);
+
+	printf("log pid is: %d\n", ssi->log_pid);
+	printf("log is going to stop ...\n");
+	kill(ssi->log_pid, SIGTERM);
 
 	return 0;
 }
@@ -642,20 +665,6 @@ const char *status_desc(enum sftt_server_status status) {
 	}
 }
 
-void ts_to_str(uint64_t ts, char *buf, int max_len) {
-	time_t t = (time_t)ts;
-    const char *format = "%Y-%m-%d %H:%M:%S";
-    struct tm lt;
-
-    (void) localtime_r(&t, &lt);
-    if (strftime(buf, max_len, format, &lt) == 0) {
-		strcpy(buf, "unknown");
-		return ;
-	}
-
-	return ;
-}
-
 void sftt_server_status(void) {
 	if (!sftt_server_is_running()) {
 		printf(PROC_NAME " is not running.\n");
@@ -674,15 +683,19 @@ void sftt_server_status(void) {
 	printf(PROC_NAME " status:\n"
 		"\tprocess status: %s\n"
 		"\tstore path: %s\n"
-		"\tpid: %d\n"
+		"\tmain pid: %d\n"
 		"\tmain port: %d\n"
 		"\tmain sock: %d\n"
+		"\tlog pid: %d\n"
+		"\tlog path: %s\n"
 		"\tlast update time: %s\n",
 		status_desc(ssi->server.status),
 		ssi->server.conf.store_path,
-		ssi->pid,
+		ssi->main_pid,
 		ssi->server.main_port,
 		ssi->server.main_sock,
+		ssi->log_pid,
+		ssi->server.conf.log_dir,
 		ts_buf);
 }
 

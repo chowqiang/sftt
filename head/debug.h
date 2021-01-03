@@ -11,7 +11,7 @@
 
 #define DEBUG_PRINT_MASK	0x1000
 
-static inline char *get_level_desc(int print_level) {
+static inline char *get_debug_level_desc(int print_level) {
 	switch (print_level) {
 	case DEBUG_DEBUG:
 		return "DEBUG";
@@ -30,7 +30,7 @@ static inline char *get_level_desc(int print_level) {
 	do {										\
 		if (!(Expression)) {					\
 			printf("[%s](%s|%d) assert(%s) failed! "fmt,			\
-				get_level_desc(DEBUG_INFO),		\
+				get_debug_level_desc(DEBUG_INFO),		\
 				__func__,						\
 				__LINE__,						\
 				#Expression,					\
@@ -39,19 +39,23 @@ static inline char *get_level_desc(int print_level) {
 		}										\
 	} while (false)
 
+static inline void print_nch(char ch, int num) {
+	int __i = 0;
+	for (; __i < num; __i++) {
+		putchar(ch);
+	}
+	putchar('\n');
+}
+
 #define print_split_line				\
 	do {								\
-		int __i = 0;					\
-		for (; __i < 80; __i++) {		\
-			putchar('=');				\
-		}								\
-		putchar('\n');					\
+		print_nch('=', 80);				\
 	} while (false)
 
 #define debug_print(print_level, fmt, ...)		\
 	if (print_level & DEBUG_PRINT_MASK) {		\
 		printf("[%s](%s|%d)"fmt,				\
-			get_level_desc(print_level),		\
+			get_debug_level_desc(print_level),		\
 			__func__,							\
 			__LINE__,							\
 			##__VA_ARGS__);						\
