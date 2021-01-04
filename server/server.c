@@ -613,13 +613,33 @@ int sftt_server_stop(void) {
 		return -1;
 	}
 
-	printf(PROC_NAME " pid is: %d\n", ssi->main_pid);
-	printf(PROC_NAME " is going to stop ...\n");
-	kill(ssi->main_pid, SIGTERM);
-
 	printf("log pid is: %d\n", ssi->log_pid);
 	printf("log is going to stop ...\n");
 	kill(ssi->log_pid, SIGTERM);
+
+	/**
+	*	All  of  these  system calls are used to wait for state changes
+	*	in a child of the calling process, and obtain information about
+	*	the child whose state has changed. A state change is considered
+	*	to be: the child terminated; the child was stopped by a signal;
+	*	or the child was resumed by a signal. In the case of a terminated
+	*	child, performing a wait allows the system to release the resources
+	*   associated with the child; if a wait is not performed, then
+	*	the terminated child remains in a "zombie" state (see NOTES below).
+	*
+	*	If  a  child  has  already changed state, then these calls return
+	*	immediately. Otherwise they block until either a child changes state
+	*	or a signal handler interrupts the call (assuming that system calls
+	*	are not automatically restarted using the SA_RESTART flag of sigaction(2)).
+	*	In the remainder of this page, a child whose state has changed and
+	*	which has not yet been waited upon by one of these system calls
+	*	is termed waitable.
+	*
+	**/
+	//waitpid(ssi->log_pid, NULL, 0);
+	printf(PROC_NAME " pid is: %d\n", ssi->main_pid);
+	printf(PROC_NAME " is going to stop ...\n");
+	kill(ssi->main_pid, SIGTERM);
 
 	return 0;
 }
