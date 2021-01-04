@@ -601,6 +601,10 @@ int sftt_server_restart(char *store_path) {
 	return 0;
 }
 
+/**
+ * we should wait all children exit before sftt server exits.
+ * todo: fix this bug.
+ **/
 int sftt_server_stop(void) {
 	if (!sftt_server_is_running()) {
 		printf("cannot stop " PROC_NAME ", because it is not running.\n");
