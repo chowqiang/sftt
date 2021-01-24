@@ -4,6 +4,8 @@
 #include <sys/msg.h>
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "config.h"
 #include "log.h"
 
@@ -107,6 +109,9 @@ void logger_exit(int sig) {
 	}
 
 	msgctl(msqid, IPC_RMID, NULL);
+
+	printf("log server is stop ...\n");
+	exit(0);
 }
 
 int add_log(int level, const char *fmt, ...) {

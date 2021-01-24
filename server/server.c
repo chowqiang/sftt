@@ -34,6 +34,10 @@ static bool update_sftt_server_info(sftt_server_info *info, int create_flag);
 
 static void sftt_server_exit(int sig);
 
+static child_info *get_child_process_info(pid_t pid);
+
+static void register_child_process_info(int index, pid_t pid);
+
 void server_init_func(sftt_server_config *server_config){
 	DIR  *mydir = NULL;
 	if (get_sftt_server_config(server_config) != 0) {
@@ -370,7 +374,15 @@ void child_process_exception_handler(int sig) {
 	exit(-1);
 }
 
+void child_process_exit(int sig) {
+	printf("I'm child process and exit for received signal.\n");
+	exit(-1);
+}
+
 void handle_client_session(int sock) {
+	child_info *ci = NULL;
+	sftt_server_info *ssi = NULL;
+
 	memory_pool *mp = mp_create();
 	if (mp == NULL) {
 		printf("allocate memory pool in child process failed!\n");
@@ -384,6 +396,7 @@ void handle_client_session(int sock) {
 		return ;
 	}
 
+	signal(SIGTERM, child_process_exit);
 	signal(SIGSEGV, child_process_exception_handler);
 
 	//if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
@@ -398,11 +411,11 @@ void handle_client_session(int sock) {
 		printf("recv ret: %d\n", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
-			exit(-1);
+			goto exit;
 		}
 		if (ret == 0) {
 			printf("client disconnected, child process is exiting ...\n");
-			exit(0);
+			goto exit;
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE:
@@ -420,6 +433,18 @@ void handle_client_session(int sock) {
 			break;
 		}
 	}
+
+exit:
+	ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		exit(-1);
+	}
+	ci = get_child_process_info(getpid());
+	if (ci == NULL) {
+		exit(-1);
+	}
+	ci->status = EXITED;
+	exit(-1);
 }
 
 void sync_server_info(sftt_server *server) {
@@ -433,18 +458,87 @@ void sync_server_info(sftt_server *server) {
 	update_sftt_server_info(ssi, 0);
 }
 
+void register_child_process_info(int index, pid_t pid) {
+	if (index >= MAX_CHILD_NUM) {
+		return ;
+	}
+
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		return ;
+	}
+
+	if (ssi->child_list[index].status == ACTIVE) {
+		return ;
+	}
+
+	ssi->child_list[index].pid = pid;
+	ssi->child_list[index].status = ACTIVE;
+}
+
+child_info *get_child_process_info(pid_t pid) {
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		return NULL;
+	}
+
+	int i = 0;
+	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+		if (ssi->child_list[i].pid == pid) {
+			return &ssi->child_list[i];
+		}
+	}
+
+	return NULL;
+}
+
+int find_first_invalid_child(void) {
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		return true;
+	}
+
+	int i = 0;
+	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+		if (ssi->child_list[i].status != ACTIVE) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void init_child_list(void) {
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		return ;
+	}
+
+	int i = 0;
+	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+		ssi->child_list[i].pid = 0;
+		ssi->child_list[i].status = EXITED;
+	}
+}
+
 void main_loop(sftt_server *server) {
 	int connect_fd = 0;
 	pid_t pid = 0;
+	int idx = 0;
 
 	server->status = RUNNING;
 	sync_server_info(server);
+	init_child_list();
 
 	while (1) {
 		update_server(server);
 		connect_fd = accept(server->main_sock, (struct sockaddr *)NULL, NULL);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
+			continue;
+		}
+		if ((idx = find_first_invalid_child()) == -1) {
+			close(connect_fd);
 			continue;
 		}
 		pid = fork();
@@ -455,6 +549,7 @@ void main_loop(sftt_server *server) {
 		} else if (pid < 0 ){
 			printf("fork failed!\n");
 		} else {
+			register_child_process_info(idx, pid);
 			wait(NULL);
 		}
 	}
@@ -531,10 +626,12 @@ bool create_sftt_server(sftt_server *server, char *store_path) {
 		strcpy(server->conf.store_path, store_path);
 	}
 
+#if 0
 	if ((server->db = start_sftt_db_server()) == NULL) {
 		printf("cannot start " PROC_NAME " database!\n");
 		return false;
 	}
+#endif
 
 	pid_t log_pid = start_sftt_log_server(server);
 	if (log_pid < 0) {
@@ -648,9 +745,27 @@ int sftt_server_stop(void) {
 	return 0;
 }
 
+void notify_all_child_to_exit(void) {
+	sftt_server_info *ssi = get_sftt_server_info();
+	if (ssi == NULL) {
+		printf("get server info failed!\n");
+		return ;
+	}
+
+	int i = 0;
+	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+		if (ssi->child_list[i].status != ACTIVE) {
+			continue;
+		}
+		kill(ssi->child_list[i].pid, SIGTERM);
+	}
+}
+
 void sftt_server_exit(int sig) {
 	printf(PROC_NAME " is exit ...!\n");
+	notify_all_child_to_exit();
 	remove_sftt_server_info();
+
 	exit(-1);
 }
 

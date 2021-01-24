@@ -19,6 +19,8 @@ do {	\
 
 #define SFTT_SERVER_SHM_SIZE	4096
 
+#define MAX_CHILD_NUM			128
+
 sftt_option sftt_server_opts[] = {
 	{"start", START, OPT_ARG},
 	{"restart", RESTART, OPT_ARG},
@@ -34,19 +36,29 @@ enum sftt_server_status {
 	NOT_RUNNING,
 };
 
+enum process_status {
+	ACTIVE,
+	EXITED
+};
+
+typedef struct {
+	pid_t pid;
+	enum process_status status;
+} child_info;
+
 typedef struct {
 	int main_sock;
 	int main_port;
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
 	sftt_server_config conf;
-	database *db;
 } sftt_server;
 
 typedef struct {
 	pid_t main_pid;
 	pid_t log_pid;
 	sftt_server server;
+	child_info child_list[MAX_CHILD_NUM];
 } sftt_server_info;
 
 void server_init_func();
