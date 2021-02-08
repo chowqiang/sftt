@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <curses.h>
 #include "random_port.h"
+#include "command.h"
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
@@ -624,10 +625,11 @@ PARAMS_ERROR:
 	return -1;
 }
 
-void execute_cmd(char *cmd, int flag) {
-	printf("%s\n", cmd);
+void execute_cmd(char *buf, int flag) {
+	printf("%s\n", buf);
+	struct command *cmd = parse_command(buf);
 
-	DEBUG((DEBUG_INFO, "%s\n", cmd));
+	DEBUG((DEBUG_INFO, "%s\n", buf));
 }
 
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
@@ -751,17 +753,7 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 		client->uinfo->passwd_md5[0] = 0;
 	}
 
-	int ret = init_sftt_client_ctrl_conn(client, port);
-	if (ret == -1) {
-		return CONN_RET_CONNECT_FAILED;
-	}
-
-	ret = validate_user_info(client);
-	if (ret == -1) {
-		return CONN_RET_VALIDATE_FAILED;
-	}
-
-	return CONN_RET_CONNECT_SUCCESS;
+	return init_sftt_client_ctrl_conn(client, port);
 }
 
 static int show_options(char *host, char *user_name, char *password) {
@@ -770,8 +762,24 @@ static int show_options(char *host, char *user_name, char *password) {
 	printf("your password: %s\n", password);
 }
 
-int main(int argc, char **argv) {
+void main_loop(sftt_client_v2 *client)
+{
 	char cmd[CMD_MAX_LEN];
+
+	while (1) {
+		printf("sftt>>");
+		fgets(cmd, 1024, stdin);
+		cmd[strlen(cmd) - 1] = 0;
+		if (!strcmp(cmd, "quit")) {
+			exit(0);
+		} else {
+			execute_cmd(cmd, -1);
+		}
+	}
+
+}
+
+int main(int argc, char **argv) {
 	int optind = 1;
 	char *optarg = NULL;
 	bool has_passwd_opt = false;
@@ -841,43 +849,24 @@ int main(int argc, char **argv) {
 		help(-1);
 	}
 
+#ifdef DEBUG_ENABLE
 	show_options(host, user_name, password);
-	//connect server to validate
+#endif
 
 	sftt_client_v2 client;
-	enum connect_result conn_ret = init_sftt_client_v2(&client, host, port, user_name, password);
-	switch (conn_ret) {
-	case CONN_RET_CONNECT_FAILED:
-		printf("connect to server failed!\n");
+	if (init_sftt_client_v2(&client, host, port, user_name, password) == -1) {
+		printf("init sftt client failed!\n");
 		exit(-1);
-		break;
-	case CONN_RET_VALIDATE_FAILED:
-		printf("can not validate user and password!\n");
-		exit(-1);
-		break;
-	case CONN_RET_SERVER_BUSYING:
-		printf("server is busying, please reconnect later ...\n");
-		exit(-1);
-		break;
-	case CONN_RET_CONNECT_SUCCESS:
-		printf("connect server successfully!\n");
-		break;
-	default:
-		printf("unrecognized connect result!\n");
-		exit(-1);
-		break;
 	}
 
-	while (1) {
-		printf("sftt>>");
-		fgets(cmd, 1024, stdin);
-		cmd[strlen(cmd) - 1] = 0;
-		if (!strcmp(cmd, "quit")) {
-			exit(0);
-		} else {
-			execute_cmd(cmd, -1);
-		}
+	if (validate_user_info(&client) == -1) {
+		printf("cannot validate user and password!\n");
+		exit(-1);
 	}
+
+	printf("validate successfully!\n");
+
+	main_loop(&client);
+
 	return 0;
-
 }
