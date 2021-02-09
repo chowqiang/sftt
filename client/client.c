@@ -625,11 +625,43 @@ PARAMS_ERROR:
 	return -1;
 }
 
+struct user_cmd *parse_command(char *buf)
+{
+	struct user_cmd *cmd;
+
+	cmd = (struct user_cmd *)malloc(sizeof(struct user_cmd));
+	if (!cmd) {
+		return NULL;
+	}
+
+	cmd->name = "ll";
+	cmd->argc = 0;
+	cmd->argv = NULL;
+
+	return cmd;
+}
+
+static int run_command(const struct command *cmd, int argc, char *argv[])
+{
+    printf("running command: `%s'", cmd->name);
+    return cmd->fn(argc, argv);
+}
+
 void execute_cmd(char *buf, int flag) {
 	printf("%s\n", buf);
-	struct command *cmd = parse_command(buf);
+	int i = 0;
+	struct user_cmd *cmd = parse_command(buf);
+	if (!cmd) {
+		return ;
+	}
 
-	DEBUG((DEBUG_INFO, "%s\n", buf));
+	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
+		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
+			run_command(&sftt_client_cmds[i], cmd->argc, cmd->argv);
+		}
+	}
+
+	//DEBUG((DEBUG_INFO, "%s\n", buf));
 }
 
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
@@ -762,6 +794,16 @@ static int show_options(char *host, char *user_name, char *password) {
 	printf("your password: %s\n", password);
 }
 
+void sftt_client_ll_usage(void)
+{
+	printf("ll\n");
+}
+
+int sftt_client_ll_handler(int argc, char *argv[])
+{
+	printf("--%s--\n", __func__);
+}
+
 void main_loop(sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
@@ -830,7 +872,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
-	//printf("---------------");
+
 	if (has_passwd_opt) {
 		passwd_len = get_pass("password: ", password, sizeof(password));
 		if (passwd_len <= 0) {

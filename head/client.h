@@ -1,6 +1,8 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
+#include <stdlib.h>
+#include "command.h"
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
@@ -26,6 +28,12 @@ sftt_option sftt_client_opts[] = {
 	{NULL, -1, NO_ARG}
 };
 
+struct user_cmd {
+	const char *name;
+	int argc;
+	char **argv;
+};
+
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
@@ -42,7 +50,6 @@ typedef struct file_input_stream {
 	FILE *fp;
 	int (*get_next_buffer)(struct file_input_stream *fis, char *buffer, size_t size);
 } file_input_stream;
-
 
 typedef struct {
 	char ip[IPV4_MAX_LEN];
@@ -115,4 +122,22 @@ sftt_client *create_client(char *ip, sftt_client_config *config, int connects_nu
 
 void destory_sftt_client(sftt_client *client);
 
+int sftt_client_ll_handler(int argc, char *argv[]);
+
+void sftt_client_ll_usage(void);
+
+static struct command sftt_client_cmds[] = {
+	{
+		.name = "ll",
+		.fn = sftt_client_ll_handler,
+		.help = "list directory contents using a long listing format",
+		.usage = sftt_client_ll_usage,
+	},
+	{
+		.name = NULL,
+		.fn = NULL,
+		.help = "",
+		.usage = NULL,
+	},
+};
 #endif
