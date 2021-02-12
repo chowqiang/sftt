@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <curses.h>
+#include <ctype.h>
 #include "random_port.h"
 #include "command.h"
 #include "config.h"
@@ -27,6 +28,7 @@
 #include "cmdline.h"
 #include "packet.h"
 #include "debug.h"
+#include "state.h"
 #include "version.h"
 
 extern int errno;
@@ -625,25 +627,153 @@ PARAMS_ERROR:
 	return -1;
 }
 
+int check_command_format(char *buf)
+{
+	return 0;
+}
+
+char *parse_exec_name(char *buf, int *offset)
+{
+	int i = 0, j = 0;
+	char exec_name[EXEC_NAME_MAX_LEN];
+
+	while (buf[i] && isspace(buf[i])) {
+		++i;
+	}
+
+	while ((j < EXEC_NAME_MAX_LEN - 1) && buf[i] && !isspace(buf[i])) {
+		exec_name[j++] = buf[i++];
+	}
+	exec_name[j] = 0;
+	*offset = i;
+
+	return strdup(exec_name);
+}
+
+char **parse_args(char *buf, int *argc)
+{
+	int i = 0;
+	dlist_node *node = NULL;
+	dlist *args_list = dlist_create(free);
+	char arg[CMD_ARG_MAX_LEN];
+	int arg_len = 0;
+	char **argv = NULL;
+	cmd_args_state state = INIT;
+
+	for (i = 0; buf[i]; ++i) {
+		if (isspace(buf[i])) {
+			switch (state) {
+			case INIT:
+				if (arg_len) {
+					arg[arg_len] = 0;
+					dlist_append(args_list, strdup(arg));
+					arg_len = 0;
+					state = SUBSTR_END;
+				}
+				continue;
+			case SUBSTR_END:
+				continue;
+			default:
+				printf("unexpected state: %d in %s:%d\n", state, __FILE__, __LINE__);
+				goto out;
+			}
+		}
+		if (buf[i] == '\'') {
+			switch (state) {
+			case INIT:
+				state = RECEIVE_SINGLE_QUOTE;
+				continue;
+			case AMONG_SINGLE_QUOTE:
+				state = INIT;
+				continue;
+			}
+		}
+		if (buf[i] == '"') {
+			switch (state) {
+			case INIT:
+				state = RECEIVE_DOUBLE_QUOTE;
+				continue;
+			case AMONG_DOUBLE_QUOTE:
+				state = INIT;
+				continue;
+			}
+		}
+		switch (state) {
+		case INIT:
+			arg[arg_len++] = buf[i];
+			break;
+		case RECEIVE_SINGLE_QUOTE:
+			arg[arg_len++] = buf[i];
+			state = AMONG_SINGLE_QUOTE;
+			break;
+		case AMONG_SINGLE_QUOTE:
+			arg[arg_len++] = buf[i];
+			break;
+		case RECEIVE_DOUBLE_QUOTE:
+			arg[arg_len++] = buf[i];
+			state = AMONG_DOUBLE_QUOTE;
+			break;
+		case AMONG_DOUBLE_QUOTE:
+			arg[arg_len++] = buf[i];
+			break;
+		}
+		if (arg_len >= CMD_ARG_MAX_LEN) {
+			goto out;
+		}
+	}
+
+	if (state == INIT && arg_len) {
+		arg[arg_len] = 0;
+		dlist_append(args_list, strdup(arg));
+	}
+
+	*argc = dlist_size(args_list);
+	if (*argc) {
+		argv = (char **)malloc(sizeof(char *) * (*argc));
+		node = dlist_head(args_list);
+		for (i = 0; i < *argc; ++i) {
+			argv[i] = node->data;
+			node->data = NULL;
+			node = dlist_next(node);
+		}
+	}
+
+	dlist_destroy(args_list);
+	return argv;
+
+out:
+	dlist_destroy(args_list);
+	*argc = -1;
+	return NULL;
+}
+
 struct user_cmd *parse_command(char *buf)
 {
 	struct user_cmd *cmd;
+	int offset;
+
+	if (check_command_format(buf) == -1) {
+		return NULL;
+	}
 
 	cmd = (struct user_cmd *)malloc(sizeof(struct user_cmd));
 	if (!cmd) {
 		return NULL;
 	}
 
-	cmd->name = "ll";
-	cmd->argc = 0;
-	cmd->argv = NULL;
+	cmd->name = parse_exec_name(buf, &offset);
+	cmd->argv = parse_args(buf + offset, &cmd->argc);
+
+	if (cmd->argc == -1) {
+		return NULL;
+	}
 
 	return cmd;
 }
 
 static int run_command(const struct command *cmd, int argc, char *argv[])
 {
-    printf("running command: `%s'", cmd->name);
+    printf("running command: %s\n", cmd->name);
     return cmd->fn(argc, argv);
 }
 
@@ -652,8 +782,10 @@ void execute_cmd(char *buf, int flag) {
 	int i = 0;
 	struct user_cmd *cmd = parse_command(buf);
 	if (!cmd) {
+		printf("your input cannot be recognized!\n");
 		return ;
 	}
+	printf("exec name: %s, argc: %d, argv: %p\n", cmd->name, cmd->argc, cmd->argv);
 
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
@@ -801,10 +933,11 @@ void sftt_client_ll_usage(void)
 
 int sftt_client_ll_handler(int argc, char *argv[])
 {
-	printf("--%s--\n", __func__);
+	printf("I'm %s handler of ll\n", __func__);
 }
 
-void main_loop(sftt_client_v2 *client)
+/* Read and execute commands until user inputs 'quit' command */
+int reader_loop(sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
 
@@ -908,7 +1041,7 @@ int main(int argc, char **argv) {
 
 	printf("validate successfully!\n");
 
-	main_loop(&client);
+	reader_loop(&client);
 
 	return 0;
 }

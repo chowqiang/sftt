@@ -20,6 +20,9 @@
 #define SESSION_TYPE_FILE		1
 #define SESSION_TYPE_DIR		2
 
+#define EXEC_NAME_MAX_LEN		32
+#define CMD_ARG_MAX_LEN			1024
+
 sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
