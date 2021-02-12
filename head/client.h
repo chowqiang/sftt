@@ -129,12 +129,52 @@ int sftt_client_ll_handler(int argc, char *argv[]);
 
 void sftt_client_ll_usage(void);
 
+void sftt_client_cd_usage(void);
+
+int sftt_client_cd_handler(int argc, char *argv[]);
+
+void sftt_client_help_usage(void);
+
+int sftt_client_help_handler(int argc, char *argv[]);
+
+void sftt_client_get_usage(void);
+
+int sftt_client_get_handler(int argc, char *argv[]);
+
+void sftt_client_put_usage(void);
+
+int sftt_client_put_handler(int argc, char *argv[]);
+
 static struct command sftt_client_cmds[] = {
+	{
+		.name = "help",
+		.fn = sftt_client_help_handler,
+		.help = "show sftt client help info",
+		.usage = sftt_client_help_usage,
+	},
 	{
 		.name = "ll",
 		.fn = sftt_client_ll_handler,
 		.help = "list directory contents using a long listing format",
 		.usage = sftt_client_ll_usage,
+	},
+	{
+		.name = "cd",
+		.fn = sftt_client_cd_handler,
+		.help = "change work directory",
+		.usage = sftt_client_cd_usage,
+	},
+	{
+		.name = "get",
+		.fn = sftt_client_get_handler,
+		.help = "get the file on server",
+		.usage = sftt_client_get_usage,
+	},
+	{
+		.name = "put",
+		.fn = sftt_client_put_handler,
+		.help = "put the file to server",
+		.usage = sftt_client_put_usage,
 	},
 	{
 		.name = NULL,

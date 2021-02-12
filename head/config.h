@@ -12,7 +12,6 @@
 #define CONFIG_NAME_MAX_LEN 	256
 #define CONFIG_VALUE_MAX_LEN	512
 
-#define CMD_MAX_LEN				1024
 
 /*
  * user info
