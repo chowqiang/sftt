@@ -1,20 +1,17 @@
 #include <stdlib.h>
-#if __linux__ 
-#include <malloc.h>
-#endif
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "net_trans.h"
-#include "config.h"
-#include "encrypt.h"
-#include "memory_pool.h"
 #include "compress.h"
+#include "config.h"
 #include "debug.h"
+#include "encrypt.h"
+#include "mem_pool.h"
+#include "net_trans.h"
 
 sftt_packet *malloc_sftt_packet(int block_size) {
-	memory_pool *mp = get_singleton_mp();
+	mem_pool *mp = get_singleton_mp();
 
 	sftt_packet *sp = (sftt_packet *)mp_malloc(mp, sizeof(sftt_packet));
 	if (sp == NULL) {
@@ -33,7 +30,7 @@ sftt_packet *malloc_sftt_packet(int block_size) {
 }
 
 int sftt_packet_encode_content(sftt_packet *src, sftt_packet *dst) {
-	printf("before encode data_len: %d\n", src->data_len);
+	//printf("before encode data_len: %d\n", src->data_len);
 	//
  	// 1. compress and encrypt content
 	// 2. update content len in header
@@ -52,7 +49,7 @@ void sftt_packet_send_header(int sock, sftt_packet *sp) {
 	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
 	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
-	memory_pool *mp = get_singleton_mp();
+	mem_pool *mp = get_singleton_mp();
 	assert(mp != NULL);
 	unsigned char *buffer = mp_malloc(mp, header_len);
 	assert(buffer != NULL);
@@ -63,18 +60,18 @@ void sftt_packet_send_header(int sock, sftt_packet *sp) {
 	int ret = send(sock, buffer, encoded_len, 0);
 	assert(ret == encoded_len);
 
-	DEBUG_POINT;
+	//DEBUG_POINT;
 	mp_free(mp, buffer);
-	DEBUG_POINT;
+	//DEBUG_POINT;
 }
 
 void sftt_packet_send_content(int sock, sftt_packet *sp) {
-	DEBUG_POINT;
+	//DEBUG_POINT;
 	assert(sp->content != NULL);
-	printf("sp->content: %p, sp->data_len: %d\n", sp->content, sp->data_len);
-	DEBUG_POINT;
+	//printf("sp->content: %p, sp->data_len: %d\n", sp->content, sp->data_len);
+	//DEBUG_POINT;
 	int ret = send(sock, sp->content, sp->data_len, 0);
-	DEBUG_POINT;
+	//DEBUG_POINT;
 	assert(ret == sp->data_len);
 }
 
@@ -83,13 +80,13 @@ int send_sftt_packet(int sock, sftt_packet *sp) {
 
 	_sp->type = sp->type;
 	sftt_packet_encode_content(sp, _sp);
-	printf("encoded content len: %d\n", _sp->data_len);
+	//printf("encoded content len: %d\n", _sp->data_len);
 
 	sftt_packet_send_header(sock, _sp);
 	sftt_packet_send_content(sock, _sp);
 
 	free_sftt_packet(&_sp);
-	DEBUG_POINT;
+	//DEBUG_POINT;
 
 	return 0;
 }
@@ -100,7 +97,7 @@ int sftt_packet_decode_content(sftt_packet *src, sftt_packet *dst) {
 	// 2. update content len in header
  	//
  	dst->data_len = sftt_buffer_decode(src->content, src->data_len, dst->content, true, true);
-	printf("after decode data_len: %d\n", dst->data_len);
+	//printf("after decode data_len: %d\n", dst->data_len);
 
 	return 0;
 }
@@ -109,7 +106,7 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header); 
 
-	DEBUG_POINT;
+	//DEBUG_POINT;
 	int ret = recv(sock, header, header_len, 0);
 	if (ret != header_len) {
 		if (ret == 0) {
@@ -118,7 +115,7 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 		return -1;
 	}
 
-	memory_pool *mp = get_singleton_mp();
+	mem_pool *mp = get_singleton_mp();
 	assert(mp != NULL);
 	unsigned char *buffer = mp_malloc(mp, header_len);
 	assert(buffer != NULL);
@@ -127,7 +124,7 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	assert(decoded_len == header_len);
 
 	memcpy(&(sp->type), buffer, PACKET_TYPE_SIZE);
-	printf("recv packet type: %d\n", sp->type);
+	//printf("recv packet type: %d\n", sp->type);
     memcpy(&(sp->data_len), buffer + PACKET_TYPE_SIZE, PACKET_LEN_SIZE);
 
 	mp_free(mp, buffer);
@@ -144,10 +141,10 @@ int sftt_packet_recv_content(int sock, sftt_packet *sp) {
 		}
 		return -1;
 	}
-	printf("recv content: ret(%d), sp->data_len(%d)\n", ret, sp->data_len);
+	//printf("recv content: ret(%d), sp->data_len(%d)\n", ret, sp->data_len);
 	//DEBUG_ASSERT(ret == sp->data_len, "ret: %d, sp->data_len: %d\n", ret, sp->data_len);
 
-	if (sp->type == PACKET_TYPE_FILE_NAME) {
+	if (sp->type == PACKET_TYPE_FILE_NAME_REQ) {
 		printf("decrypted file name: %s\n", sp->content);
 	}
 
@@ -177,7 +174,7 @@ int recv_sftt_packet(int sock, sftt_packet *sp) {
 } 
 
 void free_sftt_packet(sftt_packet **sp) {
-	memory_pool *mp = get_singleton_mp();
+	mem_pool *mp = get_singleton_mp();
 
 	if (sp && *sp) {
 		mp_free(mp, (*sp)->content);

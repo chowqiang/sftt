@@ -14,15 +14,15 @@
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <time.h>
-#include "server.h"
-#include "encrypt.h"
 #include "config.h"
-#include "memory_pool.h"
+#include "debug.h"
+#include "encrypt.h"
+#include "log.h"
+#include "mem_pool.h"
 #include "random_port.h"
+#include "server.h"
 #include "version.h"
 #include "user.h"
-#include "debug.h"
-#include "log.h"
 #include "utils.h"
 //#include "net_trans.h"
 
@@ -97,8 +97,6 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 				j ++ ;
 				continue;
 			}
-			printf("recv %d-th\n",i);
-			printf("=======================================================================\n");
 			if (trans_len <= 0) {
 				fclose(fd);
 				printf("recev failed!\n");
@@ -106,24 +104,24 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 				break;
 			}
 			switch (sp->type) {
-			case PACKET_TYPE_FILE_NAME:
+			case PACKET_TYPE_FILE_NAME_REQ:
 				fd = server_creat_file(sp,init_conf,data_buff);
 				memset(data_buff,'\0',consulted_block_size);
 				printf("get file name packet\n");
 				i++;
 				break;
-			case PACKET_TYPE_DATA:
+			case PACKET_TYPE_DATA_REQ:
 				server_transport_data_to_file(fd,sp);
 				printf("get file type packet\n");
 				i++;
 				break;
-			case PACKET_TYPE_FILE_END:
+			case PACKET_TYPE_FILE_END_REQ:
 				printf("get file end packet\n");
 				server_transport_data_to_file(fd,sp);
 				i++;
 				fclose(fd);
 				break;
-			case PACKET_TYPE_SEND_COMPLETE:
+			case PACKET_TYPE_SEND_COMPLETE_REQ:
 				printf("get complete packet\n");
 				i++;
 				break;
@@ -344,9 +342,11 @@ void update_server(sftt_server *server) {
 
 void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	validate_req *v_req = (validate_req *)req->content;
+	/*
 	printf("receive validate request: \n"
 		"\tname: %s\n\t", v_req->name);
 	show_md5(v_req->passwd_md5);
+	*/
 
 	validate_resp *v_resp = (validate_resp *)resp->content;
 	if (strcmp(v_req->name, "root") == 0) {
@@ -358,7 +358,7 @@ void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	}
 	strncpy(v_resp->name, v_req->name, USER_NAME_MAX_LEN - 1);
 
-	resp->type = PACKET_TYPE_VALIDATE;
+	resp->type = PACKET_TYPE_VALIDATE_REQ;
 	resp->data_len = sizeof(validate_resp);
 
 	int ret = send_sftt_packet(sock, resp);
@@ -383,7 +383,7 @@ void handle_client_session(int sock) {
 	child_info *ci = NULL;
 	sftt_server_info *ssi = NULL;
 
-	memory_pool *mp = mp_create();
+	mem_pool *mp = mp_create();
 	if (mp == NULL) {
 		printf("allocate memory pool in child process failed!\n");
 		return ;
@@ -408,7 +408,7 @@ void handle_client_session(int sock) {
 	printf("begin to communicate with client ...\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
-		printf("recv ret: %d\n", ret);
+		//printf("recv ret: %d\n", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
 			goto exit;
@@ -418,16 +418,16 @@ void handle_client_session(int sock) {
 			goto exit;
 		}
 		switch (req->type) {
-		case PACKET_TYPE_VALIDATE:
+		case PACKET_TYPE_VALIDATE_REQ:
 			validate_user_info(sock, req, resp);
 			break;
-		case PACKET_TYPE_FILE_NAME:
+		case PACKET_TYPE_FILE_NAME_REQ:
 			break;
-		case PACKET_TYPE_DATA:
+		case PACKET_TYPE_DATA_REQ:
 			break;
-		case PACKET_TYPE_FILE_END:
+		case PACKET_TYPE_FILE_END_REQ:
 			break;
-		case PACKET_TYPE_SEND_COMPLETE:
+		case PACKET_TYPE_SEND_COMPLETE_REQ:
 			break;
 		default:
 			break;
@@ -541,10 +541,11 @@ void main_loop(sftt_server *server) {
 			close(connect_fd);
 			continue;
 		}
+		printf("a client connected...\n");
 		pid = fork();
 		if (pid == 0){
-			print_split_line;
-			printf("I'm child\n");
+			//print_split_line;
+			//printf("I'm child\n");
 			handle_client_session(connect_fd);
 		} else if (pid < 0 ){
 			printf("fork failed!\n");

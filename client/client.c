@@ -7,8 +7,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <libgen.h> 
-#if __linux__
-#endif
 #include <netinet/in.h>
 #include <errno.h>
 #include <assert.h>
@@ -907,7 +905,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 	}
 
 	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
-	printf("%d, ret: %d\n", __LINE__, ret);
+	//printf("%d, ret: %d\n", __LINE__, ret);
 	if (ret == -1) {
 		return -1;
 	}
@@ -1163,7 +1161,7 @@ int main(int argc, char **argv) {
 	}
 
 #ifdef DEBUG_ENABLE
-	show_options(host, user_name, password);
+	//show_options(host, user_name, password);
 #endif
 
 	sftt_client_v2 client;
