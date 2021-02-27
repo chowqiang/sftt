@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "file.h"
+#include "mem_pool.h"
 
 size_t file_size(char *filename) {
 	FILE *pfile = fopen(filename, "rb");
@@ -22,9 +23,10 @@ unsigned char *file_get_contents(char *path, size_t *length)
 {
 	FILE *pfile = NULL;
 	unsigned char *data = NULL;
+	mem_pool *mp = get_singleton_mp();
  
 	*length = file_size(path);
-	data = (unsigned char *)malloc((*length + 1) * sizeof(unsigned char));
+	data = (unsigned char *)mp_malloc(mp, (*length + 1) * sizeof(unsigned char));
 	if (data == NULL) {
 		return NULL;
 	}

@@ -2,13 +2,14 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include "bits.h"
+#include "btree.h"
 #include "compress.h"
 #include "dlist.h"
-#include "btree.h"
-#include "stack.h"
-#include "map.h"
-#include "bits.h"
 #include "file.h"
+#include "map.h"
+#include "mem_pool.h"
+#include "stack.h"
 
 typedef struct {
 	int ch;
@@ -16,7 +17,9 @@ typedef struct {
 } char_stat_node;
 
 char_stat_node *create_char_stat_node(int ch, int freq) {
-	char_stat_node *node = (char_stat_node *)malloc(sizeof(char_stat_node));
+	mem_pool *mp = get_singleton_mp();
+
+	char_stat_node *node = (char_stat_node *)mp_malloc(mp, sizeof(char_stat_node));
 	//assert(node != NULL);
 	if (node == NULL) {
 		return NULL;
@@ -45,8 +48,9 @@ void show_char_stat_by_btree_node(void *data) {
 }
 
 void free_char_stata_node(char_stat_node *node) {
+	mem_pool *mp = get_singleton_mp();
 	if (node) {
-		free(node);
+		mp_free(mp, node);
 	}
 }
 
@@ -194,8 +198,10 @@ btree *generate_huffman_tree(int *char_freq) {
 
 char *get_char_code(stack *s) {
 	int len = stack_size(s);
-	void **array = (void **)malloc(sizeof(void *) * len); 
-	char *code = (char *)malloc(sizeof(char) * (len + 1));
+	mem_pool *mp = get_singleton_mp();
+
+	void **array = (void **)mp_malloc(mp, sizeof(void *) * len);
+	char *code = (char *)mp_malloc(mp, sizeof(char) * (len + 1));
 	if (array == NULL || code == NULL) {
 		return NULL;
 	}
@@ -207,7 +213,7 @@ char *get_char_code(stack *s) {
 	}	
 	code[len] = 0;	
 
-	free(array);
+	mp_free(mp, array);
 
 	return code;	
 }
@@ -269,9 +275,10 @@ int get_char_codes(btree *tree, char *char_codes[CHARSET_SIZE]) {
 
 void free_char_codes(char *char_codes[CHARSET_SIZE]) {
 	int i = 0;
+	mem_pool *mp = get_singleton_mp();
 	for (i = 0; i < CHARSET_SIZE; ++i) {
 		if (char_codes[i]) {
-			free(char_codes[i]);
+			mp_free(mp, char_codes[i]);
 			char_codes[i] = NULL;
 		}
 	}
@@ -446,12 +453,13 @@ int huffman_decompress(unsigned char *input, unsigned char *output) {
 }
 
 void test_basic(void) {
+	int i = 0;
 	unsigned char *text = "aaaabbbccd";
 	int text_len = strlen(text);
-	unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * 1024);
-	
+	mem_pool *mp = get_singleton_mp();
+
+	unsigned char *output = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * 1024);
 	int out_len = huffman_compress(text, text_len, output);
-	int i = 0;
 	for (i = 0; i < out_len; ++i) {
 		printf("%0x", output[i]);
 	}
@@ -459,14 +467,16 @@ void test_basic(void) {
 }
 
 void test_file(void) {
+	mem_pool *mp = get_singleton_mp();
 	size_t file_size = 0;
+
 	unsigned char *contents = file_get_contents("./dlist.c", &file_size);
 	if (contents == NULL) {
 		printf("get file contents failed!\n");
 		return ;
 	}
 
-	unsigned char *encodes = (unsigned char *)malloc(CHARSET_SIZE * sizeof(int) + 5 * file_size);
+	unsigned char *encodes = (unsigned char *)mp_malloc(mp, CHARSET_SIZE * sizeof(int) + 5 * file_size);
 	if (encodes == NULL) {
 		printf("alloc merroy for encode failed!\n");
 		return ;
@@ -475,7 +485,7 @@ void test_file(void) {
 	int encode_len = huffman_compress(contents, file_size, encodes);
 	printf("compress: file_size: %d, encode_len: %d\n", file_size, encode_len);
 	
-	unsigned char *decodes = (unsigned char *)malloc(file_size + 1);
+	unsigned char *decodes = (unsigned char *)mp_malloc(mp, file_size + 1);
 	if (decodes == NULL) {
 		printf("alloc merroy for decode failed!\n");
 		return ;

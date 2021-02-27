@@ -8,7 +8,6 @@
 #include <dirent.h>
 #include <libgen.h> 
 #if __linux__
-#include <malloc.h>
 #endif
 #include <netinet/in.h>
 #include <errno.h>
@@ -21,7 +20,6 @@
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
-#include "memory_pool.h"
 #include "user.h"
 #include "net_trans.h"
 #include "validate.h"
@@ -34,7 +32,9 @@
 extern int errno;
 
 path_entry *get_file_path_entry(char *file_name) {
-	path_entry *pe = (path_entry *)malloc(sizeof(path_entry));
+	mem_pool *mp = get_singleton_mp();
+
+	path_entry *pe = (path_entry *)mp_malloc(mp, sizeof(path_entry));
 	if (pe == NULL) {
 		return NULL;
 	}	
@@ -106,7 +106,9 @@ int new_connect(char *ip, int port, sftt_client_config *config, sock_connect *ps
 }
 
 sftt_client *create_client(char *ip, sftt_client_config *config, int connects_num) {
-	sftt_client *client = (sftt_client *)malloc(sizeof(sftt_client));
+	mem_pool *mp = get_singleton_mp();
+
+	sftt_client *client = (sftt_client *)mp_malloc(mp, sizeof(sftt_client));
 	if (client == NULL) {
 		return NULL;
 	}
@@ -197,10 +199,12 @@ void set_cache_port(int port) {
 }
 
 file_input_stream *create_file_input_stream(char *file_name) {
+	mem_pool *mp = get_singleton_mp();
+
 	if (strlen(file_name) > FILE_NAME_MAX_LEN) {
 		return NULL;
 	}
-	file_input_stream *fis = (file_input_stream *)malloc(sizeof(file_input_stream));
+	file_input_stream *fis = (file_input_stream *)mp_malloc(mp, sizeof(file_input_stream));
 	if (fis == NULL) {
 		return NULL;
 	}
@@ -312,6 +316,8 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 }
 
 path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
+	mem_pool *mp = get_singleton_mp();
+
 	*pcnt = 0;
 	path_entry_list *head = get_dir_path_entry_list(file_name, prefix);			
 	if (head == NULL) {
@@ -325,7 +331,7 @@ path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
 		p = p->next;
 	}
 
-	path_entry *array = (path_entry *)malloc(sizeof(path_entry) * count);
+	path_entry *array = (path_entry *)mp_malloc(mp, sizeof(path_entry) * count);
 	if (array == NULL) {
 		free_path_entry_list(head);
 		return NULL;
@@ -350,6 +356,8 @@ path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
 }
 
 path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
+	mem_pool *mp = get_singleton_mp();
+
 	path_entry_list *head = NULL;
 	path_entry_list *current_entry = NULL;
 	path_entry_list *sub_list = NULL;
@@ -396,7 +404,7 @@ path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
 			}				
 				
 		} else {
-			path_entry_list *node = (path_entry_list *)malloc(sizeof(path_entry_list));
+			path_entry_list *node = (path_entry_list *)mp_malloc(mp, sizeof(path_entry_list));
 			if (node == NULL) {
 				continue;
 			}
@@ -659,6 +667,7 @@ char **parse_args(char *buf, int *argc)
 	int arg_len = 0;
 	char **argv = NULL;
 	cmd_args_state state = INIT;
+	mem_pool *mp = get_singleton_mp();
 
 	for (i = 0; buf[i]; ++i) {
 		if (arg_len >= CMD_ARG_MAX_LEN) {
@@ -671,7 +680,6 @@ char **parse_args(char *buf, int *argc)
 					arg[arg_len] = 0;
 					dlist_append(args_list, strdup(arg));
 					arg_len = 0;
-					//state = SUBSTR_END;
 				}
 				continue;
 			case RECEIVE_SINGLE_QUOTE:
@@ -735,7 +743,7 @@ char **parse_args(char *buf, int *argc)
 
 	*argc = dlist_size(args_list);
 	if (*argc) {
-		argv = (char **)malloc(sizeof(char *) * (*argc));
+		argv = (char **)mp_malloc(mp, sizeof(char *) * (*argc));
 		node = dlist_head(args_list);
 		for (i = 0; i < *argc; ++i) {
 			argv[i] = node->data;
@@ -757,12 +765,13 @@ struct user_cmd *parse_command(char *buf)
 {
 	struct user_cmd *cmd;
 	int offset;
+	mem_pool *mp = get_singleton_mp();
 
 	if (check_command_format(buf) == -1) {
 		return NULL;
 	}
 
-	cmd = (struct user_cmd *)malloc(sizeof(struct user_cmd));
+	cmd = (struct user_cmd *)mp_malloc(mp, sizeof(struct user_cmd));
 	if (!cmd) {
 		return NULL;
 	}

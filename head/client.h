@@ -6,7 +6,7 @@
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
-#include "memory_pool.h"
+#include "mem_pool.h"
 #include "option.h"
 #include "session.h"
 #include "user.h"
@@ -69,7 +69,7 @@ typedef struct {
 typedef struct {
 	client_sock_conn conn_ctrl;
 	dlist *conn_data;
-	memory_pool *mp;
+	mem_pool *mp;
 	user_info *uinfo;
 	client_session *session;
 	char host[HOST_MAX_LEN];

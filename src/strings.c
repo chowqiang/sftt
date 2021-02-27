@@ -1,15 +1,17 @@
-#include "strings.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "mem_pool.h"
+#include "strings.h"
 
 int init_sds(sds *str) {
 	if (str == NULL) {
 		return -1;
 	}	
 	
+	mem_pool *mp = get_singleton_mp();
 	int init_size = 8;
-	char *tmp = (char *)malloc(sizeof(char) * init_size);
+	char *tmp = (char *)mp_malloc(mp, sizeof(char) * init_size);
 	if (tmp == NULL) {
 		str->buf = NULL;
 		str->size = 0;
@@ -65,15 +67,16 @@ RET:
 }
 
 strings *create_strings(void) {
-	strings *ss = (strings *)malloc(sizeof(strings));
+	mem_pool *mp = get_singleton_mp();
+	strings *ss = (strings *)mp_malloc(mp, sizeof(strings));
 	if (ss == NULL) {
 		return NULL;
 	}
 
 	int init_cap = 4;
-	ss->str_arr = (sds *)malloc(sizeof(sds) * init_cap);
+	ss->str_arr = (sds *)mp_malloc(mp, sizeof(sds) * init_cap);
 	if (ss->str_arr == NULL) {
-		free(ss);
+		mp_free(mp, ss);
 		return NULL;
 	} 
 	int i = 0;
@@ -151,13 +154,14 @@ void free_strings(strings **ss) {
 		return ;
 	}
 	int i = 0;
+	mem_pool *mp = get_singleton_mp();
 	for (i = 0; i < (*ss)->cap; ++i) {
 		if ((*ss)->str_arr[i].size != 0) {
-			free((*ss)->str_arr[i].buf);
+			mp_free(mp, (*ss)->str_arr[i].buf);
 		}
 	}
-	free((*ss)->str_arr);
-	free(*ss);
+	mp_free(mp, (*ss)->str_arr);
+	mp_free(mp, *ss);
 	*ss = NULL;
 }
 
