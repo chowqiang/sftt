@@ -45,8 +45,8 @@ void server_init_func(sftt_server_config *server_config){
 		exit(0);
 	}
 	char *filepath = server_config->store_path;
-	printf("conf  block_size is %d\n", server_config->block_size);
-	printf("store path: %s\n",filepath);
+	add_log(LOG_INFO, "conf  block_size is %d\n", server_config->block_size);
+	add_log(LOG_INFO, "store path: %s\n",filepath);
 	if((mydir= opendir(filepath))==NULL) {
 		int ret = mkdir(filepath, MODE);
 		if (ret != 0) {
@@ -136,7 +136,7 @@ void server_file_resv(int connect_fd , int consulted_block_size,sftt_server_conf
 
 void server_transport_data_to_file(FILE * fd,sftt_packet * sp ){
 	int write_len=fwrite(sp->content, 1, sp->data_len, fd);
-	printf("write len is %d", write_len);
+	add_log(LOG_INFO, "write len is %d", write_len);
 }
 
 
@@ -219,7 +219,7 @@ int main_old(){
 }
 
 void sighandler(int signum) {
-   printf("Caught signal %d, coming out...\n", signum);
+   add_log(LOG_INFO, "Caught signal %d, coming out...\n", signum);
 }
 
 bool init_sftt_server_info(sftt_server *server, pid_t log_pid) {
@@ -327,9 +327,11 @@ void update_server(sftt_server *server) {
 
 	if (server->main_port != port) {
 		sock = create_non_block_sock(&port);
+		/*
 		printf("update main port and main sock. sock(%d -> %d), port(%d -> %d)\n",
 			server->main_sock, sock,
 			server->main_port, port);
+		*/
 
 		if (sock != -1) {
 			close(server->main_sock);
@@ -375,7 +377,7 @@ void child_process_exception_handler(int sig) {
 }
 
 void child_process_exit(int sig) {
-	printf("I'm child process and exit for received signal.\n");
+	add_log(LOG_INFO, "I'm child process and exit for received signal.\n");
 	exit(-1);
 }
 
@@ -405,7 +407,7 @@ void handle_client_session(int sock) {
 	//}
 
 	int ret = 0;
-	printf("begin to communicate with client ...\n");
+	add_log(LOG_INFO, "begin to communicate with client ...\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
 		//printf("recv ret: %d\n", ret);
@@ -414,7 +416,7 @@ void handle_client_session(int sock) {
 			goto exit;
 		}
 		if (ret == 0) {
-			printf("client disconnected, child process is exiting ...\n");
+			add_log(LOG_INFO, "client disconnected, child process is exiting ...\n");
 			goto exit;
 		}
 		switch (req->type) {
@@ -541,11 +543,10 @@ void main_loop(sftt_server *server) {
 			close(connect_fd);
 			continue;
 		}
-		printf("a client connected...\n");
+		add_log(LOG_INFO, "a client connected...\n");
 		pid = fork();
 		if (pid == 0){
-			//print_split_line;
-			//printf("I'm child\n");
+			add_log(LOG_INFO, "I'm child\n");
 			handle_client_session(connect_fd);
 		} else if (pid < 0 ){
 			printf("fork failed!\n");
@@ -560,7 +561,7 @@ int create_non_block_sock(int *pport) {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
 	int rand_port = get_random_port();
-	printf("\nrandom port is %d\n", rand_port);
+	add_log(LOG_INFO, "random port is %d\n", rand_port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("create socket filed!\n");
@@ -604,6 +605,7 @@ pid_t start_sftt_log_server(sftt_server *server) {
 		signal(SIGTERM, logger_exit);
 		logger_daemon(server->conf.log_dir, PROC_NAME);
 	} else {
+		sleep(1);
 		return pid;
 	}
 }
@@ -674,7 +676,7 @@ int sftt_server_start(char *store_path) {
 		exit(-1);
 	}
 
-	printf(PROC_NAME " is going to start in the background ...\n");
+	add_log(LOG_INFO, PROC_NAME " is going to start in the background ...\n");
 
 	signal(SIGTERM, sftt_server_exit);
 
@@ -694,7 +696,7 @@ int sftt_server_restart(char *store_path) {
 		}
 	}
 
-	printf(PROC_NAME " is going to restart ...\n");
+	add_log(LOG_INFO, PROC_NAME " is going to restart ...\n");
 	//return update_sftt_server_info(NULL);
 	return 0;
 }
@@ -715,8 +717,8 @@ int sftt_server_stop(void) {
 		return -1;
 	}
 
-	printf("log pid is: %d\n", ssi->log_pid);
-	printf("log is going to stop ...\n");
+	add_log(LOG_INFO, "log pid is: %d\n", ssi->log_pid);
+	add_log(LOG_INFO, "log is going to stop ...\n");
 	kill(ssi->log_pid, SIGTERM);
 
 	/**

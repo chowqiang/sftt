@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -76,6 +77,7 @@ void logger_daemon(char *dir, char *prefix) {
 			strcpy(file1, file2);
 		}
 		fwrite(msg.mtext, ret, 1, log_fp);
+		fflush(log_fp);
 	}
 }
 
@@ -90,8 +92,9 @@ int get_log_msqid(int create_flag) {
 	}
 
 	int msgflag = (create_flag ? IPC_CREAT : 0) | 0666;
-	if ((msqid = msgget(key, msgflag)) == -1) {
-		printf(PROC_NAME " msgget failed! msgflag: 0x%0x\n", msgflag);
+	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
+		perror(PROC_NAME " msgget failed!");
+		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
 		return -1;
 	}
 
@@ -117,7 +120,12 @@ void logger_exit(int sig) {
 int add_log(int level, const char *fmt, ...) {
 	int msqid = get_log_msqid(0);
 	if (msqid == -1) {
-		return -1;
+		if (errno == ENOENT) {
+			msqid = get_log_msqid(1);
+		}
+		if (msqid == -1) {
+			return -1;
+		}
 	}
 
 	msgbuf msg;
@@ -136,9 +144,10 @@ int add_log(int level, const char *fmt, ...) {
 	va_end(args);
 
 	strcat(buf + ret, "\n");
-	ret += 2;
+	ret += 1;
 
 	if (msgsnd(msqid, &msg, ret, IPC_NOWAIT) < 0) {
+		printf("send log msg failed!\n");
 		return -1;
 	}
 
