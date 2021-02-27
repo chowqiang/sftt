@@ -64,7 +64,7 @@ RET:
 	return 0;
 }
 
-strings *create_strings() {
+strings *create_strings(void) {
 	strings *ss = (strings *)malloc(sizeof(strings));
 	if (ss == NULL) {
 		return NULL;

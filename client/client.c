@@ -261,7 +261,7 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	printf("sending file %s\n", pe->abs_path);
 
 //	strcpy(sp->type, PACKET_TYPE_FILE_NAME);
-	sp->type = PACKET_TYPE_FILE_NAME;
+	sp->type = PACKET_TYPE_FILE_NAME_REQ;
 	sp->data_len = strlen(pe->rel_path);
 	strcpy(sp->content, pe->rel_path);
 	int ret = send_sftt_packet(sock, sp);
@@ -275,7 +275,7 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	do {
 		printf("%d-th transport ...\n", ++j);
 //		strcpy(sp->type, PACKET_TYPE_DATA);
-		sp->type = PACKET_TYPE_DATA;
+		sp->type = PACKET_TYPE_DATA_REQ;
 		read_count = fread(sp->content, 1, sp->block_size, fp);		
 		printf("read block size: %d\n", read_count);
 		if (read_count < 1) {
@@ -297,7 +297,7 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	} while (read_count == sp->block_size);
 
 //	strcpy(sp->type, PACKET_TYPE_FILE_END);
-	sp->type = PACKET_TYPE_FILE_END;
+	sp->type = PACKET_TYPE_FILE_END_REQ;
 	sp->data_len = 0;
 	ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {
@@ -456,7 +456,7 @@ void *send_files_by_thread(void *args) {
 
 int send_complete_end_packet(int sock, sftt_packet *sp) {
 //	strcpy(sp->type, PACKET_TYPE_SEND_COMPLETE);
-	sp->type = PACKET_TYPE_SEND_COMPLETE;
+	sp->type = PACKET_TYPE_SEND_COMPLETE_REQ;
 	sp->data_len = 0;
 	int ret = send_sftt_packet(sock, sp);
 	if (ret == -1) {
@@ -838,7 +838,7 @@ bool port_parse(char *optarg, int *port) {
 
 static void version(void)
 {
-    printf("version " VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
+    printf("version " VERSION ", Copyright (c) 2020-2021 zhou min, zhou qiang\n");
 }
 
 static void help(int exitcode)
@@ -872,7 +872,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 		printf("allocate request packet failed!\n");
 		return -1;
 	}
-	req->type = PACKET_TYPE_VALIDATE;
+	req->type = PACKET_TYPE_VALIDATE_REQ;
 
 	validate_req v_req;
 	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
@@ -881,6 +881,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 	tmp = strncpy(v_req.passwd_md5, client->uinfo->passwd_md5, MD5_LEN);
 	v_req.passwd_len = strlen(tmp);
 
+	// how to serialize and deserialize properly ???
 	req->content = (char *)&v_req;
 	req->data_len = sizeof(validate_req);
 	req->block_size = VALIDATE_PACKET_MIN_LEN;
@@ -912,6 +913,11 @@ static int validate_user_info(sftt_client_v2 *client) {
 	return 0;
 }
 
+static int init_sftt_client_session(sftt_client_v2 *client)
+{
+
+}
+
 static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
@@ -927,7 +933,15 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 		client->uinfo->passwd_md5[0] = 0;
 	}
 
-	return init_sftt_client_ctrl_conn(client, port);
+	if (init_sftt_client_ctrl_conn(client, port) == -1) {
+		return -1;
+	}
+
+	if (init_sftt_client_session(client) == -1) {
+		return -1;
+	}
+
+	return 0;
 }
 
 static int show_options(char *host, char *user_name, char *password) {
@@ -948,12 +962,23 @@ int sftt_client_ll_handler(int argc, char *argv[])
 
 int sftt_client_help_handler(int argc, char *argv[])
 {
-	printf("sftt client currently support this commands:\n\n"
+	printf("sftt client commands:\n\n"
 		"\tll	list contents of current directory.\n"
 		"\tcd	change the current directory.\n"
+		"\tpwd	get current directory.\n"
 		"\tget	get the file on server.\n"
 		"\tput	put the file to server.\n"
+		"\this	get history command.\n"
 		"\thelp	show help info.\n\n");
+}
+
+int sftt_client_his_handler(int argc, char *argv[])
+{
+
+}
+
+void sftt_client_his_usage(void)
+{
 }
 
 void sftt_client_help_usage(void)
@@ -967,6 +992,16 @@ int sftt_client_cd_handler(int argc, char *argv[])
 }
 
 void sftt_client_cd_usage(void)
+{
+
+}
+
+int sftt_client_pwd_handler(int argc, char *argv[])
+{
+
+}
+
+void sftt_client_pwd_usage(void)
 {
 
 }
@@ -1034,6 +1069,7 @@ int reader_loop(sftt_client_v2 *client)
 int reader_loop2(sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
+	dlist *his_cmds = dlist_create(free);
 
 	for (;;) {
 		printf("sftt>> ");
@@ -1043,6 +1079,7 @@ int reader_loop2(sftt_client_v2 *client)
 			exit(0);
 		}
 		execute_cmd(cmd, -1);
+		dlist_append(his_cmds, strdup(cmd));
 	}
 }
 

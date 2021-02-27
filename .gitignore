@@ -8,3 +8,4 @@ src/a.out
 client/client
 server/server
 test/a.out
+debug/*

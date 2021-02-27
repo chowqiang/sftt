@@ -8,6 +8,7 @@
 #include "dlist.h"
 #include "memory_pool.h"
 #include "option.h"
+#include "session.h"
 #include "user.h"
 
 #define LOCAL_HOST				"127.0.0.1"
@@ -70,6 +71,7 @@ typedef struct {
 	dlist *conn_data;
 	memory_pool *mp;
 	user_info *uinfo;
+	client_session *session;
 	char host[HOST_MAX_LEN];
 } sftt_client_v2;
 
@@ -145,6 +147,14 @@ void sftt_client_put_usage(void);
 
 int sftt_client_put_handler(int argc, char *argv[]);
 
+int sftt_client_pwd_handler(int argc, char *argv[]);
+
+void sftt_client_pwd_usage(void);
+
+int sftt_client_his_handler(int argc, char *argv[]);
+
+void sftt_client_his_usage(void);
+
 static struct command sftt_client_cmds[] = {
 	{
 		.name = "help",
@@ -165,6 +175,12 @@ static struct command sftt_client_cmds[] = {
 		.usage = sftt_client_cd_usage,
 	},
 	{
+		.name = "pwd",
+		.fn = sftt_client_pwd_handler,
+		.help = "get current directory",
+		.usage = sftt_client_pwd_usage,
+	},
+	{
 		.name = "get",
 		.fn = sftt_client_get_handler,
 		.help = "get the file on server",
@@ -175,6 +191,12 @@ static struct command sftt_client_cmds[] = {
 		.fn = sftt_client_put_handler,
 		.help = "put the file to server",
 		.usage = sftt_client_put_usage,
+	},
+	{
+		.name = "his",
+		.fn = sftt_client_his_handler,
+		.help = "get history command",
+		.usage = sftt_client_his_usage,
 	},
 	{
 		.name = NULL,

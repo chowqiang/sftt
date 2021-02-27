@@ -15,7 +15,7 @@ typedef struct {
 	int num;
 } strings;
 
-strings *create_strings();
+strings *create_strings(void);
 
 int add_string(strings *ss);
 
