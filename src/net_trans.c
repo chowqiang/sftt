@@ -9,6 +9,9 @@
 #include "encrypt.h"
 #include "mem_pool.h"
 #include "net_trans.h"
+#include "serialize.h"
+
+extern struct serialize_handle *serializables;
 
 sftt_packet *malloc_sftt_packet(int block_size) {
 	mem_pool *mp = get_singleton_mp();
@@ -75,7 +78,37 @@ void sftt_packet_send_content(int sock, sftt_packet *sp) {
 	assert(ret == sp->data_len);
 }
 
+bool sftt_packet_serialize(sftt_packet *sp)
+{
+	int i = 0;
+
+	for (i = 0; serializables[i].packet_type != -1; ++i) {
+		if (sp->type == serializables[i].packet_type) {
+			return (*serializables[i].serialize)(sp->obj, &(sp->content), &(sp->data_len));
+		}
+	}
+
+	return false;
+}
+
+int sftt_packet_deserialize(sftt_packet *sp)
+{
+	int i = 0;
+
+	for (i = 0; serializables[i].packet_type != -1; ++i) {
+		if (sp->type == serializables[i].packet_type) {
+			return (*serializables[i].deserialize)(sp->content, sp->data_len, sp->obj);
+		}
+	}
+
+	return false;
+}
+
 int send_sftt_packet(int sock, sftt_packet *sp) {
+	if (!sftt_packet_serialize(sp)) {
+		return -1;
+	}
+
 	sftt_packet *_sp = malloc_sftt_packet(sp->block_size * 2);
 
 	_sp->type = sp->type;
@@ -168,6 +201,7 @@ int recv_sftt_packet(int sock, sftt_packet *sp) {
 	sp->type = _sp->type;
 	sftt_packet_decode_content(_sp, sp);
 
+	sftt_packet_deserialize(sp);
 	free_sftt_packet(&_sp);	
 		
 	return sp->data_len;
