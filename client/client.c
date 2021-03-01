@@ -889,7 +889,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 	v_req.passwd_len = strlen(tmp);
 
 	// how to serialize and deserialize properly ???
-	req->obj = (char *)&v_req;
+	req->obj = (void *)&v_req;
 	req->block_size = VALIDATE_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->conn_ctrl.sock, req);

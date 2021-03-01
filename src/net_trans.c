@@ -11,7 +11,7 @@
 #include "net_trans.h"
 #include "serialize.h"
 
-extern struct serialize_handle *serializables;
+extern struct serialize_handle serializables[];
 
 sftt_packet *malloc_sftt_packet(int block_size) {
 	mem_pool *mp = get_singleton_mp();
@@ -84,7 +84,7 @@ bool sftt_packet_serialize(sftt_packet *sp)
 
 	for (i = 0; serializables[i].packet_type != -1; ++i) {
 		if (sp->type == serializables[i].packet_type) {
-			return (*serializables[i].serialize)(sp->obj, &(sp->content), &(sp->data_len));
+			return serializables[i].serialize(sp->obj, &(sp->content), &(sp->data_len));
 		}
 	}
 
@@ -97,7 +97,7 @@ int sftt_packet_deserialize(sftt_packet *sp)
 
 	for (i = 0; serializables[i].packet_type != -1; ++i) {
 		if (sp->type == serializables[i].packet_type) {
-			return (*serializables[i].deserialize)(sp->content, sp->data_len, sp->obj);
+			return serializables[i].deserialize(sp->content, sp->data_len, sp->obj);
 		}
 	}
 
