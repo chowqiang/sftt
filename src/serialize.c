@@ -22,33 +22,55 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
 	mem_pool *mp = get_singleton_mp();
 
-	*len = 2 * sizeof(validate_req);
-	*buf = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (*len));
-
 	XDR xdr;
 	validate_req *vreq = (validate_req *)req;
+
+	char *name = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (USER_NAME_MAX_LEN + 1));
+	char *passwd_md5 = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (MD5_LEN + 1));
+
+	strcpy(name, vreq->name);
+	strcpy(passwd_md5, vreq->passwd_md5);
+
+	*len = 2 * sizeof(validate_req);
+	*buf = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (*len));
 
 	xdrmem_create(&xdr, *buf, *len, XDR_ENCODE);
 
 	bool status = xdr_int(&xdr, &(vreq->name_len)) &&
 				xdr_int(&xdr, &(vreq->passwd_len)) &&
-				xdr_string(&xdr, &(vreq->name), USER_NAME_MAX_LEN) &&
-				xdr_string(&xdr, &(vreq->passwd_md5), MD5_LEN + 1);
+				xdr_string(&xdr, &name, USER_NAME_MAX_LEN) &&
+				xdr_string(&xdr, &passwd_md5, MD5_LEN + 1);
+
+	mp_free(mp, name);
+	mp_free(mp, passwd_md5);
 
 	return status;
 }
 
 bool validate_req_decode(unsigned char *buf, int len, void *req)
 {
+	mem_pool *mp = get_singleton_mp();
+
 	XDR xdr;
 	validate_req *vreq = (validate_req *)req;
+
+	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
+	char *passwd_md5 = (char *)mp_malloc(mp, sizeof(char) * (MD5_LEN + 1));
 
 	xdrmem_create(&xdr, buf, len, XDR_DECODE);
 
 	bool status = xdr_int(&xdr, &(vreq->name_len)) &&
 				xdr_int(&xdr, &(vreq->passwd_len)) &&
-				xdr_string(&xdr, &(vreq->name), USER_NAME_MAX_LEN) &&
-				xdr_string(&xdr, &(vreq->passwd_md5), MD5_LEN + 1);
+				xdr_string(&xdr, &name, USER_NAME_MAX_LEN) &&
+				xdr_string(&xdr, &passwd_md5, MD5_LEN + 1);
+
+	if (status) {
+		strcpy(vreq->name, name);
+		strcpy(vreq->passwd_md5, passwd_md5);
+	}
+
+	mp_free(mp, name);
+	mp_free(mp, passwd_md5);
 
 	return status;
 }
