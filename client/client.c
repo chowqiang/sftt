@@ -909,7 +909,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 		return -1;
 	}
 
-	validate_resp *v_resp = (validate_resp *)resp->content;
+	validate_resp *v_resp = (validate_resp *)resp->obj;
 	if (v_resp->status != UVS_PASS) {
 		return -1;
 	}

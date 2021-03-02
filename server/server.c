@@ -343,25 +343,26 @@ void update_server(sftt_server *server) {
 }
 
 void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
-	validate_req *v_req = (validate_req *)req->content;
-	/*
+	validate_req *v_req = (validate_req *)req->obj;
+
 	printf("receive validate request: \n"
 		"\tname: %s\n\t", v_req->name);
 	show_md5(v_req->passwd_md5);
-	*/
 
-	validate_resp *v_resp = (validate_resp *)resp->content;
+	//validate_resp *v_resp = (validate_resp *)resp->content;
+	validate_resp v_resp;
 	if (strcmp(v_req->name, "root") == 0) {
-		v_resp->status = UVS_PASS;
-		v_resp->uid = 19910930;
+		v_resp.status = UVS_PASS;
+		v_resp.uid = 19910930;
 	} else {
-		v_resp->status = UVS_BLOCK;
-		v_resp->uid = 9527;
+		v_resp.status = UVS_BLOCK;
+		v_resp.uid = 9527;
 	}
-	strncpy(v_resp->name, v_req->name, USER_NAME_MAX_LEN - 1);
+	strncpy(v_resp.name, v_req->name, USER_NAME_MAX_LEN - 1);
 
-	resp->type = PACKET_TYPE_VALIDATE_REQ;
-	resp->data_len = sizeof(validate_resp);
+	resp->type = PACKET_TYPE_VALIDATE_RSP;
+	//resp->data_len = sizeof(validate_resp);
+	resp->obj = &v_resp;
 
 	int ret = send_sftt_packet(sock, resp);
 	if (ret == -1) {
@@ -410,7 +411,7 @@ void handle_client_session(int sock) {
 	add_log(LOG_INFO, "begin to communicate with client ...\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
-		//printf("recv ret: %d\n", ret);
+		printf("recv ret: %d\n", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
 			goto exit;

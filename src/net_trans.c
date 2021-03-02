@@ -97,7 +97,7 @@ int sftt_packet_deserialize(sftt_packet *sp)
 
 	for (i = 0; serializables[i].packet_type != -1; ++i) {
 		if (sp->type == serializables[i].packet_type) {
-			return serializables[i].deserialize(sp->content, sp->data_len, sp->obj);
+			return serializables[i].deserialize(sp->content, sp->data_len, &(sp->obj));
 		}
 	}
 

@@ -47,12 +47,12 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	return status;
 }
 
-bool validate_req_decode(unsigned char *buf, int len, void *req)
+bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
 	mem_pool *mp = get_singleton_mp();
 
 	XDR xdr;
-	validate_req *vreq = (validate_req *)req;
+	validate_req *vreq = (validate_req *)mp_malloc(mp, sizeof(validate_req));
 
 	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
 	char *passwd_md5 = (char *)mp_malloc(mp, sizeof(char) * (MD5_LEN + 1));
@@ -64,6 +64,7 @@ bool validate_req_decode(unsigned char *buf, int len, void *req)
 				xdr_string(&xdr, &name, USER_NAME_MAX_LEN) &&
 				xdr_string(&xdr, &passwd_md5, MD5_LEN + 1);
 
+	printf("status: %d\n", status);
 	if (status) {
 		strcpy(vreq->name, name);
 		strcpy(vreq->passwd_md5, passwd_md5);
@@ -72,17 +73,61 @@ bool validate_req_decode(unsigned char *buf, int len, void *req)
 	mp_free(mp, name);
 	mp_free(mp, passwd_md5);
 
+	*req = vreq;
+
 	return status;
 }
 
 bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 {
-	return true;
+	mem_pool *mp = get_singleton_mp();
+
+	XDR xdr;
+	validate_resp *vrsp = (validate_resp *)rsp;
+
+	char *name = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (USER_NAME_MAX_LEN + 1));
+
+	strcpy(name, vrsp->name);
+
+	*len = 2 * sizeof(validate_resp);
+	*buf = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (*len));
+
+	xdrmem_create(&xdr, *buf, *len, XDR_ENCODE);
+
+	bool status = xdr_int(&xdr, &(vrsp->status)) &&
+				xdr_u_long(&xdr, &(vrsp->uid)) &&
+				xdr_string(&xdr, &name, USER_NAME_MAX_LEN);
+
+	mp_free(mp, name);
+
+	return status;
 }
 
-bool validate_rsp_decode(unsigned char *buf, int len, void *rsp)
+bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
-	return true;
+	mem_pool *mp = get_singleton_mp();
+
+	XDR xdr;
+	validate_resp *vrsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
+
+	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
+
+	xdrmem_create(&xdr, buf, len, XDR_DECODE);
+
+	bool status = xdr_int(&xdr, &(vrsp->status)) &&
+				xdr_u_long(&xdr, &(vrsp->uid)) &&
+				xdr_string(&xdr, &name, USER_NAME_MAX_LEN);
+
+	printf("status: %d\n", status);
+	if (status) {
+		strcpy(vrsp->name, name);
+	}
+
+	mp_free(mp, name);
+
+	*rsp = vrsp;
+
+	return status;
 }
 
 
@@ -91,7 +136,7 @@ bool send_file_name_req_encode(void *req, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_file_name_req_decode(unsigned char *buf, int len, void *req)
+bool send_file_name_req_decode(unsigned char *buf, int len, void **req)
 {
 	return true;
 }
@@ -101,7 +146,7 @@ bool send_file_name_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_file_name_rsp_decode(unsigned char *buf, int len, void *rsp)
+bool send_file_name_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	return true;
 }
@@ -112,7 +157,7 @@ bool send_data_req_encode(void *req, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_data_req_decode(unsigned char *buf, int len, void *req)
+bool send_data_req_decode(unsigned char *buf, int len, void **req)
 {
 	return true;
 }
@@ -122,7 +167,7 @@ bool send_data_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_data_rsp_decode(unsigned char *buf, int len, void *rsp)
+bool send_data_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	return true;
 }
@@ -133,7 +178,7 @@ bool send_file_end_req_encode(void *req, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_file_end_req_decode(unsigned char *buf, int len, void *req)
+bool send_file_end_req_decode(unsigned char *buf, int len, void **req)
 {
 	return true;
 }
@@ -143,7 +188,7 @@ bool send_file_end_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_file_end_rsp_decode(unsigned char *buf, int len, void *rsp)
+bool send_file_end_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	return true;
 }
@@ -154,7 +199,7 @@ bool send_end_complete_req_encode(void *req, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_end_complete_req_decode(unsigned char *buf, int len, void *req)
+bool send_end_complete_req_decode(unsigned char *buf, int len, void **req)
 {
 	return true;
 }
@@ -164,7 +209,7 @@ bool send_end_complete_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	return true;
 }
 
-bool send_end_complete_rsp_decode(unsigned char *buf, int len, void *rsp)
+bool send_end_complete_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	return true;
 }
