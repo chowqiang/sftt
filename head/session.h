@@ -5,8 +5,7 @@
 #include "config.h"
 #include "md5.h"
 #include "user.h"
-
-#define SESSION_ID_LEN	(MD5_LEN + 1)
+#include "xdr.h"
 
 typedef struct client_session {
 	char session_id[SESSION_ID_LEN];

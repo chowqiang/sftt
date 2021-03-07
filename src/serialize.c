@@ -1,8 +1,8 @@
 #include <rpc/xdr.h>
 #include <stdbool.h>
 #include "mem_pool.h"
-#include "packet.h"
 #include "serialize.h"
+#include "xdr.h"
 
 struct serialize_handle serializables[] = {
 	{PACKET_TYPE_VALIDATE_REQ, validate_req_encode, validate_req_decode},
@@ -20,6 +20,16 @@ struct serialize_handle serializables[] = {
 
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
+	FILE *fp = open_memstream((char **)buf, (size_t *)len);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_validate_req(&xdr, (validate_req *)req);
+	fclose(fp);
+
+	return ret;
+#if 0
 	mem_pool *mp = get_singleton_mp();
 
 	XDR xdr;
@@ -45,10 +55,26 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	mp_free(mp, passwd_md5);
 
 	return status;
+#endif
 }
 
 bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
+	mem_pool *mp = get_singleton_mp();
+	validate_req *_req = (validate_req *)mp_malloc(mp, sizeof(validate_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_validate_req(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+
+	return ret;
+#if 0
 	mem_pool *mp = get_singleton_mp();
 
 	XDR xdr;
@@ -76,10 +102,21 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	*req = vreq;
 
 	return status;
+#endif
 }
 
 bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 {
+	FILE *fp = open_memstream((char **)buf, (size_t *)len);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_validate_resp(&xdr, (validate_resp *)rsp);
+	fclose(fp);
+
+	return ret;
+#if 0
 	mem_pool *mp = get_singleton_mp();
 
 	XDR xdr;
@@ -101,15 +138,31 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	mp_free(mp, name);
 
 	return status;
+#endif
 }
 
 bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	mem_pool *mp = get_singleton_mp();
+	validate_resp *_rsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_validate_resp(&xdr, (validate_resp *)_rsp);
+	fclose(fp);
+
+	*rsp = _rsp;
+
+	return ret;
+
+#if 0
+	mem_pool *mp = get_singleton_mp();
 
 	XDR xdr;
 	validate_resp *vrsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
-
 	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
 
 	xdrmem_create(&xdr, buf, len, XDR_DECODE);
@@ -128,6 +181,7 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 	*rsp = vrsp;
 
 	return status;
+#endif
 }
 
 

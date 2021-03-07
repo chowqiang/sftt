@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "state.h"
 #include "version.h"
+#include "xdr.h"
 
 extern int errno;
 
@@ -930,7 +931,7 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(user_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
-	strncpy(client->uinfo->passwd, passwd, USER_PASSWD_MAX_LEN - 1);
+	strncpy(client->uinfo->passwd, passwd, PASSWD_MAX_LEN - 1);
 	if (strlen(passwd)) {
 		md5_str(passwd, strlen(passwd), client->uinfo->passwd_md5);
 		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
@@ -1094,7 +1095,7 @@ int main(int argc, char **argv) {
 	char *optarg = NULL;
 	bool has_passwd_opt = false;
 	char user_name[USER_NAME_MAX_LEN];
-	char password[USER_PASSWD_MAX_LEN];
+	char password[PASSWD_MAX_LEN];
 	char host[HOST_MAX_LEN];
 	int port = -1;
 	const sftt_option *opt = NULL;	

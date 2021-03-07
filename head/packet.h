@@ -4,11 +4,13 @@
 #include <stdint.h>
 #include "config.h"
 #include "md5.h"
+#include "session.h"
 
 #define PACKET_TYPE_SIZE		(sizeof(int))
 #define PACKET_LEN_SIZE			(sizeof(int))	
 
 #define VALIDATE_PACKET_MIN_LEN		10240
+#define PASSWD_MD5_LEN				(MD5_LEN + 1)
 
 enum user_validate_status {
 	UVS_INVALID,
@@ -29,18 +31,6 @@ enum packet_type {
 	PACKET_TYPE_SEND_COMPLETE_RSP,
 };
 
-typedef struct {
-	int name_len;
-	int passwd_len;
-	char name[USER_NAME_MAX_LEN];
-	char passwd_md5[MD5_LEN + 1];
-} validate_req;
-
-typedef struct {
-	int status;
-	uint64_t uid;
-	char name[USER_NAME_MAX_LEN];
-} validate_resp;
 
 typedef struct sftt_packet {
 	int type;

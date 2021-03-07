@@ -12,13 +12,6 @@
 #define CONFIG_NAME_MAX_LEN 	256
 #define CONFIG_VALUE_MAX_LEN	512
 
-
-/*
- * user info
- * */
-#define USER_NAME_MAX_LEN	64
-#define USER_PASSWD_MAX_LEN	32
-
 /*
  * host info
  * */
