@@ -105,11 +105,17 @@ int sftt_packet_deserialize(sftt_packet *sp)
 }
 
 int send_sftt_packet(int sock, sftt_packet *sp) {
+	printf("packet size: %d\n", sp->block_size * 2);
 	if (!sftt_packet_serialize(sp)) {
 		return -1;
 	}
 
 	sftt_packet *_sp = malloc_sftt_packet(sp->block_size * 2);
+	if (_sp == NULL) {
+		DEBUG_POINT;
+		printf("malloc failed! size: %d\n", sp->block_size * 2);
+		return -1;
+	}
 
 	_sp->type = sp->type;
 	sftt_packet_encode_content(sp, _sp);

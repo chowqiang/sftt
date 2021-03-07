@@ -20,13 +20,18 @@ struct serialize_handle serializables[] = {
 
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
-	FILE *fp = open_memstream((char **)buf, (size_t *)len);
+	printf("begin to encode ...\n");
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
 
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
 	int ret = xdr_validate_req(&xdr, (validate_req *)req);
 	fclose(fp);
+
+	*len = size;
+	printf("encoded len: %d\n", *len);
 
 	return ret;
 #if 0

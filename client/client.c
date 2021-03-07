@@ -922,7 +922,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 
 static int init_sftt_client_session(sftt_client_v2 *client)
 {
-
+	return 0;
 }
 
 static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
