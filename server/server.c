@@ -45,8 +45,8 @@ void server_init_func(sftt_server_config *server_config){
 		exit(0);
 	}
 	char *filepath = server_config->store_path;
-	add_log(LOG_INFO, "conf  block_size is %d\n", server_config->block_size);
-	add_log(LOG_INFO, "store path: %s\n",filepath);
+	add_log(LOG_INFO, "conf  block_size is %d", server_config->block_size);
+	add_log(LOG_INFO, "store path: %s",filepath);
 	if((mydir= opendir(filepath))==NULL) {
 		int ret = mkdir(filepath, MODE);
 		if (ret != 0) {
@@ -219,7 +219,7 @@ int main_old(){
 }
 
 void sighandler(int signum) {
-   add_log(LOG_INFO, "Caught signal %d, coming out...\n", signum);
+   add_log(LOG_INFO, "Caught signal %d, coming out ...", signum);
 }
 
 bool init_sftt_server_info(sftt_server *server, pid_t log_pid) {
@@ -345,11 +345,13 @@ void update_server(sftt_server *server) {
 void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	validate_req *v_req = (validate_req *)req->obj;
 
-	printf("receive validate request: \n"
-		"\tname: %s\n\t", v_req->name);
-	show_md5(v_req->passwd_md5);
+	add_log(LOG_INFO, "receive validate request|name: %s", v_req->name);
+	char *md5_str = md5_printable_str(v_req->passwd_md5);
+	if (md5_str) {
+		add_log(LOG_INFO, "passwd md5: %s", md5_str);
+		free(md5_str);
+	}
 
-	//validate_resp *v_resp = (validate_resp *)resp->content;
 	validate_resp v_resp;
 	if (strcmp(v_req->name, "root") == 0) {
 		v_resp.status = UVS_PASS;
@@ -361,7 +363,6 @@ void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	strncpy(v_resp.name, v_req->name, USER_NAME_MAX_LEN - 1);
 
 	resp->type = PACKET_TYPE_VALIDATE_RSP;
-	//resp->data_len = sizeof(validate_resp);
 	resp->obj = &v_resp;
 
 	int ret = send_sftt_packet(sock, resp);
@@ -378,7 +379,7 @@ void child_process_exception_handler(int sig) {
 }
 
 void child_process_exit(int sig) {
-	add_log(LOG_INFO, "I'm child process and exit for received signal.\n");
+	add_log(LOG_INFO, "I'm child process and exit for received signal.");
 	exit(-1);
 }
 
@@ -408,16 +409,16 @@ void handle_client_session(int sock) {
 	//}
 
 	int ret = 0;
-	add_log(LOG_INFO, "begin to communicate with client ...\n");
+	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
-		add_log(LOG_INFO, "recv ret: %d\n", ret);
+		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
 			goto exit;
 		}
 		if (ret == 0) {
-			add_log(LOG_INFO, "client disconnected, child process is exiting ...\n");
+			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
 			goto exit;
 		}
 		switch (req->type) {
@@ -544,10 +545,10 @@ void main_loop(sftt_server *server) {
 			close(connect_fd);
 			continue;
 		}
-		add_log(LOG_INFO, "a client connected...\n");
+		add_log(LOG_INFO, "a client connected ...");
 		pid = fork();
 		if (pid == 0){
-			add_log(LOG_INFO, "I'm child\n");
+			add_log(LOG_INFO, "I'm child");
 			handle_client_session(connect_fd);
 		} else if (pid < 0 ){
 			printf("fork failed!\n");
@@ -562,7 +563,7 @@ int create_non_block_sock(int *pport) {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
 	int rand_port = get_random_port();
-	add_log(LOG_INFO, "random port is %d\n", rand_port);
+	add_log(LOG_INFO, "random port is %d", rand_port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		printf("create socket filed!\n");
@@ -678,7 +679,7 @@ int sftt_server_start(char *store_path) {
 		exit(-1);
 	}
 
-	add_log(LOG_INFO, PROC_NAME " is going to start in the background ...\n");
+	add_log(LOG_INFO, PROC_NAME " is going to start in the background ...");
 
 	signal(SIGTERM, sftt_server_exit);
 
@@ -698,7 +699,7 @@ int sftt_server_restart(char *store_path) {
 		}
 	}
 
-	add_log(LOG_INFO, PROC_NAME " is going to restart ...\n");
+	add_log(LOG_INFO, PROC_NAME " is going to restart ...");
 	//return update_sftt_server_info(NULL);
 	return 0;
 }
@@ -719,8 +720,8 @@ int sftt_server_stop(void) {
 		return -1;
 	}
 
-	add_log(LOG_INFO, "log pid is: %d\n", ssi->log_pid);
-	add_log(LOG_INFO, "log is going to stop ...\n");
+	add_log(LOG_INFO, "log pid is: %d", ssi->log_pid);
+	add_log(LOG_INFO, "log is going to stop ...");
 	kill(ssi->log_pid, SIGTERM);
 
 	/**

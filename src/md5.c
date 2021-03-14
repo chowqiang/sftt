@@ -216,12 +216,18 @@ int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 	return 0;
 }
 
-void show_md5(unsigned char *digest) {
+char *md5_printable_str(unsigned char *digest) {
 	int i = 0;
-	printf("md5: ");
-    for(i = 0; i < 16; i++)
+	char *str = malloc(sizeof(char) * (MD5_LEN + 1)) ;
+	if (!str) {
+		return str;
+	}
+
+    for(i = 0; i < MD5_LEN; ++i)
     {
-        printf("%02x", digest[i]);
+		sprintf(str + i, "%02x", digest[i]);
     }
-    printf("\n");
+	str[i] = 0;
+
+	return str;
 }

@@ -792,27 +792,36 @@ static int run_command(const struct command *cmd, int argc, char *argv[])
     return cmd->fn(argc, argv);
 }
 
+void add_cmd_log(struct user_cmd *cmd)
+{
+	int i = 0, ret = 0;
+	char *buf = malloc(sizeof(char) * 1024);
+
+	ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
+	for (i = 0; i < cmd->argc; ++i) {
+		ret += sprintf(buf + ret, ", %s", cmd->argv[i]);
+	}
+	buf[ret] = 0;
+
+	add_log(LOG_INFO, "%s", buf);
+	free(buf);
+}
+
 void execute_cmd(char *buf, int flag) {
-	//printf("%s\n", buf);
+	add_log(LOG_INFO, "input command: %s", buf);
 	int i = 0;
 	struct user_cmd *cmd = parse_command(buf);
 	if (!cmd) {
 		printf("your input cannot be recognized!\n");
 		return ;
 	}
-	printf("exec name: %s, argc: %d", cmd->name, cmd->argc);
-	for (i = 0; i < cmd->argc; ++i) {
-		printf(", %s", cmd->argv[i]);
-	}
-	printf("\n");
 
+	add_cmd_log(cmd);
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
 			run_command(&sftt_client_cmds[i], cmd->argc, cmd->argv);
 		}
 	}
-
-	//DEBUG((DEBUG_INFO, "%s\n", buf));
 }
 
 bool user_name_parse(char *optarg, char *user_name, int max_len) {
@@ -906,7 +915,6 @@ static int validate_user_info(sftt_client_v2 *client) {
 	}
 
 	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
-	//printf("%d, ret: %d\n", __LINE__, ret);
 	if (ret == -1) {
 		return -1;
 	}
@@ -917,6 +925,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 	}
 
 	client->uinfo->uid = v_resp->uid;
+	add_log(LOG_INFO, "uid: %d", client->uinfo->uid);
 
 	return 0;
 }
@@ -936,7 +945,11 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 	if (strlen(passwd)) {
 		md5_str(passwd, strlen(passwd), client->uinfo->passwd_md5);
 		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
-		show_md5(client->uinfo->passwd_md5);
+		char *md5_str = md5_printable_str(client->uinfo->passwd_md5);
+		if (md5_str) {
+			add_log(LOG_INFO, "%s", md5_str);
+			free(md5_str);
+		}
 	} else {
 		client->uinfo->passwd_md5[0] = 0;
 	}
@@ -953,9 +966,9 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 }
 
 static int show_options(char *host, char *user_name, char *password) {
-	add_log(LOG_INFO, "host: %s\n", host);
-	add_log(LOG_INFO, "your name: %s\n", user_name);
-	add_log(LOG_INFO, "your password: %s\n", password);
+	add_log(LOG_INFO, "host: %s", host);
+	add_log(LOG_INFO, "your name: %s", user_name);
+	add_log(LOG_INFO, "your password: %s", password);
 }
 
 void sftt_client_ll_usage(void)
@@ -1178,8 +1191,7 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
-	add_log(LOG_INFO, "client validate successfully!\n");
-	//printf("validate successfully!\n");
+	add_log(LOG_INFO, "client validate successfully!");
 
 	reader_loop2(&client);
 

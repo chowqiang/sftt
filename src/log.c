@@ -118,6 +118,8 @@ int get_log_msqid(int create_flag) {
 }
 
 void logger_exit(int sig) {
+	add_log(LOG_INFO, "log server is stop ...");
+
 	if (server_log_fp) {
 		fclose(server_log_fp);
 	}
@@ -127,9 +129,9 @@ void logger_exit(int sig) {
 		return ;
 	}
 
+	printf("log server is stop ...\n");
 	msgctl(msqid, IPC_RMID, NULL);
 
-	printf("log server is stop ...\n");
 	exit(0);
 }
 
@@ -152,7 +154,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 	strcat(buf + ret, "\n");
 	ret += 1;
 
-	printf("client log dir: %s\n", client_log_dir);
+	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
 	FILE *client_log_fp = fopen(log_file, "a");
 	if (client_log_fp == NULL) {

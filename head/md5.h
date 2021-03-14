@@ -60,5 +60,5 @@ void MD5Decode(unsigned int *output,unsigned char *input,unsigned int len);
 int md5_file(unsigned char *file, unsigned char *digest);
 int md5_str(unsigned char *str, unsigned int len, unsigned char *digest);
 
-void show_md5(unsigned char *digest);
+char *md5_printable_str(unsigned char *digest);
 #endif

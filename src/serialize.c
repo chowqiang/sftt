@@ -1,5 +1,6 @@
 #include <rpc/xdr.h>
 #include <stdbool.h>
+#include "log.h"
 #include "mem_pool.h"
 #include "serialize.h"
 #include "xdr.h"
@@ -20,7 +21,7 @@ struct serialize_handle serializables[] = {
 
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
-	printf("begin to encode ...\n");
+	add_log(LOG_INFO, "begin to encode ...");
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -31,40 +32,14 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
-	printf("encoded len: %d\n", *len);
+	add_log(LOG_INFO, "end encode|ret: %d, encoded len: %d", ret, *len);
 
 	return ret;
-#if 0
-	mem_pool *mp = get_singleton_mp();
-
-	XDR xdr;
-	validate_req *vreq = (validate_req *)req;
-
-	char *name = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (USER_NAME_MAX_LEN + 1));
-	char *passwd_md5 = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (MD5_LEN + 1));
-
-	strcpy(name, vreq->name);
-	strcpy(passwd_md5, vreq->passwd_md5);
-
-	*len = 2 * sizeof(validate_req);
-	*buf = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (*len));
-
-	xdrmem_create(&xdr, *buf, *len, XDR_ENCODE);
-
-	bool status = xdr_int(&xdr, &(vreq->name_len)) &&
-				xdr_int(&xdr, &(vreq->passwd_len)) &&
-				xdr_string(&xdr, &name, USER_NAME_MAX_LEN) &&
-				xdr_string(&xdr, &passwd_md5, MD5_LEN + 1);
-
-	mp_free(mp, name);
-	mp_free(mp, passwd_md5);
-
-	return status;
-#endif
 }
 
 bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
+	add_log(LOG_INFO, "begin to decode ...");
 	mem_pool *mp = get_singleton_mp();
 	validate_req *_req = (validate_req *)mp_malloc(mp, sizeof(validate_req));
 
@@ -77,42 +52,16 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+	add_log(LOG_INFO, "end decode|ret: %d", ret);
 
 	return ret;
-#if 0
-	mem_pool *mp = get_singleton_mp();
-
-	XDR xdr;
-	validate_req *vreq = (validate_req *)mp_malloc(mp, sizeof(validate_req));
-
-	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
-	char *passwd_md5 = (char *)mp_malloc(mp, sizeof(char) * (MD5_LEN + 1));
-
-	xdrmem_create(&xdr, buf, len, XDR_DECODE);
-
-	bool status = xdr_int(&xdr, &(vreq->name_len)) &&
-				xdr_int(&xdr, &(vreq->passwd_len)) &&
-				xdr_string(&xdr, &name, USER_NAME_MAX_LEN) &&
-				xdr_string(&xdr, &passwd_md5, MD5_LEN + 1);
-
-	printf("status: %d\n", status);
-	if (status) {
-		strcpy(vreq->name, name);
-		strcpy(vreq->passwd_md5, passwd_md5);
-	}
-
-	mp_free(mp, name);
-	mp_free(mp, passwd_md5);
-
-	*req = vreq;
-
-	return status;
-#endif
 }
 
 bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 {
-	FILE *fp = open_memstream((char **)buf, (size_t *)len);
+	add_log(LOG_INFO, "begin to encode ...");
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
 
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
@@ -120,34 +69,15 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	int ret = xdr_validate_resp(&xdr, (validate_resp *)rsp);
 	fclose(fp);
 
+	*len = size;
+	add_log(LOG_INFO, "end encode|ret: %d, encode len: %d", ret, *len);
+
 	return ret;
-#if 0
-	mem_pool *mp = get_singleton_mp();
-
-	XDR xdr;
-	validate_resp *vrsp = (validate_resp *)rsp;
-
-	char *name = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (USER_NAME_MAX_LEN + 1));
-
-	strcpy(name, vrsp->name);
-
-	*len = 2 * sizeof(validate_resp);
-	*buf = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * (*len));
-
-	xdrmem_create(&xdr, *buf, *len, XDR_ENCODE);
-
-	bool status = xdr_int(&xdr, &(vrsp->status)) &&
-				xdr_u_long(&xdr, &(vrsp->uid)) &&
-				xdr_string(&xdr, &name, USER_NAME_MAX_LEN);
-
-	mp_free(mp, name);
-
-	return status;
-#endif
 }
 
 bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
+	add_log(LOG_INFO, "begin to decode ...");
 	mem_pool *mp = get_singleton_mp();
 	validate_resp *_rsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
 
@@ -160,33 +90,9 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 	fclose(fp);
 
 	*rsp = _rsp;
+	add_log(LOG_INFO, "encode decode|ret: %d", ret);
 
 	return ret;
-
-#if 0
-	mem_pool *mp = get_singleton_mp();
-
-	XDR xdr;
-	validate_resp *vrsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
-	char *name = (char *)mp_malloc(mp, sizeof(char) * (USER_NAME_MAX_LEN + 1));
-
-	xdrmem_create(&xdr, buf, len, XDR_DECODE);
-
-	bool status = xdr_int(&xdr, &(vrsp->status)) &&
-				xdr_u_long(&xdr, &(vrsp->uid)) &&
-				xdr_string(&xdr, &name, USER_NAME_MAX_LEN);
-
-	printf("status: %d\n", status);
-	if (status) {
-		strcpy(vrsp->name, name);
-	}
-
-	mp_free(mp, name);
-
-	*rsp = vrsp;
-
-	return status;
-#endif
 }
 
 
