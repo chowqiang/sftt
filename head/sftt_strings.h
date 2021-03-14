@@ -1,5 +1,5 @@
-#ifndef _STRINGS_H_
-#define _STRINGS_H_
+#ifndef _SFTT_STRINGS_H_
+#define _SFTT_STRINGS_H_
 
 #define MAX_SDS_AUTO_GROW_SIZE	1024
 

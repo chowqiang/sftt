@@ -12,9 +12,9 @@
 #define CONFIG_NAME_MAX_LEN 	256
 #define CONFIG_VALUE_MAX_LEN	512
 
-/*
+/**
  * host info
- * */
+ */
 #define HOST_MAX_LEN		32
 
 typedef struct sftt_server_config {
@@ -30,7 +30,6 @@ typedef struct sftt_client_config {
 
 /**
  * get sftt server config
- *
  */
 int get_sftt_server_config(sftt_server_config *ssc);
 

@@ -6,12 +6,9 @@
 #ifndef _XDR_H_RPCGEN
 #define _XDR_H_RPCGEN
 
+#define RPCGEN_VERSION	199506
+
 #include <rpc/rpc.h>
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define USER_NAME_MAX_LEN 33
 #define PASSWD_MAX_LEN 17
@@ -24,29 +21,29 @@ struct validate_req {
 	char passwd_md5[PASSWD_MAX_LEN];
 };
 typedef struct validate_req validate_req;
+#ifdef __cplusplus
+extern "C" bool_t xdr_validate_req(XDR *, validate_req*);
+#elif __STDC__
+extern  bool_t xdr_validate_req(XDR *, validate_req*);
+#else /* Old Style C */
+bool_t xdr_validate_req();
+#endif /* Old Style C */
+
 
 struct validate_resp {
 	int status;
-	uint64_t uid;
+	u_long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 };
 typedef struct validate_resp validate_resp;
-
-/* the xdr functions */
-
-#if defined(__STDC__) || defined(__cplusplus)
-extern  bool_t xdr_validate_req (XDR *, validate_req*);
-extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
-
-#else /* K&R C */
-extern bool_t xdr_validate_req ();
-extern bool_t xdr_validate_resp ();
-
-#endif /* K&R C */
-
 #ifdef __cplusplus
-}
-#endif
+extern "C" bool_t xdr_validate_resp(XDR *, validate_resp*);
+#elif __STDC__
+extern  bool_t xdr_validate_resp(XDR *, validate_resp*);
+#else /* Old Style C */
+bool_t xdr_validate_resp();
+#endif /* Old Style C */
+
 
 #endif /* !_XDR_H_RPCGEN */

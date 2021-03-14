@@ -11,7 +11,7 @@ struct validate_req {
 
 struct validate_resp {
 	int status;
-	uint64_t uid;
+	unsigned long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 };

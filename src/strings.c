@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "mem_pool.h"
-#include "strings.h"
+#include "sftt_strings.h"
 
 int init_sds(sds *str) {
 	if (str == NULL) {

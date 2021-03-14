@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "config.h"
-#include "strings.h"
+#include "sftt_strings.h"
 
 void strip(char *line) {
 	int len = strlen(line);

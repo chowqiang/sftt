@@ -1,5 +1,5 @@
-#include <rpc/xdr.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "log.h"
 #include "mem_pool.h"
 #include "serialize.h"
