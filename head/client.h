@@ -24,6 +24,8 @@
 #define EXEC_NAME_MAX_LEN		32
 #define CMD_ARG_MAX_LEN			1024
 
+#define CLIENT_LOG_DIR		"/var/log/"PROC_NAME"/"
+
 sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},

@@ -411,7 +411,7 @@ void handle_client_session(int sock) {
 	add_log(LOG_INFO, "begin to communicate with client ...\n");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
-		printf("recv ret: %d\n", ret);
+		add_log(LOG_INFO, "recv ret: %d\n", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
 			goto exit;
@@ -606,6 +606,7 @@ pid_t start_sftt_log_server(sftt_server *server) {
 		signal(SIGTERM, logger_exit);
 		logger_daemon(server->conf.log_dir, PROC_NAME);
 	} else {
+		set_log_type(SERVER_LOG);
 		sleep(1);
 		return pid;
 	}

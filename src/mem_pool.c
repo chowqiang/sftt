@@ -104,7 +104,7 @@ void mp_free(mem_pool *mp, void *p) {
 	dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
 		m_node = (mem_node *)l_node->data;
-		if (m_node->address = p) {
+		if (m_node->address == p) {
 			m_node->is_using = 0;
 			m_node->used_cnt += 1;
 			break;

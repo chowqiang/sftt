@@ -16,7 +16,17 @@ typedef struct
     char    mtext[LOG_STR_MAX_LEN];
 } msgbuf;
 
-FILE *log_fp = NULL;
+static log_type type = UNKNOWN_LOG;
+
+static char client_log_dir[DIR_PATH_MAX_LEN];
+static char client_log_prefix[32];
+
+static FILE *server_log_fp = NULL;
+
+void set_log_type(log_type t)
+{
+	type = t;
+}
 
 static inline char *get_log_level_desc(int level) {
 	switch (level) {
@@ -45,6 +55,12 @@ void get_log_file_name(char *dir, char *prefix, char *file_name, int max_len) {
 	}
 }
 
+void logger_init(char *dir, char *prefix)
+{
+	strcpy(client_log_dir, dir);
+	strcpy(client_log_prefix, prefix);
+}
+
 void logger_daemon(char *dir, char *prefix) {
 	int msqid;
     key_t key;
@@ -59,8 +75,8 @@ void logger_daemon(char *dir, char *prefix) {
 	char file2[FILE_NAME_MAX_LEN];
 
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
-	log_fp = fopen(file1, "a");
-	if (log_fp == NULL) {
+	server_log_fp = fopen(file1, "a");
+	if (server_log_fp == NULL) {
 		return ;
 	}
 
@@ -69,15 +85,15 @@ void logger_daemon(char *dir, char *prefix) {
 		ret = msgrcv(msqid, &msg, LOG_STR_MAX_LEN, LOG_MSG_TYPE, 0);
 		get_log_file_name(dir, prefix, file2, FILE_NAME_MAX_LEN);
 		if (strcmp(file1, file2)) {
-			fclose(log_fp);
-			log_fp = fopen(file2, "a");
-			if (log_fp == NULL) {
+			fclose(server_log_fp);
+			server_log_fp = fopen(file2, "a");
+			if (server_log_fp == NULL) {
 				continue;
 			}
 			strcpy(file1, file2);
 		}
-		fwrite(msg.mtext, ret, 1, log_fp);
-		fflush(log_fp);
+		fwrite(msg.mtext, ret, 1, server_log_fp);
+		fflush(server_log_fp);
 	}
 }
 
@@ -86,14 +102,14 @@ int get_log_msqid(int create_flag) {
 	int msqid;
 
 	if ((key = ftok(SFTT_LOG_MSQKEY_FILE, 'S')) == -1) {
-		printf(PROC_NAME " ftok failed!\n"
+		printf("sfttd ftok failed!\n"
 			"\tFile \"" SFTT_LOG_MSQKEY_FILE "\" is existed?\n");
 		return -1;
 	}
 
 	int msgflag = (create_flag ? IPC_CREAT : 0) | 0666;
 	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
-		perror(PROC_NAME " msgget failed!");
+		perror("sfftd msgget failed!");
 		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
 		return -1;
 	}
@@ -102,8 +118,8 @@ int get_log_msqid(int create_flag) {
 }
 
 void logger_exit(int sig) {
-	if (log_fp) {
-		fclose(log_fp);
+	if (server_log_fp) {
+		fclose(server_log_fp);
 	}
 
 	int msqid = get_log_msqid(0);
@@ -117,7 +133,42 @@ void logger_exit(int sig) {
 	exit(0);
 }
 
-int add_log(int level, const char *fmt, ...) {
+int add_client_log(int level, const char *fmt, va_list args)
+{
+	char log_file[FILE_NAME_MAX_LEN];
+	char buf[LOG_STR_MAX_LEN];
+	char now[32];
+
+	char *desc = get_log_level_desc(level);
+	now_time_str(now, 31);
+
+	int ret = sprintf(buf, "[%s] %s ", desc, now);
+
+	//va_list args;
+	//va_start(args, fmt);
+	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
+	//va_end(args);
+
+	strcat(buf + ret, "\n");
+	ret += 1;
+
+	printf("client log dir: %s\n", client_log_dir);
+	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
+	FILE *client_log_fp = fopen(log_file, "a");
+	if (client_log_fp == NULL) {
+		return -1;
+	}
+
+	fwrite(buf, ret, 1, client_log_fp);
+	fflush(client_log_fp);
+
+	fclose(client_log_fp);
+
+	return 0;
+}
+
+int add_server_log(int level, const char *fmt, va_list args)
+{
 	int msqid = get_log_msqid(0);
 	if (msqid == -1) {
 		if (errno == ENOENT) {
@@ -138,10 +189,10 @@ int add_log(int level, const char *fmt, ...) {
 
 	int ret = sprintf(buf, "[%s] %s ", desc, now);
 
-	va_list args;
-	va_start(args, fmt);
+	//va_list args;
+	//va_start(args, fmt);
 	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
-	va_end(args);
+	//va_end(args);
 
 	strcat(buf + ret, "\n");
 	ret += 1;
@@ -152,4 +203,26 @@ int add_log(int level, const char *fmt, ...) {
 	}
 
 	return 0;
+}
+
+int add_log(int level, const char *fmt, ...) {
+	int ret = -1;
+
+	va_list args;
+	va_start(args, fmt);
+
+	switch (type) {
+	case CLIENT_LOG:
+		ret = add_client_log(level, fmt, args);
+		break;
+	case SERVER_LOG:
+		ret = add_server_log(level, fmt, args);
+		break;
+	default:
+		break;
+	}
+
+	va_end(args);
+
+	return ret;
 }

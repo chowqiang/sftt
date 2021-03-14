@@ -10,8 +10,17 @@
 
 #define LOG_MSG_TYPE	1
 
-#define PROC_NAME	"sfttd"
-#define SFTT_LOG_MSQKEY_FILE	"/var/lib/"PROC_NAME"/msgkey"
+#define SFTT_LOG_MSQKEY_FILE	"/var/lib/sfttd/msgkey"
+
+enum log_type {
+	CLIENT_LOG,
+	SERVER_LOG,
+	UNKNOWN_LOG,
+};
+
+typedef enum log_type log_type;
+
+void logger_init(char *dir, char *prefix);
 
 void logger_daemon(char *dir, char *prefix);
 

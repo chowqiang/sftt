@@ -18,13 +18,14 @@
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
-#include "user.h"
+#include "log.h"
 #include "net_trans.h"
 #include "validate.h"
 #include "cmdline.h"
 #include "packet.h"
 #include "debug.h"
 #include "state.h"
+#include "user.h"
 #include "version.h"
 #include "xdr.h"
 
@@ -952,9 +953,9 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 }
 
 static int show_options(char *host, char *user_name, char *password) {
-	printf("host: %s\n", host);
-	printf("your name: %s\n", user_name);
-	printf("your password: %s\n", password);
+	add_log(LOG_INFO, "host: %s\n", host);
+	add_log(LOG_INFO, "your name: %s\n", user_name);
+	add_log(LOG_INFO, "your password: %s\n", password);
 }
 
 void sftt_client_ll_usage(void)
@@ -1102,6 +1103,8 @@ int main(int argc, char **argv) {
 	bool ret = false;
 	int passwd_len = 0;
 
+	logger_init(CLIENT_LOG_DIR, PROC_NAME);
+	set_log_type(CLIENT_LOG);
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
 	memset(host, 0, sizeof(host));
@@ -1161,7 +1164,7 @@ int main(int argc, char **argv) {
 	}
 
 #ifdef DEBUG_ENABLE
-	//show_options(host, user_name, password);
+	show_options(host, user_name, password);
 #endif
 
 	sftt_client_v2 client;
@@ -1175,7 +1178,8 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
-	printf("validate successfully!\n");
+	add_log(LOG_INFO, "client validate successfully!\n");
+	//printf("validate successfully!\n");
 
 	reader_loop2(&client);
 

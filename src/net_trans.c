@@ -80,11 +80,21 @@ void sftt_packet_send_content(int sock, sftt_packet *sp) {
 
 bool sftt_packet_serialize(sftt_packet *sp)
 {
-	int i = 0;
+	int i = 0, len = 0;
+	unsigned char *buf = NULL;
+	bool ret = false;
 
 	for (i = 0; serializables[i].packet_type != -1; ++i) {
 		if (sp->type == serializables[i].packet_type) {
-			return serializables[i].serialize(sp->obj, &(sp->content), &(sp->data_len));
+			ret = serializables[i].serialize(sp->obj, &buf, &len);
+			if (ret && buf) {
+				if (len < sp->block_size) {
+					memcpy(sp->content, buf, len);
+					sp->data_len = len;
+				}
+				free(buf);
+			}
+			return ret;
 		}
 	}
 
@@ -109,6 +119,7 @@ int send_sftt_packet(int sock, sftt_packet *sp) {
 	if (!sftt_packet_serialize(sp)) {
 		return -1;
 	}
+	printf("serialize done!\n");
 
 	sftt_packet *_sp = malloc_sftt_packet(sp->block_size * 2);
 	if (_sp == NULL) {
@@ -125,7 +136,7 @@ int send_sftt_packet(int sock, sftt_packet *sp) {
 	sftt_packet_send_content(sock, _sp);
 
 	free_sftt_packet(&_sp);
-	//DEBUG_POINT;
+	DEBUG_POINT;
 
 	return 0;
 }
@@ -145,7 +156,8 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header); 
 
-	//DEBUG_POINT;
+	DEBUG_POINT;
+	printf("recv header_len: %d\n", header_len);
 	int ret = recv(sock, header, header_len, 0);
 	if (ret != header_len) {
 		if (ret == 0) {
