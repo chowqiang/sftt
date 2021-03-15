@@ -954,6 +954,12 @@ static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, cha
 		client->uinfo->passwd_md5[0] = 0;
 	}
 
+    if (get_sftt_client_config(&client->config) == -1) {
+        return -1;
+    }
+    logger_init(client->config.log_dir, PROC_NAME);
+    set_log_type(CLIENT_LOG);
+
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
 		return -1;
 	}
@@ -1116,8 +1122,6 @@ int main(int argc, char **argv) {
 	bool ret = false;
 	int passwd_len = 0;
 
-	logger_init(CLIENT_LOG_DIR, PROC_NAME);
-	set_log_type(CLIENT_LOG);
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
 	memset(host, 0, sizeof(host));

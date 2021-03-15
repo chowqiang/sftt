@@ -253,6 +253,8 @@ int deal_client_config_line(char *line, sftt_client_config *scc) {
 		
 	if (strcmp(config_name, "block_size") == 0) {
 		scc->block_size = atoi(config_value);
+	} else if (strcmp(config_name, "log_dir") == 0) {
+	    strncpy(scc->log_dir, config_value, DIR_PATH_MAX_LEN);
 	}
 	
 	return 0;

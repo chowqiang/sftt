@@ -26,6 +26,7 @@ typedef struct sftt_server_config {
 
 typedef struct sftt_client_config {
 	int block_size;
+	char log_dir[DIR_PATH_MAX_LEN + 1];
 } sftt_client_config;
 
 /**

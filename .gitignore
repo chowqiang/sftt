@@ -6,6 +6,9 @@ client/*.o
 server/*.o
 src/a.out
 client/client
+client/sftt
 server/server
+server/sfttd
 test/a.out
 debug/*
+logs/*

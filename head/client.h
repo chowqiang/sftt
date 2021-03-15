@@ -75,6 +75,7 @@ typedef struct {
 	user_info *uinfo;
 	client_session *session;
 	char host[HOST_MAX_LEN];
+    sftt_client_config config;
 } sftt_client_v2;
 
 typedef struct {

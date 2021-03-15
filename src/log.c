@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "config.h"
 #include "log.h"
+#include "utils.h"
 
 typedef struct
 {
@@ -22,6 +23,8 @@ static char client_log_dir[DIR_PATH_MAX_LEN];
 static char client_log_prefix[32];
 
 static FILE *server_log_fp = NULL;
+
+int get_log_msqid(int create_flag);
 
 void set_log_type(log_type t)
 {
@@ -68,6 +71,7 @@ void logger_daemon(char *dir, char *prefix) {
 
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
+	    perror("get log msqid failed.");
 		return ;
 	}
 
@@ -77,6 +81,7 @@ void logger_daemon(char *dir, char *prefix) {
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
+	    perror("open log file failed.");
 		return ;
 	}
 
@@ -88,6 +93,7 @@ void logger_daemon(char *dir, char *prefix) {
 			fclose(server_log_fp);
 			server_log_fp = fopen(file2, "a");
 			if (server_log_fp == NULL) {
+			    perror("open log file failed.");
 				continue;
 			}
 			strcpy(file1, file2);
