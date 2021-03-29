@@ -41,11 +41,30 @@ enum process_status {
 	EXITED
 };
 
+enum client_status {
+	VALIDATED,
+	INVALIDATED
+};
+
 typedef struct {
 	pid_t pid;
 	enum process_status status;
 } child_info;
 
+/*
+ *
+ */
+typedef struct {
+	int status;
+	char session_id[SESSION_ID_LEN + 1];
+	char pwd[DIR_PATH_MAX_LEN];
+} client_info_t;
+
+client_info_t *client_info_t_construct(void);
+void client_info_t_deconstruct(client_info_t *ptr);
+
+/*
+ */
 typedef struct {
 	int main_sock;
 	int main_port;

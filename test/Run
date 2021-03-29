@@ -1,0 +1,45 @@
+#!/bin/bash
+
+setup()
+{
+	echo "make ..."
+	make -C ./basic O=../bin
+}
+
+main()
+{
+	bin=./bin
+	testcases=./testcases
+	echo "test begin ..."
+	for rule_file in $(ls $testcases)
+	do
+		total=0
+		success=0
+		failed=0
+		echo ">> $rule_file cases begin"
+		while read line
+		do
+			if [[ "$line" = "^#*" ]]; then
+				continue
+			fi
+
+			cmd=$bin/$line
+			eval $cmd
+			if [ $? -eq 0 ]; then
+				echo "successful: $line"
+				success=$((success+1))
+			else
+				echo "failed: $line"
+				failed=$((failed+1))
+			fi
+			total=$((total+1))
+		done < $testcases/$rule_file
+		echo ">> total: $total, success: $success, failed: $failed"
+	done
+	echo "test end"
+
+}
+
+setup
+main "$@"
+

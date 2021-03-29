@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+void generate_session_id(char *buf, int len);
+
 int now_time_str(char *buf, int max_len);
 
 int ts_to_str(uint64_t ts, char *buf, int max_len);

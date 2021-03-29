@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <sys/socket.h>  
 #include <signal.h>
@@ -14,21 +15,22 @@
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <time.h>
+#include "base.h"
 #include "config.h"
 #include "debug.h"
 #include "encrypt.h"
 #include "log.h"
 #include "mem_pool.h"
+#include "net_trans.h"
 #include "random_port.h"
 #include "server.h"
 #include "version.h"
 #include "user.h"
 #include "utils.h"
-//#include "net_trans.h"
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
 
-//#define BUFFER_SIZE  10240
+extern mem_pool_t *mp;
 
 static bool update_sftt_server_info(sftt_server_info *info, int create_flag);
 
@@ -324,14 +326,17 @@ void update_server(sftt_server *server) {
 	int sock = 0;
 	uint64_t current_ts = (uint64_t)time(NULL);
 	int port = get_random_port();
+	char buf[128];
 
 	if (server->main_port != port) {
 		sock = create_non_block_sock(&port);
-		/*
-		printf("update main port and main sock. sock(%d -> %d), port(%d -> %d)\n",
-			server->main_sock, sock,
-			server->main_port, port);
-		*/
+		if (sock == -1) {
+			return ;
+		}
+
+		sprintf(buf, "update main port and main sock. sock(%d -> %d), port(%d -> %d)",
+			server->main_sock, sock, server->main_port, port);
+		add_log(LOG_INFO, buf);
 
 		if (sock != -1) {
 			close(server->main_sock);
@@ -342,8 +347,19 @@ void update_server(sftt_server *server) {
 	}
 }
 
-void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
+client_info_t *client_info_t_construct(void)
+{
+
+}
+
+void client_info_t_deconstruct(client_info_t *ptr)
+{
+
+}
+
+client_info_t *validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	validate_req *v_req = (validate_req *)req->obj;
+	client_info_t *client = NULL;
 
 	add_log(LOG_INFO, "receive validate request|name: %s", v_req->name);
 	char *md5_str = md5_printable_str(v_req->passwd_md5);
@@ -368,9 +384,16 @@ void validate_user_info(int sock, sftt_packet *req, sftt_packet *resp) {
 	int ret = send_sftt_packet(sock, resp);
 	if (ret == -1) {
 		printf("send validate response failed!\n");
+		return NULL;
 	}
 
-	return ;
+	client = new(client_info_t);
+	assert(client != NULL);
+	
+	client->status = VALIDATED;
+	generate_session_id(client->session_id, SESSION_ID_LEN);
+
+	return client;
 }
 
 void child_process_exception_handler(int sig) {
@@ -386,12 +409,7 @@ void child_process_exit(int sig) {
 void handle_client_session(int sock) {
 	child_info *ci = NULL;
 	sftt_server_info *ssi = NULL;
-
-	mem_pool *mp = mp_create();
-	if (mp == NULL) {
-		printf("allocate memory pool in child process failed!\n");
-		return ;
-	}
+	client_info_t *client = NULL;
 
 	sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
@@ -423,9 +441,13 @@ void handle_client_session(int sock) {
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
-			validate_user_info(sock, req, resp);
+			client = validate_user_info(sock, req, resp);
+			if (client == NULL) {
+				goto exit;
+			}
 			break;
 		case PACKET_TYPE_FILE_NAME_REQ:
+			
 			break;
 		case PACKET_TYPE_DATA_REQ:
 			break;
@@ -566,12 +588,12 @@ int create_non_block_sock(int *pport) {
 	add_log(LOG_INFO, "random port is %d", rand_port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
-		printf("create socket filed!\n");
+		perror("create socket filed");
 		return -1;
 	}
 
 	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
-		printf("set sockfd to non-block failed!\n");
+		perror("set sockfd to non-block failed");
 		return -1;
 	}
 
@@ -581,12 +603,12 @@ int create_non_block_sock(int *pport) {
 	serveraddr.sin_port = htons(rand_port);
 
 	if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
-		printf("bind socket error!\n");
+		perror("bind socket error");
 		return -1;
 	}
 
 	if (listen(sockfd, 10) == -1){
-		printf("listen socket error\n");
+		perror("listen socket error");
 		return -1;
 	}
 

@@ -1,6 +1,72 @@
-#include <time.h>
+#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
 #include "utils.h"
+
+int gen_int(int begin, int end)
+{
+	time_t t;
+
+	assert(end > begin);
+	t = time(NULL);
+	srand((unsigned)(t));
+
+	return rand() % (end - begin) + begin;
+}
+
+char gen_char(char begin, char end)
+{
+	time_t t;
+
+	assert(end > begin);
+	t = time(NULL);
+	srand((unsigned)(t));
+
+	return rand() % (end - begin) + begin;
+}
+
+int gen_id(void)
+{
+	int MAX_ID = (1 << 30);
+	int MIN_ID = ( 1 << 29);
+
+	return gen_int(MIN_ID, MAX_ID);
+}
+
+void generate_session_id(char *buf, int len)
+{
+	int i;
+
+	for (i = 0; i < len; ++i) {
+		if (i % 2) {
+			buf[i] = gen_char('a', 'z');
+		} else {
+			buf[i] = gen_char('0', '9');
+		}
+	}
+}
+
+bool is_int(char *buf, int *num)
+{
+	if (!(buf[0] == '-' || buf[0] == '+' || isdigit(buf[0]))) {
+		return false;
+	}
+
+	if (strlen(buf) > 11) {
+		return false;
+	}
+
+	int i;
+	for (i = 1; buf[i]; ++i) {
+		if (!isdigit(buf[i])) {
+			return false;
+		}
+	}
+
+	return atol(buf) == atoi(buf);
+}
 
 int ymd_hm_str(char *buf, int max_len) {
 	time_t ts = time(NULL);

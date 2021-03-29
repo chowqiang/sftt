@@ -10,5 +10,7 @@ client/sftt
 server/server
 server/sfttd
 test/a.out
+test/bin/*
 debug/*
 logs/*
+lib/*

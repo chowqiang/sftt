@@ -1,13 +1,14 @@
-CC=gcc
-version=0.0.2
-release_number=2
+BASIC_DIR=$(TEST_DIR)/basic
 
-all: test 
+export LIB_DIR LIB CFLAG TEST_DIR BASIC_DIR LIB_NAME
 
-test: test.c 
-	$(CC) -o $@ $^ -DDEBUG_PRINT -D VERSION='"$(version)"' -D RELEASE_NUMBER=$(release_number)
+all: BASIC
+ 
+BASIC:
+	make -C $(BASIC_DIR) O=../bin
 
 .PHONY: clean
 
 clean:
-	rm test 
+	@rm -f $(TEST_DIR)/bin/*
+	@rm -f $(BASIC_DIR)/*.o

@@ -71,7 +71,7 @@ void logger_daemon(char *dir, char *prefix) {
 
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
-	    perror("get log msqid failed.");
+	    perror("get log msqid failed");
 		return ;
 	}
 
@@ -81,7 +81,7 @@ void logger_daemon(char *dir, char *prefix) {
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
-	    perror("open log file failed.");
+	    perror("open log file failed");
 		return ;
 	}
 
@@ -93,7 +93,7 @@ void logger_daemon(char *dir, char *prefix) {
 			fclose(server_log_fp);
 			server_log_fp = fopen(file2, "a");
 			if (server_log_fp == NULL) {
-			    perror("open log file failed.");
+			    perror("open log file failed");
 				continue;
 			}
 			strcpy(file1, file2);
@@ -115,7 +115,7 @@ int get_log_msqid(int create_flag) {
 
 	int msgflag = (create_flag ? IPC_CREAT : 0) | 0666;
 	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
-		perror("sfftd msgget failed!");
+		perror("sfftd msgget failed");
 		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
 		return -1;
 	}
@@ -157,9 +157,6 @@ int add_client_log(int level, const char *fmt, va_list args)
 	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
 	//va_end(args);
 
-	strcat(buf + ret, "\n");
-	ret += 1;
-
 	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
 	FILE *client_log_fp = fopen(log_file, "a");
@@ -167,7 +164,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 		return -1;
 	}
 
-	fwrite(buf, ret, 1, client_log_fp);
+	fprintf(client_log_fp, "%s\n", buf);
 	fflush(client_log_fp);
 
 	fclose(client_log_fp);

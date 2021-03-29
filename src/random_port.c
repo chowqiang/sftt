@@ -1,5 +1,5 @@
-#include<stdio.h>
-#include<time.h>
+#include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include "random_port.h"
 

@@ -34,12 +34,6 @@ sftt_option sftt_client_opts[] = {
 	{NULL, -1, NO_ARG}
 };
 
-struct user_cmd {
-	const char *name;
-	int argc;
-	char **argv;
-};
-
 typedef struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
@@ -130,35 +124,35 @@ sftt_client *create_client(char *ip, sftt_client_config *config, int connects_nu
 
 void destory_sftt_client(sftt_client *client);
 
-int sftt_client_ll_handler(int argc, char *argv[]);
+int sftt_client_ll_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_ll_usage(void);
 
 void sftt_client_cd_usage(void);
 
-int sftt_client_cd_handler(int argc, char *argv[]);
+int sftt_client_cd_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_help_usage(void);
 
-int sftt_client_help_handler(int argc, char *argv[]);
+int sftt_client_help_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_get_usage(void);
 
-int sftt_client_get_handler(int argc, char *argv[]);
+int sftt_client_get_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_put_usage(void);
 
-int sftt_client_put_handler(int argc, char *argv[]);
+int sftt_client_put_handler(int argc, char *argv[], bool *argv_check);
 
-int sftt_client_pwd_handler(int argc, char *argv[]);
+int sftt_client_pwd_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_pwd_usage(void);
 
-int sftt_client_his_handler(int argc, char *argv[]);
+int sftt_client_his_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_his_usage(void);
 
-static struct command sftt_client_cmds[] = {
+static cmd_handler_t sftt_client_cmds[] = {
 	{
 		.name = "help",
 		.fn = sftt_client_help_handler,

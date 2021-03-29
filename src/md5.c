@@ -175,7 +175,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 	
 	if(!fp)
 	{
-		perror("fopen");
+		perror("fopen failed");
 		return -1;
 	}
 	data = (char *)mp_malloc(mp, BLOCK_SIZE);

@@ -3,9 +3,14 @@
 #include <stdlib.h>
 #include "mem_pool.h"
 
-static mem_pool *g_mp = NULL;
+mem_pool_t *g_mp = NULL;
 
-mem_pool *get_singleton_mp() {
+static void __attribute__((constructor)) mem_pool_init(void)
+{
+	get_singleton_mp();	
+}
+
+mem_pool_t *get_singleton_mp() {
 	if (g_mp) {
 		return g_mp;
 	}
@@ -15,8 +20,8 @@ mem_pool *get_singleton_mp() {
 	return g_mp;
 }
 
-mem_node *mem_node_create(size_t size) {
-	mem_node *p = (mem_node *)malloc(sizeof(mem_node));
+mem_node_t *mem_node_t_create(size_t size) {
+	mem_node_t *p = (mem_node_t *)malloc(sizeof(mem_node_t));
 	if (p == NULL) {
 		return NULL;
 	}
@@ -32,44 +37,44 @@ mem_node *mem_node_create(size_t size) {
 	return p;
 }
 
-void mem_node_free(void *data) {
+void mem_node_t_free(void *data) {
 	if (data == NULL) {
 		return ;
 	}
-	mem_node *node = (mem_node *)data;
+	mem_node_t *node = (mem_node_t *)data;
 	if (!node->is_using && node->address) {
 		free(node->address);
 	}
 }
 
-mem_pool *mp_create() {
-	mem_pool *mp = (mem_pool *)malloc(sizeof(mem_pool));
+mem_pool_t *mp_create(void) {
+	mem_pool_t *mp = (mem_pool_t *)malloc(sizeof(mem_pool_t));
 	if (mp == NULL) {
 		return NULL;
 	}
-	mp->list = dlist_create(mem_node_free);
+	mp->list = dlist_create(mem_node_t_free);
 
 	return mp;
 }
 
-int mp_init(mem_pool *mp) {
+int mp_init(mem_pool_t *mp) {
 	if (mp == NULL) {
 		return -1;
 	}
-	mp->list = dlist_create(mem_node_free);
+	mp->list = dlist_create(mem_node_t_free);
 
 	return 0;
 }
 
-void *mp_malloc(mem_pool *mp, size_t n) {
+void *mp_malloc(mem_pool_t *mp, size_t n) {
 	if (mp == NULL || mp->list == NULL || n == 0) {
 		return NULL;
 	}
 
-	mem_node *m_node = NULL, *p = NULL;
+	mem_node_t *m_node = NULL, *p = NULL;
 	dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		p = (mem_node *)l_node->data;
+		p = (mem_node_t *)l_node->data;
 		if (p->is_using || p->size < n) {
 			continue;
 		}
@@ -83,7 +88,7 @@ void *mp_malloc(mem_pool *mp, size_t n) {
 	}
 
 	if (m_node == NULL) {
-		m_node = mem_node_create(n);
+		m_node = mem_node_t_create(n);
 		if (m_node == NULL) {
 			return NULL;
 		}
@@ -96,14 +101,14 @@ void *mp_malloc(mem_pool *mp, size_t n) {
 	return m_node->address;
 }
 
-void mp_free(mem_pool *mp, void *p) {
+void mp_free(mem_pool_t *mp, void *p) {
 	if (mp == NULL || mp->list == NULL || p == NULL) {
 		return ;
 	}
-	mem_node *m_node = NULL;
+	mem_node_t *m_node = NULL;
 	dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		m_node = (mem_node *)l_node->data;
+		m_node = (mem_node_t *)l_node->data;
 		if (m_node->address == p) {
 			m_node->is_using = 0;
 			m_node->used_cnt += 1;
@@ -112,14 +117,14 @@ void mp_free(mem_pool *mp, void *p) {
 	}
 }
 
-void mp_destroy(mem_pool *mp) {
+void mp_destroy(mem_pool_t *mp) {
 	if (mp == NULL || mp->list == NULL) {
 		return ;
 	}
-	mem_node *m_node = NULL;
+	mem_node_t *m_node = NULL;
 	dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		m_node = (mem_node *)l_node->data;
+		m_node = (mem_node_t *)l_node->data;
 		if (m_node->is_using) {
 			return ;
 		}
@@ -128,7 +133,7 @@ void mp_destroy(mem_pool *mp) {
 	dlist_destroy(mp->list);
 }
 
-int mp_node_cnt(mem_pool *mp) {
+int mp_node_cnt(mem_pool_t *mp) {
 	if (mp == NULL || mp->list == NULL) {
 		return 0;
 	}
@@ -136,9 +141,19 @@ int mp_node_cnt(mem_pool *mp) {
 	return dlist_size(mp->list);
 }
 
+mem_pool_t *mem_pool_t_contruct(void)
+{
+	return NULL;
+}
+
+void mem_pool_t_deconstruct(mem_pool_t *ptr)
+{
+
+}
+
 #if 0
 int main(void) {
-	mem_pool *mp = mp_create();
+	mem_pool_t *mp = mp_create();
 	printf("node count: %d\n", mp_node_cnt(mp));
 
 	char *str1 = (char *)mp_malloc(mp, 16);

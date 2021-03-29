@@ -31,6 +31,8 @@
 
 extern int errno;
 
+dlist *his_cmds;
+
 path_entry *get_file_path_entry(char *file_name) {
 	mem_pool *mp = get_singleton_mp();
 
@@ -788,8 +790,16 @@ struct user_cmd *parse_command(char *buf)
 
 static int run_command(const struct command *cmd, int argc, char *argv[])
 {
-    printf("running command: %s\n", cmd->name);
-    return cmd->fn(argc, argv);
+	int ret;
+	bool argv_check = true;
+
+    add_log(LOG_INFO, "running command: %s", cmd->name);
+    ret = cmd->fn(argc, argv, &argv_check);
+	if (!argv_check) {
+		cmd->usage();
+	}
+
+	return ret;
 }
 
 void add_cmd_log(struct user_cmd *cmd)
@@ -797,9 +807,14 @@ void add_cmd_log(struct user_cmd *cmd)
 	int i = 0, ret = 0;
 	char *buf = malloc(sizeof(char) * 1024);
 
-	ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
-	for (i = 0; i < cmd->argc; ++i) {
-		ret += sprintf(buf + ret, ", %s", cmd->argv[i]);
+	if (cmd->argc == 0) {
+		ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
+	} else {
+		ret = sprintf(buf, "exec name: %s, argc: %d, argv: ", cmd->name, cmd->argc);
+		for (i = 0; i < cmd->argc - 1; ++i) {
+			ret += sprintf(buf + ret, "%s, ", cmd->argv[i]);
+		}
+		ret += sprintf(buf + ret, "%s", cmd->argv[i]);
 	}
 	buf[ret] = 0;
 
@@ -820,6 +835,7 @@ void execute_cmd(char *buf, int flag) {
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
 			run_command(&sftt_client_cmds[i], cmd->argc, cmd->argv);
+			break;
 		}
 	}
 }
@@ -932,6 +948,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 
 static int init_sftt_client_session(sftt_client_v2 *client)
 {
+
 	return 0;
 }
 
@@ -982,13 +999,14 @@ void sftt_client_ll_usage(void)
 	printf("ll\n");
 }
 
-int sftt_client_ll_handler(int argc, char *argv[])
+int sftt_client_ll_handler(int argc, char *argv[], bool *argv_check)
 {
 	printf("I'm %s handler of ll\n", __func__);
 }
 
-int sftt_client_help_handler(int argc, char *argv[])
+int sftt_client_help_handler(int argc, char *argv[], bool *argv_check)
 {
+#if 0
 	printf("sftt client commands:\n\n"
 		"\tll	list contents of current directory.\n"
 		"\tcd	change the current directory.\n"
@@ -997,11 +1015,35 @@ int sftt_client_help_handler(int argc, char *argv[])
 		"\tput	put the file to server.\n"
 		"\this	get history command.\n"
 		"\thelp	show help info.\n\n");
+#endif
+	int i;
+	*argv_check = true;
+	printf("sftt client commands:\n\n");
+	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
+		printf("\t%s\t\t%s\n", sftt_client_cmds[i].name, sftt_client_cmds[i].help);
+	}
+
+	return 0;
 }
 
-int sftt_client_his_handler(int argc, char *argv[])
+int sftt_client_his_handler(int argc, char *argv[], bool *argv_check)
 {
+	int i = 0, num = 10;
+	if (argc > 0) {
+		num = atoi(argv[0]);
+		add_log(LOG_INFO, "his number specified: %d", num);
+	}
 
+	dlist_node *node;
+	dlist_for_each(his_cmds, node) {
+		if (i >= num) {
+			break;
+		}
+		printf("%s\n", (char *)node->data);
+		++i;
+	}
+
+	return 0;
 }
 
 void sftt_client_his_usage(void)
@@ -1013,7 +1055,7 @@ void sftt_client_help_usage(void)
 
 }
 
-int sftt_client_cd_handler(int argc, char *argv[])
+int sftt_client_cd_handler(int argc, char *argv[], bool *argv_check)
 {
 	return 0;
 }
@@ -1023,7 +1065,7 @@ void sftt_client_cd_usage(void)
 
 }
 
-int sftt_client_pwd_handler(int argc, char *argv[])
+int sftt_client_pwd_handler(int argc, char *argv[], bool *argv_check)
 {
 
 }
@@ -1033,7 +1075,7 @@ void sftt_client_pwd_usage(void)
 
 }
 
-int sftt_client_get_handler(int argc, char *argv[])
+int sftt_client_get_handler(int argc, char *argv[], bool *argv_check)
 {
 
 }
@@ -1043,7 +1085,7 @@ void sftt_client_get_usage(void)
 
 }
 
-int sftt_client_put_handler(int argc, char *argv[])
+int sftt_client_put_handler(int argc, char *argv[], bool *argv_check)
 {
 
 }
@@ -1059,7 +1101,7 @@ int reader_loop(sftt_client_v2 *client)
 	int start;
 	cmd_line cmd;
 	dlist_node *last = NULL, *next = NULL;
-	dlist *his_cmds = dlist_create(free);
+	his_cmds = dlist_create(free);
 
 	start = 0;
 	cmd.buf[0] = 0;
@@ -1093,10 +1135,15 @@ int reader_loop(sftt_client_v2 *client)
 	}
 }
 
+user_cmd *user_cmd_construct(void)
+{
+		
+}
+
 int reader_loop2(sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
-	dlist *his_cmds = dlist_create(free);
+	his_cmds = dlist_create(free);
 
 	for (;;) {
 		printf("sftt>> ");
