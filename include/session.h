@@ -5,18 +5,18 @@
 #include "config.h"
 #include "md5.h"
 #include "user.h"
-#include "xdr.h"
+#include "req_rsp.h"
 
-typedef struct client_session {
+struct client_session {
 	char session_id[SESSION_ID_LEN];
-} client_session;
+};
 
-typedef struct server_session {
+struct server_session {
 	char session_id[SESSION_ID_LEN];
 	bool is_validate;
-	user_info *user;
+	struct user_info *user;
 	char pwd[DIR_PATH_MAX_LEN];
 
-} server_session;
+};
 
 #endif

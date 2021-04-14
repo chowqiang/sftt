@@ -21,7 +21,7 @@ do {	\
 
 #define MAX_CHILD_NUM			128
 
-sftt_option sftt_server_opts[] = {
+struct sftt_option sftt_server_opts[] = {
 	{"start", START, OPT_ARG},
 	{"restart", RESTART, OPT_ARG},
 	{"stop", STOP, NO_ARG},
@@ -46,45 +46,46 @@ enum client_status {
 	INVALIDATED
 };
 
-typedef struct {
+struct child_info {
 	pid_t pid;
 	enum process_status status;
-} child_info;
+};
 
 /*
  *
  */
-typedef struct {
+struct client_info {
 	int status;
 	char session_id[SESSION_ID_LEN + 1];
 	char pwd[DIR_PATH_MAX_LEN];
-} client_info_t;
+};
 
-client_info_t *client_info_t_construct(void);
-void client_info_t_deconstruct(client_info_t *ptr);
+struct client_info *client_info_construct(void);
+
+void client_info_deconstruct(struct client_info *ptr);
 
 /*
  */
-typedef struct {
+struct sftt_server {
 	int main_sock;
 	int main_port;
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
-	sftt_server_config conf;
-} sftt_server;
+	struct sftt_server_config conf;
+};
 
-typedef struct {
+struct sftt_server_info {
 	pid_t main_pid;
 	pid_t log_pid;
-	sftt_server server;
-	child_info child_list[MAX_CHILD_NUM];
-} sftt_server_info;
+	struct sftt_server server;
+	struct child_info child_list[MAX_CHILD_NUM];
+};
 
 void server_init_func();
-int  server_consult_block_size(int connect_fd,char *buff,int server_block_size);
-void server_file_resv(int connect_fd , int consulted_block_size, sftt_server_config init_conf);
-FILE *server_creat_file(sftt_packet *sp ,sftt_server_config  init_conf, char * data_buff);
-void server_transport_data_to_file(FILE * fd,sftt_packet * sp);
+int  server_consult_block_size(int connect_fd,char *buff, int server_block_size);
+void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_server_config init_conf);
+FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_conf, char * data_buff);
+void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 void is_exit(char * filepath);
 
 

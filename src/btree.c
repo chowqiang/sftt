@@ -5,8 +5,8 @@
 #include "queue.h"
 #include "destroy.h"
 
-btree_node *btree_node_create(void *data) {
-	btree_node *node = (btree_node *)malloc(sizeof(btree_node));
+struct btree_node *btree_node_create(void *data) {
+	struct btree_node *node = (struct btree_node *)malloc(sizeof(struct btree_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -16,8 +16,8 @@ btree_node *btree_node_create(void *data) {
 
 	return node;
 }
-btree *btree_create(void (*destroy)(void *data)) {
-	btree *tree = (btree *)malloc(sizeof(btree));
+struct btree *btree_create(void (*destroy)(void *data)) {
+	struct btree *tree = (struct btree *)malloc(sizeof(struct btree));
 	if (tree == NULL) {
 		return NULL;
 	}
@@ -26,7 +26,7 @@ btree *btree_create(void (*destroy)(void *data)) {
 	return tree;	
 }
 
-void btree_init(btree *tree, void (*destroy) (void *data)) {
+void btree_init(struct btree *tree, void (*destroy) (void *data)) {
 	if (tree == NULL) {
 		return ;
 	}
@@ -35,7 +35,7 @@ void btree_init(btree *tree, void (*destroy) (void *data)) {
 	tree->root = NULL;
 }
 
-void btree_set_root(btree *tree, btree_node *root) {
+void btree_set_root(struct btree *tree, struct btree_node *root) {
 	if (tree == NULL) {
 		return ;
 	}
@@ -43,7 +43,7 @@ void btree_set_root(btree *tree, btree_node *root) {
 	tree->size = btree_node_count(root); 
 }
 
-int btree_node_destroy(btree_node *node, void (*destroy) (void *data)) {
+int btree_node_destroy(struct btree_node *node, void (*destroy) (void *data)) {
 	if (node == NULL) {
 		return 0;
 	}
@@ -57,7 +57,7 @@ int btree_node_destroy(btree_node *node, void (*destroy) (void *data)) {
 	return left_cnt + right_cnt + 1;
 }
 
-void btree_destroy(btree *tree) {
+void btree_destroy(struct btree *tree) {
 	if (tree == NULL) {
 		return ;
 	}
@@ -66,11 +66,11 @@ void btree_destroy(btree *tree) {
 	tree->root = NULL;
 }
 
-int btree_ins_left(btree *tree, btree_node *node, void *data) {
+int btree_ins_left(struct btree *tree, struct btree_node *node, void *data) {
 	if (tree == NULL) {
 		return -1;
 	} 
-	btree_node *new_node = btree_node_create(data);
+	struct btree_node *new_node = btree_node_create(data);
 	if (new_node == NULL) {
 		return -1;
 	}
@@ -86,16 +86,16 @@ int btree_ins_left(btree *tree, btree_node *node, void *data) {
 	return tree->size;
 }
 
-int btree_is_empty(btree *tree) {
+int btree_is_empty(struct btree *tree) {
 	return tree == NULL ? 1 : tree->root == NULL;
 }
 
-int btree_ins_right(btree *tree, btree_node *node, void *data) {
+int btree_ins_right(struct btree *tree, struct btree_node *node, void *data) {
 	if (tree == NULL) {
 		return -1;
 	}
 
-	btree_node *new_node = btree_node_create(data);
+	struct btree_node *new_node = btree_node_create(data);
 	if (new_node == NULL) {
 		return -1;
 	}
@@ -111,7 +111,7 @@ int btree_ins_right(btree *tree, btree_node *node, void *data) {
 	return tree->size;
 }
 
-int btree_rm_left(btree *tree, btree_node *node) {
+int btree_rm_left(struct btree *tree, struct btree_node *node) {
 	if (tree == NULL || node == NULL) {
 		return -1;	
 	} 
@@ -122,7 +122,7 @@ int btree_rm_left(btree *tree, btree_node *node) {
 	return tree->size;
 }
 
-int btree_rm_right(btree *tree, btree_node *node) {
+int btree_rm_right(struct btree *tree, struct btree_node *node) {
 	if (tree == NULL || node == NULL) {
 		return -1;
 	}
@@ -133,20 +133,20 @@ int btree_rm_right(btree *tree, btree_node *node) {
 	return tree->size;
 }
 
-int btree_size(btree *tree) {
+int btree_size(struct btree *tree) {
 	return tree == NULL ? 0 : tree->size;
 }
 
-btree_node *btree_root(btree *tree) {
+struct btree_node *btree_root(struct btree *tree) {
 	return tree == NULL ? NULL : tree->root;
 }
 
-int btree_is_leaf(btree_node *node) {
+int btree_is_leaf(struct btree_node *node) {
 	return node == NULL ? 0 : node->left == NULL && node->right == NULL;
 }
 
-btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *right) {
-	btree_node *parent = btree_node_create(data);
+struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left, struct btree_node *right) {
+	struct btree_node *parent = btree_node_create(data);
 	if (parent == NULL) {
 		return NULL;
 	}
@@ -156,22 +156,22 @@ btree_node *btree_node_gen_parent(void *data, btree_node *left, btree_node *righ
 	return parent;
 }
 
-void *btree_data(btree_node *node) {
+void *btree_data(struct btree_node *node) {
 	return node == NULL ? NULL : node->data;
 }
 
-dlist *btree_bfs(btree *tree) {
+struct dlist *btree_bfs(struct btree *tree) {
 	if (tree == NULL) {
 		return NULL;
 	}
 
-	dlist *list = dlist_create(NULL);
+	struct dlist *list = dlist_create(NULL);
 	if (list == NULL) {
 		return NULL;
 	}
 
-	btree_node *node = NULL;
-	queue *q = queue_create(NULL);
+	struct btree_node *node = NULL;
+	struct queue *q = queue_create(NULL);
 	queue_enqueue(q, tree->root);
 	while (!queue_is_empty(q)) {
 		queue_dequeue(q, (void **)&node);
@@ -187,7 +187,7 @@ dlist *btree_bfs(btree *tree) {
 	return list;
 }
 
-int btree_node_count(btree_node *node) {
+int btree_node_count(struct btree_node *node) {
 	if (node == NULL) {
 		return 0;
 	} else {
@@ -195,13 +195,12 @@ int btree_node_count(btree_node *node) {
 	}
 }
 
-#if 0
-int main(void) {
-	btree tree;
+int btree_test(void) {
+	struct btree tree;
 	btree_init(&tree, destroy_int);
 
 	btree_ins_left(&tree, NULL, (void *) 1);
-	btree_node *root = btree_root(&tree);
+	struct btree_node *root = btree_root(&tree);
 	btree_ins_left(&tree, root, (void *) 2);
 	btree_ins_right(&tree, root, (void *) 2);
 	printf("%d\n", btree_size(&tree));
@@ -211,4 +210,3 @@ int main(void) {
 	
 	return 0;	
 }
-#endif

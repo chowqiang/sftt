@@ -4,15 +4,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "md5.h"
-#include "xdr.h"
+#include "req_rsp.h"
 
-typedef struct user_info {
+struct user_info {
 	uint64_t uid;
 	char name[USER_NAME_MAX_LEN];
 	char passwd[PASSWD_MAX_LEN];
 	char passwd_md5[PASSWD_MAX_LEN];
-} user_info;
+};
 
-bool user_add(user_info ui);
+bool user_add(struct user_info ui);
 
 #endif

@@ -12,18 +12,18 @@
 #include "net_trans.h"
 #include "serialize.h"
 
+extern mem_pool_t *g_mp;
 extern struct serialize_handle serializables[];
 
 sftt_packet *malloc_sftt_packet(int block_size) {
-	mem_pool *mp = get_singleton_mp();
 
-	sftt_packet *sp = (sftt_packet *)mp_malloc(mp, sizeof(sftt_packet));
+	sftt_packet *sp = (sftt_packet *)mp_malloc(g_mp, sizeof(sftt_packet));
 	if (sp == NULL) {
 		return NULL;
 	}	
 	memset(sp, 0, sizeof(*sp));
 
-	sp->content = (unsigned char *)mp_malloc(mp, sizeof(unsigned char) * block_size);
+	sp->content = (unsigned char *)mp_malloc(g_mp, sizeof(unsigned char) * block_size);
 	if (sp->content == NULL) {
 		free(sp);
 		return NULL;
@@ -52,9 +52,7 @@ void sftt_packet_send_header(int sock, sftt_packet *sp) {
 	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
 	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
-	mem_pool *mp = get_singleton_mp();
-	assert(mp != NULL);
-	unsigned char *buffer = mp_malloc(mp, header_len);
+	unsigned char *buffer = mp_malloc(g_mp, header_len);
 	assert(buffer != NULL);
 
 	int encoded_len = sftt_buffer_encode(header, header_len, buffer, false, false);
@@ -63,7 +61,7 @@ void sftt_packet_send_header(int sock, sftt_packet *sp) {
 	int ret = send(sock, buffer, encoded_len, 0);
 	assert(ret == encoded_len);
 
-	mp_free(mp, buffer);
+	mp_free(g_mp, buffer);
 	add_log(LOG_INFO, "send packet header successfully!");
 }
 
@@ -162,9 +160,7 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 		return -1;
 	}
 
-	mem_pool *mp = get_singleton_mp();
-	assert(mp != NULL);
-	unsigned char *buffer = mp_malloc(mp, header_len);
+	unsigned char *buffer = mp_malloc(g_mp, header_len);
 	assert(buffer != NULL);
 
 	int decoded_len = sftt_buffer_decode(header, header_len, buffer, false, false);
@@ -174,7 +170,7 @@ int sftt_packet_recv_header(int sock, sftt_packet *sp) {
 	add_log(LOG_INFO, "recv packet type: %d", sp->type);
     memcpy(&(sp->data_len), buffer + PACKET_TYPE_SIZE, PACKET_LEN_SIZE);
 
-	mp_free(mp, buffer);
+	mp_free(g_mp, buffer);
 
 	return header_len;
 }
@@ -223,11 +219,9 @@ int recv_sftt_packet(int sock, sftt_packet *sp) {
 } 
 
 void free_sftt_packet(sftt_packet **sp) {
-	mem_pool *mp = get_singleton_mp();
-
 	if (sp && *sp) {
-		mp_free(mp, (*sp)->content);
-		mp_free(mp, *sp);
+		mp_free(g_mp, (*sp)->content);
+		mp_free(g_mp, *sp);
 		*sp = NULL;
 	} 
 }

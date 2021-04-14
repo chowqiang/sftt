@@ -3,18 +3,18 @@
 
 #include <stdbool.h>
 
-typedef struct {
+struct user_cmd {
 	const char *name;
 	int argc;
 	char **argv;
-} user_cmd_t;
+};
 
-typedef struct {
+struct cmd_handler {
 	const char *name;
 	int (*fn)(int argc, char *argv[], bool *argv_check);
 	const char *help;
 	void (*usage)(void);
-} cmd_handler_t;
+};
 
 #endif
 

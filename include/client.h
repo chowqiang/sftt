@@ -11,12 +11,12 @@
 #include "session.h"
 #include "user.h"
 
-#define LOCAL_HOST				"127.0.0.1"
+#define LOCAL_HOST			"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
 
 #define IPV4_MAX_LEN			16	
-#define CLIENT_MAX_CONNECT_NUM	4
+#define CLIENT_MAX_CONNECT_NUM		4
 
 #define SESSION_TYPE_FILE		1
 #define SESSION_TYPE_DIR		2
@@ -24,9 +24,9 @@
 #define EXEC_NAME_MAX_LEN		32
 #define CMD_ARG_MAX_LEN			1024
 
-#define CLIENT_LOG_DIR		"/var/log/"PROC_NAME"/"
+#define CLIENT_LOG_DIR			"/var/log/"PROC_NAME"/"
 
-sftt_option sftt_client_opts[] = {
+struct sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
 	{"-P", PORT, HAS_ARG},
@@ -34,75 +34,75 @@ sftt_option sftt_client_opts[] = {
 	{NULL, -1, NO_ARG}
 };
 
-typedef struct path_entry {
+struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
-} path_entry;
+};
 
-typedef struct path_entry_list {
-	path_entry entry;
+struct path_entry_list {
+	struct path_entry entry;
 	struct path_entry_list *next;
-} path_entry_list;
+};
 
-typedef struct file_input_stream {
+struct file_input_stream {
 	char target[FILE_NAME_MAX_LEN + 1];
 	int cursor;
 	FILE *fp;
 	int (*get_next_buffer)(struct file_input_stream *fis, char *buffer, size_t size);
-} file_input_stream;
+};
 
-typedef struct {
+struct sftt_client {
 	char ip[IPV4_MAX_LEN];
 	int port;
 	int configured_block_size;
-	sock_connect connects[CLIENT_MAX_CONNECT_NUM];
+	struct sock_connect connects[CLIENT_MAX_CONNECT_NUM];
 	int connects_num;
 	char session_file[FILE_NAME_MAX_LEN];
 	int session_type;
 	void *trans_session;
-} sftt_client;
+};
 
-typedef struct {
-	client_sock_conn conn_ctrl;
-	dlist *conn_data;
-	mem_pool *mp;
-	user_info *uinfo;
-	client_session *session;
+struct sftt_client_v2 {
+	struct client_sock_conn conn_ctrl;
+	struct dlist *conn_data;
+	struct mem_pool *mp;
+	struct user_info *uinfo;
+	struct client_session *session;
 	char host[HOST_MAX_LEN];
-    sftt_client_config config;
-} sftt_client_v2;
+    	struct sftt_client_config config;
+};
 
-typedef struct {
-	sock_connect connect;
+struct thread_input_params {
+	struct sock_connect connect;
 	int index;
 	int step;
-	path_entry *pes;
+	struct path_entry *pes;
 	int pe_count;
-} thread_input_params;
+};
 
-typedef struct {
+struct file_trans_session{
         char ip[IPV4_MAX_LEN];
         int index;
         char md5;
-	path_entry pe;
-} file_trans_session;
+	struct path_entry pe;
+};
 
-typedef struct {
+struct dir_trans_session{
         char ip[IPV4_MAX_LEN];
-        file_trans_session *fts;
+        struct file_trans_session *fts;
         int fts_count;
-	path_entry pe;
-} dir_trans_session;
+	struct path_entry pe;
+};
 
-path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
+struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
 
-int find_unfinished_session(path_entry *pe, char *ip);
+int find_unfinished_session(struct path_entry *pe, char *ip);
 
-int file_trans_session_diff(file_trans_session *old_session, file_trans_session *new_seesion);
+int file_trans_session_diff(struct file_trans_session *old_session, struct file_trans_session *new_seesion);
 
-int dir_trans_session_diff(dir_trans_session *old_session, dir_trans_session *new_session);
+int dir_trans_session_diff(struct dir_trans_session *old_session, struct dir_trans_session *new_session);
 
-int save_trans_session(sftt_client *client);
+int save_trans_session(struct sftt_client *client);
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
 
@@ -112,17 +112,17 @@ int is_dir(char *file_name);
 
 int is_file(char *file_name);
 
-file_input_stream *create_file_input_stream(char *file_name);
+struct file_input_stream *create_file_input_stream(char *file_name);
 
-void destory_file_input_stream(file_input_stream *fis);
+void destory_file_input_stream(struct file_input_stream *fis);
 
 int get_cache_port();
 
 void set_cache_port(int port);
 
-sftt_client *create_client(char *ip, sftt_client_config *config, int connects_num); 
+struct sftt_client *create_client(char *ip, struct sftt_client_config *config, int connects_num); 
 
-void destory_sftt_client(sftt_client *client);
+void destory_sftt_client(struct sftt_client *client);
 
 int sftt_client_ll_handler(int argc, char *argv[], bool *argv_check);
 
@@ -152,7 +152,7 @@ int sftt_client_his_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_his_usage(void);
 
-static cmd_handler_t sftt_client_cmds[] = {
+static struct cmd_handler sftt_client_cmds[] = {
 	{
 		.name = "help",
 		.fn = sftt_client_help_handler,

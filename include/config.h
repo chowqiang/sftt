@@ -17,23 +17,23 @@
  */
 #define HOST_MAX_LEN		32
 
-typedef struct sftt_server_config {
+struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];
 	char log_dir[DIR_PATH_MAX_LEN + 1];
 	int block_size;
 	int update_th;
-} sftt_server_config;
+};
 
-typedef struct sftt_client_config {
+struct sftt_client_config {
 	int block_size;
 	char log_dir[DIR_PATH_MAX_LEN + 1];
-} sftt_client_config;
+};
 
 /**
  * get sftt server config
  */
-int get_sftt_server_config(sftt_server_config *ssc);
+int get_sftt_server_config(struct sftt_server_config *ssc);
 
-int get_sftt_client_config(sftt_client_config *scc);
+int get_sftt_client_config(struct sftt_client_config *scc);
 
 #endif

@@ -18,8 +18,6 @@ enum log_type {
 	UNKNOWN_LOG,
 };
 
-typedef enum log_type log_type;
-
 void logger_init(char *dir, char *prefix);
 
 void logger_daemon(char *dir, char *prefix);
@@ -27,5 +25,7 @@ void logger_daemon(char *dir, char *prefix);
 void logger_exit(int sig);
 
 int add_log(int level, const char *fmt, ...);
+
+void set_log_type(enum log_type t);
 
 #endif

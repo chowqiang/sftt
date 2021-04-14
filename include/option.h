@@ -19,15 +19,15 @@ enum option_index {
 	UNKNOWN
 };
 
-typedef struct {
+struct sftt_option {
 	const char *name;
 	enum option_index index;
 	int flags;
-} sftt_option;
+};
 
 char *next_arg(char *arg, char **param, char **value);
 
-const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const sftt_option *sftt_opts);
+const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const struct sftt_option *sftt_opts);
 
 #endif
 

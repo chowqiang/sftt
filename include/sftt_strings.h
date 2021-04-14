@@ -3,28 +3,28 @@
 
 #define MAX_SDS_AUTO_GROW_SIZE	1024
 
-typedef struct {
+struct sds {
 	int len;
 	int size;
 	char *buf;	
-} sds;
+};
 
-typedef struct {
+struct strings {
 	sds *str_arr;
 	int cap;	
 	int num;
-} strings;
+};
 
-strings *create_strings(void);
+struct strings *create_strings(void);
 
-int add_string(strings *ss);
+int add_string(struct strings *ss);
 
-int append_char(strings *ss, int index, char c);
+int append_char(struct strings *ss, int index, char c);
 
-int get_string_num(strings *ss);
+int get_string_num(struct strings *ss);
 
-const char *get_string(strings *ss, int index);
+const char *get_string(struct strings *ss, int index);
 
-void free_strings(strings **ss); 
+void free_strings(struct strings **ss); 
 
 #endif

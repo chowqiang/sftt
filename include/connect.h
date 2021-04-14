@@ -13,15 +13,15 @@ enum connect_type {
 	CONN_TYPE_DATA
 };
 
-typedef struct {
+struct sock_connect {
 	int sock;
 	int block_size;
-} sock_connect;
+};
 
-typedef struct {
+struct client_sock_conn {
 	int sock;
 	enum connect_type type;
 	int port;
-} client_sock_conn;
+};
 
 #endif

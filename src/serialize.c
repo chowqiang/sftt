@@ -5,6 +5,8 @@
 #include "serialize.h"
 #include "xdr.h"
 
+extern mem_pool_t *g_mp;
+
 struct serialize_handle serializables[] = {
 	{PACKET_TYPE_VALIDATE_REQ, validate_req_encode, validate_req_decode},
 	{PACKET_TYPE_VALIDATE_RSP, validate_rsp_encode, validate_rsp_decode},
@@ -40,8 +42,7 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
 	add_log(LOG_INFO, "begin to decode ...");
-	mem_pool *mp = get_singleton_mp();
-	validate_req *_req = (validate_req *)mp_malloc(mp, sizeof(validate_req));
+	validate_req *_req = (validate_req *)mp_malloc(g_mp, sizeof(validate_req));
 
 	FILE *fp = fmemopen(buf, len, "r");
 
@@ -78,8 +79,7 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	add_log(LOG_INFO, "begin to decode ...");
-	mem_pool *mp = get_singleton_mp();
-	validate_resp *_rsp = (validate_resp *)mp_malloc(mp, sizeof(validate_resp));
+	validate_resp *_rsp = (validate_resp *)mp_malloc(g_mp, sizeof(validate_resp));
 
 	FILE *fp = fmemopen(buf, len, "r");
 

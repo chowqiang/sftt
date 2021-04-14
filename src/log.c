@@ -11,13 +11,12 @@
 #include "log.h"
 #include "utils.h"
 
-typedef struct
-{
+struct msgbuf {
     long    mtype;
     char    mtext[LOG_STR_MAX_LEN];
-} msgbuf;
+};
 
-static log_type type = UNKNOWN_LOG;
+static enum log_type type = UNKNOWN_LOG;
 
 static char client_log_dir[DIR_PATH_MAX_LEN];
 static char client_log_prefix[32];
@@ -26,12 +25,13 @@ static FILE *server_log_fp = NULL;
 
 int get_log_msqid(int create_flag);
 
-void set_log_type(log_type t)
+void set_log_type(enum log_type t)
 {
 	type = t;
 }
 
-static inline char *get_log_level_desc(int level) {
+static inline char *get_log_level_desc(int level)
+{
 	switch (level) {
 	case LOG_DEBUG:
 		return "DEBUG";
@@ -46,7 +46,8 @@ static inline char *get_log_level_desc(int level) {
 	}
 }
 
-void get_log_file_name(char *dir, char *prefix, char *file_name, int max_len) {
+void get_log_file_name(char *dir, char *prefix, char *file_name, int max_len)
+{
 	char suffix[16];
 	ymd_hm_str(suffix, 15);
 
@@ -64,10 +65,11 @@ void logger_init(char *dir, char *prefix)
 	strcpy(client_log_prefix, prefix);
 }
 
-void logger_daemon(char *dir, char *prefix) {
+void logger_daemon(char *dir, char *prefix)
+{
 	int msqid;
-    key_t key;
-    msgbuf msg;
+    	key_t key;
+    	struct msgbuf msg;
 
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
@@ -103,7 +105,8 @@ void logger_daemon(char *dir, char *prefix) {
 	}
 }
 
-int get_log_msqid(int create_flag) {
+int get_log_msqid(int create_flag)
+{
 	key_t key;
 	int msqid;
 
@@ -123,7 +126,8 @@ int get_log_msqid(int create_flag) {
 	return msqid;
 }
 
-void logger_exit(int sig) {
+void logger_exit(int sig)
+{
 	add_log(LOG_INFO, "log server is stop ...");
 
 	if (server_log_fp) {
@@ -184,7 +188,7 @@ int add_server_log(int level, const char *fmt, va_list args)
 		}
 	}
 
-	msgbuf msg;
+	struct msgbuf msg;
 	msg.mtype = LOG_MSG_TYPE;
 	char *buf = msg.mtext;
 	char now[32];
@@ -210,7 +214,8 @@ int add_server_log(int level, const char *fmt, va_list args)
 	return 0;
 }
 
-int add_log(int level, const char *fmt, ...) {
+int add_log(int level, const char *fmt, ...)
+{
 	int ret = -1;
 
 	va_list args;

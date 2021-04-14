@@ -24,19 +24,18 @@
 #include "cmdline.h"
 #include "packet.h"
 #include "debug.h"
+#include "req_rsp.h"
 #include "state.h"
 #include "user.h"
 #include "version.h"
-#include "xdr.h"
 
 extern int errno;
+extern struct mem_pool *g_mp;
 
-dlist *his_cmds;
+struct dlist *his_cmds;
 
-path_entry *get_file_path_entry(char *file_name) {
-	mem_pool *mp = get_singleton_mp();
-
-	path_entry *pe = (path_entry *)mp_malloc(mp, sizeof(path_entry));
+struct path_entry *get_file_path_entry(char *file_name) {
+	struct path_entry *pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
 	if (pe == NULL) {
 		return NULL;
 	}	
@@ -47,8 +46,8 @@ path_entry *get_file_path_entry(char *file_name) {
 	return pe;
 }
 
-void free_path_entry_list(path_entry_list *head) {
-	path_entry_list *p = head, *q = head;
+void free_path_entry_list(struct path_entry_list *head) {
+	struct path_entry_list *p = head, *q = head;
 	while (p) {
 		q = p->next;
 		free(p);
@@ -79,15 +78,15 @@ int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size
 	return 0;
 }
 
-int new_connect(char *ip, int port, sftt_client_config *config, sock_connect *psc) {
+int new_connect(char *ip, int port, struct sftt_client_config *config, struct sock_connect *psc) {
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 
-	serv_addr.sin_family = AF_INET;  //使用IPv4地址
-    	serv_addr.sin_addr.s_addr = inet_addr(ip);  //具体的IP地址
-	serv_addr.sin_port = htons(port);  //端口
+	serv_addr.sin_family = AF_INET;
+    	serv_addr.sin_addr.s_addr = inet_addr(ip);
+	serv_addr.sin_port = htons(port);
 	int ret = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 	if (ret == -1) {
 		return -1;
@@ -107,14 +106,12 @@ int new_connect(char *ip, int port, sftt_client_config *config, sock_connect *ps
 	return 0;
 }
 
-sftt_client *create_client(char *ip, sftt_client_config *config, int connects_num) {
-	mem_pool *mp = get_singleton_mp();
-
-	sftt_client *client = (sftt_client *)mp_malloc(mp, sizeof(sftt_client));
+struct sftt_client *create_client(char *ip, struct sftt_client_config *config, int connects_num) {
+	struct sftt_client *client = (struct sftt_client *)mp_malloc(g_mp, sizeof(struct sftt_client));
 	if (client == NULL) {
 		return NULL;
 	}
-	memset(client, 0, sizeof(sftt_client));
+	memset(client, 0, sizeof(struct sftt_client));
 
 	strcpy(client->ip, ip);
 	printf("server ip is: %s\n", ip);
@@ -123,7 +120,7 @@ sftt_client *create_client(char *ip, sftt_client_config *config, int connects_nu
 	printf("cache port is %d\n", port);
 	
 	int i = 0, ret = 0;
-	sock_connect sc;
+	struct sock_connect sc;
 	for (i = 0; i < connects_num; ++i) {
 		ret = new_connect(ip, port, config, &sc);
 		if (ret == -1) {
@@ -200,13 +197,12 @@ void set_cache_port(int port) {
 	fputs(str, fp);
 }
 
-file_input_stream *create_file_input_stream(char *file_name) {
-	mem_pool *mp = get_singleton_mp();
-
+struct file_input_stream *create_file_input_stream(char *file_name) {
 	if (strlen(file_name) > FILE_NAME_MAX_LEN) {
 		return NULL;
 	}
-	file_input_stream *fis = (file_input_stream *)mp_malloc(mp, sizeof(file_input_stream));
+
+	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(g_mp, sizeof(struct file_input_stream));
 	if (fis == NULL) {
 		return NULL;
 	}
@@ -226,13 +222,13 @@ file_input_stream *create_file_input_stream(char *file_name) {
 	return fis;
 }
 
-void destory_file_input_stream(file_input_stream *fis) {
+void destory_file_input_stream(struct file_input_stream *fis) {
 	if (fis) {
 		free(fis);
 	}
 }
 
-int consult_block_size_with_server(int sock, sftt_client_config *client_config) {
+int consult_block_size_with_server(int sock, struct sftt_client_config *client_config) {
 	char buffer[BUFFER_SIZE];
 		
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
@@ -257,7 +253,7 @@ int consult_block_size_with_server(int sock, sftt_client_config *client_config) 
 	return consulted_block_size; 
 }
 
-int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
+int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 	FILE *fp = fopen(pe->abs_path, "rb");
 	if (fp == NULL) {
 		printf("Error. cannot open file: %s\n", pe->abs_path);
@@ -317,23 +313,21 @@ int send_single_file(int sock, sftt_packet *sp, path_entry *pe) {
 	return 0;
 }
 
-path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
-	mem_pool *mp = get_singleton_mp();
-
+struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
 	*pcnt = 0;
-	path_entry_list *head = get_dir_path_entry_list(file_name, prefix);			
+	struct path_entry_list *head = get_dir_path_entry_list(file_name, prefix);			
 	if (head == NULL) {
 		return NULL;
 	}
 
 	int count = 0;
-	path_entry_list *p = head;
+	struct path_entry_list *p = head;
 	while (p) {
 		++count;
 		p = p->next;
 	}
 
-	path_entry *array = (path_entry *)mp_malloc(mp, sizeof(path_entry) * count);
+	struct path_entry *array = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry) * count);
 	if (array == NULL) {
 		free_path_entry_list(head);
 		return NULL;
@@ -357,12 +351,10 @@ path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
 	return array;
 }
 
-path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
-	mem_pool *mp = get_singleton_mp();
-
-	path_entry_list *head = NULL;
-	path_entry_list *current_entry = NULL;
-	path_entry_list *sub_list = NULL;
+struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
+	struct path_entry_list *head = NULL;
+	struct path_entry_list *current_entry = NULL;
+	struct path_entry_list *sub_list = NULL;
 
 	char dir_abs_path[FILE_NAME_MAX_LEN];
 	char dir_rel_path[FILE_NAME_MAX_LEN];
@@ -406,7 +398,7 @@ path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
 			}				
 				
 		} else {
-			path_entry_list *node = (path_entry_list *)mp_malloc(mp, sizeof(path_entry_list));
+			struct path_entry_list *node = (struct path_entry_list *)mp_malloc(g_mp, sizeof(struct path_entry_list));
 			if (node == NULL) {
 				continue;
 			}
@@ -429,7 +421,7 @@ path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
 	return head;
 }
 
-void destory_sftt_client(sftt_client *client) {
+void destory_sftt_client(struct sftt_client *client) {
 	if (client == NULL) {
 		return ;
 	}
@@ -444,8 +436,8 @@ void usage(char *exec_file) {
 }
 
 void *send_files_by_thread(void *args) {
-	thread_input_params *tip = (thread_input_params *)args;
-	sftt_packet *sp = malloc_sftt_packet((tip->connect).block_size);
+	struct thread_input_params *tip = (struct thread_input_params *)args;
+	struct sftt_packet *sp = malloc_sftt_packet((tip->connect).block_size);
 	if (sp == NULL) {
 		printf("Error. malloc sftt packet failed!\n");
 		return (void *)-1;
@@ -464,7 +456,7 @@ void *send_files_by_thread(void *args) {
 	return NULL;
 }
 
-int send_complete_end_packet(int sock, sftt_packet *sp) {
+int send_complete_end_packet(int sock, struct sftt_packet *sp) {
 //	strcpy(sp->type, PACKET_TYPE_SEND_COMPLETE);
 	sp->type = PACKET_TYPE_SEND_COMPLETE_REQ;
 	sp->data_len = 0;
@@ -477,14 +469,14 @@ int send_complete_end_packet(int sock, sftt_packet *sp) {
 	return 0;
 }
 
-int send_multiple_file(sftt_client *client, path_entry *pes, int count) {
+int send_multiple_file(struct sftt_client *client, struct path_entry *pes, int count) {
 	if (count == 0) {
 		return -1;
 	}
 	
 	int i = 0, ret = 0;
 	pthread_t thread_ids[CLIENT_MAX_CONNECT_NUM];
-	thread_input_params tips[CLIENT_MAX_CONNECT_NUM];
+	struct thread_input_params tips[CLIENT_MAX_CONNECT_NUM];
 	for (i = 0; i < client->connects_num; ++i) {
 		tips[i].connect = client->connects[i];
 		tips[i].index = i;
@@ -512,24 +504,24 @@ int send_multiple_file(sftt_client *client, path_entry *pes, int count) {
 	return 0;
 }
 
-int find_unfinished_session(path_entry *pe, char *ip) {
+int find_unfinished_session(struct path_entry *pe, char *ip) {
 	return 0;		
 }
 
-int file_trans_session_diff(file_trans_session *old_session, file_trans_session *new_seesion) {
+int file_trans_session_diff(struct file_trans_session *old_session, struct file_trans_session *new_seesion) {
 	return 0;
 }
 
-int dir_trans_session_diff(dir_trans_session *old_session, dir_trans_session *new_session) {
+int dir_trans_session_diff(struct dir_trans_session *old_session, struct dir_trans_session *new_session) {
 	return 0;
 }
 
-int save_trans_session(sftt_client *client) {
+int save_trans_session(struct sftt_client *client) {
 	return 0;
 }
 
 
-int main2(int argc, char **argv) {
+int main_old(int argc, char **argv) {
 	if (argc < 4) {
 		usage(argv[0]);
 		return -1;
@@ -566,7 +558,7 @@ int main2(int argc, char **argv) {
 	} 
 
 	printf("reading config ...\n");
-	sftt_client_config client_config;
+	struct sftt_client_config client_config;
 	int ret = get_sftt_client_config(&client_config);
 	if (ret == -1) {
 		printf("Error. get client config failed!\n");
@@ -575,7 +567,7 @@ int main2(int argc, char **argv) {
 	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
 
 	int connects_num = 0; 
-	sftt_client *client = NULL;
+	struct sftt_client *client = NULL;
 	if (is_file(target)) {
 		connects_num = 1;
 		client = create_client(ip, &client_config, connects_num);
@@ -586,13 +578,13 @@ int main2(int argc, char **argv) {
 			printf("create client successfully!\n");
 		}
 
-		path_entry *pe = get_file_path_entry(target);	
+		struct path_entry *pe = get_file_path_entry(target);	
 		if (pe == NULL) {
 			printf("Error. get file path entry failed!\n");
 			return -1;
 		}
 
-		sftt_packet *sp = malloc_sftt_packet(client->connects[0].block_size);
+		struct sftt_packet *sp = malloc_sftt_packet(client->connects[0].block_size);
 		if (sp == NULL) {
 			printf("Error. malloc sftt packet failed!\n");
 			return -1;
@@ -616,7 +608,7 @@ int main2(int argc, char **argv) {
 
 		char prefix[1] = {0};
 		int count = 0;
-		path_entry *pes = get_dir_path_entry_array(target, prefix, &count);
+		struct path_entry *pes = get_dir_path_entry_array(target, prefix, &count);
 		if (pes == NULL) {
 			printf("Error. get dir path entry list failed!\n");
 			return -1;
@@ -663,13 +655,12 @@ char *parse_exec_name(char *buf, int *offset)
 char **parse_args(char *buf, int *argc)
 {
 	int i = 0;
-	dlist_node *node = NULL;
-	dlist *args_list = dlist_create(free);
+	struct dlist_node *node = NULL;
+	struct dlist *args_list = dlist_create(free);
 	char arg[CMD_ARG_MAX_LEN];
 	int arg_len = 0;
 	char **argv = NULL;
-	cmd_args_state state = INIT;
-	mem_pool *mp = get_singleton_mp();
+	enum cmd_args_state state = INIT;
 
 	for (i = 0; buf[i]; ++i) {
 		if (arg_len >= CMD_ARG_MAX_LEN) {
@@ -745,7 +736,7 @@ char **parse_args(char *buf, int *argc)
 
 	*argc = dlist_size(args_list);
 	if (*argc) {
-		argv = (char **)mp_malloc(mp, sizeof(char *) * (*argc));
+		argv = (char **)mp_malloc(g_mp, sizeof(char *) * (*argc));
 		node = dlist_head(args_list);
 		for (i = 0; i < *argc; ++i) {
 			argv[i] = node->data;
@@ -767,13 +758,12 @@ struct user_cmd *parse_command(char *buf)
 {
 	struct user_cmd *cmd;
 	int offset;
-	mem_pool *mp = get_singleton_mp();
 
 	if (check_command_format(buf) == -1) {
 		return NULL;
 	}
 
-	cmd = (struct user_cmd *)mp_malloc(mp, sizeof(struct user_cmd));
+	cmd = (struct user_cmd *)mp_malloc(g_mp, sizeof(struct user_cmd));
 	if (!cmd) {
 		return NULL;
 	}
@@ -788,13 +778,13 @@ struct user_cmd *parse_command(char *buf)
 	return cmd;
 }
 
-static int run_command(const struct command *cmd, int argc, char *argv[])
+static int run_command(const struct cmd_handler *cmd, int argc, char *argv[])
 {
 	int ret;
 	bool argv_check = true;
-
-    add_log(LOG_INFO, "running command: %s", cmd->name);
-    ret = cmd->fn(argc, argv, &argv_check);
+	
+	add_log(LOG_INFO, "running command: %s", cmd->name);
+	ret = cmd->fn(argc, argv, &argv_check);
 	if (!argv_check) {
 		cmd->usage();
 	}
@@ -883,7 +873,7 @@ static void help(int exitcode)
     exit(exitcode);
 }
 
-static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
+static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
 	assert(client);
 	if (port == -1) {
 		port = get_random_port();
@@ -900,15 +890,16 @@ static int init_sftt_client_ctrl_conn(sftt_client_v2 *client, int port) {
 	return 0;
 }
 
-static int validate_user_info(sftt_client_v2 *client) {
-	sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+static int validate_user_info(struct sftt_client_v2 *client) {
+	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	if (!req) {
 		printf("allocate request packet failed!\n");
 		return -1;
 	}
 	req->type = PACKET_TYPE_VALIDATE_REQ;
 
-	validate_req v_req;
+	struct validate_req v_req;
+	
 	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
 	v_req.name_len = strlen(tmp);
 
@@ -924,7 +915,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 		return -1;
 	}
 
-	sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	struct sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	if (!resp) {
 		printf("allocate response packet failed!\n");
 		return -1;
@@ -935,7 +926,7 @@ static int validate_user_info(sftt_client_v2 *client) {
 		return -1;
 	}
 
-	validate_resp *v_resp = (validate_resp *)resp->obj;
+	struct validate_resp *v_resp = (validate_resp *)resp->obj;
 	if (v_resp->status != UVS_PASS) {
 		return -1;
 	}
@@ -946,17 +937,17 @@ static int validate_user_info(sftt_client_v2 *client) {
 	return 0;
 }
 
-static int init_sftt_client_session(sftt_client_v2 *client)
+static int init_sftt_client_session(struct sftt_client_v2 *client)
 {
 
 	return 0;
 }
 
-static int init_sftt_client_v2(sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
+static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
-	client->uinfo = mp_malloc(client->mp, sizeof(user_info));
+	client->uinfo = mp_malloc(client->mp, sizeof(struct user_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
 	strncpy(client->uinfo->passwd, passwd, PASSWD_MAX_LEN - 1);
 	if (strlen(passwd)) {
@@ -1034,7 +1025,7 @@ int sftt_client_his_handler(int argc, char *argv[], bool *argv_check)
 		add_log(LOG_INFO, "his number specified: %d", num);
 	}
 
-	dlist_node *node;
+	struct dlist_node *node;
 	dlist_for_each(his_cmds, node) {
 		if (i >= num) {
 			break;
@@ -1096,11 +1087,11 @@ void sftt_client_put_usage(void)
 }
 
 /* Read and execute commands until user inputs 'quit' command */
-int reader_loop(sftt_client_v2 *client)
+int reader_loop(struct sftt_client_v2 *client)
 {
 	int start;
-	cmd_line cmd;
-	dlist_node *last = NULL, *next = NULL;
+	struct cmd_line cmd;
+	struct dlist_node *last = NULL, *next = NULL;
 	his_cmds = dlist_create(free);
 
 	start = 0;
@@ -1135,12 +1126,12 @@ int reader_loop(sftt_client_v2 *client)
 	}
 }
 
-user_cmd *user_cmd_construct(void)
+struct user_cmd *user_cmd_construct(void)
 {
 		
 }
 
-int reader_loop2(sftt_client_v2 *client)
+int reader_loop2(struct sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
 	his_cmds = dlist_create(free);
@@ -1165,7 +1156,7 @@ int main(int argc, char **argv) {
 	char password[PASSWD_MAX_LEN];
 	char host[HOST_MAX_LEN];
 	int port = -1;
-	const sftt_option *opt = NULL;	
+	const struct sftt_option *opt = NULL;	
 	bool ret = false;
 	int passwd_len = 0;
 
@@ -1231,7 +1222,7 @@ int main(int argc, char **argv) {
 	show_options(host, user_name, password);
 #endif
 
-	sftt_client_v2 client;
+	struct sftt_client_v2 client;
 	if (init_sftt_client_v2(&client, host, port, user_name, password) == -1) {
 		printf("init sftt client failed!\n");
 		exit(-1);

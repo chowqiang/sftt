@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
 	//printf("test file: %s\n", __FILE__);
 	//show_argv(argc, argv);
-	dlist *list = dlist_create(NULL);
+	struct dlist *list = dlist_create(NULL);
 
 	return -1;
 }

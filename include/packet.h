@@ -32,12 +32,12 @@ enum packet_type {
 };
 
 
-typedef struct sftt_packet {
+struct sftt_packet {
 	int type;
 	void *obj;
 	unsigned char *content;
 	int data_len;
 	int block_size;
-} sftt_packet;
+};
 
 #endif

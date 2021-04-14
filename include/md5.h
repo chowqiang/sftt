@@ -5,12 +5,11 @@
 
 #define MD5_LEN	16
 
-typedef struct  
-{  
+typedef struct {  
     unsigned int count[2];  
     unsigned int state[4];  
     unsigned char buffer[64];     
-}MD5_CTX;  
+} MD5_CTX;  
 
 #define F(x,y,z) ((x & y) | (~x & z))  
 

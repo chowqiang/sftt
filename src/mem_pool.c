@@ -3,14 +3,14 @@
 #include <stdlib.h>
 #include "mem_pool.h"
 
-mem_pool_t *g_mp = NULL;
+struct mem_pool *g_mp = NULL;
 
 static void __attribute__((constructor)) mem_pool_init(void)
 {
 	get_singleton_mp();	
 }
 
-mem_pool_t *get_singleton_mp() {
+struct mem_pool *get_singleton_mp() {
 	if (g_mp) {
 		return g_mp;
 	}
@@ -20,8 +20,8 @@ mem_pool_t *get_singleton_mp() {
 	return g_mp;
 }
 
-mem_node_t *mem_node_t_create(size_t size) {
-	mem_node_t *p = (mem_node_t *)malloc(sizeof(mem_node_t));
+struct mem_node *mem_node_create(size_t size) {
+	struct mem_node *p = (struct mem_node *)malloc(sizeof(struct mem_node));
 	if (p == NULL) {
 		return NULL;
 	}
@@ -37,44 +37,44 @@ mem_node_t *mem_node_t_create(size_t size) {
 	return p;
 }
 
-void mem_node_t_free(void *data) {
+void mem_node_free(void *data) {
 	if (data == NULL) {
 		return ;
 	}
-	mem_node_t *node = (mem_node_t *)data;
+	struct mem_node *node = (struct mem_node *)data;
 	if (!node->is_using && node->address) {
 		free(node->address);
 	}
 }
 
-mem_pool_t *mp_create(void) {
-	mem_pool_t *mp = (mem_pool_t *)malloc(sizeof(mem_pool_t));
+struct mem_pool *mp_create(void) {
+	struct mem_pool *mp = (struct mem_pool *)malloc(sizeof(struct mem_pool));
 	if (mp == NULL) {
 		return NULL;
 	}
-	mp->list = dlist_create(mem_node_t_free);
+	mp->list = dlist_create(mem_node_free);
 
 	return mp;
 }
 
-int mp_init(mem_pool_t *mp) {
+int mp_init(struct mem_pool *mp) {
 	if (mp == NULL) {
 		return -1;
 	}
-	mp->list = dlist_create(mem_node_t_free);
+	mp->list = dlist_create(mem_node_free);
 
 	return 0;
 }
 
-void *mp_malloc(mem_pool_t *mp, size_t n) {
+void *mp_malloc(struct mem_pool *mp, size_t n) {
 	if (mp == NULL || mp->list == NULL || n == 0) {
 		return NULL;
 	}
 
-	mem_node_t *m_node = NULL, *p = NULL;
-	dlist_node *l_node = NULL;
+	struct mem_node *m_node = NULL, *p = NULL;
+	struct dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		p = (mem_node_t *)l_node->data;
+		p = (struct mem_node *)l_node->data;
 		if (p->is_using || p->size < n) {
 			continue;
 		}
@@ -88,7 +88,7 @@ void *mp_malloc(mem_pool_t *mp, size_t n) {
 	}
 
 	if (m_node == NULL) {
-		m_node = mem_node_t_create(n);
+		m_node = mem_node_create(n);
 		if (m_node == NULL) {
 			return NULL;
 		}
@@ -101,14 +101,14 @@ void *mp_malloc(mem_pool_t *mp, size_t n) {
 	return m_node->address;
 }
 
-void mp_free(mem_pool_t *mp, void *p) {
+void mp_free(struct mem_pool *mp, void *p) {
 	if (mp == NULL || mp->list == NULL || p == NULL) {
 		return ;
 	}
-	mem_node_t *m_node = NULL;
-	dlist_node *l_node = NULL;
+	struct mem_node *m_node = NULL;
+	struct dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		m_node = (mem_node_t *)l_node->data;
+		m_node = (struct mem_node *)l_node->data;
 		if (m_node->address == p) {
 			m_node->is_using = 0;
 			m_node->used_cnt += 1;
@@ -117,14 +117,14 @@ void mp_free(mem_pool_t *mp, void *p) {
 	}
 }
 
-void mp_destroy(mem_pool_t *mp) {
+void mp_destroy(struct mem_pool *mp) {
 	if (mp == NULL || mp->list == NULL) {
 		return ;
 	}
-	mem_node_t *m_node = NULL;
-	dlist_node *l_node = NULL;
+	struct mem_node *m_node = NULL;
+	struct dlist_node *l_node = NULL;
 	dlist_for_each(mp->list, l_node) {
-		m_node = (mem_node_t *)l_node->data;
+		m_node = (struct mem_node *)l_node->data;
 		if (m_node->is_using) {
 			return ;
 		}
@@ -133,7 +133,7 @@ void mp_destroy(mem_pool_t *mp) {
 	dlist_destroy(mp->list);
 }
 
-int mp_node_cnt(mem_pool_t *mp) {
+int mp_node_cnt(struct mem_pool *mp) {
 	if (mp == NULL || mp->list == NULL) {
 		return 0;
 	}
@@ -141,19 +141,18 @@ int mp_node_cnt(mem_pool_t *mp) {
 	return dlist_size(mp->list);
 }
 
-mem_pool_t *mem_pool_t_contruct(void)
+struct mem_pool *mem_pool_contruct(void)
 {
-	return NULL;
+	return get_singleton_mp();
 }
 
-void mem_pool_t_deconstruct(mem_pool_t *ptr)
+void mem_pool_deconstruct(struct mem_pool *ptr)
 {
-
+	mp_destroy(ptr);	
 }
 
-#if 0
-int main(void) {
-	mem_pool_t *mp = mp_create();
+int mem_pool_test(void) {
+	struct mem_pool *mp = mp_create();
 	printf("node count: %d\n", mp_node_cnt(mp));
 
 	char *str1 = (char *)mp_malloc(mp, 16);
@@ -189,4 +188,3 @@ int main(void) {
 
 	return 0;
 }
-#endif

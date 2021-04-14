@@ -1,71 +1,71 @@
 #ifndef _DLIST_H_
 #define _DLIST_H_
 
-typedef struct _dlist_node {
+struct dlist_node {
 	void *data;
-	struct _dlist_node *prev;
-	struct _dlist_node *next;
-} dlist_node;
+	struct dlist_node *prev;
+	struct dlist_node *next;
+};
 
-typedef struct _dlist {
+struct dlist {
 	int size;
 	void (*destroy) (void *data);
 	void (*show) (void *data);
-	dlist_node *head;
-	dlist_node *tail;
-} dlist;
+	struct dlist_node *head;
+	struct dlist_node *tail;
+};
 
-dlist_node *dlist_node_create(void *data); 
+struct dlist_node *dlist_node_create(void *data); 
 
-dlist *dlist_create(void (*destroy)(void *data)); 
+struct dlist *dlist_create(void (*destroy)(void *data)); 
 
-void dlist_init(dlist *list, void (*destroy) (void *data));
+void dlist_init(struct dlist *list, void (*destroy) (void *data));
 
-void dlist_set_destroy(dlist *list, void (*destroy)(void *data));
+void dlist_set_destroy(struct dlist *list, void (*destroy)(void *data));
 
-void dlist_destroy(dlist *list);
+void dlist_destroy(struct dlist *list);
 
-int dlist_ins_next(dlist *list, dlist_node *elem, void *data);
+int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data);
 
-int dlist_ins_prev(dlist *list, dlist_node *elem, void *data);
+int dlist_ins_prev(struct dlist *list, struct dlist_node *elem, void *data);
 
-int dlist_append(dlist *list, void *data);
+int dlist_append(struct dlist *list, void *data);
 
-int dlist_prepend(dlist *list, void *data);
+int dlist_prepend(struct dlist *list, void *data);
 
-int dlist_remove(dlist *list, dlist_node *elem, void **data, int need_free);
+int dlist_remove(struct dlist *list, struct dlist_node *elem, void **data, int need_free);
 
-int dlist_size(dlist *list);
+int dlist_size(struct dlist *list);
 
-dlist_node *dlist_head(dlist *list);
+struct dlist_node *dlist_head(struct dlist *list);
 
-dlist_node *dlist_tail(dlist *list);
+struct dlist_node *dlist_tail(struct dlist *list);
 
-int dlist_is_head(dlist_node *elem);
+int dlist_is_head(struct dlist_node *elem);
 
-int dlist_is_tail(dlist_node *elem);
+int dlist_is_tail(struct dlist_node *elem);
 
-void *dlist_data(dlist_node *elem);
+void *dlist_data(struct dlist_node *elem);
 
-dlist_node *dlist_next(dlist_node *elem);
+struct dlist_node *dlist_next(struct dlist_node *elem);
 
-dlist_node *dlist_prev(dlist_node *elem);
+struct dlist_node *dlist_prev(struct dlist_node *elem);
 
-int dlist_pop_front(dlist *list, void **data); 
+int dlist_pop_front(struct dlist *list, void **data); 
 
-int dlist_pop_back(dlist *list, void **data); 
+int dlist_pop_back(struct dlist *list, void **data); 
 
-void dlist_set_show(dlist *list, void (*show) (void *data));
+void dlist_set_show(struct dlist *list, void (*show) (void *data));
 
-void dlist_show(dlist *list);
+void dlist_show(struct dlist *list);
  
-int dlist_is_empty(dlist *list);
+int dlist_is_empty(struct dlist *list);
 
-void dlist_sort(dlist *list, int (*cmp)(void *a, void *b), int asc);
+void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc);
 
-dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b));
+struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b));
 
-dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b));
+struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b));
 
 #define dlist_for_each(list, node) \
 	for (node = list->head; node != NULL; node = node->next)

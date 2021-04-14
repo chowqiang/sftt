@@ -3,17 +3,17 @@
 
 #include "dlist.h"
 
-typedef struct {
-	dlist *list;
-} queue;
+struct queue {
+	struct dlist *list;
+};
 
-queue *queue_create(void (*destroy)(void *data));
-void queue_init(queue *q, void (*destroy)(void *data));
-void queue_destroy(queue *q);
-int queue_enqueue(queue *q, void *data);
-int queue_dequeue(queue *q, void **data);
-void *queue_peek(queue *q);
-int queue_size(queue *q);
-int queue_is_empty(queue *q);
+struct queue *queue_create(void (*destroy)(void *data));
+void queue_init(struct queue *q, void (*destroy)(void *data));
+void queue_destroy(struct queue *q);
+int queue_enqueue(struct queue *q, void *data);
+int queue_dequeue(struct queue *q, void **data);
+void *queue_peek(struct queue *q);
+int queue_size(struct queue *q);
+int queue_is_empty(struct queue *q);
 
 #endif

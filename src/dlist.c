@@ -5,8 +5,8 @@
 #include "destroy.h"
 #include "show.h"
 
-dlist_node *dlist_node_create(void *data) {
-	dlist_node *node = (dlist_node *)malloc(sizeof(dlist_node));
+struct dlist_node *dlist_node_create(void *data) {
+	struct dlist_node *node = (struct dlist_node *)malloc(sizeof(struct dlist_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -17,14 +17,14 @@ dlist_node *dlist_node_create(void *data) {
 	return node;
 }
 
-dlist *dlist_create(void (*destroy)(void *data)) {
-	dlist *list = (dlist *)malloc(sizeof(dlist));
+struct dlist *dlist_create(void (*destroy)(void *data)) {
+	struct dlist *list = (struct dlist *)malloc(sizeof(struct dlist));
 	dlist_init(list, destroy);
 
 	return list;
 }
 
-void dlist_init(dlist *list, void (*destroy) (void *data)) {	
+void dlist_init(struct dlist *list, void (*destroy) (void *data)) {	
 	if (list == NULL) {
 		return ;
 	}
@@ -36,13 +36,13 @@ void dlist_init(dlist *list, void (*destroy) (void *data)) {
 	list->tail = NULL;
 }
 
-void dlist_destroy(dlist *list) {
+void dlist_destroy(struct dlist *list) {
 	if (list == NULL || list->destroy == NULL) {
 		return ;
 	}
 
-	dlist_node *p = list->head;
-	dlist_node *q = NULL;
+	struct dlist_node *p = list->head;
+	struct dlist_node *q = NULL;
 	while (p) {
 		if (list->destroy) {
 			list->destroy(p->data);	
@@ -53,17 +53,17 @@ void dlist_destroy(dlist *list) {
 	}
 }
 
-int dlist_ins_next(dlist *list, dlist_node *elem, void *data) {
+int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data) {
 	if (list == NULL || elem == NULL) {
 		return -1;
 	}
 
-	dlist_node *node = dlist_node_create(data);
+	struct dlist_node *node = dlist_node_create(data);
 	if (node == NULL) {
 		return -1;
 	} 
 
-	dlist_node *next = elem->next;
+	struct dlist_node *next = elem->next;
 	node->next = next;
 	if (next) {
 		next->prev = node;
@@ -80,17 +80,17 @@ int dlist_ins_next(dlist *list, dlist_node *elem, void *data) {
 	return list->size;
 }
 
-int dlist_ins_prev(dlist *list, dlist_node *elem, void *data) {
+int dlist_ins_prev(struct dlist *list, struct dlist_node *elem, void *data) {
 	if (list == NULL || elem == NULL) {
 		return -1;
 	}
 	
-	dlist_node *node = dlist_node_create(data);
+	struct dlist_node *node = dlist_node_create(data);
 	if (node == NULL) {
 		return -1;
 	}
 
-	dlist_node *prev = elem->prev;
+	struct dlist_node *prev = elem->prev;
 	node->prev = prev;
 	if (prev) {
 		prev->next = node;
@@ -107,13 +107,13 @@ int dlist_ins_prev(dlist *list, dlist_node *elem, void *data) {
 	return list->size;
 }
 
-int dlist_prepend(dlist *list, void *data) {
+int dlist_prepend(struct dlist *list, void *data) {
 	if (list == NULL) {
 		return -1;
 	}
 	if (list->head == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
-		dlist_node *node = dlist_node_create(data);
+		struct dlist_node *node = dlist_node_create(data);
 		if (node == NULL) {
 			return -1;
 		}
@@ -126,13 +126,13 @@ int dlist_prepend(dlist *list, void *data) {
 	return dlist_ins_prev(list, list->head, data); 
 }
 
-int dlist_append(dlist *list, void *data) {
+int dlist_append(struct dlist *list, void *data) {
 	if (list == NULL) {
 		return -1;
 	}
 	if (list->tail == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
-		dlist_node *node = dlist_node_create(data);
+		struct dlist_node *node = dlist_node_create(data);
 		if (node == NULL) {
 			return -1;
 		}
@@ -145,13 +145,13 @@ int dlist_append(dlist *list, void *data) {
 	return dlist_ins_next(list, list->tail, data); 
 }
 
-int dlist_remove(dlist *list, dlist_node *elem, void **data, int need_free) {
+int dlist_remove(struct dlist *list, struct dlist_node *elem, void **data, int need_free) {
 	if (list == NULL || elem == NULL) {
 		return -1;
 	} 
 
-	dlist_node *prev = elem->prev;
-	dlist_node *next = elem->next;
+	struct dlist_node *prev = elem->prev;
+	struct dlist_node *next = elem->next;
 	if (prev) {
 		prev->next = next;
 	}
@@ -180,7 +180,7 @@ int dlist_remove(dlist *list, dlist_node *elem, void **data, int need_free) {
 	return list->size;
 }
 
-int dlist_pop_front(dlist *list, void **data) {
+int dlist_pop_front(struct dlist *list, void **data) {
 	if (list == NULL) {
 		return -1;
 	}
@@ -194,7 +194,7 @@ int dlist_pop_front(dlist *list, void **data) {
 	return dlist_remove(list, list->head, data, 1);
 }
 
-int dlist_pop_back(dlist *list, void **data) {
+int dlist_pop_back(struct dlist *list, void **data) {
 	if (list == NULL) {
 		return -1;
 	}
@@ -208,7 +208,7 @@ int dlist_pop_back(dlist *list, void **data) {
 	return dlist_remove(list, list->tail, data, 1);
 }
 
-int dlist_size(dlist *list) {
+int dlist_size(struct dlist *list) {
 	if (list == NULL) {
 		return 0;
 	}
@@ -216,7 +216,7 @@ int dlist_size(dlist *list) {
 	return list->size;
 }
 
-dlist_node *dlist_head(dlist *list) {
+struct dlist_node *dlist_head(struct dlist *list) {
 	if (list == NULL) {
 		return NULL;
 	}
@@ -224,7 +224,7 @@ dlist_node *dlist_head(dlist *list) {
 	return list->head;
 }
 
-dlist_node *dlist_tail(dlist *list) {
+struct dlist_node *dlist_tail(struct dlist *list) {
 	if (list == NULL) {
 		return NULL;
 	}
@@ -232,38 +232,38 @@ dlist_node *dlist_tail(dlist *list) {
 	return list->tail;
 }
 
-int dlist_is_head(dlist_node *elem) {
+int dlist_is_head(struct dlist_node *elem) {
 	return elem && elem->prev == NULL;
 }
 
-int dlist_is_tail(dlist_node *elem) {
+int dlist_is_tail(struct dlist_node *elem) {
 	return elem && elem->next == NULL;
 }
 
-void *dlist_data(dlist_node *elem) {
+void *dlist_data(struct dlist_node *elem) {
 	return elem ? elem->data : NULL;
 }
 
-dlist_node *dlist_next(dlist_node *elem) {
+struct dlist_node *dlist_next(struct dlist_node *elem) {
 	return elem ? elem->next : NULL;
 }
 
-dlist_node *dlist_prev(dlist_node *elem) {
+struct dlist_node *dlist_prev(struct dlist_node *elem) {
 	return elem ? elem->prev : NULL;
 }
 
-void dlist_set_show(dlist *list, void (*show) (void *data)) {
+void dlist_set_show(struct dlist *list, void (*show) (void *data)) {
 	if (list == NULL) {
 		return ;
 	} 
 	list->show = show;
 }
 
-void dlist_show(dlist *list) {
+void dlist_show(struct dlist *list) {
 	if (list == NULL) {
 		return ;
 	}		
-	dlist_node *p = list->head;
+	struct dlist_node *p = list->head;
 	printf("list: ( ");
 	while (p) {
 		list->show(p->data);
@@ -272,7 +272,7 @@ void dlist_show(dlist *list) {
 	printf(" )\n");
 }
 
-int dlist_is_empty(dlist *list) {
+int dlist_is_empty(struct dlist *list) {
 	if (list == NULL) {
 		return 1;
 	}
@@ -286,13 +286,13 @@ int dlist_is_empty(dlist *list) {
 	return 0;	
 }
 
-void dlist_sort(dlist *list, int (*cmp)(void *a, void *b), int asc) {
+void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc) {
 	if (list == NULL || cmp == NULL) {
 		return ;
 	}
 
 	int size = dlist_size(list);
-	dlist_node *new_head = NULL, *new_tail = NULL, *node = NULL;
+	struct dlist_node *new_head = NULL, *new_tail = NULL, *node = NULL;
 	while (dlist_size(list) > 0) {
 		if (asc) {
 			node = dlist_get_min(list, cmp);
@@ -314,11 +314,11 @@ void dlist_sort(dlist *list, int (*cmp)(void *a, void *b), int asc) {
 	list->size = size;
 } 
 
-dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b)) {
+struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b)) {
 	if (list == NULL || cmp == NULL) {
 		return NULL;
 	}
-	dlist_node *node = NULL, *p = NULL;
+	struct dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {
 		if (node == NULL) {
 			node = p;
@@ -332,11 +332,11 @@ dlist_node *dlist_get_max(dlist *list, int (*cmp)(void *a, void *b)) {
 	return node;
 }
 
-dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b)) {
+struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b)) {
 	if (list == NULL || cmp == NULL) {
 		return NULL;
 	}
-	dlist_node *node = NULL, *p = NULL;
+	struct dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {
 		if (node == NULL) {
 			node = p;
@@ -353,9 +353,9 @@ dlist_node *dlist_get_min(dlist *list, int (*cmp)(void *a, void *b)) {
 int cmp_int(void *a, void *b) {
 	return (int)a - (int)b;
 }
-#if 0
-int main(void) {
-	dlist list;
+
+int dlist_test(void) {
+	struct dlist list;
 	dlist_init(&list, destroy_int);
 	dlist_set_show(&list, show_int);
 	dlist_show(&list);
@@ -382,4 +382,3 @@ int main(void) {
 
 	return 0;
 }
-#endif
