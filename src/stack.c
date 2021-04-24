@@ -86,7 +86,7 @@ int stack_test(void) {
 
 	void *data = NULL;
 	stack_pop(s, &data);
-	printf("%d\n", (int)data);
+	printf("%d\n", data);
 	if (s == NULL) {
 		printf("unbelievable!\n");
 		return 0;
@@ -94,9 +94,9 @@ int stack_test(void) {
 	stack_show(s, show_int);
 
 	stack_pop(s, &data);
-	printf("%d\n", (int)data);
+	printf("%d\n", data);
 	stack_pop(s, &data);
-	printf("%d\n", (int)data);
+	printf("%d\n", data);
 
 	return 0;
 }

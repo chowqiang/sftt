@@ -69,7 +69,7 @@ void return_left(char *prefix, int num)
 	//printf("\r%s", prefix);
 }
 
-int get_user_command(char *prompt, cmd_line *cmd, int start)
+int get_user_command(char *prompt, struct cmd_line *cmd, int start)
 {
 	int i = 0;
     char ch = 0;

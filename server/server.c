@@ -25,6 +25,7 @@
 #include "random_port.h"
 #include "req_rsp.h"
 #include "server.h"
+#include "session.h"
 #include "version.h"
 #include "user.h"
 #include "utils.h"
@@ -33,15 +34,20 @@
 
 extern struct mem_pool *g_mp;
 
-int create_non_block_sock(int *pport); 
+struct sftt_server *server;
 
-static bool update_sftt_server_info(struct sftt_server_info *info, int create_flag);
+int create_non_block_sock(int *pport);
 
 static void sftt_server_exit(int sig);
 
-static struct child_info *get_child_process_info(pid_t pid);
+void put_sftt_server_stat(struct sftt_server_stat *sss);
 
-static void register_child_process_info(int index, pid_t pid);
+struct sftt_server_stat *alloc_sftt_server_stat(void);
+
+void sync_server_stat(void);
+
+//static struct child_info *get_child_process_info(pid_t pid);
+//static void register_child_process_info(int index, pid_t pid);
 
 void server_init_func(struct sftt_server_config *server_config){
 	DIR *mydir = NULL;
@@ -227,14 +233,15 @@ void sighandler(int signum) {
    add_log(LOG_INFO, "Caught signal %d, coming out ...", signum);
 }
 
-bool init_sftt_server_info(struct sftt_server *server, pid_t log_pid) {
-	struct sftt_server_info ssi = {
-		.main_pid = getpid(),
-		.log_pid = log_pid,
-	};
-	memcpy(&ssi.server, server, sizeof(struct sftt_server));
+bool init_sftt_server_stat(pid_t log_pid) {
+	struct sftt_server_stat *sss = alloc_sftt_server_stat();
+	assert(sss != NULL);
 
-	return update_sftt_server_info(&ssi, 1);
+	sss->main_pid = getpid();
+	sss->log_pid = log_pid;
+	memcpy(&sss->conf, &server->conf, sizeof(struct sftt_server_config));
+
+	put_sftt_server_stat(sss);
 }
 
 int get_sftt_server_shmid(int create_flag) {
@@ -264,32 +271,29 @@ void *get_sftt_server_shmaddr(int create_flag) {
 	}
 
 	void *data = shmat(shmid, NULL, 0);
-    if (data == (void *)(-1)) {
+	if (data == (void *)(-1)) {
 		printf(PROC_NAME " shmat failed!\n");
 		return NULL;
-    }
+	}
 
 	return data;
 }
 
-struct sftt_server_info *get_sftt_server_info(void) {
-	return (struct sftt_server_info *)get_sftt_server_shmaddr(0);
+struct sftt_server_stat *alloc_sftt_server_stat(void)
+{
+	return (struct sftt_server_stat *)get_sftt_server_shmaddr(1);
 }
 
-static bool update_sftt_server_info(struct sftt_server_info *info, int create_flag) {
-	void *shmaddr = get_sftt_server_shmaddr(create_flag);
-	if (shmaddr == NULL) {
-		printf("get shared memory for " PROC_NAME " failed!\n");
-		return false;
-	}
-
-	memcpy(shmaddr, info, sizeof(struct sftt_server_info));
-	shmdt(shmaddr);
-
-	return true;
+struct sftt_server_stat *get_sftt_server_stat(void) {
+	return (struct sftt_server_stat *)get_sftt_server_shmaddr(0);
 }
 
-bool remove_sftt_server_info(void) {
+void put_sftt_server_stat(struct sftt_server_stat *sss)
+{
+	shmdt(sss);
+}
+
+bool free_sftt_server_stat(void) {
 	int shmid = get_sftt_server_shmid(0);
 	if (shmid == -1) {
 		printf(PROC_NAME " get shmid failed!\n");
@@ -317,12 +321,12 @@ bool sftt_server_is_running(void) {
 		return false;
 	}
 
-	struct sftt_server_info *ssi = shmat(shmid, NULL, 0);
-    if (ssi == (void *)(-1)) {
+	struct sftt_server_stat *sss = shmat(shmid, NULL, 0);
+	if (sss == (void *)(-1)) {
 		return false;
-    }
+	}
 
-	return ssi->server.status == RUNNING;
+	return sss->status == RUNNING;
 }
 
 void update_server(struct sftt_server *server) {
@@ -348,21 +352,10 @@ void update_server(struct sftt_server *server) {
 			server->last_update_ts = current_ts;
 		}
 	}
+	sync_server_stat();
 }
 
-struct client_info *client_info_construct(void)
-{
-	struct client_info *client_info = mp_malloc(g_mp, sizeof(client_info));
-
-	return client_info;
-}
-
-void client_info_deconstruct(struct client_info *ptr)
-{
-	mp_free(g_mp, ptr);
-}
-
-struct client_info *validate_user_info(int sock, struct sftt_packet *req, struct sftt_packet *resp)
+int validate_user_info(struct client_session *session, struct sftt_packet *req, struct sftt_packet *resp)
 {
 	struct validate_req *v_req = (struct validate_req *)req->obj;
 	struct client_info *client = NULL;
@@ -387,19 +380,16 @@ struct client_info *validate_user_info(int sock, struct sftt_packet *req, struct
 	resp->type = PACKET_TYPE_VALIDATE_RSP;
 	resp->obj = &v_resp;
 
-	int ret = send_sftt_packet(sock, resp);
+	int ret = send_sftt_packet(session->connect_fd, resp);
 	if (ret == -1) {
 		printf("send validate response failed!\n");
-		return NULL;
+		return -1;
 	}
 
-	client = new(client_info);
-	assert(client != NULL);
-	
-	client->status = VALIDATED;
-	generate_session_id(client->session_id, SESSION_ID_LEN);
+	session->cinfo.status = VALIDATED;
+	generate_session_id(session->session_id, SESSION_ID_LEN);
 
-	return client;
+	return 0;
 }
 
 void child_process_exception_handler(int sig) {
@@ -412,17 +402,16 @@ void child_process_exit(int sig) {
 	exit(-1);
 }
 
-void handle_client_session(int sock)
+void *handle_client_session(void *args)
 {
-	struct child_info *ci = NULL;
-	struct sftt_server_info *ssi = NULL;
-	struct client_info *client = NULL;
+	struct client_session *session = (struct client_session *)args;
+	int sock = session->connect_fd;
 
 	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	struct sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	if (!req || !resp) {
 		printf("cannot allocate resources from memory pool!\n");
-		return ;
+		return NULL;
 	}
 
 	signal(SIGTERM, child_process_exit);
@@ -448,8 +437,8 @@ void handle_client_session(int sock)
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
-			client = validate_user_info(sock, req, resp);
-			if (client == NULL) {
+			ret = validate_user_info(session, req, resp);
+			if (ret == -1) {
 				goto exit;
 			}
 			break;
@@ -468,29 +457,40 @@ void handle_client_session(int sock)
 	}
 
 exit:
-	ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		exit(-1);
-	}
-	ci = get_child_process_info(getpid());
-	if (ci == NULL) {
-		exit(-1);
-	}
-	ci->status = EXITED;
-	exit(-1);
+	session->status = EXITED;
+	return NULL;
 }
 
-void sync_server_info(struct sftt_server *server) {
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
+void sync_server_stat(void)
+{
+	struct sftt_server_stat *sss = get_sftt_server_stat();
+	if (sss == NULL) {
 		printf("get " PROC_NAME " info object failed!\n");
 		return ;
 	}
 
-	memcpy(&ssi->server, server, sizeof(struct sftt_server));
-	update_sftt_server_info(ssi, 0);
+	sss->main_sock = server->main_sock;
+	sss->main_port = server->main_port;
+	sss->last_update_ts = server->last_update_ts;
+	sss->status = server->status;
+
+	put_sftt_server_stat(sss);
 }
 
+struct client_session *find_get_new_session(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+		if (server->sessions[i].status == EXITED) {
+			return &server->sessions[i];
+		}
+	}
+
+	return NULL;
+}
+
+#if 0
 void register_child_process_info(int index, pid_t pid) {
 	if (index >= MAX_CHILD_NUM) {
 		return ;
@@ -501,12 +501,12 @@ void register_child_process_info(int index, pid_t pid) {
 		return ;
 	}
 
-	if (ssi->child_list[index].status == ACTIVE) {
+	if (ssi->sessions[index].status == ACTIVE) {
 		return ;
 	}
 
-	ssi->child_list[index].pid = pid;
-	ssi->child_list[index].status = ACTIVE;
+	ssi->sessions[index].pid = pid;
+	ssi->sessions[index].status = ACTIVE;
 }
 
 struct child_info *get_child_process_info(pid_t pid) {
@@ -517,40 +517,20 @@ struct child_info *get_child_process_info(pid_t pid) {
 
 	int i = 0;
 	for (i = 0; i < MAX_CHILD_NUM; ++i) {
-		if (ssi->child_list[i].pid == pid) {
-			return &ssi->child_list[i];
+		if (ssi->sessions[i].pid == pid) {
+			return &ssi->sessions[i];
 		}
 	}
 
 	return NULL;
 }
+#endif
 
-int find_first_invalid_child(void) {
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		return true;
-	}
-
+void init_sessions(void)
+{
 	int i = 0;
 	for (i = 0; i < MAX_CHILD_NUM; ++i) {
-		if (ssi->child_list[i].status != ACTIVE) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-void init_child_list(void) {
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		return ;
-	}
-
-	int i = 0;
-	for (i = 0; i < MAX_CHILD_NUM; ++i) {
-		ssi->child_list[i].pid = 0;
-		ssi->child_list[i].status = EXITED;
+		server->sessions[i].status = EXITED;
 	}
 }
 
@@ -558,10 +538,12 @@ void main_loop(struct sftt_server *server) {
 	int connect_fd = 0;
 	pid_t pid = 0;
 	int idx = 0;
+	int ret;
+	pthread_t child;
+	struct client_session *session;
 
 	server->status = RUNNING;
-	sync_server_info(server);
-	init_child_list();
+	init_sessions();
 
 	while (1) {
 		update_server(server);
@@ -570,11 +552,14 @@ void main_loop(struct sftt_server *server) {
 			usleep(100 * 1000);
 			continue;
 		}
-		if ((idx = find_first_invalid_child()) == -1) {
+		if ((session = find_get_new_session()) == NULL) {
 			close(connect_fd);
 			continue;
 		}
 		add_log(LOG_INFO, "a client connected ...");
+
+		ret = pthread_create(&child, NULL, handle_client_session, session);
+		/*
 		pid = fork();
 		if (pid == 0){
 			add_log(LOG_INFO, "I'm child");
@@ -585,6 +570,7 @@ void main_loop(struct sftt_server *server) {
 			register_child_process_info(idx, pid);
 			wait(NULL);
 		}
+		*/
 	}
 }
 
@@ -674,7 +660,7 @@ bool create_sftt_server(struct sftt_server *server, char *store_path) {
 		return false;
 	}
 
-	bool ret = init_sftt_server_info(server, log_pid);
+	bool ret = init_sftt_server_stat(log_pid);
 	if (!ret) {
 		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
 		return false;
@@ -715,6 +701,16 @@ int sftt_server_start(char *store_path) {
 	main_loop(&server);
 }
 
+struct sftt_server *sftt_server_construct(void)
+{
+	return (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
+}
+
+void sftt_server_destruct(struct sftt_server *ptr)
+{
+	mp_free(g_mp, ptr);
+}
+
 int sftt_server_restart(char *store_path) {
 	if (!sftt_server_is_running()) {
 		printf("cannot restart " PROC_NAME ", because it is not running.\n");
@@ -729,7 +725,6 @@ int sftt_server_restart(char *store_path) {
 	}
 
 	add_log(LOG_INFO, PROC_NAME " is going to restart ...");
-	//return update_sftt_server_info(NULL);
 	return 0;
 }
 
@@ -743,15 +738,15 @@ int sftt_server_stop(void) {
 		exit(-1);
 	}
 
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
+	struct sftt_server_stat *sss = get_sftt_server_stat();
+	if (sss == NULL) {
 		printf("cannot get " PROC_NAME " info!\n");
 		return -1;
 	}
 
-	add_log(LOG_INFO, "log pid is: %d", ssi->log_pid);
+	add_log(LOG_INFO, "log pid is: %d", sss->log_pid);
 	add_log(LOG_INFO, "log is going to stop ...");
-	kill(ssi->log_pid, SIGTERM);
+	kill(sss->log_pid, SIGTERM);
 
 	/**
 	*	All  of  these  system calls are used to wait for state changes
@@ -773,33 +768,27 @@ int sftt_server_stop(void) {
 	*
 	**/
 	//waitpid(ssi->log_pid, NULL, 0);
-	printf(PROC_NAME " pid is: %d\n", ssi->main_pid);
+	printf(PROC_NAME " pid is: %d\n", sss->main_pid);
 	printf(PROC_NAME " is going to stop ...\n");
-	kill(ssi->main_pid, SIGTERM);
+	kill(sss->main_pid, SIGTERM);
 
 	return 0;
 }
 
 void notify_all_child_to_exit(void) {
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		printf("get server info failed!\n");
-		return ;
-	}
-
 	int i = 0;
 	for (i = 0; i < MAX_CHILD_NUM; ++i) {
-		if (ssi->child_list[i].status != ACTIVE) {
+		if (server->sessions[i].status != ACTIVE) {
 			continue;
 		}
-		kill(ssi->child_list[i].pid, SIGTERM);
+		//kill(ssi->sessions[i].pid, SIGTERM);
 	}
 }
 
 void sftt_server_exit(int sig) {
 	printf(PROC_NAME " is exit ...!\n");
 	notify_all_child_to_exit();
-	remove_sftt_server_info();
+	free_sftt_server_stat();
 
 	exit(-1);
 }
@@ -845,14 +834,14 @@ void sftt_server_status(void) {
 		return ;
 	}
 
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
+	struct sftt_server_stat *sss = get_sftt_server_stat();
+	if (sss == NULL) {
 		printf("cannot get " PROC_NAME " status!\n");
 		return ;
 	}
 
 	char ts_buf[64];
-	ts_to_str(ssi->server.last_update_ts, ts_buf, 63);
+	ts_to_str(sss->last_update_ts, ts_buf, 63);
 
 	printf(PROC_NAME " status:\n"
 		"\tprocess status: %s\n"
@@ -863,13 +852,13 @@ void sftt_server_status(void) {
 		"\tlog pid: %d\n"
 		"\tlog path: %s\n"
 		"\tlast update time: %s\n",
-		status_desc(ssi->server.status),
-		ssi->server.conf.store_path,
-		ssi->main_pid,
-		ssi->server.main_port,
-		ssi->server.main_sock,
-		ssi->log_pid,
-		ssi->server.conf.log_dir,
+		status_desc(sss->status),
+		sss->conf.store_path,
+		sss->main_pid,
+		sss->main_port,
+		sss->main_sock,
+		sss->log_pid,
+		sss->conf.log_dir,
 		ts_buf);
 }
 
@@ -885,7 +874,6 @@ void sftt_server_db(void) {
 	}
 
 	char sql[1024];
-	struct sftt_server_info *ssi = get_sftt_server_info();
 
 	while (1) {
 		printf("sftt>>");

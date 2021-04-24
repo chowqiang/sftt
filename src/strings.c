@@ -4,14 +4,15 @@
 #include "mem_pool.h"
 #include "sftt_strings.h"
 
-int init_sds(sds *str) {
+extern struct mem_pool *g_mp;
+
+int init_sds(struct sds *str) {
 	if (str == NULL) {
 		return -1;
 	}	
 	
-	mem_pool *mp = get_singleton_mp();
 	int init_size = 8;
-	char *tmp = (char *)mp_malloc(mp, sizeof(char) * init_size);
+	char *tmp = (char *)mp_malloc(g_mp, sizeof(char) * init_size);
 	if (tmp == NULL) {
 		str->buf = NULL;
 		str->size = 0;
@@ -27,7 +28,7 @@ int init_sds(sds *str) {
 	return 0;
 }
 
-int sds_append_char(sds *str, char c) {
+int sds_append_char(struct sds *str, char c) {
 	if (str == NULL) {
 		return -1;
 	}
@@ -66,17 +67,16 @@ RET:
 	return 0;
 }
 
-strings *create_strings(void) {
-	mem_pool *mp = get_singleton_mp();
-	strings *ss = (strings *)mp_malloc(mp, sizeof(strings));
+struct strings *create_strings(void) {
+	struct strings *ss = (struct strings *)mp_malloc(g_mp, sizeof(struct strings));
 	if (ss == NULL) {
 		return NULL;
 	}
 
 	int init_cap = 4;
-	ss->str_arr = (sds *)mp_malloc(mp, sizeof(sds) * init_cap);
+	ss->str_arr = (struct sds *)mp_malloc(g_mp, sizeof(struct sds) * init_cap);
 	if (ss->str_arr == NULL) {
-		mp_free(mp, ss);
+		mp_free(g_mp, ss);
 		return NULL;
 	} 
 	int i = 0;
@@ -89,7 +89,7 @@ strings *create_strings(void) {
 	return ss;
 }
 
-int add_string(strings *ss) {
+int add_string(struct strings *ss) {
 	if (ss == NULL) {
 		return -1;
 	}
@@ -106,7 +106,7 @@ int add_string(strings *ss) {
 		goal = ss->cap + 10;
 	}
 
-	sds *tmp = (sds *)realloc(ss->str_arr, sizeof(sds) * goal);
+	struct sds *tmp = (struct sds *)realloc(ss->str_arr, sizeof(struct sds) * goal);
 	if (tmp == NULL) {
 		return -1;
 	}
@@ -125,7 +125,7 @@ int add_string(strings *ss) {
 	return 0;
 }
 
-int append_char(strings *ss, int index, char c) {
+int append_char(struct strings *ss, int index, char c) {
 	if (ss == NULL || ss->num <= index) {
 		return -1;
 	}
@@ -133,7 +133,7 @@ int append_char(strings *ss, int index, char c) {
 	return sds_append_char(&ss->str_arr[index], c);
 }
 
-int get_string_num(strings *ss) {
+int get_string_num(struct strings *ss) {
 	if (ss == NULL) {
 		return -1;
 	}
@@ -141,7 +141,7 @@ int get_string_num(strings *ss) {
 	return ss->num;
 }
 
-const char *get_string(strings *ss, int index) {
+const char *get_string(struct strings *ss, int index) {
 	if (ss == NULL || ss->num <= index) {
 		return NULL;
 	}
@@ -149,25 +149,23 @@ const char *get_string(strings *ss, int index) {
 	return (const char *)ss->str_arr[index].buf;
 }
 
-void free_strings(strings **ss) {
+void free_strings(struct strings **ss) {
 	if (ss == NULL || *ss == NULL) {
 		return ;
 	}
 	int i = 0;
-	mem_pool *mp = get_singleton_mp();
 	for (i = 0; i < (*ss)->cap; ++i) {
 		if ((*ss)->str_arr[i].size != 0) {
-			mp_free(mp, (*ss)->str_arr[i].buf);
+			mp_free(g_mp, (*ss)->str_arr[i].buf);
 		}
 	}
-	mp_free(mp, (*ss)->str_arr);
-	mp_free(mp, *ss);
+	mp_free(g_mp, (*ss)->str_arr);
+	mp_free(g_mp, *ss);
 	*ss = NULL;
 }
 
-#if 0 
-int main(void) {
-	strings *ss = create_strings();
+int strings_test(void) {
+	struct strings *ss = create_strings();
 	if (ss == NULL) {
 		return -1;
 	}	
@@ -183,4 +181,3 @@ int main(void) {
 
 	return 0;
 }
-#endif

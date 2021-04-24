@@ -4,6 +4,7 @@
 #include "md5.h" 
 #include "mem_pool.h"
 
+extern struct mem_pool *g_mp;
 
 unsigned char PADDING[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  
@@ -165,7 +166,6 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
 }  
 
 int md5_file(unsigned char *file, unsigned char *digest) {
-	mem_pool *mp = get_singleton_mp();
 
     MD5_CTX context;
     MD5Init(&context);
@@ -178,7 +178,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 		perror("fopen failed");
 		return -1;
 	}
-	data = (char *)mp_malloc(mp, BLOCK_SIZE);
+	data = (char *)mp_malloc(g_mp, BLOCK_SIZE);
 	int i = 0;
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
@@ -192,7 +192,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
     MD5Final(&context, digest);
 
 	fclose(fp);
-	mp_free(mp, data);
+	mp_free(g_mp, data);
 
 	return 0;
 }

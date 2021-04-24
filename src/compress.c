@@ -199,7 +199,7 @@ struct btree *generate_huffman_tree(int *char_freq) {
 char *get_char_code(struct stack *s) {
 	int len = stack_size(s);
 
-	void **array = (void **)mp_malloc(g_mp, sizeof(void *) * len);
+	void **array = (void *)mp_malloc(g_mp, sizeof(void *) * len);
 	char *code = (char *)mp_malloc(g_mp, sizeof(char) * (len + 1));
 	if (array == NULL || code == NULL) {
 		return NULL;

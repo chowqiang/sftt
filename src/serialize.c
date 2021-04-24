@@ -5,7 +5,7 @@
 #include "serialize.h"
 #include "xdr.h"
 
-extern mem_pool_t *g_mp;
+extern struct mem_pool *g_mp;
 
 struct serialize_handle serializables[] = {
 	{PACKET_TYPE_VALIDATE_REQ, validate_req_encode, validate_req_decode},

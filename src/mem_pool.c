@@ -1,3 +1,5 @@
+#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -53,26 +55,28 @@ struct mem_pool *mp_create(void) {
 		return NULL;
 	}
 	mp->list = dlist_create(mem_node_free);
+	assert(mp->list != NULL);
+	if (pthread_mutex_init(&mp->lock, NULL) != 0) {
+		perror("mem pool mutex init failed! ");
+		dlist_destroy(mp->list);
+		return NULL;
+	}
 
 	return mp;
 }
 
-int mp_init(struct mem_pool *mp) {
-	if (mp == NULL) {
-		return -1;
-	}
-	mp->list = dlist_create(mem_node_free);
-
-	return 0;
-}
-
-void *mp_malloc(struct mem_pool *mp, size_t n) {
+void *mp_malloc(struct mem_pool *mp, size_t n)
+{
 	if (mp == NULL || mp->list == NULL || n == 0) {
 		return NULL;
 	}
 
 	struct mem_node *m_node = NULL, *p = NULL;
 	struct dlist_node *l_node = NULL;
+	if (pthread_mutex_lock(&mp->lock) != 0) {
+		perror("mp_malloc failed: cannot lock mem pool. ");
+		return NULL;
+	}
 	dlist_for_each(mp->list, l_node) {
 		p = (struct mem_node *)l_node->data;
 		if (p->is_using || p->size < n) {
@@ -97,6 +101,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n) {
 
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
+	pthread_mutex_unlock(&mp->lock);
 
 	return m_node->address;
 }
@@ -107,6 +112,10 @@ void mp_free(struct mem_pool *mp, void *p) {
 	}
 	struct mem_node *m_node = NULL;
 	struct dlist_node *l_node = NULL;
+	if (pthread_mutex_lock(&mp->lock) != 0) {
+		perror("mp_free failed: cannot lock mem pool. ");
+		return ;
+	}
 	dlist_for_each(mp->list, l_node) {
 		m_node = (struct mem_node *)l_node->data;
 		if (m_node->address == p) {
@@ -115,6 +124,7 @@ void mp_free(struct mem_pool *mp, void *p) {
 			break;
 		}
 	}
+	pthread_mutex_unlock(&mp->lock);
 }
 
 void mp_destroy(struct mem_pool *mp) {
@@ -141,14 +151,49 @@ int mp_node_cnt(struct mem_pool *mp) {
 	return dlist_size(mp->list);
 }
 
-struct mem_pool *mem_pool_contruct(void)
+struct mem_pool *mem_pool_construct(void)
 {
 	return get_singleton_mp();
 }
 
-void mem_pool_deconstruct(struct mem_pool *ptr)
+void mem_pool_destruct(struct mem_pool *ptr)
 {
 	mp_destroy(ptr);	
+}
+
+bool mp_valid(struct mem_pool *mp)
+{
+	return mp && mp->list;
+}
+
+int mp_size(struct mem_pool *mp)
+{
+	if (mp == NULL || mp->list == NULL) {
+		return 0;
+	}
+
+	int sum =0;
+	struct mem_node *m_node = NULL;
+	struct dlist_node *l_node = NULL;
+	dlist_for_each(mp->list, l_node) {
+		m_node = (struct mem_node *)l_node->data;
+		sum += m_node->size;
+
+	}
+
+	return sum;
+}
+
+void mp_stat(struct mem_pool *mp)
+{
+	if (!mp_valid(mp))
+		return ;
+	/* total cached memory */
+	/* number of memory node */
+	/* map of memory size and memory node */
+	printf("mem_pool(%p): size -- %d, node -- %d\n", mp,
+		mp_size(mp), mp_node_cnt(mp));
+
 }
 
 int mem_pool_test(void) {

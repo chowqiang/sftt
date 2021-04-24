@@ -3,7 +3,8 @@
 #include <string.h>
 #include "connect.h"
 
-int make_connect(char *ip, int port) {
+int make_connect(char *ip, int port)
+{
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	struct sockaddr_in serv_addr;

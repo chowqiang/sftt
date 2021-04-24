@@ -24,4 +24,6 @@ struct client_sock_conn {
 	int port;
 };
 
+int make_connect(char *ip, int port);
+
 #endif

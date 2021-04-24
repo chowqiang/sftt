@@ -34,6 +34,10 @@ extern struct mem_pool *g_mp;
 
 struct dlist *his_cmds;
 
+int consult_block_size_with_server(int sock, struct sftt_client_config *client_config);
+
+int send_complete_end_packet(int sock, struct sftt_packet *sp);
+
 struct path_entry *get_file_path_entry(char *file_name) {
 	struct path_entry *pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
 	if (pe == NULL) {

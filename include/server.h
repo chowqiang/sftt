@@ -36,34 +36,6 @@ enum sftt_server_status {
 	NOT_RUNNING,
 };
 
-enum process_status {
-	ACTIVE,
-	EXITED
-};
-
-enum client_status {
-	VALIDATED,
-	INVALIDATED
-};
-
-struct child_info {
-	pid_t pid;
-	enum process_status status;
-};
-
-/*
- *
- */
-struct client_info {
-	int status;
-	char session_id[SESSION_ID_LEN + 1];
-	char pwd[DIR_PATH_MAX_LEN];
-};
-
-struct client_info *client_info_construct(void);
-
-void client_info_deconstruct(struct client_info *ptr);
-
 /*
  */
 struct sftt_server {
@@ -72,13 +44,18 @@ struct sftt_server {
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
 	struct sftt_server_config conf;
+	struct client_session sessions[MAX_CLIENT_NUM];
+	pthread_mutex_t lock;
 };
 
-struct sftt_server_info {
+struct sftt_server_stat {
 	pid_t main_pid;
 	pid_t log_pid;
-	struct sftt_server server;
-	struct child_info child_list[MAX_CHILD_NUM];
+	int main_sock;
+	int main_port;
+	uint64_t last_update_ts;
+	enum sftt_server_status status;
+	struct sftt_server_config conf;
 };
 
 void server_init_func();
@@ -88,9 +65,7 @@ FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_c
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 void is_exit(char * filepath);
 
-
-
-
-
+struct sftt_server *sftt_server_construct(void);
+void sftt_server_destruct(struct sftt_server *ptr);
 
 #endif

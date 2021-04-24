@@ -23,7 +23,7 @@ unsigned char *file_get_contents(char *path, size_t *length)
 {
 	FILE *pfile = NULL;
 	unsigned char *data = NULL;
-	mem_pool *mp = get_singleton_mp();
+	struct mem_pool *mp = get_singleton_mp();
  
 	*length = file_size(path);
 	data = (unsigned char *)mp_malloc(mp, (*length + 1) * sizeof(unsigned char));

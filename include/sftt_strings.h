@@ -10,7 +10,7 @@ struct sds {
 };
 
 struct strings {
-	sds *str_arr;
+	struct sds *str_arr;
 	int cap;	
 	int num;
 };

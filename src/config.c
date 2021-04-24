@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -31,14 +32,14 @@ void strip(char *line) {
 	}
 }
 
-strings *split(char *line, char delimiter) {
+struct strings *split(char *line, char delimiter) {
 	if (line == NULL) {
 		return NULL;
 	}
 	int len = strlen(line);
 	//printf("%d\n", len);
 	
-	strings *ss = create_strings();
+	struct strings *ss = create_strings();
 	if (ss == NULL) {
 		return NULL;
 	}
@@ -90,7 +91,7 @@ ERROR_RET:
 	return NULL;
 }
 
-int deal_server_config_line(char *line, sftt_server_config *ssc) {
+int deal_server_config_line(char *line, struct sftt_server_config *ssc) {
 	strip(line);
 	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
@@ -149,7 +150,7 @@ int deal_server_config_line(char *line, sftt_server_config *ssc) {
 	return 0;
 }
 
-int get_sftt_server_config(sftt_server_config *ssc) {
+int get_sftt_server_config(struct sftt_server_config *ssc) {
 	if (ssc == NULL) {
 		return -1;
 	}
@@ -205,7 +206,7 @@ ERR_RET:
 	return -1;
 }
 
-int deal_client_config_line(char *line, sftt_client_config *scc) {
+int deal_client_config_line(char *line, struct sftt_client_config *scc) {
 	strip(line);
 	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
@@ -261,7 +262,7 @@ int deal_client_config_line(char *line, sftt_client_config *scc) {
 }
 
 
-int get_sftt_client_config(sftt_client_config *scc) {
+int get_sftt_client_config(struct sftt_client_config *scc) {
 	if (scc == NULL) {
 		return -1;
 	}
@@ -317,12 +318,11 @@ ERR_RET:
 	return -1;
 }
 
-#if 0
-int main(void) {
+int config_test(void) {
 	char *line = "a,0,0,,";
 	int i = 0;
 	
-	strings *ss = split(line, ',');
+	struct strings *ss = split(line, ',');
 	int num = get_string_num(ss);
 	printf("num: %d\n", num);
 	for (i = 0; i < num; ++i) {
@@ -331,4 +331,3 @@ int main(void) {
 	
 	return 0;
 }
-#endif

@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include "option.h"
@@ -71,13 +72,14 @@ char *next_arg(char *args, char **param, char **val)
     return skip_spaces(next);
 }
 
-const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const sftt_option *sftt_opts) {
+const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg,
+		int *optind, const struct sftt_option *sftt_opts) {
 	*optarg = NULL;
 	if (*optind >= argc) {
 		return NULL;
 	}
 
-	const sftt_option *opt = sftt_opts;
+	const struct sftt_option *opt = sftt_opts;
 	for (;;) {
 		if (!opt->name) {
 			return NULL;
@@ -103,8 +105,7 @@ const sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind,
 	return opt;
 }
 
-#if 0
-int main(void) {
+int sftt_option_test(void) {
 	char *str = "a=12 b=12";
 	char *param = NULL, *value = NULL;
 	
@@ -115,4 +116,3 @@ int main(void) {
 
 	return 0;
 }
-#endif
