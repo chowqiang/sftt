@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "base.h"
 #include "mem_pool.h"
 
 struct mem_pool *g_mp = NULL;
@@ -56,11 +57,9 @@ struct mem_pool *mp_create(void) {
 	}
 	mp->list = dlist_create(mem_node_free);
 	assert(mp->list != NULL);
-	if (pthread_mutex_init(&mp->lock, NULL) != 0) {
-		perror("mem pool mutex init failed! ");
-		dlist_destroy(mp->list);
-		return NULL;
-	}
+
+	mp->mutex = new(pthread_mutex);
+	assert(mp->mutex != NULL);
 
 	return mp;
 }
@@ -73,7 +72,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 	struct mem_node *m_node = NULL, *p = NULL;
 	struct dlist_node *l_node = NULL;
-	if (pthread_mutex_lock(&mp->lock) != 0) {
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_malloc failed: cannot lock mem pool. ");
 		return NULL;
 	}
@@ -101,7 +100,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
-	pthread_mutex_unlock(&mp->lock);
+	mp->mutex->ops->unlock(mp->mutex);
 
 	return m_node->address;
 }
@@ -112,7 +111,7 @@ void mp_free(struct mem_pool *mp, void *p) {
 	}
 	struct mem_node *m_node = NULL;
 	struct dlist_node *l_node = NULL;
-	if (pthread_mutex_lock(&mp->lock) != 0) {
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_free failed: cannot lock mem pool. ");
 		return ;
 	}
@@ -124,7 +123,7 @@ void mp_free(struct mem_pool *mp, void *p) {
 			break;
 		}
 	}
-	pthread_mutex_unlock(&mp->lock);
+	mp->mutex->ops->unlock(mp->mutex);
 }
 
 void mp_destroy(struct mem_pool *mp) {

@@ -16,6 +16,8 @@ enum option_index {
 	STATUS,
 	DB,
 	ADDUSER,
+	DAEMON,
+	STORE,
 	UNKNOWN
 };
 
@@ -27,7 +29,8 @@ struct sftt_option {
 
 char *next_arg(char *arg, char **param, char **value);
 
-const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg, int *optind, const struct sftt_option *sftt_opts);
+const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg,
+	int *optind, const struct sftt_option *sftt_opts);
 
 #endif
 

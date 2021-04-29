@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "file.h"
 #include "mem_pool.h"
 
@@ -55,4 +56,9 @@ size_t file_put_contents(char *path, unsigned char *text, size_t length) {
 	fclose(fp);
 
 	return cnt; 
+}
+
+bool file_is_existed(char *path)
+{
+	return access(path, F_OK) != -1;
 }

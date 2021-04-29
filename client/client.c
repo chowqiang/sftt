@@ -967,16 +967,19 @@ static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int po
 	}
 
     if (get_sftt_client_config(&client->config) == -1) {
+	    printf("get sftt client config failed!\n");
         return -1;
     }
     logger_init(client->config.log_dir, PROC_NAME);
     set_log_type(CLIENT_LOG);
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
+		printf("init sftt client control connection failed!\n");
 		return -1;
 	}
 
 	if (init_sftt_client_session(client) == -1) {
+		printf("init sftt client session failed!\n");
 		return -1;
 	}
 

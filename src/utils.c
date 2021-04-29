@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include "utils.h"
 
 int gen_int(int begin, int end)
@@ -101,4 +102,13 @@ int ts_to_str(uint64_t ts, char *buf, int max_len) {
 	}
 
 	return ret;
+}
+
+time_t get_ts(void)
+{
+	struct timeval t;
+
+	gettimeofday(&t, NULL);
+
+	return (time_t)t.tv_sec;
 }

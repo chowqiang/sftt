@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stddef.h>
 #include "dlist.h"
+#include "lock.h"
 
 struct mem_node {
 	size_t size;
@@ -14,7 +15,7 @@ struct mem_node {
 
 struct mem_pool {
 	struct dlist *list;
-	pthread_mutex_t lock;
+	struct pthread_mutex *mutex;
 };
 
 struct mem_pool *mem_pool_construct(void);

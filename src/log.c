@@ -1,4 +1,6 @@
+#include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -7,8 +9,10 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "base.h"
 #include "config.h"
 #include "log.h"
+#include "ratelimit.h"
 #include "utils.h"
 
 struct msgbuf {
@@ -22,6 +26,10 @@ static char client_log_dir[DIR_PATH_MAX_LEN];
 static char client_log_prefix[32];
 
 static FILE *server_log_fp = NULL;
+
+struct ratelimit_state *client_limit;
+
+struct ratelimit_state *server_limit;
 
 int get_log_msqid(int create_flag);
 
@@ -63,6 +71,9 @@ void logger_init(char *dir, char *prefix)
 {
 	strcpy(client_log_dir, dir);
 	strcpy(client_log_prefix, prefix);
+
+	client_limit = new(ratelimit_state, 10, 1000);
+	assert(client_limit != NULL);
 }
 
 void logger_daemon(char *dir, char *prefix)
@@ -70,6 +81,9 @@ void logger_daemon(char *dir, char *prefix)
 	int msqid;
     	key_t key;
     	struct msgbuf msg;
+
+	server_limit = new(ratelimit_state, 10, 1000);
+	assert(server_limit != NULL);
 
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
@@ -83,7 +97,7 @@ void logger_daemon(char *dir, char *prefix)
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
-	    perror("open log file failed");
+	    printf("%d: open log file %s failed!\n", __LINE__, file1);
 		return ;
 	}
 
@@ -95,7 +109,7 @@ void logger_daemon(char *dir, char *prefix)
 			fclose(server_log_fp);
 			server_log_fp = fopen(file2, "a");
 			if (server_log_fp == NULL) {
-			    perror("open log file failed");
+				printf("%d: open log file %s failed!\n", __LINE__, file2);
 				continue;
 			}
 			strcpy(file1, file2);
@@ -151,6 +165,10 @@ int add_client_log(int level, const char *fmt, va_list args)
 	char buf[LOG_STR_MAX_LEN];
 	char now[32];
 
+	if (ratelimit_try_inc(client_limit) == false) {
+		return -1;
+	}
+
 	char *desc = get_log_level_desc(level);
 	now_time_str(now, 31);
 
@@ -178,6 +196,10 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 int add_server_log(int level, const char *fmt, va_list args)
 {
+	if (ratelimit_try_inc(server_limit) == false) {
+		return -1;
+	}
+
 	int msqid = get_log_msqid(0);
 	if (msqid == -1) {
 		if (errno == ENOENT) {

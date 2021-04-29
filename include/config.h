@@ -17,6 +17,7 @@
  */
 #define HOST_MAX_LEN		32
 
+
 struct sftt_server_config {
 	char store_path[FILE_NAME_MAX_LEN + 1];
 	char log_dir[DIR_PATH_MAX_LEN + 1];

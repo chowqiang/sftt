@@ -22,11 +22,13 @@ do {	\
 #define MAX_CHILD_NUM			128
 
 struct sftt_option sftt_server_opts[] = {
-	{"start", START, OPT_ARG},
-	{"restart", RESTART, OPT_ARG},
+	{"start", START, NO_ARG},
+	{"restart", RESTART, NO_ARG},
 	{"stop", STOP, NO_ARG},
 	{"status", STATUS, NO_ARG},
 	{"db", DB, NO_ARG},
+	{"-d", DAEMON, NO_ARG},
+	{"-s", STORE, HAS_ARG},
 	{NULL, -1, NO_ARG}
 };
 
@@ -45,7 +47,7 @@ struct sftt_server {
 	enum sftt_server_status status;
 	struct sftt_server_config conf;
 	struct client_session sessions[MAX_CLIENT_NUM];
-	pthread_mutex_t lock;
+	struct pthread_mutex *pm;
 };
 
 struct sftt_server_stat {
@@ -64,8 +66,5 @@ void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_serv
 FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_conf, char * data_buff);
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 void is_exit(char * filepath);
-
-struct sftt_server *sftt_server_construct(void);
-void sftt_server_destruct(struct sftt_server *ptr);
 
 #endif

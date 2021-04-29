@@ -4,7 +4,24 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "config.h"
+#include "file.h"
 #include "sftt_strings.h"
+
+char *config_search_pathes[] = {"/etc/sftt", "./conf", ".", NULL};
+
+char *search_config(char *fname)
+{
+	int i;
+	char tmp[256];
+
+	for (i = 0; config_search_pathes[i] != NULL; ++i) {
+		snprintf(tmp, 255, "%s/%s", config_search_pathes[i], fname);
+		if (file_is_existed(tmp))
+			return strdup(tmp);
+	}
+
+	return NULL;
+}
 
 void strip(char *line) {
 	int len = strlen(line);
@@ -159,7 +176,12 @@ int get_sftt_server_config(struct sftt_server_config *ssc) {
         getcwd(buf,sizeof(buf));   
       	printf("current working directory: %s\n", buf);   
 */
-	char *server_config_path = "/etc/sftt/sftt_server.conf"; 
+	char *server_config_path;
+	if ((server_config_path	= search_config("sftt_server.conf")) == NULL) {
+		printf("cannot find client config file!");
+		return -1;
+	}
+
 	FILE *fp = fopen(server_config_path, "r");
 	if (fp == NULL) {
 		printf("open config file failed: %s\n", server_config_path);
@@ -197,11 +219,13 @@ int get_sftt_server_config(struct sftt_server_config *ssc) {
 	}
 
 	fclose(fp);
+	free(server_config_path);
 
 	return 0;
 
 ERR_RET:
 	printf("server config file parse failed!\n");
+	free(server_config_path);
 
 	return -1;
 }
@@ -271,7 +295,12 @@ int get_sftt_client_config(struct sftt_client_config *scc) {
         getcwd(buf,sizeof(buf));   
       	printf("current working directory: %s\n", buf);   
 */
-	char *client_config_path = "/etc/sftt/sftt_client.conf";
+	char *client_config_path;
+	if ((client_config_path	= search_config("sftt_client.conf")) == NULL) {
+		printf("cannot find client config file!");
+		return -1;
+	}
+
 	FILE *fp = fopen(client_config_path, "r");
 	if (fp == NULL) {
 		printf("open config file failed: %s\n", client_config_path);
@@ -309,11 +338,13 @@ int get_sftt_client_config(struct sftt_client_config *scc) {
 	}
 
 	fclose(fp);
+	free(client_config_path);
 
 	return 0;
 
 ERR_RET:
 	printf("client config file parse failed!\n");
+	free(client_config_path);
 
 	return -1;
 }

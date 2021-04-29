@@ -19,6 +19,7 @@
 #include "config.h"
 #include "debug.h"
 #include "encrypt.h"
+#include "lock.h"
 #include "log.h"
 #include "mem_pool.h"
 #include "net_trans.h"
@@ -46,8 +47,6 @@ struct sftt_server_stat *alloc_sftt_server_stat(void);
 
 void sync_server_stat(void);
 
-//static struct child_info *get_child_process_info(pid_t pid);
-//static void register_child_process_info(int index, pid_t pid);
 
 void server_init_func(struct sftt_server_config *server_config){
 	DIR *mydir = NULL;
@@ -242,6 +241,8 @@ bool init_sftt_server_stat(pid_t log_pid) {
 	memcpy(&sss->conf, &server->conf, sizeof(struct sftt_server_config));
 
 	put_sftt_server_stat(sss);
+
+	return true;
 }
 
 int get_sftt_server_shmid(int create_flag) {
@@ -393,6 +394,7 @@ int validate_user_info(struct client_session *session, struct sftt_packet *req, 
 }
 
 void child_process_exception_handler(int sig) {
+	add_log(LOG_WARN, "child thread encounter seg fault!");
 	printf("I'm child process and encountered segmental fault!\n");
 	exit(-1);
 }
@@ -483,48 +485,13 @@ struct client_session *find_get_new_session(void)
 
 	for (i = 0; i < MAX_CHILD_NUM; ++i) {
 		if (server->sessions[i].status == EXITED) {
+			server->sessions[i].status = ACTIVE;
 			return &server->sessions[i];
 		}
 	}
 
 	return NULL;
 }
-
-#if 0
-void register_child_process_info(int index, pid_t pid) {
-	if (index >= MAX_CHILD_NUM) {
-		return ;
-	}
-
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		return ;
-	}
-
-	if (ssi->sessions[index].status == ACTIVE) {
-		return ;
-	}
-
-	ssi->sessions[index].pid = pid;
-	ssi->sessions[index].status = ACTIVE;
-}
-
-struct child_info *get_child_process_info(pid_t pid) {
-	struct sftt_server_info *ssi = get_sftt_server_info();
-	if (ssi == NULL) {
-		return NULL;
-	}
-
-	int i = 0;
-	for (i = 0; i < MAX_CHILD_NUM; ++i) {
-		if (ssi->sessions[i].pid == pid) {
-			return &ssi->sessions[i];
-		}
-	}
-
-	return NULL;
-}
-#endif
 
 void init_sessions(void)
 {
@@ -534,7 +501,7 @@ void init_sessions(void)
 	}
 }
 
-void main_loop(struct sftt_server *server) {
+void main_loop(void) {
 	int connect_fd = 0;
 	pid_t pid = 0;
 	int idx = 0;
@@ -553,24 +520,17 @@ void main_loop(struct sftt_server *server) {
 			continue;
 		}
 		if ((session = find_get_new_session()) == NULL) {
+			add_log(LOG_INFO, "exceed max connection!");
 			close(connect_fd);
 			continue;
 		}
 		add_log(LOG_INFO, "a client connected ...");
 
 		ret = pthread_create(&child, NULL, handle_client_session, session);
-		/*
-		pid = fork();
-		if (pid == 0){
-			add_log(LOG_INFO, "I'm child");
-			handle_client_session(connect_fd);
-		} else if (pid < 0 ){
-			printf("fork failed!\n");
-		} else {
-			register_child_process_info(idx, pid);
-			wait(NULL);
+		if (ret) {
+			add_log(LOG_INFO, "create thread failed!");
+			session->status = EXITED;
 		}
-		*/
 	}
 }
 
@@ -628,13 +588,15 @@ pid_t start_sftt_log_server(struct sftt_server *server) {
 	}
 }
 
-bool create_sftt_server(struct sftt_server *server, char *store_path) {
+bool init_sftt_server(char *store_path) {
 	int port = 0;
 	int sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
 		return false;
 	}
 
+	server = (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
+	assert(server != NULL);
 	server->status = READY;
 	server->main_sock = sockfd;
 	server->main_port = port;
@@ -665,11 +627,12 @@ bool create_sftt_server(struct sftt_server *server, char *store_path) {
 		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
 		return false;
 	}
+	server->pm = new(pthread_mutex);
 
 	return true;
 }
 
-int sftt_server_start(char *store_path) {
+int sftt_server_start(char *store_path, bool background) {
 	if (sftt_server_is_running()) {
 		printf("cannot start " PROC_NAME ", because it has been running.\n");
 		exit(-1);
@@ -682,13 +645,12 @@ int sftt_server_start(char *store_path) {
 		}
 	}
 
-	if (daemon(1, 1) != 0) {
+	if (background && daemon(1, 1) != 0) {
 		printf("server cannot running in the background!\n");
 		exit(-1);
 	}
 
-	struct sftt_server server;
-	bool ret = create_sftt_server(&server, store_path);
+	bool ret = init_sftt_server(store_path);
 	if (!ret) {
 		printf(PROC_NAME " create server failed!\n");
 		exit(-1);
@@ -698,20 +660,10 @@ int sftt_server_start(char *store_path) {
 
 	signal(SIGTERM, sftt_server_exit);
 
-	main_loop(&server);
+	main_loop();
 }
 
-struct sftt_server *sftt_server_construct(void)
-{
-	return (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
-}
-
-void sftt_server_destruct(struct sftt_server *ptr)
-{
-	mp_free(g_mp, ptr);
-}
-
-int sftt_server_restart(char *store_path) {
+int sftt_server_restart(char *store_path, bool background) {
 	if (!sftt_server_is_running()) {
 		printf("cannot restart " PROC_NAME ", because it is not running.\n");
 		exit(-1);
@@ -799,11 +751,12 @@ static void version(void) {
 
 static void help(int exitcode) {
 	version();
-	printf("usage:\t" PROC_NAME " [option]\n"
-		"\t" PROC_NAME " [start|restart dir]\n"
-		"\t" PROC_NAME " [stop]\n"
-		"\t" PROC_NAME " [status]\n"
-		"\t" PROC_NAME " [db]\n");
+	printf("usage:\t" PROC_NAME " options\n"
+		"\t" PROC_NAME " start [-d] [-s dir]\n"
+		"\t" PROC_NAME " restart [-d] [-s dir]\n"
+		"\t" PROC_NAME " stop\n"
+		"\t" PROC_NAME " status\n"
+		"\t" PROC_NAME " db\n");
 	exit(exitcode);
 }
 
@@ -894,6 +847,7 @@ int main(int argc, char **argv) {
 	bool ret = false;
 	char store_path[DIR_PATH_MAX_LEN];
 	enum option_index opt_idx = UNKNOWN;
+	bool background = false;
 
 	if (argc < 2) {
 		help(-1);
@@ -911,19 +865,9 @@ int main(int argc, char **argv) {
 		}
 		switch (opt->index) {
 		case START:
-			if (optarg) {
-				ASSERT_STORE_PATH_LEN("start", optarg, DIR_PATH_MAX_LEN);
-				ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
-				++optind;
-			}
 			opt_idx = START;
 			break;
 		case RESTART:
-			if (optarg) {
-				ASSERT_STORE_PATH_LEN("restart", optarg, DIR_PATH_MAX_LEN);
-				ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
-				++optind;
-			}
 			opt_idx = RESTART;
 			break;
 		case STOP:
@@ -934,6 +878,13 @@ int main(int argc, char **argv) {
 			break;
 		case DB:
 			opt_idx = DB;
+			break;
+		case DAEMON:
+			background = true;
+			break;
+		case STORE:
+			ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
+			++optind;
 			break;
 		default:
 			printf("unknown parameter: %s\n", argv[optind]);
@@ -949,10 +900,10 @@ int main(int argc, char **argv) {
 
 	switch (opt_idx) {
 	case START:
-		sftt_server_start(store_path);
+		sftt_server_start(store_path, background);
 		break;
 	case RESTART:
-		sftt_server_restart(store_path);
+		sftt_server_restart(store_path, background);
 		break;
 	case STOP:
 		sftt_server_stop();
