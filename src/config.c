@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include "config.h"
 #include "file.h"
-#include "sftt_strings.h"
 
 char *config_search_pathes[] = {"/etc/sftt", "./conf", ".", NULL};
 
@@ -49,6 +48,7 @@ void strip(char *line) {
 	}
 }
 
+#if 0
 struct strings *split(char *line, char delimiter) {
 	if (line == NULL) {
 		return NULL;
@@ -107,6 +107,7 @@ ERROR_RET:
 	free_strings(&ss);
 	return NULL;
 }
+#endif
 
 int deal_server_config_line(char *line, struct sftt_server_config *ssc) {
 	strip(line);
@@ -349,6 +350,7 @@ ERR_RET:
 	return -1;
 }
 
+#if 0
 int config_test(void) {
 	char *line = "a,0,0,,";
 	int i = 0;
@@ -362,3 +364,4 @@ int config_test(void) {
 	
 	return 0;
 }
+#endif

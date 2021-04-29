@@ -23,6 +23,7 @@ void mem_pool_destruct(struct mem_pool *ptr);
 struct mem_pool *get_singleton_mp(void);
 struct mem_pool *mp_create(void);
 void *mp_malloc(struct mem_pool *mp, size_t n);
+void *mp_realloc(struct mem_pool *mp, void *addr, size_t n);
 void mp_stat(struct mem_pool *mp);
 void mp_free(struct mem_pool *mp, void *p);
 void mp_destroy(struct mem_pool *mp);

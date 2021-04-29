@@ -4,18 +4,14 @@
 #define MAX_SDS_AUTO_GROW_SIZE	1024
 
 struct sds {
+	char *buf;
 	int len;
 	int size;
-	char *buf;	
+	struct pthread_mutex *mutex;
 };
 
-struct strings {
-	struct sds *str_arr;
-	int cap;	
-	int num;
-};
-
-struct strings *create_strings(void);
+#if 0
+struct flex_array *create_strings(void);
 
 int add_string(struct strings *ss);
 
@@ -26,5 +22,10 @@ int get_string_num(struct strings *ss);
 const char *get_string(struct strings *ss, int index);
 
 void free_strings(struct strings **ss); 
+#endif
+
+struct sds *sds_construct(void);
+void sds_destruct(struct sds *ptr);
+int sds_append_char(struct sds *str, char c);
 
 #endif

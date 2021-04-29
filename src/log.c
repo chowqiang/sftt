@@ -12,6 +12,7 @@
 #include "base.h"
 #include "config.h"
 #include "log.h"
+#include "mem_pool.h"
 #include "ratelimit.h"
 #include "utils.h"
 
@@ -19,6 +20,8 @@ struct msgbuf {
     long    mtype;
     char    mtext[LOG_STR_MAX_LEN];
 };
+
+extern struct mem_pool *g_mp;
 
 static enum log_type type = UNKNOWN_LOG;
 
@@ -253,6 +256,79 @@ int add_log(int level, const char *fmt, ...)
 		break;
 	}
 
+	va_end(args);
+
+	return ret;
+}
+
+struct logger *logger_construct(char *store_dir, int interval, int burst)
+{
+	struct logger *log;
+
+	assert(strlen(store_dir) < DIR_PATH_MAX_LEN);
+
+	log = (struct logger *)mp_malloc(g_mp, sizeof(struct logger));
+	assert(log != NULL);
+
+	log->mutex = new(pthread_mutex);
+	assert(log->mutex != NULL);
+
+	log->limit = new(ratelimit_state, interval, burst);
+	assert(log->limit != NULL);
+
+	strncpy(log->store_dir, store_dir, strlen(store_dir));
+
+	return log;
+}
+
+void logger_destruct(struct logger *ptr)
+{
+	ptr->mutex->ops->destroy(ptr->mutex);
+	mp_free(g_mp, ptr);
+}
+
+int do_log(struct logger *log, struct trace_info *trace, int level, const char *fmt, va_list args)
+{
+	char log_file[FILE_NAME_MAX_LEN];
+	char buf[LOG_STR_MAX_LEN];
+	char now[32];
+
+	if (ratelimit_try_inc(client_limit) == false) {
+		return -1;
+	}
+
+	char *desc = get_log_level_desc(level);
+	now_time_str(now, 31);
+
+	int ret = sprintf(buf, "[%s] %s ", desc, now);
+
+	//va_list args;
+	//va_start(args, fmt);
+	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
+	//va_end(args);
+
+	//printf("client log dir: %s\n", client_log_dir);
+	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
+	FILE *client_log_fp = fopen(log_file, "a");
+	if (client_log_fp == NULL) {
+		return -1;
+	}
+
+	fprintf(client_log_fp, "%s\n", buf);
+	fflush(client_log_fp);
+
+	fclose(client_log_fp);
+
+	return 0;
+}
+
+int log_info(struct logger* log, struct trace_info *trace, const char *fmt, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, fmt);
+	ret = do_log(log, trace, LOG_INFO, fmt, args);
 	va_end(args);
 
 	return ret;

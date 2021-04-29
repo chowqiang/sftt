@@ -894,7 +894,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
 	return 0;
 }
 
-static int validate_user_info(struct sftt_client_v2 *client) {
+static int validate_user_info(struct sftt_client_v2 *client, char *passwd) {
 	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	if (!req) {
 		printf("allocate request packet failed!\n");
@@ -907,8 +907,20 @@ static int validate_user_info(struct sftt_client_v2 *client) {
 	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
 	v_req.name_len = strlen(tmp);
 
-	tmp = strncpy(v_req.passwd_md5, client->uinfo->passwd_md5, MD5_LEN);
-	v_req.passwd_len = strlen(tmp);
+	//strncpy(client->uinfo->passwd, passwd, PASSWD_MAX_LEN - 1);
+	if (strlen(passwd)) {
+		md5_str(passwd, strlen(passwd), v_req.passwd_md5);
+		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
+		char *md5_str = md5_printable_str(v_req.passwd_md5);
+		if (md5_str) {
+			add_log(LOG_INFO, "%s", md5_str);
+			free(md5_str);
+		}
+	} else {
+		v_req.passwd_md5[0] = 0;
+	}
+	//tmp = strncpy(v_req.passwd_md5, client->uinfo->passwd_md5, MD5_LEN);
+	v_req.passwd_len = strlen(v_req.passwd_md5);
 
 	// how to serialize and deserialize properly ???
 	req->obj = (void *)&v_req;
@@ -947,25 +959,12 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
-static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
+static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user) {
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(struct user_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
-	strncpy(client->uinfo->passwd, passwd, PASSWD_MAX_LEN - 1);
-	if (strlen(passwd)) {
-		md5_str(passwd, strlen(passwd), client->uinfo->passwd_md5);
-		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
-		char *md5_str = md5_printable_str(client->uinfo->passwd_md5);
-		if (md5_str) {
-			add_log(LOG_INFO, "%s", md5_str);
-			free(md5_str);
-		}
-	} else {
-		client->uinfo->passwd_md5[0] = 0;
-	}
-
     if (get_sftt_client_config(&client->config) == -1) {
 	    printf("get sftt client config failed!\n");
         return -1;
@@ -1230,12 +1229,12 @@ int main(int argc, char **argv) {
 #endif
 
 	struct sftt_client_v2 client;
-	if (init_sftt_client_v2(&client, host, port, user_name, password) == -1) {
+	if (init_sftt_client_v2(&client, host, port, user_name) == -1) {
 		printf("init sftt client failed!\n");
 		exit(-1);
 	}
 
-	if (validate_user_info(&client) == -1) {
+	if (validate_user_info(&client, password) == -1) {
 		printf("cannot validate user and password!\n");
 		exit(-1);
 	}

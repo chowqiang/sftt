@@ -1,6 +1,9 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#include "config.h"
+#include "trace.h"
+
 #define LOG_STR_MAX_LEN	4096
 
 #define LOG_DEBUG	1
@@ -18,6 +21,12 @@ enum log_type {
 	UNKNOWN_LOG,
 };
 
+struct logger {
+	struct pthread_mutex *mutex;
+	struct ratelimit_state *limit;
+	char store_dir[DIR_PATH_MAX_LEN];
+};
+
 void logger_init(char *dir, char *prefix);
 
 void logger_daemon(char *dir, char *prefix);
@@ -27,5 +36,11 @@ void logger_exit(int sig);
 int add_log(int level, const char *fmt, ...);
 
 void set_log_type(enum log_type t);
+
+int log_info(struct logger* log, struct trace_info *trace, const char *fmt, ...);
+
+struct logger *logger_construct(char *store_dir, int interval, int burst);
+
+void logger_destruct(struct logger *ptr);
 
 #endif

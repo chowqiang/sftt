@@ -9,8 +9,8 @@
 struct user_info {
 	uint64_t uid;
 	char name[USER_NAME_MAX_LEN];
-	char passwd[PASSWD_MAX_LEN];
-	char passwd_md5[PASSWD_MAX_LEN];
+	//char passwd[PASSWD_MAX_LEN];
+	//char passwd_md5[PASSWD_MAX_LEN];
 };
 
 bool user_add(struct user_info ui);

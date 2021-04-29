@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "base.h"
+#include "lock.h"
 #include "mem_pool.h"
-#include "sftt_strings.h"
+#include "sds.h"
 
 extern struct mem_pool *g_mp;
 
@@ -26,6 +28,34 @@ int init_sds(struct sds *str) {
 	str->len = 0;
 
 	return 0;
+}
+
+struct sds *sds_construct(void)
+{
+	struct sds *str = (struct sds *)mp_malloc(g_mp, sizeof(struct sds));
+	assert(str != NULL);
+
+	str->mutex = new(pthread_mutex);
+	assert(str->mutex != NULL);
+
+	str->buf = NULL;
+	str->len = 0;
+	str->size = 0;
+
+	return str;
+}
+
+void sds_destruct(struct sds *ptr)
+{
+	if (ptr->buf)
+		mp_free(g_mp, ptr->buf);
+
+	ptr->buf = NULL;
+	ptr->len = 0;
+	ptr->size = 0;
+	ptr->mutex->ops->destroy(ptr->mutex);
+
+	mp_free(g_mp, ptr);
 }
 
 int sds_append_char(struct sds *str, char c) {
@@ -53,7 +83,7 @@ int sds_append_char(struct sds *str, char c) {
 		goal = str->size + 16;
 	}
 
-	char *tmp = (char *)realloc(str->buf, sizeof(char) * goal);
+	char *tmp = (char *)mp_realloc(g_mp, str->buf, sizeof(char) * goal);
 	if (tmp == NULL) {
 		return -1;
 	}
@@ -67,6 +97,7 @@ RET:
 	return 0;
 }
 
+#if 0
 struct strings *create_strings(void) {
 	struct strings *ss = (struct strings *)mp_malloc(g_mp, sizeof(struct strings));
 	if (ss == NULL) {
@@ -181,3 +212,4 @@ int strings_test(void) {
 
 	return 0;
 }
+#endif
