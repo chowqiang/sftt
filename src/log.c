@@ -104,6 +104,9 @@ void logger_daemon(char *dir, char *prefix)
 	int ret = 0;
 	for (;;) {
 		ret = msgrcv(msqid, &msg, LOG_STR_MAX_LEN, LOG_MSG_TYPE, 0);
+		if (ratelimit_try_inc(server_limit) == false) {
+			continue;
+		}
 		get_log_file_name(dir, prefix, file2, FILE_NAME_MAX_LEN);
 		if (strcmp(file1, file2)) {
 			fclose(server_log_fp);
@@ -196,10 +199,6 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 int add_server_log(int level, const char *fmt, va_list args)
 {
-	if (ratelimit_try_inc(server_limit) == false) {
-		return -1;
-	}
-
 	int msqid = get_log_msqid(0);
 	if (msqid == -1) {
 		if (errno == ENOENT) {
