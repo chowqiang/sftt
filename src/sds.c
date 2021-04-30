@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,23 +9,22 @@
 
 extern struct mem_pool *g_mp;
 
-int init_sds(struct sds *str) {
+int sds_init(struct sds *str, int size) {
 	if (str == NULL) {
 		return -1;
 	}	
 	
-	int init_size = 8;
-	char *tmp = (char *)mp_malloc(g_mp, sizeof(char) * init_size);
+	char *tmp = (char *)mp_malloc(g_mp, sizeof(char) * size);
 	if (tmp == NULL) {
 		str->buf = NULL;
 		str->size = 0;
 		str->len = 0;
 
 		return -1;
-	} 
-	memset(tmp, 0, init_size);
+	}
+	memset(tmp, 0, size);
 	str->buf = tmp;
-	str->size = init_size;
+	str->size = size;
 	str->len = 0;
 
 	return 0;
@@ -58,41 +58,65 @@ void sds_destruct(struct sds *ptr)
 	mp_free(g_mp, ptr);
 }
 
-int sds_append_char(struct sds *str, char c) {
-	if (str == NULL) {
+int sds_resize(struct sds *ptr, int size)
+{
+	if (mp_realloc(g_mp, ptr->buf, size)) {
 		return -1;
 	}
+
+
+	if (size <= ptr->len) {
+		ptr->len = size;
+	}
+
+	ptr->size = size;
+
+	return 0;
+}
+
+int sds_add_str(struct sds *ptr, char *str)
+{
+	assert(ptr != NULL);
 
 	int ret = 0;
-	if (str->size == 0) {
-		ret = init_sds(str);
-		if (ret == -1) {
-			return -1;
-		}
-		goto RET;
-	}
+	int len = strlen(str);
 
-	if (str->len < str->size - 1) {
-		goto RET;
-	}
-	
-	int goal = 0;
-	if (str->size < MAX_SDS_AUTO_GROW_SIZE) {
-		goal = (str->size != 0 ? str->size : 8) * 2;
-	} else {
-		goal = str->size + 16;
-	}
+	if (len == 0)
+		return 0;
 
-	char *tmp = (char *)mp_realloc(g_mp, str->buf, sizeof(char) * goal);
-	if (tmp == NULL) {
+	if (ptr->size == 0 && sds_init(ptr, len + 1)) {
 		return -1;
 	}
-	memset(&str->buf[str->size], 0, goal - str->size);
-	str->buf = tmp;
-	str->size = goal;
-RET:
-	str->buf[str->len] = c;
-	str->len++;
+
+	int goal = 0;
+	if (len >= (ptr->size - ptr->len)) {
+		goal = ptr->size + len;
+	}
+	if (goal && sds_resize(ptr, goal))
+		return -1;
+
+	strcat(ptr->buf + ptr->len, str);
+	ptr->len += len;
+
+	return 0;
+}
+
+int sds_add_char(struct sds *ptr, char c) {
+	assert(ptr != NULL);
+
+	int len = 1;
+	if (ptr->size == 0 && sds_init(ptr, len + 1))
+		return -1;
+
+	int goal = 0;
+	if (len >= (ptr->size - ptr->len))
+		goal = ptr->size + len * 8;
+
+	if (goal && sds_resize(ptr, goal))
+		return -1;
+
+	ptr->buf[ptr->len++] = c;
+	ptr->buf[ptr->len] = 0;
 
 	return 0;
 }

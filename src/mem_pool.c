@@ -105,6 +105,42 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 	return m_node->address;
 }
 
+void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
+{
+	struct mem_node *m_node;
+	struct dlist_node *l_node;
+	bool found = false;
+	void *tmp;
+
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
+		perror("mp_realloc failed: cannot lock mem pool. ");
+		return NULL;
+	}
+	dlist_for_each(mp->list, l_node) {
+		m_node = (struct mem_node *)l_node->data;
+		if (m_node->address == addr) {
+			found = true;
+			break;
+		}
+	}
+	if (!found)
+		return NULL;
+
+	tmp = mp_malloc(mp, n);
+	if (tmp == NULL)
+		return NULL;
+
+	if (n < m_node->size) {
+		memcpy(tmp, addr, n);
+	} else {
+		memcpy(tmp, addr, m_node->size);
+	}
+
+	mp_free(mp, addr);
+
+	return tmp;
+}
+
 void mp_free(struct mem_pool *mp, void *p) {
 	if (mp == NULL || mp->list == NULL || p == NULL) {
 		return ;

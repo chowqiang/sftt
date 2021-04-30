@@ -26,6 +26,7 @@ void free_strings(struct strings **ss);
 
 struct sds *sds_construct(void);
 void sds_destruct(struct sds *ptr);
-int sds_append_char(struct sds *str, char c);
+int sds_add_char(struct sds *ptr, char c);
+int sds_add_str(struct sds *ptr, char *str);
 
 #endif
