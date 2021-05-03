@@ -23,7 +23,7 @@ struct serialize_handle serializables[] = {
 
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
-	add_log(LOG_INFO, "begin to encode ...");
+	add_log(LOG_INFO, "%s: in", __func__);
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -34,14 +34,15 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
-	add_log(LOG_INFO, "end encode|ret: %d, encoded len: %d", ret, *len);
+	add_log(LOG_INFO, "%s: encode ret=%d, encoded_len=%d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
 }
 
 bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
-	add_log(LOG_INFO, "begin to decode ...");
+	add_log(LOG_INFO, "%s: in", __func__);
 	validate_req *_req = (validate_req *)mp_malloc(g_mp, sizeof(validate_req));
 
 	FILE *fp = fmemopen(buf, len, "r");
@@ -53,14 +54,15 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "end decode|ret: %d", ret);
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
 }
 
 bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 {
-	add_log(LOG_INFO, "begin to encode ...");
+	add_log(LOG_INFO, "%s: in", __func__);
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -71,14 +73,15 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
-	add_log(LOG_INFO, "end encode|ret: %d, encode len: %d", ret, *len);
+	add_log(LOG_INFO, "%s: encode ret: %d, encode_len: %d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
 }
 
 bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
-	add_log(LOG_INFO, "begin to decode ...");
+	add_log(LOG_INFO, "%s: in", __func__);
 	validate_resp *_rsp = (validate_resp *)mp_malloc(g_mp, sizeof(validate_resp));
 
 	FILE *fp = fmemopen(buf, len, "r");
@@ -90,7 +93,8 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 	fclose(fp);
 
 	*rsp = _rsp;
-	add_log(LOG_INFO, "encode decode|ret: %d", ret);
+	add_log(LOG_INFO, "%s: decode ret: %d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
 }
