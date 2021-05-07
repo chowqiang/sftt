@@ -21,17 +21,6 @@ do {	\
 
 #define MAX_CHILD_NUM			128
 
-struct sftt_option sftt_server_opts[] = {
-	{"start", START, NO_ARG},
-	{"restart", RESTART, NO_ARG},
-	{"stop", STOP, NO_ARG},
-	{"status", STATUS, NO_ARG},
-	{"db", DB, NO_ARG},
-	{"-d", DAEMON, NO_ARG},
-	{"-s", STORE, HAS_ARG},
-	{NULL, -1, NO_ARG}
-};
-
 enum sftt_server_status {
 	READY,
 	RUNNING,
@@ -67,4 +56,7 @@ FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_c
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 void is_exit(char * filepath);
 
+void sftt_server_db(void); 
+void sftt_server_exit(int sig);
+void server_usage_help(int exitcode);
 #endif

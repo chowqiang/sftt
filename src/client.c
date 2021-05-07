@@ -13,7 +13,7 @@
 #include <pthread.h>
 #include <curses.h>
 #include <ctype.h>
-#include "random_port.h"
+#include "endpoint.h"
 #include "command.h"
 #include "config.h"
 #include "client.h"
@@ -31,6 +31,14 @@
 
 extern int errno;
 extern struct mem_pool *g_mp;
+
+struct sftt_option sftt_client_opts[] = {
+	{"-u", USER, HAS_ARG},
+	{"-h", HOST, HAS_ARG},
+	{"-P", PORT, HAS_ARG},
+	{"-p", PASSWORD, NO_ARG},
+	{NULL, -1, NO_ARG}
+};
 
 struct dlist *his_cmds;
 
@@ -525,7 +533,7 @@ int save_trans_session(struct sftt_client *client) {
 }
 
 
-int main_old(int argc, char **argv) {
+int client_main_old(int argc, char **argv) {
 	if (argc < 4) {
 		usage(argv[0]);
 		return -1;
@@ -869,7 +877,7 @@ static void version(void)
     printf("version " VERSION ", Copyright (c) 2020-2021 zhou min, zhou qiang\n");
 }
 
-static void help(int exitcode)
+void client_usage_help(int exitcode)
 {
     version();
 	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
@@ -907,7 +915,6 @@ static int validate_user_info(struct sftt_client_v2 *client, char *passwd) {
 	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
 	v_req.name_len = strlen(tmp);
 
-	//strncpy(client->uinfo->passwd, passwd, PASSWD_MAX_LEN - 1);
 	if (strlen(passwd)) {
 		md5_str(passwd, strlen(passwd), v_req.passwd_md5);
 		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
@@ -919,7 +926,6 @@ static int validate_user_info(struct sftt_client_v2 *client, char *passwd) {
 	} else {
 		v_req.passwd_md5[0] = 0;
 	}
-	//tmp = strncpy(v_req.passwd_md5, client->uinfo->passwd_md5, MD5_LEN);
 	v_req.passwd_len = strlen(v_req.passwd_md5);
 
 	// how to serialize and deserialize properly ???
@@ -959,7 +965,7 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
-static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user) {
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user) {
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
@@ -985,7 +991,7 @@ static int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int po
 	return 0;
 }
 
-static int show_options(char *host, char *user_name, char *password) {
+int show_options(char *host, char *user_name, char *password) {
 	add_log(LOG_INFO, "host: %s", host);
 	add_log(LOG_INFO, "your name: %s", user_name);
 	add_log(LOG_INFO, "your password: %s", password);
@@ -1152,96 +1158,4 @@ int reader_loop2(struct sftt_client_v2 *client)
 		execute_cmd(cmd, -1);
 		dlist_append(his_cmds, strdup(cmd));
 	}
-}
-
-int main(int argc, char **argv) {
-	int optind = 1;
-	char *optarg = NULL;
-	bool has_passwd_opt = false;
-	char user_name[USER_NAME_MAX_LEN];
-	char password[PASSWD_MAX_LEN];
-	char host[HOST_MAX_LEN];
-	int port = -1;
-	const struct sftt_option *opt = NULL;	
-	bool ret = false;
-	int passwd_len = 0;
-
-	memset(user_name, 0, sizeof(user_name));
-	memset(password, 0, sizeof(password));
-	memset(host, 0, sizeof(host));
-	for (;;) {
-		if (optind >= argc) {
-			break;
-		}
-		opt = lookup_opt(argc, argv, &optarg, &optind, sftt_client_opts);
-		if (opt == NULL) {
-			printf("invalid option\n");
-			help(-1);
-		}
-		switch (opt->index) {
-		case USER:
-			ret = user_name_parse(optarg, user_name, sizeof(user_name));
-			if (!ret) {
-				printf("user name is invalid!\n");	
-				help(-1);
-			}
-			break;
-		case HOST:
-			ret = host_parse(optarg, host, sizeof(host));
-			if (!ret) {
-				printf("host is invalid!\n");
-				help(-1);
-			}
-			break;
-		case PORT:
-			ret = port_parse(optarg, &port);
-			if (!ret) {
-				printf("port is invalid!\n");
-				help(-1);
-			}
-			break;
-		case PASSWORD:
-			has_passwd_opt = true;
-			break;
-		}
-	}
-
-	if (has_passwd_opt) {
-		passwd_len = get_pass("password: ", password, sizeof(password));
-		if (passwd_len <= 0) {
-			printf("password is invalid!\n");
-			help(-1);
-		}
-	}
-
-	if (strlen(user_name) == 0) {
-		printf("user name is invalid!\n");
-		help(-1);
-	}
-
-	if (strlen(host) == 0) {
-		printf("host is invalid!\n");
-		help(-1);
-	}
-
-#ifdef DEBUG_ENABLE
-	show_options(host, user_name, password);
-#endif
-
-	struct sftt_client_v2 client;
-	if (init_sftt_client_v2(&client, host, port, user_name) == -1) {
-		printf("init sftt client failed!\n");
-		exit(-1);
-	}
-
-	if (validate_user_info(&client, password) == -1) {
-		printf("cannot validate user and password!\n");
-		exit(-1);
-	}
-
-	add_log(LOG_INFO, "client validate successfully!");
-
-	reader_loop2(&client);
-
-	return 0;
 }

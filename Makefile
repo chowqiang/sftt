@@ -42,8 +42,7 @@ ECHO:
 
 clean:
 	@rm $(ROOT_DIR)/src/*.o
-	@rm $(ROOT_DIR)/client/*.o
+	@rm $(ROOT_DIR)/lib/$(LIB_NAME)
 	@rm $(ROOT_DIR)/client/$(CLIENT_BIN)
-	@rm $(ROOT_DIR)/server/*.o
 	@rm $(ROOT_DIR)/server/$(SERVER_BIN)
 	make clean -C $(TEST_DIR)

@@ -23,7 +23,7 @@
 #include "log.h"
 #include "mem_pool.h"
 #include "net_trans.h"
-#include "random_port.h"
+#include "endpoint.h"
 #include "req_rsp.h"
 #include "server.h"
 #include "session.h"
@@ -33,20 +33,28 @@
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
 
+struct sftt_option sftt_server_opts[] = {
+	{"start", START, NO_ARG},
+	{"restart", RESTART, NO_ARG},
+	{"stop", STOP, NO_ARG},
+	{"status", STATUS, NO_ARG},
+	{"db", DB, NO_ARG},
+	{"-d", DAEMON, NO_ARG},
+	{"-s", STORE, HAS_ARG},
+	{NULL, -1, NO_ARG}
+};
+
 extern struct mem_pool *g_mp;
 
 struct sftt_server *server;
 
 int create_non_block_sock(int *pport);
 
-static void sftt_server_exit(int sig);
-
 void put_sftt_server_stat(struct sftt_server_stat *sss);
 
 struct sftt_server_stat *alloc_sftt_server_stat(void);
 
 void sync_server_stat(void);
-
 
 void server_init_func(struct sftt_server_config *server_config){
 	DIR *mydir = NULL;
@@ -195,7 +203,7 @@ void  is_exit(char * filepath){
 	}
 }
 
-int main_old(){
+int server_main_old(){
 //	int	socket_fd = sftt_server();
     int socket_fd = 0;
 	int	connect_fd;
@@ -749,7 +757,7 @@ static void version(void) {
     printf("version " VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
 }
 
-static void help(int exitcode) {
+void server_usage_help(int exitcode) {
 	version();
 	printf("usage:\t" PROC_NAME " options\n"
 		"\t" PROC_NAME " start [-d] [-s dir]\n"
@@ -840,81 +848,3 @@ void sftt_server_db(void) {
 	}
 }
 
-int main(int argc, char **argv) {
-	int optind = 1;
-	char *optarg = NULL;
-	const struct sftt_option *opt = NULL;
-	bool ret = false;
-	char store_path[DIR_PATH_MAX_LEN];
-	enum option_index opt_idx = UNKNOWN;
-	bool background = false;
-
-	if (argc < 2) {
-		help(-1);
-	}
-
-	memset(store_path, 0, sizeof(store_path));
-	for (;;) {
-		if (optind >= argc) {
-			break;
-		}
-		opt = lookup_opt(argc, argv, &optarg, &optind, sftt_server_opts);
-		if (opt == NULL) {
-			printf("invalid option: %s\n", argv[optind]);
-			help(-1);
-		}
-		switch (opt->index) {
-		case START:
-			opt_idx = START;
-			break;
-		case RESTART:
-			opt_idx = RESTART;
-			break;
-		case STOP:
-			opt_idx = STOP;
-			break;
-		case STATUS:
-			opt_idx = STATUS;
-			break;
-		case DB:
-			opt_idx = DB;
-			break;
-		case DAEMON:
-			background = true;
-			break;
-		case STORE:
-			ret = parse_store_path(optarg, store_path, DIR_PATH_MAX_LEN - 1);
-			++optind;
-			break;
-		default:
-			printf("unknown parameter: %s\n", argv[optind]);
-			help(-1);
-			break;
-		}
-	}
-
-	if (optind < argc) {
-		printf("unknown parameters: %s\n", argv[optind]);
-		help(-1);
-	}
-
-	switch (opt_idx) {
-	case START:
-		sftt_server_start(store_path, background);
-		break;
-	case RESTART:
-		sftt_server_restart(store_path, background);
-		break;
-	case STOP:
-		sftt_server_stop();
-		break;
-	case STATUS:
-		sftt_server_status();
-		break;
-	case DB:
-		sftt_server_db();
-		break;
-	}
-
-	return 0;
-}

@@ -181,6 +181,7 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp) {
 	ret = recv(sock, header, header_len, 0);
 	add_log(LOG_INFO, "%s: recv header, ret=%d, header_len=%d", __func__, ret, header_len);
 	if (ret != header_len) {
+		perror("recv failed");
 		printf("%s: recv ret not equal to header len, ret = %d, header_len = %d\n",
 				__func__, ret, header_len);
 		if (ret == 0) {

@@ -26,14 +26,6 @@
 
 #define CLIENT_LOG_DIR			"/var/log/"PROC_NAME"/"
 
-struct sftt_option sftt_client_opts[] = {
-	{"-u", USER, HAS_ARG},
-	{"-h", HOST, HAS_ARG},
-	{"-P", PORT, HAS_ARG},
-	{"-p", PASSWORD, NO_ARG},
-	{NULL, -1, NO_ARG}
-};
-
 struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
@@ -151,6 +143,12 @@ void sftt_client_pwd_usage(void);
 int sftt_client_his_handler(int argc, char *argv[], bool *argv_check);
 
 void sftt_client_his_usage(void);
+
+void client_usage_help(int exitcode);
+
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user); 
+
+int show_options(char *host, char *user_name, char *password); 
 
 static struct cmd_handler sftt_client_cmds[] = {
 	{
