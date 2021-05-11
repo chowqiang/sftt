@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -65,6 +66,9 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp) {
 	assert(encoded_len == header_len);
 
 	ret = send(sock, buffer, encoded_len, 0);
+	if (ret != encoded_len) {
+		printf("send header failed! %s\n", strerror(errno));
+	}
 	assert(ret == encoded_len);
 
 	mp_free(g_mp, buffer);
@@ -136,6 +140,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp) {
 		printf("sftt packet serialize failed!\n");
 		return -1;
 	}
+	//printf("%s: after serialize, packet data_len: %d\n", __func__, sp->data_len);
 
 	_sp = malloc_sftt_packet(sp->block_size * 2);
 	if (_sp == NULL) {
@@ -263,7 +268,9 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp) {
 	sftt_packet_decode_content(_sp, sp);
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
-	sftt_packet_deserialize(sp);
+	if (!sftt_packet_deserialize(sp)) {
+		printf("%s: recv deserialize failed!\n", __func__);
+	}
 
 	free_sftt_packet(&_sp);	
 	add_log(LOG_INFO, "%s: out", __func__);

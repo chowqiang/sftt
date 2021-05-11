@@ -38,7 +38,7 @@ int gen_id(void)
 	return gen_int(MIN_ID, MAX_ID);
 }
 
-void generate_session_id(char *buf, int len)
+void gen_session_id(char *buf, int len)
 {
 	int i;
 

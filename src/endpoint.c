@@ -5,6 +5,7 @@
 #include <sys/socket.h>  
 #include <netinet/in.h>  
 #include <fcntl.h>
+#include "connect.h"
 #include "endpoint.h"
 
 int get_random_port(){
@@ -19,9 +20,9 @@ int get_random_port(){
 	return port;
 }
 
-int make_client(void)
+int make_client(char *host, int port)
 {
-	return 0;
+	return make_connect(host, port);
 }
 
 int make_server(int port)

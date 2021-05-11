@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 
-void generate_session_id(char *buf, int len);
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+void gen_session_id(char *buf, int len);
 
 int now_time_str(char *buf, int max_len);
 

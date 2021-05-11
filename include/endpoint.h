@@ -5,7 +5,7 @@
 
 int get_random_port();
 
-int make_client(void);
+int make_client(char *host, int port);
 
 int make_server(int port);
 #endif

@@ -168,6 +168,11 @@ struct btree *generate_huffman_tree(int *char_freq) {
 #endif
 		t_node2 = fetch_min_btree_node(list);
 		if (t_node2 == NULL) {
+			if (btree_is_leaf(t_node1)) {
+				t_node = btree_node_gen_parent((void *)cs_node, t_node1, t_node2);
+				assert(t_node != NULL);
+				t_node1 = t_node;
+			}
 			break;
 		}
 #if	0
@@ -310,6 +315,10 @@ int huffman_encode(unsigned char *input, int input_len, char *char_codes[CHARSET
 	char *tmp = NULL;
 	for (i = 0; i < input_len; ++i) {
 		tmp = char_codes[input[i]];
+		if (tmp == NULL) {
+			printf("0x%0x\n", input[i]);
+			assert(tmp != NULL);
+		}
 		for (j = 0; tmp[j]; ++j) {
 			if (index == 0) {	
 				++pos;
@@ -360,7 +369,10 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 
 	char *char_codes[CHARSET_SIZE];
 	memset(char_codes, 0, sizeof(char_codes));
-	get_char_codes(tree, char_codes);
+	if (get_char_codes(tree, char_codes) == -1) {
+		printf("get char codes failed!\n");
+		return -1;
+	}
 
 	unsigned char *pos = output;
 	int char_freq_len = copy_char_freq(pos, char_freq);	
