@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "client.h"
+#include "cmdline.h"
 #include "log.h"
 
 extern struct sftt_option sftt_client_opts[];
@@ -29,21 +30,21 @@ int main(int argc, char **argv) {
 		}
 		switch (opt->index) {
 		case USER:
-			ret = user_name_parse(optarg, user_name, sizeof(user_name));
+			ret = parse_user_name(optarg, user_name, sizeof(user_name));
 			if (!ret) {
 				printf("user name is invalid!\n");	
 				client_usage_help(-1);
 			}
 			break;
 		case HOST:
-			ret = host_parse(optarg, host, sizeof(host));
+			ret = parse_host(optarg, host, sizeof(host));
 			if (!ret) {
 				printf("host is invalid!\n");
 				client_usage_help(-1);
 			}
 			break;
 		case PORT:
-			ret = port_parse(optarg, &port);
+			ret = parse_port(optarg, &port);
 			if (!ret) {
 				printf("port is invalid!\n");
 				client_usage_help(-1);
@@ -78,15 +79,11 @@ int main(int argc, char **argv) {
 #endif
 
 	struct sftt_client_v2 client;
-	if (init_sftt_client_v2(&client, host, port, user_name) == -1) {
+	if (init_sftt_client_v2(&client, host, port, user_name, password) == -1) {
 		printf("init sftt client failed!\n");
 		exit(-1);
 	}
 
-	if (validate_user_info(&client, password) == -1) {
-		printf("cannot validate user and password!\n");
-		exit(-1);
-	}
 
 	add_log(LOG_INFO, "client validate successfully!");
 

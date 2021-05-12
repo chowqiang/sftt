@@ -15,6 +15,8 @@ do {	\
 			}	\
 } while (false)
 
+#define PROC_NAME	"sfttd"
+
 #define SFTT_SERVER_SHMKEY_FILE	"/var/lib/"PROC_NAME"/shmkey"
 
 #define SFTT_SERVER_SHM_SIZE	4096

@@ -42,13 +42,15 @@ void gen_session_id(char *buf, int len)
 {
 	int i;
 
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len - 1; ++i) {
 		if (i % 2) {
 			buf[i] = gen_char('a', 'z');
 		} else {
 			buf[i] = gen_char('0', '9');
 		}
 	}
+
+	buf[len] = 0;
 }
 
 bool is_int(char *buf, int *num)

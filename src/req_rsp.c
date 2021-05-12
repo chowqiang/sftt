@@ -32,7 +32,7 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_u_long (xdrs, &objp->uid))
+	 if (!xdr_int (xdrs, &objp->uid))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))

@@ -103,6 +103,8 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 				if (len < sp->block_size) {
 					memcpy(sp->content, buf, len);
 					sp->data_len = len;
+				} else {
+					printf("%s: encoded len more then block size\n");
 				}
 				free(buf);
 			}

@@ -117,14 +117,16 @@ xdrstdio_destroy(xdrs)
 static bool_t
 xdrstdio_getlong(xdrs, lp)
 	XDR *xdrs;
-	register long *lp;
+	long *lp;
 {
 
 	if (fread((caddr_t)lp, sizeof(long), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
+//printf("%s, before ntohl: *lp = 0x%0x\n", __func__, *lp);
 #ifndef mc68000
 	*lp = ntohl(*lp);
 #endif
+//printf("%s, after ntohl: *lp = 0x%0x\n", __func__, *lp);
 	return (TRUE);
 }
 
@@ -134,10 +136,12 @@ xdrstdio_putlong(xdrs, lp)
 	long *lp;
 {
 
+//printf("%s, before htonl: *lp = 0x%0x\n", __func__, *lp);
 #ifndef mc68000
 	long mycopy = htonl(*lp);
 	lp = &mycopy;
 #endif
+//printf("%s, after htonl: *lp = 0x%0x\n", __func__, *lp);
 	if (fwrite((caddr_t)lp, sizeof(long), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
 	return (TRUE);

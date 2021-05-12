@@ -842,7 +842,7 @@ void execute_cmd(char *buf, int flag) {
 	}
 }
 
-bool user_name_parse(char *optarg, char *user_name, int max_len) {
+bool parse_user_name(char *optarg, char *user_name, int max_len) {
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len )) {
 		return false;
@@ -852,7 +852,7 @@ bool user_name_parse(char *optarg, char *user_name, int max_len) {
 	return true;
 }
 
-bool host_parse(char *optarg, char *host, int max_len) {
+bool parse_host(char *optarg, char *host, int max_len) {
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len)) {
 		return false;
@@ -862,7 +862,7 @@ bool host_parse(char *optarg, char *host, int max_len) {
 	return true;
 }
 
-bool port_parse(char *optarg, int *port) {
+bool parse_port(char *optarg, int *port) {
 	if (!isdigit(optarg)) {
 		return false;
 	}
@@ -903,57 +903,66 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
 }
 
 static int validate_user_info(struct sftt_client_v2 *client, char *passwd) {
-	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
-	if (!req) {
+	struct sftt_packet *req_packet, *resp_packet;
+	struct validate_req *req_info;
+	struct validate_resp *resp_info;
+
+	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!req_packet) {
 		printf("allocate request packet failed!\n");
 		return -1;
 	}
-	req->type = PACKET_TYPE_VALIDATE_REQ;
+	req_packet->type = PACKET_TYPE_VALIDATE_REQ;
 
-	struct validate_req v_req;
-	
-	char *tmp = strncpy(v_req.name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
-	v_req.name_len = strlen(tmp);
+	req_info = mp_malloc(g_mp, sizeof(struct validate_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
+	req_info->name_len = strlen(req_info->name);
 
 	if (strlen(passwd)) {
-		md5_str(passwd, strlen(passwd), v_req.passwd_md5);
+		md5_str(passwd, strlen(passwd), req_info->passwd_md5);
 		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
-		char *md5_str = md5_printable_str(v_req.passwd_md5);
+		char *md5_str = md5_printable_str(req_info->passwd_md5);
 		if (md5_str) {
 			add_log(LOG_INFO, "%s", md5_str);
 			free(md5_str);
 		}
 	} else {
-		v_req.passwd_md5[0] = 0;
+		req_info->passwd_md5[0] = 0;
 	}
-	v_req.passwd_len = strlen(v_req.passwd_md5);
+	req_info->passwd_len = strlen(req_info->passwd_md5);
 
 	// how to serialize and deserialize properly ???
-	req->obj = (void *)&v_req;
-	req->block_size = VALIDATE_PACKET_MIN_LEN;
+	req_packet->obj = req_info;
+	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req);
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
 	}
 
-	struct sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
-	if (!resp) {
+	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp);
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
 	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
 	}
 
-	struct validate_resp *v_resp = (validate_resp *)resp->obj;
-	if (v_resp->status != UVS_PASS) {
+	resp_info = (validate_resp *)resp_packet->obj;
+	if (resp_info->status != UVS_PASS) {
+		printf("%s: validate status is not pass! status: 0x%0x\n", __func__, resp_info->status);
+		printf("%s: uid: 0x%0x, name: %s, session_id: %s\n", __func__, resp_info->uid, resp_info->name, resp_info->session_id);
 		return -1;
 	}
 
-	client->uinfo->uid = v_resp->uid;
+	client->uinfo->uid = resp_info->uid;
 	add_log(LOG_INFO, "uid: %d", client->uinfo->uid);
 
 	return 0;
@@ -965,7 +974,7 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user) {
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
@@ -986,6 +995,11 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, cha
 	if (init_sftt_client_session(client) == -1) {
 		printf("init sftt client session failed!\n");
 		return -1;
+	}
+
+	if (validate_user_info(client, passwd) == -1) {
+		printf("cannot validate user and password!\n");
+		exit(-1);
 	}
 
 	return 0;

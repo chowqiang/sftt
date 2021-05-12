@@ -364,39 +364,51 @@ void update_server(struct sftt_server *server) {
 	sync_server_stat();
 }
 
-int validate_user_info(struct client_session *session, struct sftt_packet *req, struct sftt_packet *resp)
+static int validate_user_info(struct client_session *session, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
-	struct validate_req *v_req = (struct validate_req *)req->obj;
+	struct validate_req *req_info;
+	struct validate_resp *resp_info;
 	struct client_info *client = NULL;
 
-	add_log(LOG_INFO, "receive validate request|name: %s", v_req->name);
-	char *md5_str = md5_printable_str(v_req->passwd_md5);
+	req_info = (struct validate_req *)req_packet->obj;
+	//printf("receive validate name: %s, name len: %d\n", req_info->name, req_info->name_len);
+	add_log(LOG_INFO, "receive validate request|name: %s", req_info->name);
+	char *md5_str = md5_printable_str(req_info->passwd_md5);
 	if (md5_str) {
 		add_log(LOG_INFO, "passwd md5: %s", md5_str);
 		free(md5_str);
 	}
 
-	struct validate_resp v_resp;
-	if (strcmp(v_req->name, "root") == 0) {
-		v_resp.status = UVS_PASS;
-		v_resp.uid = 19910930;
+	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));
+	assert(resp_info != NULL);
+
+	if (strcmp(req_info->name, "root") == 0) {
+		resp_info->status = UVS_PASS;
+		resp_info->uid = 930;
 	} else {
-		v_resp.status = UVS_BLOCK;
-		v_resp.uid = 9527;
+		resp_info->status = UVS_BLOCK;
+		resp_info->uid = 9527;
 	}
-	strncpy(v_resp.name, v_req->name, USER_NAME_MAX_LEN - 1);
+	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
+	gen_session_id(session->session_id, SESSION_ID_LEN);
+	strncpy(resp_info->session_id, session->session_id, SESSION_ID_LEN);
+	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
+		resp_info->name, resp_info->uid, resp_info->status,
+		resp_info->session_id);
 
-	resp->type = PACKET_TYPE_VALIDATE_RSP;
-	resp->obj = &v_resp;
+	resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
+	resp_packet->obj = resp_info;
+	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
+		resp_info->name, resp_info->uid, resp_info->status,
+		resp_info->session_id);
 
-	int ret = send_sftt_packet(session->connect_fd, resp);
+	int ret = send_sftt_packet(session->connect_fd, resp_packet);
 	if (ret == -1) {
 		printf("send validate response failed!\n");
 		return -1;
 	}
 
 	session->cinfo.status = VALIDATED;
-	generate_session_id(session->session_id, SESSION_ID_LEN);
 
 	return 0;
 }
@@ -462,6 +474,7 @@ void *handle_client_session(void *args)
 		case PACKET_TYPE_SEND_COMPLETE_REQ:
 			break;
 		default:
+			printf("%s: cannot recognize packet type!\n", __func__);
 			break;
 		}
 	}
@@ -533,6 +546,7 @@ void main_loop(void) {
 			continue;
 		}
 		add_log(LOG_INFO, "a client connected ...");
+		session->connect_fd = connect_fd;
 
 		ret = pthread_create(&child, NULL, handle_client_session, session);
 		if (ret) {

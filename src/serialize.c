@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "log.h"
 #include "mem_pool.h"
+#include "req_rsp.h"
 #include "serialize.h"
 #include "xdr.h"
 
@@ -73,6 +74,16 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+#if 0
+	int i = 0, j = 0, step = 16;
+	for (i = 0; i < *len; i += step) {
+		for (j = 0; j < step; ++j)
+			printf("0x%0x ", (*buf)[i + j]);
+		printf("\n");
+	}
+	printf("%s: len: %d\n", __func__, *len);
+#endif
+
 	add_log(LOG_INFO, "%s: encode ret: %d, encode_len: %d", __func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -83,16 +94,28 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
 	validate_resp *_rsp = (validate_resp *)mp_malloc(g_mp, sizeof(validate_resp));
+	//printf("%s: len: %d\n", __func__, len);
+#if 0
+	int i = 0, j = 0, step = 16;
+	for (i = 0; i < len; i += step) {
+		for (j = 0; j < step; ++j)
+			printf("0x%0x ", buf[i + j]);
+		printf("\n");
+	}
+#endif
+	_rsp->status = 0;
+	_rsp->uid = 0;
 
-	FILE *fp = fmemopen(buf, len, "r");
+	FILE *fp = fmemopen(buf, len, "rb");
 
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_validate_resp(&xdr, (validate_resp *)_rsp);
+	int ret = xdr_validate_resp(&xdr, _rsp);
 	fclose(fp);
 
 	*rsp = _rsp;
+	//printf("%s: status: %d, uid: %d\n", __func__, _rsp->status, _rsp->uid);
 	add_log(LOG_INFO, "%s: decode ret: %d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 

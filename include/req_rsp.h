@@ -27,7 +27,7 @@ typedef struct validate_req validate_req;
 
 struct validate_resp {
 	int status;
-	u_long uid;
+	int uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 };

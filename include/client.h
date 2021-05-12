@@ -11,6 +11,8 @@
 #include "session.h"
 #include "user.h"
 
+#define PROC_NAME			"sftt"
+
 #define LOCAL_HOST			"127.0.0.1"
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
@@ -146,9 +148,17 @@ void sftt_client_his_usage(void);
 
 void client_usage_help(int exitcode);
 
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user); 
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd);
 
 int show_options(char *host, char *user_name, char *password); 
+
+bool parse_user_name(char *arg, char *user_name, int maxlen);
+
+bool parse_host(char *arg, char *host, int maxlen);
+
+bool parse_port(char *arg, int *port);
+
+int reader_loop2(struct sftt_client_v2 *client);
 
 static struct cmd_handler sftt_client_cmds[] = {
 	{

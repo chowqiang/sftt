@@ -96,6 +96,7 @@ xdr_int(xdrs, ip)
 	int *ip;
 {
 #ifdef lint
+	//assert(false);
 	(void) (xdr_short(xdrs, (short *)ip));
 	return (xdr_long(xdrs, (long *)ip));
 #else
@@ -183,12 +184,14 @@ xdr_short(xdrs, sp)
 
 	case XDR_ENCODE:
 		l = (long) *sp;
+		//printf("%s: encode, l:%d\n", __func__, l);
 		return (XDR_PUTLONG(xdrs, &l));
 
 	case XDR_DECODE:
 		if (!XDR_GETLONG(xdrs, &l)) {
 			return (FALSE);
 		}
+		//printf("%s: decode, l:%d\n", __func__, l);
 		*sp = (short) l;
 		return (TRUE);
 

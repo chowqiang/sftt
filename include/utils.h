@@ -2,6 +2,7 @@
 #define _UTILS_H_
 
 #include <stdint.h>
+#include <time.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
