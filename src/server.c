@@ -745,6 +745,7 @@ int sftt_server_stop(void) {
 	printf(PROC_NAME " pid is: %d\n", sss->main_pid);
 	printf(PROC_NAME " is going to stop ...\n");
 	kill(sss->main_pid, SIGTERM);
+	free_sftt_server_stat();
 
 	return 0;
 }
