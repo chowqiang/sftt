@@ -94,8 +94,8 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
 	validate_resp *_rsp = (validate_resp *)mp_malloc(g_mp, sizeof(validate_resp));
-	//printf("%s: len: %d\n", __func__, len);
 #if 0
+	printf("%s: len: %d\n", __func__, len);
 	int i = 0, j = 0, step = 16;
 	for (i = 0; i < len; i += step) {
 		for (j = 0; j < step; ++j)
@@ -103,8 +103,6 @@ bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
 		printf("\n");
 	}
 #endif
-	_rsp->status = 0;
-	_rsp->uid = 0;
 
 	FILE *fp = fmemopen(buf, len, "rb");
 

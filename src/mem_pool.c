@@ -37,6 +37,8 @@ struct mem_node *mem_node_create(size_t size) {
 	p->is_using = 0;
 	p->used_cnt = 0;
 
+	bzero(p->address, size);
+
 	return p;
 }
 

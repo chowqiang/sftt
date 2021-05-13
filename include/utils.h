@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#define bzero(addr, size)	memset(addr, 0, size)
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 void gen_session_id(char *buf, int len);
