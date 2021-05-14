@@ -6,16 +6,10 @@
 #include <unistd.h>
 #include "endpoint.h"
 #include "net_trans.h"
+#include "user.h"
 #include "utils.h"
 
 #define PROG	"net_trans"
-
-struct user_info users[] = {
-	{123456, "root"},
-	{19910930, "zhoumin"},
-	{19921112, "yanan"},
-	{-1, ""}
-};
 
 void help(void)
 {
@@ -88,19 +82,6 @@ int run_client(int port, char *user_name)
 		resp_info->uid, resp_info->session_id);
 }
 
-struct user_info *find_user_info(char *name)
-{
-	int i;
-
-	for (i = 0; users[i].uid != -1; ++i) {
-		if (!strcmp(name, users[i].name)) {
-			return &users[i];
-		}
-	}
-
-	return NULL;
-}
-
 int run_server(void)
 {
 	int ret;
@@ -109,7 +90,7 @@ int run_server(void)
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
 	struct sftt_packet *req_packet, *resp_packet;
-	struct user_info *user;
+	struct user_base_info *user;
 	char session_id[32];
 
 	port = get_random_port();
@@ -140,7 +121,7 @@ int run_server(void)
 		}
 
 		req_info = req_packet->obj;
-		user = find_user_info(req_info->name);
+		user = find_user_base_by_name(req_info->name);
 		if (user == NULL) {
 			printf("get user info by name failed!\n");
 			resp_info->status = UVS_INVALID;

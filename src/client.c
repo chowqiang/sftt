@@ -902,7 +902,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
 	return 0;
 }
 
-static int validate_user_info(struct sftt_client_v2 *client, char *passwd) {
+static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) {
 	struct sftt_packet *req_packet, *resp_packet;
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
@@ -978,7 +978,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, cha
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
-	client->uinfo = mp_malloc(client->mp, sizeof(struct user_info));
+	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
     if (get_sftt_client_config(&client->config) == -1) {
 	    printf("get sftt client config failed!\n");
@@ -997,7 +997,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, cha
 		return -1;
 	}
 
-	if (validate_user_info(client, passwd) == -1) {
+	if (validate_user_base_info(client, passwd) == -1) {
 		printf("cannot validate user and password!\n");
 		exit(-1);
 	}

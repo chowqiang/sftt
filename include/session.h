@@ -41,7 +41,7 @@ struct client_session {
 struct server_session {
 	char session_id[SESSION_ID_LEN];
 	bool is_validate;
-	struct user_info *user;
+	struct user_base_info *user;
 	char pwd[DIR_PATH_MAX_LEN];
 
 };

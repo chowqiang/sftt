@@ -60,7 +60,7 @@ struct sftt_client_v2 {
 	struct client_sock_conn conn_ctrl;
 	struct dlist *conn_data;
 	struct mem_pool *mp;
-	struct user_info *uinfo;
+	struct user_base_info *uinfo;
 	struct client_session *session;
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;

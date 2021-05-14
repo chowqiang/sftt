@@ -31,10 +31,10 @@ void trace_info_destruct(struct trace_info *ptr)
 
 }
 
-int trace_info_set_user(struct trace_info *trace, struct user_info *user)
+int trace_info_set_user(struct trace_info *trace, struct user_base_info *user)
 {
 	if (trace->user == NULL);
-		trace->user = mp_malloc(g_mp, sizeof(struct user_info));
+		trace->user = mp_malloc(g_mp, sizeof(struct user_base_info));
 	assert(trace->user != NULL);
 
 	trace->user->uid = user->uid;

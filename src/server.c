@@ -838,27 +838,106 @@ void sftt_server_status(void) {
 		ts_buf);
 }
 
-void execute_sql(char *sql, int flag) {
+char *fetch_next_str(char **str)
+{
+	char *p, *q;
+
+	if (str == NULL || *str == NULL)
+		return NULL;
+
+	p = *str;
+	/* skip blank */
+	while (*p && (*p == ' ' || *p == '\t'))
+		++p;
+	if (!*p)
+		return NULL;
+
+	q = p;
+	while (*q && (*q != ' ' && *q != '\t'))
+		++q;
+	if (*q) {
+		*q = 0;
+		*str = q + 1;
+	} else {
+		*str = q;
+	}
+
+	return p;
+}
+
+void db_add_user(struct db_connect *db_con, char *info)
+{
+	char *name, *passwd;
+	char passwd_md5[17];
+	struct user_base_info *user_info;
+
+	name = fetch_next_str(&info);
+	if (name == NULL || strlen(name) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	passwd = fetch_next_str(&info);
+	if (passwd == NULL || strlen(passwd) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	if (find_user_base_by_name(name)) {
+		printf("user %s has already existed!\n", name);
+		return ;
+	}
+
+	if (user_add(name, passwd_md5) == -1) {
+		printf("add user failed!\n");
+		return ;
+	}
+}
+
+void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
+{
+	int len = strlen(cmd);
+	char *p;
+
+	p = fetch_next_str(&cmd);
+	if (p == NULL) {
+		printf("cannot parse command\n");
+		return ;
+	}
+
+	if (strcmp(p, "adduser") == 0) {
+		db_add_user(db_con, cmd);
+	} else {
+		printf("unknown command: %s\n", p);
+	}
 
 }
 
 void sftt_server_db(void) {
-	if (!sftt_server_is_running()) {
-		printf("cannot connect " PROC_NAME " database, because " PROC_NAME " is not running!\n");
-		printf("please start " PROC_NAME " first!\n");
+	char cmd[1024];
+	struct db_connect *db_con;
+	char *user_db_file = get_user_db_file();
+
+	if (user_db_file == NULL) {
+		printf("cannot get db file!\n");
+		return ;
+	}
+	printf("user db file is: %s\n", user_db_file);
+
+	db_con = create_db_connect(user_db_file);
+	if (db_con == NULL) {
+		printf("cannot connect to db!\n");
 		return ;
 	}
 
-	char sql[1024];
-
 	while (1) {
-		printf("sftt>>");
-		fgets(sql, 1024, stdin);
-		sql[strlen(sql) - 1] = 0;
-		if (!strcmp(sql, "quit")) {
+		printf("sftt_db>> ");
+		fgets(cmd, 1024, stdin);
+		cmd[strlen(cmd) - 1] = 0;
+		if (!strcmp(cmd, "quit")) {
 			exit(0);
 		} else {
-			execute_sql(sql, -1);
+			execute_db_cmd(db_con, cmd, -1);
 		}
 	}
 }
