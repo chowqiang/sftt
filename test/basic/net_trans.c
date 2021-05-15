@@ -121,8 +121,8 @@ int run_server(void)
 		}
 
 		req_info = req_packet->obj;
-		user = find_user_base_by_name(req_info->name, &num);
-		if (user == NULL || num > 1) {
+		user = find_user_base_by_name(req_info->name);
+		if (user == NULL) {
 			printf("get user info by name failed!\n");
 			resp_info->status = UVS_INVALID;
 		} else {

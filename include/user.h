@@ -12,15 +12,15 @@ struct user_base_info {
 };
 
 struct user_auth_info {
-	uint64_t uid;
+	char name[USER_NAME_MAX_LEN + 1];
 	char passwd_md5[PASSWD_MAX_LEN];
 };
 
 int user_add(char *name, char *passwd_md5);
 
-struct user_base_info *find_user_base_by_name(char *name, int *pnum);
+struct user_base_info *find_user_base_by_name(char *name);
 
-struct user_auth_info *find_user_auth_by_id(uint64_t uid);
+struct user_auth_info *find_user_auth_by_name(char *name);
 
 char *get_user_db_file(void);
 

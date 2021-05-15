@@ -43,16 +43,15 @@ char *get_user_db_file(void)
 	return NULL;
 }
 
-struct user_base_info *find_user_base_by_name(char *name, int *pnum)
+struct user_base_info *find_user_base_by_name(char *name)
 {
 	int i, count;
 	struct map *data;
 	struct db_connect *db_con;
 	char *err_msg, *value, *db_file;
 	char sql[1024];
-	struct user_base_info *tmp;
+	struct user_base_info *user_base;
 
-	*pnum = 0;
 	db_file = get_user_db_file();
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
@@ -62,27 +61,62 @@ struct user_base_info *find_user_base_by_name(char *name, int *pnum)
 	if (count < 1)
 		return NULL;
 
+	assert(count == 1);
 	printf("user count: %d\n", count);
-	tmp = mp_malloc(g_mp, count * sizeof(struct user_base_info));
-	assert(tmp != NULL);
+	user_base = mp_malloc(g_mp, sizeof(struct user_base_info));
+	assert(user_base != NULL);
 
-	for (i = 0; i < count; ++i) {
-		if (map_find(&data[i], str_equal, "uid", (void **)&value) == -1 || value == NULL) {
-			printf("cannot find uid\n");
-			return NULL;
-		}
-		tmp[i].uid = atoi(value);
-
-		if (map_find(&data[i], str_equal, "name", (void **)&value) == -1 || value == NULL) {
-			printf("cannot find name\n");
-			return NULL;
-		}
-		strcpy(tmp[i].name, value);
+	if (map_find(&data[i], str_equal, "uid", (void **)&value) == -1 || value == NULL) {
+		printf("cannot find uid\n");
+		return NULL;
 	}
+	user_base->uid = atoi(value);
 
-	*pnum = count;
+	if (map_find(&data[i], str_equal, "name", (void **)&value) == -1 || value == NULL) {
+		printf("cannot find name\n");
+		return NULL;
+	}
+	strcpy(user_base->name, value);
 
-	return tmp;
+	return user_base;
+}
+
+struct user_auth_info *find_user_auth_by_name(char *name)
+{
+	int i, count;
+	struct map *data;
+	struct db_connect *db_con;
+	char *err_msg, *value, *db_file;
+	char sql[1024];
+	struct user_auth_info *user_auth;
+
+	db_file = get_user_db_file();
+	db_con = create_db_connect(db_file);
+	assert(db_con != NULL);
+
+	sprintf(sql, "select * from user where name='%s'", name);
+	count = db_select(db_con, sql, &data, &err_msg);
+	if (count < 1)
+		return NULL;
+
+	assert(count == 1);
+	printf("user count: %d\n", count);
+	user_auth = mp_malloc(g_mp, sizeof(struct user_auth_info));
+	assert(user_auth != NULL);
+
+	if (map_find(&data[i], str_equal, "name", (void **)&value) == -1 || value == NULL) {
+		printf("cannot find uid\n");
+		return NULL;
+	}
+	strcpy(user_auth->name, value);
+
+	if (map_find(&data[i], str_equal, "passwd_md5", (void **)&value) == -1 || value == NULL) {
+		printf("cannot find name\n");
+		return NULL;
+	}
+	strcpy(user_auth->passwd_md5, value);
+
+	return user_auth;
 }
 
 int user_add(char *name, char *passwd_md5)
