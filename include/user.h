@@ -18,7 +18,7 @@ struct user_auth_info {
 
 int user_add(char *name, char *passwd_md5);
 
-struct user_base_info *find_user_base_by_name(char *name);
+struct user_base_info *find_user_base_by_name(char *name, int *pnum);
 
 struct user_auth_info *find_user_auth_by_id(uint64_t uid);
 

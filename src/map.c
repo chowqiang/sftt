@@ -1,7 +1,23 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "map.h"
 
-struct map *map_create(){
+int map_init(struct map *m)
+{
+	if (m == NULL) {
+		return -1;
+	}
+
+	m->list = dlist_create(free);
+	if (m->list == NULL) {
+		free(m);
+		return -1;
+	}
+
+	return 0;
+}
+
+struct map *map_create(void){
 	struct map *m = (struct map *)malloc(sizeof(struct map));
 	if (m == NULL) {
 		return NULL;
@@ -16,12 +32,16 @@ struct map *map_create(){
 }
 int map_add(struct map *m, void *key, void *value){
 	if (m == NULL) {
+		printf("map object cannot be NULL\n");
 		return -1;
 	}
+
 	struct kv_node *data = (struct kv_node *)malloc(sizeof(struct kv_node));
 	if (data == NULL) {
+		printf("cannot alloc kv_node object\n");
 		return -1;
 	} 
+
 	data->key = key;
 	data->value = value;
 
@@ -40,15 +60,16 @@ int map_add(struct map *m, void *key, void *value){
 	return 0;
 }
 
-int map_find(struct map *m, void *key, void **value){
+int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
 	if (m == NULL) {
+		printf("map object cannot be NULL\n");
 		return -1; 
 	}
 	struct kv_node *kvn = NULL;
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
-		if (kvn->key == key) {
+		if (is_equal(kvn->key, key)) {
 			if (value) {
 				*value = kvn->value;
 			}
@@ -56,6 +77,7 @@ int map_find(struct map *m, void *key, void **value){
 		}
 	}
 
+	printf("cannot find elem!\n");
 	return -1;
 }
 

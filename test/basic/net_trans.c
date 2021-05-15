@@ -84,7 +84,7 @@ int run_client(int port, char *user_name)
 
 int run_server(void)
 {
-	int ret;
+	int ret, num;
 	int port;
 	int socket_fd, connect_fd;
 	struct validate_req *req_info;
@@ -121,8 +121,8 @@ int run_server(void)
 		}
 
 		req_info = req_packet->obj;
-		user = find_user_base_by_name(req_info->name);
-		if (user == NULL) {
+		user = find_user_base_by_name(req_info->name, &num);
+		if (user == NULL || num > 1) {
 			printf("get user info by name failed!\n");
 			resp_info->status = UVS_INVALID;
 		} else {

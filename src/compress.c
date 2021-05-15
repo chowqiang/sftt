@@ -258,12 +258,12 @@ int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
 			continue;
 		}
 
-		if (tn->left && map_find(m, tn->left, NULL) == -1) {
+		if (tn->left && map_find(m, ptr_equal, tn->left, NULL) == -1) {
 			stack_push(sc, (void *)'1');
 			stack_push(stn, tn->left);
 			map_add(m, (void *)tn->left, NULL);
 
-		} else if (tn->right && map_find(m, tn->right, NULL) == -1) { 
+		} else if (tn->right && map_find(m, ptr_equal, tn->right, NULL) == -1) {
 			stack_push(sc, (void *)'0');
 			stack_push(stn, tn->right);
 			map_add(m, (void *)tn->right, NULL);
