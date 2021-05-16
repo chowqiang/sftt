@@ -888,10 +888,14 @@ void db_add_user(struct db_connect *db_con, char *info)
 		return ;
 	}
 
+	md5_str(passwd, strlen(passwd), passwd_md5);
+
 	if (user_add(name, passwd_md5) == -1) {
 		printf("add user failed!\n");
 		return ;
 	}
+
+	printf("add %s successfully!\n", name);
 }
 
 void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)

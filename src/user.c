@@ -121,7 +121,27 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 
 int user_add(char *name, char *passwd_md5)
 {
+	int count;
+	int uid;
+	char *db_file;
+	struct db_connect *db_con;
+	char sql[1024];
+	char *err_msg;
 
+	count = get_user_count();
+	if (count == -1) {
+		return -1;
+	}
+
+	db_file = get_user_db_file();
+	db_con = create_db_connect(db_file);
+	assert(db_con != NULL);
+
+	uid = count + 1;
+	snprintf(sql, 1023, "insert into user values(%d, '%s', '%s')", uid, name, passwd_md5);
+	db_insert(db_con, sql, &err_msg);
+
+	return 0;
 }
 
 int get_user_count(void)

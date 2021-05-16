@@ -45,7 +45,14 @@ int create_table(struct db_connect *db_con, char *table_name) {
 	return 0;
 }
 
-int db_insert(struct db_connect *db_con, char *table_name, void *data) {
+int db_insert(struct db_connect *db_con, char *sql, char **err_msg) {
+	int ret;
+
+	ret = sqlite3_exec(db_con->db, sql, NULL, NULL, err_msg);
+	if (ret != SQLITE_OK) {
+		printf("%s:%d, sqlite3 exec failed!\n", __func__, __LINE__);
+	}
+
 	return 0;
 }
 
@@ -90,7 +97,7 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data, char **er
 
 	sqlite3_get_table(db_con->db, sql, &pret, &rows, &cols, err_msg);
 	if (pret == NULL || rows == 0 || cols == 0) {
-		printf("%s:%d, cannot find records.\n", __func__, __LINE__);
+		//printf("%s:%d, cannot find records.\n", __func__, __LINE__);
 		return -1;
 	}
 
