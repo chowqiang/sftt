@@ -870,7 +870,6 @@ void db_add_user(struct db_connect *db_con, char *info)
 	char *name, *passwd;
 	char passwd_md5[17];
 	struct user_base_info *user_info;
-	int num;
 
 	name = fetch_next_str(&info);
 	if (name == NULL || strlen(name) == 0) {
@@ -884,7 +883,7 @@ void db_add_user(struct db_connect *db_con, char *info)
 		return ;
 	}
 
-	if (find_user_base_by_name(name, &num) && num > 1) {
+	if (find_user_base_by_name(name)) {
 		printf("user %s has already existed!\n", name);
 		return ;
 	}

@@ -49,6 +49,33 @@ int db_insert(struct db_connect *db_con, char *table_name, void *data) {
 	return 0;
 }
 
+int fetch_select_count_from_result(void *pnum, int ret_cnt, char **cols_val, char **cols_name)
+{
+	if (cols_val == NULL || cols_val[0] == NULL) {
+		printf("%s:%d, sql result bad!\n", __func__, __LINE__);
+		*(int *)pnum = -1;
+
+		return -1;
+	}
+
+	*(int *)pnum = atoi(cols_val[0]);
+
+	return 0;
+}
+
+int db_select_count(struct db_connect *db_con, char *sql, char **err_msg)
+{
+	int count = -1;
+	int ret;
+
+	ret = sqlite3_exec(db_con->db, sql, fetch_select_count_from_result, &count, err_msg);
+	if (ret != SQLITE_OK) {
+		printf("%s:%d, sqlite3 exec failed!\n", __func__, __LINE__);
+	}
+
+	return count;
+}
+
 int db_select(struct db_connect *db_con, char *sql, struct map **data, char **err_msg)
 {
 	char **pret;

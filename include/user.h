@@ -24,4 +24,6 @@ struct user_auth_info *find_user_auth_by_name(char *name);
 
 char *get_user_db_file(void);
 
+int get_user_count(void);
+
 #endif

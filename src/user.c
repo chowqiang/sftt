@@ -123,3 +123,17 @@ int user_add(char *name, char *passwd_md5)
 {
 
 }
+
+int get_user_count(void)
+{
+	char *db_file;
+	struct db_connect *db_con;
+	char *sql = "select count(*) from user";
+	char *err_msg;
+
+	db_file = get_user_db_file();
+	db_con = create_db_connect(db_file);
+	assert(db_con != NULL);
+
+	return db_select_count(db_con, sql, &err_msg);
+}
