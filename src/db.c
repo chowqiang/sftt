@@ -48,6 +48,7 @@ int create_table(struct db_connect *db_con, char *table_name) {
 int db_insert(struct db_connect *db_con, char *sql, char **err_msg) {
 	int ret;
 
+	printf("sql: %s\n", sql);
 	ret = sqlite3_exec(db_con->db, sql, NULL, NULL, err_msg);
 	if (ret != SQLITE_OK) {
 		printf("%s:%d, sqlite3 exec failed!\n", __func__, __LINE__);

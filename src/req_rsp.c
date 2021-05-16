@@ -18,7 +18,7 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MAX_LEN,
+	 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MD5_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	return TRUE;

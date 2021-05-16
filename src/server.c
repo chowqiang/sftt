@@ -369,6 +369,8 @@ static int validate_user_info(struct client_session *session, struct sftt_packet
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
 	struct client_info *client = NULL;
+	struct user_base_info *user_base;
+	struct user_auth_info *user_auth;
 
 	req_info = (struct validate_req *)req_packet->obj;
 	//printf("receive validate name: %s, name len: %d\n", req_info->name, req_info->name_len);
@@ -382,25 +384,31 @@ static int validate_user_info(struct client_session *session, struct sftt_packet
 	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
 
-	if (strcmp(req_info->name, "root") == 0) {
+	user_base = find_user_base_by_name(req_info->name);
+	user_auth = find_user_auth_by_name(req_info->name);
+	if (user_base && !strcmp(user_auth->passwd_md5, req_info->passwd_md5)) {
 		resp_info->status = UVS_PASS;
-		resp_info->uid = 930;
+		resp_info->uid = user_base->uid;
 	} else {
 		resp_info->status = UVS_BLOCK;
-		resp_info->uid = 9527;
+		resp_info->uid = -1;
 	}
 	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
 	gen_session_id(session->session_id, SESSION_ID_LEN);
 	strncpy(resp_info->session_id, session->session_id, SESSION_ID_LEN);
+#if 0
 	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
 		resp_info->name, resp_info->uid, resp_info->status,
 		resp_info->session_id);
+#endif
 
 	resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
 	resp_packet->obj = resp_info;
+#if 0
 	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
 		resp_info->name, resp_info->uid, resp_info->status,
 		resp_info->session_id);
+#endif
 
 	int ret = send_sftt_packet(session->connect_fd, resp_packet);
 	if (ret == -1) {
@@ -868,7 +876,7 @@ char *fetch_next_str(char **str)
 void db_add_user(struct db_connect *db_con, char *info)
 {
 	char *name, *passwd;
-	char passwd_md5[17];
+	char passwd_md5[PASSWD_MD5_LEN];
 	struct user_base_info *user_info;
 
 	name = fetch_next_str(&info);
@@ -882,6 +890,7 @@ void db_add_user(struct db_connect *db_con, char *info)
 		printf("bad format\n");
 		return ;
 	}
+	printf("passwd: %s\n", passwd);
 
 	if (find_user_base_by_name(name)) {
 		printf("user %s has already existed!\n", name);

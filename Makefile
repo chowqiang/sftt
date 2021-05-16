@@ -41,8 +41,8 @@ ECHO:
 .PHONY: clean
 
 clean:
-	@rm $(ROOT_DIR)/src/*.o
-	@rm $(ROOT_DIR)/lib/$(LIB_NAME)
-	@rm $(ROOT_DIR)/client/$(CLIENT_BIN)
-	@rm $(ROOT_DIR)/server/$(SERVER_BIN)
+	@rm -f $(ROOT_DIR)/src/*.o
+	@rm -f $(ROOT_DIR)/lib/$(LIB_NAME)
+	@rm -f $(ROOT_DIR)/client/$(CLIENT_BIN)
+	@rm -f $(ROOT_DIR)/server/$(SERVER_BIN)
 	make clean -C $(TEST_DIR)

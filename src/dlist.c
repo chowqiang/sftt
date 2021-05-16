@@ -37,7 +37,7 @@ void dlist_init(struct dlist *list, void (*destroy) (void *data)) {
 }
 
 void dlist_destroy(struct dlist *list) {
-	if (list == NULL || list->destroy == NULL) {
+	if (list == NULL) {
 		return ;
 	}
 

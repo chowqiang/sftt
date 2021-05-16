@@ -77,7 +77,7 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
 		}
 	}
 
-	printf("cannot find elem!\n");
+	//printf("cannot find elem!\n");
 	return -1;
 }
 

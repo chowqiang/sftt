@@ -8,12 +8,12 @@
 
 struct user_base_info {
 	uint64_t uid;
-	char name[USER_NAME_MAX_LEN + 1];
+	char name[USER_NAME_MAX_LEN];
 };
 
 struct user_auth_info {
-	char name[USER_NAME_MAX_LEN + 1];
-	char passwd_md5[PASSWD_MAX_LEN];
+	char name[USER_NAME_MAX_LEN];
+	char passwd_md5[PASSWD_MD5_LEN];
 };
 
 int user_add(char *name, char *passwd_md5);

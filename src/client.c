@@ -923,11 +923,11 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	if (strlen(passwd)) {
 		md5_str(passwd, strlen(passwd), req_info->passwd_md5);
 		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
-		char *md5_str = md5_printable_str(req_info->passwd_md5);
-		if (md5_str) {
-			add_log(LOG_INFO, "%s", md5_str);
-			free(md5_str);
-		}
+		//char *md5_str = md5_printable_str(req_info->passwd_md5);
+		//if (md5_str) {
+		//	add_log(LOG_INFO, "%s", md5_str);
+		//	free(md5_str);
+		//}
 	} else {
 		req_info->passwd_md5[0] = 0;
 	}
@@ -958,7 +958,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	resp_info = (validate_resp *)resp_packet->obj;
 	if (resp_info->status != UVS_PASS) {
 		printf("%s: validate status is not pass! status: 0x%0x\n", __func__, resp_info->status);
-		printf("%s: uid: 0x%0x, name: %s, session_id: %s\n", __func__, resp_info->uid, resp_info->name, resp_info->session_id);
+		//printf("%s: uid: 0x%0x, name: %s, session_id: %s\n", __func__, resp_info->uid, resp_info->name, resp_info->session_id);
 		return -1;
 	}
 

@@ -37,8 +37,6 @@ struct mem_node *mem_node_create(size_t size) {
 	p->is_using = 0;
 	p->used_cnt = 0;
 
-	bzero(p->address, size);
-
 	return p;
 }
 
@@ -103,6 +101,8 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
 	mp->mutex->ops->unlock(mp->mutex);
+
+	bzero(m_node->address, n);
 
 	return m_node->address;
 }

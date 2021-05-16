@@ -10,7 +10,6 @@
 #define PACKET_LEN_SIZE			(sizeof(int))	
 
 #define VALIDATE_PACKET_MIN_LEN		10240
-#define PASSWD_MD5_LEN				(MD5_LEN + 1)
 
 enum user_validate_status {
 	UVS_INVALID,

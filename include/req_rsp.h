@@ -14,14 +14,14 @@ extern "C" {
 #endif
 
 #define USER_NAME_MAX_LEN 32
-#define PASSWD_MAX_LEN 16
-#define SESSION_ID_LEN 16
+#define PASSWD_MD5_LEN 33
+#define SESSION_ID_LEN 32
 
 struct validate_req {
 	int name_len;
 	int passwd_len;
 	char name[USER_NAME_MAX_LEN];
-	char passwd_md5[PASSWD_MAX_LEN];
+	char passwd_md5[PASSWD_MD5_LEN];
 };
 typedef struct validate_req validate_req;
 

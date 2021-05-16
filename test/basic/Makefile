@@ -1,5 +1,5 @@
 
-all: dlist mem_pool net_trans serialize utils db
+all: dlist mem_pool net_trans serialize utils db md5
 
 dlist: dlist.c
 	$(CC) -o $O/$@ $^ $(CFLAG) -L$(LIB_DIR) -l$(LIB)
@@ -17,4 +17,7 @@ utils: utils.c
 	$(CC) -o $O/$@ $^ $(CFLAG) -L$(LIB_DIR) -l$(LIB)
 
 db: db.c
+	$(CC) -o $O/$@ $^ $(CFLAG) -L$(LIB_DIR) -l$(LIB)
+
+md5: md5.c
 	$(CC) -o $O/$@ $^ $(CFLAG) -L$(LIB_DIR) -l$(LIB)

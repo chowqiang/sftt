@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,6 +6,8 @@
 #include "mem_pool.h"
 
 extern struct mem_pool *g_mp;
+
+char dec_to_hex_char(int dec);
 
 unsigned char PADDING[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  
@@ -166,12 +169,12 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
 }  
 
 int md5_file(unsigned char *file, unsigned char *digest) {
-
-    MD5_CTX context;
-    MD5Init(&context);
+	MD5_CTX context;
+	MD5Init(&context);
 	FILE *fp = fopen(file, "r");
-	char *data = NULL;
+	char *data = NULL, *tmp = NULL;
 	int ret = 0;
+	unsigned char md5[MD5_LEN];
 	
 	if(!fp)
 	{
@@ -182,17 +185,24 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 	int i = 0;
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
-		printf("update %d-th block, block size: %d\n", (i + 1), ret);
+		//printf("update %d-th block, block size: %d\n", (i + 1), ret);
+		//printf("data: %s\n", data);
 		MD5Update(&context, data, ret);
 		if (ret < BLOCK_SIZE) {
 			break;
 		}
 		i++;
 	}
-    MD5Final(&context, digest);
+	MD5Final(&context, md5);
 
 	fclose(fp);
 	mp_free(g_mp, data);
+
+	tmp = md5_printable_str(md5);
+	assert(tmp != NULL);
+
+	strcpy(digest, tmp);
+	free(tmp);
 
 	return 0;
 }
@@ -200,34 +210,54 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 	MD5_CTX context;
 	MD5Init(&context);
-	int i = 0;
+	int i = 0, ret = 0;
+	unsigned char md5[MD5_LEN];
+	char *tmp;
 
 	for (;;) {
-		if (len < BLOCK_SIZE) {
-			MD5Update(&context, str + i, len);
+		ret = len < BLOCK_SIZE ? len : BLOCK_SIZE;
+		//printf("update %d-th block, block size: %d\n", (i + 1), ret);
+		//printf("data: %s\n", str);
+		MD5Update(&context, str, ret);
+		if (ret < BLOCK_SIZE) {
 			break;
 		}
-		MD5Update(&context, str + i, BLOCK_SIZE);
+		str += BLOCK_SIZE;
 		len -= BLOCK_SIZE;
-		i += BLOCK_SIZE;
 	}
-	MD5Final(&context, digest);
+	MD5Final(&context, md5);
+
+	tmp = md5_printable_str(md5);
+	assert(tmp != NULL);
+
+	strcpy(digest, tmp);
+	free(tmp);
 
 	return 0;
 }
 
+char dec_to_hex_char(int dec)
+{
+	char *charset = "0123456789abcdef";
+
+	assert(dec >= 0 && dec < 16);
+
+	return charset[dec];
+}
+
 char *md5_printable_str(unsigned char *digest) {
 	int i = 0;
-	char *str = malloc(sizeof(char) * (MD5_LEN + 1)) ;
+	char *str = malloc(sizeof(char) * (MD5_LEN * 2 + 1)) ;
 	if (!str) {
 		return str;
 	}
 
-    for(i = 0; i < MD5_LEN; ++i)
-    {
-		sprintf(str + i, "%02x", digest[i]);
-    }
-	str[i] = 0;
+	for(i = 0; i < MD5_LEN; ++i)
+	{
+		str[i * 2] = dec_to_hex_char(digest[i] / 16);
+		str[i * 2 + 1] = dec_to_hex_char(digest[i] % 16);
+	}
+	str[i * 2] = 0;
 
 	return str;
 }

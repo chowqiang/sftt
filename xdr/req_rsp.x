@@ -1,12 +1,12 @@
 const USER_NAME_MAX_LEN = 32;
-const PASSWD_MAX_LEN = 16;
-const SESSION_ID_LEN = 16;
+const PASSWD_MD5_LEN = 33;
+const SESSION_ID_LEN = 32;
 
 struct validate_req {
 	int name_len;
 	int passwd_len;
 	char name[USER_NAME_MAX_LEN];
-	char passwd_md5[PASSWD_MAX_LEN];
+	char passwd_md5[PASSWD_MD5_LEN];
 };
 
 struct validate_resp {
