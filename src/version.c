@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "version.h"
 
 void version(void)

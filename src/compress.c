@@ -213,7 +213,7 @@ char *get_char_code(struct stack *s) {
 	stack_peek_all(s, array);
 	int i = 0;
 	for (i = 0; i < len; ++i) {
-		code[len - 1 - i] = (char)array[i];
+		code[len - 1 - i] = (char)(unsigned long)array[i];
 	}	
 	code[len] = 0;	
 
