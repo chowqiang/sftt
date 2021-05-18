@@ -776,10 +776,6 @@ void sftt_server_exit(int sig) {
 	exit(-1);
 }
 
-static void version(void) {
-    printf("version " VERSION ", Copyright (c) 2020-2020 zhou min, zhou qiang\n");
-}
-
 void server_usage_help(int exitcode) {
 	version();
 	printf("usage:\t" PROC_NAME " options\n"

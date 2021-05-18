@@ -872,11 +872,6 @@ bool parse_port(char *optarg, int *port) {
 	return true;
 }
 
-static void version(void)
-{
-    printf("version " VERSION ", Copyright (c) 2020-2021 zhou min, zhou qiang\n");
-}
-
 void client_usage_help(int exitcode)
 {
     version();
