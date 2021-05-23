@@ -36,4 +36,5 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value);
 int map_remove(struct map *m, void *key, void **value);
 void map_destroy(struct map *m);
 
+void show_keys(struct map *m);
 #endif

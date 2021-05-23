@@ -873,7 +873,6 @@ void db_add_user(struct db_connect *db_con, char *info)
 {
 	char *name, *passwd;
 	char passwd_md5[PASSWD_MD5_LEN];
-	struct user_base_info *user_info;
 
 	name = fetch_next_str(&info);
 	if (name == NULL || strlen(name) == 0) {
@@ -903,6 +902,47 @@ void db_add_user(struct db_connect *db_con, char *info)
 	printf("add %s successfully!\n", name);
 }
 
+void db_update_user(struct db_connect *db_con, char *info)
+{
+	char *name, *key_name, *value;
+	char passwd_md5[PASSWD_MD5_LEN];
+
+	name = fetch_next_str(&info);
+	if (name == NULL || strlen(name) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	key_name = fetch_next_str(&info);
+	if (key_name == NULL || strlen(key_name) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	value = fetch_next_str(&info);
+	if (value == NULL || strlen(value) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	if (find_user_base_by_name(name) == NULL) {
+		printf("user %s dosen't existed!\n", name);
+		return ;
+	}
+
+	if (strcmp(key_name, "passwd") == 0) {
+		md5_str(value, strlen(value), passwd_md5);
+		update_user_base_info(name, "passwd_md5", passwd_md5);
+	} else if (strcmp(key_name, "home_dir") == 0 ||
+		   strcmp(key_name, "create_time") == 0) {
+		update_user_base_info(name, key_name, value);
+	} else {
+		printf("cannot recognize key name: %s\n", key_name);
+	}
+
+	return ;
+}
+
 void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
 {
 	int len = strlen(cmd);
@@ -916,6 +956,8 @@ void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
 
 	if (strcmp(p, "adduser") == 0) {
 		db_add_user(db_con, cmd);
+	} else if (strcmp(p, "update") == 0){
+		db_update_user(db_con, cmd);
 	} else {
 		printf("unknown command: %s\n", p);
 	}

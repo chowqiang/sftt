@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 	const struct sftt_option *opt = NULL;
 	bool ret = false;
 	char store_path[DIR_PATH_MAX_LEN];
-	enum option_index opt_idx = UNKNOWN;
+	enum option_index opt_idx = UNKNOWN_OPT;
 	bool background = false;
 
 	if (argc < 2) {

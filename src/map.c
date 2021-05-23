@@ -49,6 +49,7 @@ int map_add(struct map *m, void *key, void *value){
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
+		//printf("%s:%d, kvn->key=%s\n", kvn->key);
 		if (kvn->key == data->key) {
 			kvn->value = data->value;
 			free(data);
@@ -56,8 +57,7 @@ int map_add(struct map *m, void *key, void *value){
 		}
 	} 
 
-	dlist_append(m->list, (void *)data);
-	return 0;
+	return dlist_append(m->list, (void *)data);
 }
 
 int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
@@ -69,6 +69,7 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
+		//printf("map_key: %s\n", kvn->key);
 		if (is_equal(kvn->key, key)) {
 			if (value) {
 				*value = kvn->value;
@@ -103,4 +104,19 @@ void map_destroy(struct map *m){
 	} 	
 
 	dlist_destroy(m->list);
+}
+
+void show_keys(struct map *m)
+{
+	if (m == NULL)
+		return ;
+
+	struct kv_node *kvn = NULL;
+	struct dlist_node *ln = NULL;
+	printf("map keys:");
+	dlist_for_each(m->list, ln) {
+		kvn = (struct kv_node *)ln->data;
+		printf(" %s", kvn->key);
+	}
+	printf("\n");
 }

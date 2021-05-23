@@ -36,6 +36,7 @@ struct client_session {
 	struct thread_info tinfo;
 	enum process_status status;
 	char session_id[SESSION_ID_LEN];
+	char pwd[DIR_PATH_MAX_LEN];
 };
 
 struct server_session {

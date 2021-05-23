@@ -57,6 +57,18 @@ int db_insert(struct db_connect *db_con, char *sql, char **err_msg) {
 	return 0;
 }
 
+int db_update(struct db_connect *db_con, char *sql, char **err_msg) {
+	int ret;
+
+	printf("sql: %s\n", sql);
+	ret = sqlite3_exec(db_con->db, sql, NULL, NULL, err_msg);
+	if (ret != SQLITE_OK) {
+		printf("%s:%d, sqlite3 exec failed!\n", __func__, __LINE__);
+	}
+
+	return 0;
+}
+
 int fetch_select_count_from_result(void *pnum, int ret_cnt, char **cols_val, char **cols_name)
 {
 	if (cols_val == NULL || cols_val[0] == NULL) {
@@ -111,13 +123,33 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data, char **er
 		ret = map_init(&tmp[i - 1]);
 		assert(ret == 0);
 
-		for (j = 0; j < cols; ++j)
-			if (map_add(&tmp[i - 1], pret[j], pret[i * cols + j]) == -1) {
+		//printf("cols = %d\n", cols);
+		for (j = 0; j < cols; ++j) {
+			//printf("j = %d, %s=%s\n", j, pret[j], pret[i * cols + j]);
+			ret = map_add(&tmp[i - 1], pret[j], pret[i * cols + j]);
+			//printf("j = %d, map add ret=%d\n", j, ret);
+			if (ret == -1) {
 				printf("cannot add %s to map\n", pret[j]);
 			}
+		}
 	}
 
 	*data = tmp;
 
 	return rows;
+}
+
+enum col_type get_col_type(struct table_info *table, char *col_name)
+{
+	int i = 0;
+	enum col_type type = UNKNOWN_COL_TYPE;
+
+	for (i = 0; i < table->nr_cols; ++i) {
+		if (strcmp(table->cols[i].name, col_name) == 0) {
+			type = table->cols[i].type;
+			break;
+		}
+	}
+
+	return type;
 }

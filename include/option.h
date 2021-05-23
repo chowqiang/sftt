@@ -18,7 +18,7 @@ enum option_index {
 	ADDUSER,
 	DAEMON,
 	STORE,
-	UNKNOWN
+	UNKNOWN_OPT
 };
 
 struct sftt_option {

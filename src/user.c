@@ -6,14 +6,22 @@
 #include "map.h"
 #include "mem_pool.h"
 #include "user.h"
+#include "utils.h"
 
 extern struct mem_pool *g_mp;
 
-struct user_base_info users[] = {
-	{123456, "root"},
-	{19910930, "zhoumin"},
-	{19921112, "yanan"},
-	{-1, ""}
+struct col_info user_cols[] = {
+	{"uid", INTEGER},
+	{"name", TEXT},
+	{"passwd_md5", TEXT},
+	{"home_dir", TEXT},
+	{"create_time", INTEGER},
+	{"update_time", INTEGER}
+};
+
+struct table_info user_table = {
+	.cols = user_cols,
+	.nr_cols = ARRAY_SIZE(user_cols),
 };
 
 char *db_search_pathes[] = {
@@ -21,10 +29,6 @@ char *db_search_pathes[] = {
 	"./db",
 	".",
 	NULL,
-};
-
-struct user_auth_info auths = {
-
 };
 
 char *get_user_db_file(void)
@@ -45,12 +49,14 @@ char *get_user_db_file(void)
 
 struct user_base_info *find_user_base_by_name(char *name)
 {
-	int i, count;
-	struct map *data;
+	int count = 0;
+	struct map *data = NULL;
 	struct db_connect *db_con;
-	char *err_msg, *value, *db_file;
+	char *err_msg = NULL;
+        char *value = NULL;
+        char *db_file = NULL;
 	char sql[1024];
-	struct user_base_info *user_base;
+	struct user_base_info *user_base = NULL;
 
 	db_file = get_user_db_file();
 	db_con = create_db_connect(db_file);
@@ -66,17 +72,26 @@ struct user_base_info *find_user_base_by_name(char *name)
 	user_base = mp_malloc(g_mp, sizeof(struct user_base_info));
 	assert(user_base != NULL);
 
-	if (map_find(&data[i], str_equal, "uid", (void **)&value) == -1 || value == NULL) {
+	//show_keys(&data[0]);
+	if (map_find(&data[0], str_equal, "uid", (void **)&value) == -1 || value == NULL) {
+		printf("uid's value: %d\n", atoi(value));
 		printf("cannot find uid\n");
 		return NULL;
 	}
 	user_base->uid = atoi(value);
 
-	if (map_find(&data[i], str_equal, "name", (void **)&value) == -1 || value == NULL) {
+	if (map_find(&data[0], str_equal, "name", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find name\n");
 		return NULL;
 	}
 	strcpy(user_base->name, value);
+
+	if (map_find(&data[0], str_equal, "home_dir", (void **)&value) == -1) {
+		printf("cannot find home dir\n");
+		return NULL;
+	}
+	if (value)
+		strcpy(user_base->home_dir, value);
 
 	return user_base;
 }
@@ -156,4 +171,34 @@ int get_user_count(void)
 	assert(db_con != NULL);
 
 	return db_select_count(db_con, sql, &err_msg);
+}
+
+int update_user_base_info(char *name, char *key, char *value)
+{
+	char *db_file;
+	struct db_connect *db_con;
+	char buf[1024];
+	char sql[1024];
+	char *err_msg;
+	enum col_type type;
+	const char *fmt;
+
+	db_file = get_user_db_file();
+	db_con = create_db_connect(db_file);
+	assert(db_con != NULL);
+
+	type = get_col_type(&user_table, key);
+	assert(type != UNKNOWN_COL_TYPE);
+
+	fmt = col_fmt(type);
+
+	bzero(buf, 1024);
+	strcat(buf, "update user set %s='");
+	strcat(buf, fmt);
+	strcat(buf, "', update_time=%d where name='%s'");
+
+	snprintf(sql, 1023, buf, key, col_value(type, value),
+			get_ts(), name);
+
+	return db_update(db_con, sql, &err_msg);
 }
