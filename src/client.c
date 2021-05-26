@@ -952,8 +952,29 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 
 	resp_info = (validate_resp *)resp_packet->obj;
 	if (resp_info->status != UVS_PASS) {
-		printf("%s: validate status is not pass! status: 0x%0x\n", __func__, resp_info->status);
-		//printf("%s: uid: 0x%0x, name: %s, session_id: %s\n", __func__, resp_info->uid, resp_info->name, resp_info->session_id);
+		printf("%s: validate status is not pass! status: 0x%0x\n",
+			__func__, resp_info->status);
+		switch (resp_info->status) {
+		case UVS_NTFD:
+			printf("user %s not found!\n", req_info->name);
+			break;
+		case UVS_INVALID:
+			printf("user name and passwd not match!\n");
+			break;
+		case UVS_MISSHOME:
+			printf("user %s's home dir cannot access!\n",
+				req_info->name);
+			break;
+		case UVS_BLOCK:
+			printf("user %s blocked!\n", req_info->name);
+			break;
+		default:
+			printf("validate exception!\n");
+			break;
+		}
+		//printf("%s: uid: 0x%0x, name: %s, session_id: %s\n",
+		//	__func__, resp_info->uid, resp_info->name,
+		//	resp_info->session_id);
 		return -1;
 	}
 

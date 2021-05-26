@@ -93,6 +93,21 @@ struct user_base_info *find_user_base_by_name(char *name)
 	if (value)
 		strcpy(user_base->home_dir, value);
 
+	if (map_find(&data[0], str_equal, "create_time", (void **)&value) == -1) {
+		printf("cannot find create_time\n");
+		return NULL;
+	}
+	if (value)
+		user_base->create_time = atoi(value);
+
+	if (map_find(&data[0], str_equal, "update_time", (void **)&value) == -1) {
+		printf("cannot find update_time\n");
+		return NULL;
+	}
+	if (value)
+		user_base->update_time = atoi(value);
+
+
 	return user_base;
 }
 
@@ -113,19 +128,19 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 	count = db_select(db_con, sql, &data, &err_msg);
 	if (count < 1)
 		return NULL;
-
 	assert(count == 1);
 	printf("user count: %d\n", count);
+
 	user_auth = mp_malloc(g_mp, sizeof(struct user_auth_info));
 	assert(user_auth != NULL);
 
-	if (map_find(&data[i], str_equal, "name", (void **)&value) == -1 || value == NULL) {
+	if (map_find(&data[0], str_equal, "name", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find uid\n");
 		return NULL;
 	}
 	strcpy(user_auth->name, value);
 
-	if (map_find(&data[i], str_equal, "passwd_md5", (void **)&value) == -1 || value == NULL) {
+	if (map_find(&data[0], str_equal, "passwd_md5", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find name\n");
 		return NULL;
 	}

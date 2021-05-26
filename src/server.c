@@ -19,6 +19,7 @@
 #include "config.h"
 #include "debug.h"
 #include "encrypt.h"
+#include "file.h"
 #include "lock.h"
 #include "log.h"
 #include "mem_pool.h"
@@ -386,12 +387,18 @@ static int validate_user_info(struct client_session *session, struct sftt_packet
 
 	user_base = find_user_base_by_name(req_info->name);
 	user_auth = find_user_auth_by_name(req_info->name);
-	if (user_base && !strcmp(user_auth->passwd_md5, req_info->passwd_md5)) {
+	if (user_base == NULL) {
+		resp_info->status = UVS_NTFD;
+		resp_info->uid = -1;
+	} else if (strcmp(user_auth->passwd_md5, req_info->passwd_md5)) {
+		resp_info->status = UVS_INVALID;
+		resp_info->uid = -1;
+	} else if (!file_is_existed(user_base->home_dir)) {
+		resp_info->status = UVS_MISSHOME;
+		resp_info->uid = -1;
+	} else {
 		resp_info->status = UVS_PASS;
 		resp_info->uid = user_base->uid;
-	} else {
-		resp_info->status = UVS_BLOCK;
-		resp_info->uid = -1;
 	}
 	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
 	gen_session_id(session->session_id, SESSION_ID_LEN);
@@ -943,6 +950,31 @@ void db_update_user(struct db_connect *db_con, char *info)
 	return ;
 }
 
+void db_user_info(struct db_connect *db_con, char *cmd)
+{
+	struct user_base_info *user_base = NULL;
+	char ctime_buf[32];
+	char uptime_buf[32];
+	char *name = NULL;
+
+	name = fetch_next_str(&cmd);
+	if (name == NULL || strlen(name) == 0) {
+		printf("bad format\n");
+		return ;
+	}
+
+	if ((user_base = find_user_base_by_name(name)) == NULL) {
+		printf("user %s not found!\n", name);
+		return ;
+	}
+
+	ts_to_str(user_base->create_time, ctime_buf, 31);
+	ts_to_str(user_base->update_time, uptime_buf, 31);
+	printf("name: %s, uid: %d, home: %s, create time: %s, "
+		"last update: %s\n", user_base->name, user_base->uid,
+		user_base->home_dir, ctime_buf, uptime_buf);
+}
+
 void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
 {
 	int len = strlen(cmd);
@@ -958,6 +990,8 @@ void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
 		db_add_user(db_con, cmd);
 	} else if (strcmp(p, "update") == 0){
 		db_update_user(db_con, cmd);
+	} else if (strcmp(p, "info") == 0) {
+		db_user_info(db_con, cmd);
 	} else {
 		printf("unknown command: %s\n", p);
 	}

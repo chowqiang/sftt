@@ -11,12 +11,6 @@
 
 #define VALIDATE_PACKET_MIN_LEN		10240
 
-enum user_validate_status {
-	UVS_INVALID,
-	UVS_PASS,
-	UVS_BLOCK
-};
-
 enum packet_type {
 	PACKET_TYPE_VALIDATE_REQ,
 	PACKET_TYPE_VALIDATE_RSP,

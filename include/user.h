@@ -6,10 +6,20 @@
 #include "md5.h"
 #include "req_rsp.h"
 
+enum user_validate_status {
+	UVS_NTFD,
+	UVS_INVALID,
+	UVS_MISSHOME,
+	UVS_BLOCK,
+	UVS_PASS
+};
+
 struct user_base_info {
 	uint64_t uid;
 	char name[USER_NAME_MAX_LEN];
 	char home_dir[DIR_PATH_MAX_LEN];
+	int create_time;
+	int update_time;
 };
 
 struct user_auth_info {

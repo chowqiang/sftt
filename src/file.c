@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "file.h"
 #include "mem_pool.h"
@@ -60,5 +61,8 @@ size_t file_put_contents(char *path, unsigned char *text, size_t length) {
 
 bool file_is_existed(char *path)
 {
+	if (path == NULL || strlen(path) == 0)
+		return false;
+
 	return access(path, F_OK) != -1;
 }
