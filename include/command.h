@@ -11,7 +11,7 @@ struct user_cmd {
 
 struct cmd_handler {
 	const char *name;
-	int (*fn)(int argc, char *argv[], bool *argv_check);
+	int (*fn)(void *obj, int argc, char *argv[], bool *argv_check);
 	const char *help;
 	void (*usage)(void);
 };

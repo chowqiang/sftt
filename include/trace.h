@@ -2,6 +2,7 @@
 #define _TRACE_H_
 
 #include "user.h"
+#include "req_rsp.h"
 
 #define TRACE_ID_LEN 16	
 

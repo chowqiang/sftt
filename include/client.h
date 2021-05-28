@@ -61,7 +61,7 @@ struct sftt_client_v2 {
 	struct dlist *conn_data;
 	struct mem_pool *mp;
 	struct user_base_info *uinfo;
-	struct client_session *session;
+	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
 };
@@ -118,31 +118,31 @@ struct sftt_client *create_client(char *ip, struct sftt_client_config *config, i
 
 void destory_sftt_client(struct sftt_client *client);
 
-int sftt_client_ll_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_ll_usage(void);
 
 void sftt_client_cd_usage(void);
 
-int sftt_client_cd_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_help_usage(void);
 
-int sftt_client_help_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_get_usage(void);
 
-int sftt_client_get_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_put_usage(void);
 
-int sftt_client_put_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
-int sftt_client_pwd_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_pwd_usage(void);
 
-int sftt_client_his_handler(int argc, char *argv[], bool *argv_check);
+int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_his_usage(void);
 

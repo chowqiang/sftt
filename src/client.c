@@ -790,13 +790,13 @@ struct user_cmd *parse_command(char *buf)
 	return cmd;
 }
 
-static int run_command(const struct cmd_handler *cmd, int argc, char *argv[])
+static int run_command(struct sftt_client_v2 *client, const struct cmd_handler *cmd, int argc, char *argv[])
 {
 	int ret;
 	bool argv_check = true;
 	
 	add_log(LOG_INFO, "running command: %s", cmd->name);
-	ret = cmd->fn(argc, argv, &argv_check);
+	ret = cmd->fn(client, argc, argv, &argv_check);
 	if (!argv_check) {
 		cmd->usage();
 	}
@@ -824,7 +824,7 @@ void add_cmd_log(struct user_cmd *cmd)
 	free(buf);
 }
 
-void execute_cmd(char *buf, int flag) {
+void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag) {
 	add_log(LOG_INFO, "input command: %s", buf);
 	int i = 0;
 	struct user_cmd *cmd = parse_command(buf);
@@ -836,7 +836,7 @@ void execute_cmd(char *buf, int flag) {
 	add_cmd_log(cmd);
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
-			run_command(&sftt_client_cmds[i], cmd->argc, cmd->argv);
+			run_command(client, &sftt_client_cmds[i], cmd->argc, cmd->argv);
 			break;
 		}
 	}
@@ -981,6 +981,8 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	client->uinfo->uid = resp_info->uid;
 	add_log(LOG_INFO, "uid: %d", client->uinfo->uid);
 
+	strncpy(client->session_id, resp_info->session_id, SESSION_ID_LEN - 1);
+
 	return 0;
 }
 
@@ -996,12 +998,12 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, cha
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
-    if (get_sftt_client_config(&client->config) == -1) {
-	    printf("get sftt client config failed!\n");
-        return -1;
-    }
-    logger_init(client->config.log_dir, PROC_NAME);
-    set_log_type(CLIENT_LOG);
+	if (get_sftt_client_config(&client->config) == -1) {
+		printf("get sftt client config failed!\n");
+		return -1;
+	}
+	logger_init(client->config.log_dir, PROC_NAME);
+	set_log_type(CLIENT_LOG);
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
 		printf("init sftt client control connection failed!\n");
@@ -1032,12 +1034,12 @@ void sftt_client_ll_usage(void)
 	printf("ll\n");
 }
 
-int sftt_client_ll_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	printf("I'm %s handler of ll\n", __func__);
 }
 
-int sftt_client_help_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 #if 0
 	printf("sftt client commands:\n\n"
@@ -1059,7 +1061,7 @@ int sftt_client_help_handler(int argc, char *argv[], bool *argv_check)
 	return 0;
 }
 
-int sftt_client_his_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	int i = 0, num = 10;
 	if (argc > 0) {
@@ -1088,7 +1090,7 @@ void sftt_client_help_usage(void)
 
 }
 
-int sftt_client_cd_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	return 0;
 }
@@ -1098,8 +1100,52 @@ void sftt_client_cd_usage(void)
 
 }
 
-int sftt_client_pwd_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
+	struct sftt_packet *req_packet, *resp_packet;
+	struct pwd_req *req_info;
+	struct pwd_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
+
+	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_PWD_REQ;
+
+	req_info = mp_malloc(g_mp, sizeof(struct pwd_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+
+	// how to serialize and deserialize properly ???
+	req_packet->obj = req_info;
+	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (pwd_resp *)resp_packet->obj;
+	printf("pwd: %s\n", resp_info->pwd);
+
+
+	return 0;
 
 }
 
@@ -1108,7 +1154,7 @@ void sftt_client_pwd_usage(void)
 
 }
 
-int sftt_client_get_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 
 }
@@ -1118,7 +1164,7 @@ void sftt_client_get_usage(void)
 
 }
 
-int sftt_client_put_handler(int argc, char *argv[], bool *argv_check)
+int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 
 }
@@ -1161,7 +1207,7 @@ int reader_loop(struct sftt_client_v2 *client)
 		} else {
 			dlist_append(his_cmds, strdup(cmd.buf));
 			last = dlist_tail(his_cmds);
-			execute_cmd(cmd.buf, -1);
+			execute_cmd(client, cmd.buf, -1);
 			start = 0;
 			cmd.buf[0] = 0;
 		}
@@ -1185,7 +1231,7 @@ int reader_loop2(struct sftt_client_v2 *client)
 		if (!strcmp(cmd, "quit")) {
 			exit(0);
 		}
-		execute_cmd(cmd, -1);
+		execute_cmd(client, cmd, -1);
 		dlist_append(his_cmds, strdup(cmd));
 	}
 }

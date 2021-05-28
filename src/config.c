@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "config.h"
 #include "file.h"
+#include "req_rsp.h"
 
 char *config_search_pathes[] = {"/etc/sftt", "./conf", ".", NULL};
 

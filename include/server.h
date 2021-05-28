@@ -25,8 +25,8 @@ do {	\
 
 enum sftt_server_status {
 	READY,
-	RUNNING,
-	NOT_RUNNING,
+	SERVERING,
+	STOPED
 };
 
 /*

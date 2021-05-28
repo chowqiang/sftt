@@ -14,6 +14,7 @@
 #include "log.h"
 #include "mem_pool.h"
 #include "ratelimit.h"
+#include "req_rsp.h"
 #include "utils.h"
 
 struct msgbuf {

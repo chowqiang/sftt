@@ -16,6 +16,7 @@ extern "C" {
 #define USER_NAME_MAX_LEN 32
 #define PASSWD_MD5_LEN 33
 #define SESSION_ID_LEN 32
+#define DIR_PATH_MAX_LEN 256
 
 struct validate_req {
 	int name_len;
@@ -33,15 +34,30 @@ struct validate_resp {
 };
 typedef struct validate_resp validate_resp;
 
+struct pwd_req {
+	char session_id[SESSION_ID_LEN];
+};
+typedef struct pwd_req pwd_req;
+
+struct pwd_resp {
+	int status;
+	char pwd[DIR_PATH_MAX_LEN];
+};
+typedef struct pwd_resp pwd_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_validate_req (XDR *, validate_req*);
 extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
+extern  bool_t xdr_pwd_req (XDR *, pwd_req*);
+extern  bool_t xdr_pwd_resp (XDR *, pwd_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
 extern bool_t xdr_validate_resp ();
+extern bool_t xdr_pwd_req ();
+extern bool_t xdr_pwd_resp ();
 
 #endif /* K&R C */
 

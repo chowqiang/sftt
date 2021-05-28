@@ -365,11 +365,10 @@ void update_server(struct sftt_server *server) {
 	sync_server_stat();
 }
 
-static int validate_user_info(struct client_session *session, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+static int validate_user_info(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
-	struct client_info *client = NULL;
 	struct user_base_info *user_base;
 	struct user_auth_info *user_auth;
 
@@ -390,19 +389,26 @@ static int validate_user_info(struct client_session *session, struct sftt_packet
 	if (user_base == NULL) {
 		resp_info->status = UVS_NTFD;
 		resp_info->uid = -1;
+		printf("%s:%d, cannot find user!\n", __func__, __LINE__);
 	} else if (strcmp(user_auth->passwd_md5, req_info->passwd_md5)) {
 		resp_info->status = UVS_INVALID;
 		resp_info->uid = -1;
+		printf("%s:%d, passwd not correct!\n", __func__, __LINE__);
 	} else if (!file_is_existed(user_base->home_dir)) {
 		resp_info->status = UVS_MISSHOME;
 		resp_info->uid = -1;
+		printf("%s:%d, user's home dir not found!\n", __func__, __LINE__);
 	} else {
 		resp_info->status = UVS_PASS;
 		resp_info->uid = user_base->uid;
+		client->status = ACTIVE;
+		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
+		memcpy(&client->user, user_base, sizeof(struct user_base_info));
+		printf("%s:%d, user pwd is: %s\n", __func__, __LINE__, client->pwd);
 	}
 	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
-	gen_session_id(session->session_id, SESSION_ID_LEN);
-	strncpy(resp_info->session_id, session->session_id, SESSION_ID_LEN);
+	gen_session_id(client->session_id, SESSION_ID_LEN);
+	strncpy(resp_info->session_id, client->session_id, SESSION_ID_LEN);
 #if 0
 	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
 		resp_info->name, resp_info->uid, resp_info->status,
@@ -417,13 +423,12 @@ static int validate_user_info(struct client_session *session, struct sftt_packet
 		resp_info->session_id);
 #endif
 
-	int ret = send_sftt_packet(session->connect_fd, resp_packet);
+	int ret = send_sftt_packet(client->connect_fd, resp_packet);
 	if (ret == -1) {
 		printf("send validate response failed!\n");
 		return -1;
 	}
 
-	session->cinfo.status = VALIDATED;
 
 	return 0;
 }
@@ -439,10 +444,39 @@ void child_process_exit(int sig) {
 	exit(-1);
 }
 
+void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct pwd_req *req_info;
+	struct pwd_resp *resp_info;
+
+	req_info = req_packet->obj;
+	assert(req_info != NULL);
+
+	resp_info = mp_malloc(g_mp, sizeof(struct pwd_resp));
+	assert(resp_info != NULL);
+
+	if (strcmp(req_info->session_id, client->session_id)) {
+		resp_info->status = SESSION_INVALID;
+		resp_info->pwd[0] = 0;
+	} else {
+		resp_info->status = RESP_OK;
+		strncpy(resp_info->pwd, client->pwd, DIR_PATH_MAX_LEN);
+	}
+
+	resp_packet->type = PACKET_TYPE_PWD_RSP;
+	resp_packet->obj = resp_info;
+
+	int ret = send_sftt_packet(client->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("send pwd response failed!\n");
+		return ;
+	}
+}
+
 void *handle_client_session(void *args)
 {
-	struct client_session *session = (struct client_session *)args;
-	int sock = session->connect_fd;
+	struct client_session *client = (struct client_session *)args;
+	int sock = client->connect_fd;
 
 	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
 	struct sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
@@ -474,7 +508,7 @@ void *handle_client_session(void *args)
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
-			ret = validate_user_info(session, req, resp);
+			ret = validate_user_info(client, req, resp);
 			if (ret == -1) {
 				goto exit;
 			}
@@ -488,6 +522,9 @@ void *handle_client_session(void *args)
 			break;
 		case PACKET_TYPE_SEND_COMPLETE_REQ:
 			break;
+		case PACKET_TYPE_PWD_REQ:
+			handle_pwd_req(client, req, resp);
+			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);
 			break;
@@ -495,7 +532,7 @@ void *handle_client_session(void *args)
 	}
 
 exit:
-	session->status = EXITED;
+	client->status = INACTIVE;
 	return NULL;
 }
 
@@ -806,9 +843,9 @@ bool parse_store_path(char *optarg, char *store_path, int max_len) {
 
 const char *status_desc(enum sftt_server_status status) {
 	switch (status) {
-	case RUNNING:
+	case SERVERING:
 		return "running";
-	case NOT_RUNNING:
+	case STOPED:
 		return "not running";
 	default:
 		return "unknown";

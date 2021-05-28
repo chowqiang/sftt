@@ -2,6 +2,7 @@
 #define _LOG_H_
 
 #include "config.h"
+#include "req_rsp.h"
 #include "trace.h"
 
 #define LOG_STR_MAX_LEN	4096

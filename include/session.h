@@ -11,32 +11,40 @@
 /*
  *
  */
-struct client_info {
-	int status;
-	char pwd[DIR_PATH_MAX_LEN];
+
+enum process_status {
+	RUNNING,
+	EXITED
 };
 
 struct thread_info {
 	pthread_t tid;
-};
-
-enum process_status {
-	ACTIVE,
-	EXITED
+	enum process_status status;
 };
 
 enum client_status {
+	ACTIVE,
+	INACTIVE
+};
+
+enum session_status {
 	VALIDATED,
 	INVALIDATED
 };
 
+enum resp_status {
+	SESSION_INVALID,
+	SERVER_EXCEPTION,
+	RESP_OK
+};
+
 struct client_session {
 	int connect_fd;
-	struct client_info cinfo;
 	struct thread_info tinfo;
-	enum process_status status;
-	char session_id[SESSION_ID_LEN];
+	enum client_status status;
 	char pwd[DIR_PATH_MAX_LEN];
+	char session_id[SESSION_ID_LEN];
+	struct user_base_info user;
 };
 
 struct server_session {

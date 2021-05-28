@@ -42,3 +42,29 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_pwd_req (XDR *xdrs, pwd_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_pwd_resp (XDR *xdrs, pwd_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->status))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}

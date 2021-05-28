@@ -23,7 +23,7 @@ all: $(XDR) $(SERVER_BIN) $(CLIENT_BIN) $(LIB_NAME) $(TEST)
 $(XDR): ECHO
 	make -C $(XDR_DIR)
 
-$(LIB_NAME): ECHO
+$(LIB_NAME): $(XDR) ECHO
 	make -C $(OBJS_DIR)
 
 $(SERVER_BIN): $(LIB_NAME) ECHO

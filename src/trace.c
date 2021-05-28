@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "base.h"
 #include "mem_pool.h"
 #include "sds.h"

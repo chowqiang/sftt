@@ -8,6 +8,11 @@ bool validate_req_decode(unsigned char *buf, int len, void **req);
 bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len);
 bool validate_rsp_decode(unsigned char *buf, int len, void **rsp);
 
+bool pwd_req_encode(void *req, unsigned char **buf, int *len);
+bool pwd_req_decode(unsigned char *buf, int len, void **req);
+bool pwd_rsp_encode(void *rsp, unsigned char **buf, int *len);
+bool pwd_rsp_decode(unsigned char *buf, int len, void **rsp);
+
 bool send_file_name_req_encode(void *req, unsigned char **buf, int *len);
 bool send_file_name_req_decode(unsigned char *buf, int len, void **req);
 bool send_file_name_rsp_encode(void *rsp, unsigned char **buf, int *len);
