@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mem_pool.h"
+#include "req_rsp.h"
 #include "serialize.h"
 #include "utils.h"
 
@@ -55,11 +57,11 @@ void test_validate_resp(void)
 	int len = 0;
 	bool ret = false;
 
-	ret = validate_rsp_encode(resp_info, &buf, &len);
+	ret = validate_resp_encode(resp_info, &buf, &len);
 	printf("encode ret = %d, buf = %p, len = %d\n", ret, buf, len);
 
 	
-	ret = validate_rsp_decode(buf, len, (void *)&resp_info2);
+	ret = validate_resp_decode(buf, len, (void *)&resp_info2);
 	printf("decode ret = %d\n", ret);
 	printf("name: %s, uid: %d\n", resp_info2->name, resp_info2->uid);
 	printf("status: %d, session_id: %s\n", resp_info2->status, resp_info2->session_id);

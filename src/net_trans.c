@@ -12,10 +12,10 @@
 #include "log.h"
 #include "mem_pool.h"
 #include "net_trans.h"
-#include "serialize.h"
+#include "serialize_handler.h"
 
 extern struct mem_pool *g_mp;
-extern struct serialize_handle serializables[];
+extern struct serialize_handler serializables[];
 
 struct sftt_packet *malloc_sftt_packet(int block_size) {
 

@@ -1,3 +1,7 @@
+/*
+ * Automatically generated - do not edit
+ */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include "log.h"
@@ -8,22 +12,6 @@
 
 extern struct mem_pool *g_mp;
 
-struct serialize_handle serializables[] = {
-	{PACKET_TYPE_VALIDATE_REQ, validate_req_encode, validate_req_decode},
-	{PACKET_TYPE_VALIDATE_RSP, validate_rsp_encode, validate_rsp_decode},
-	{PACKET_TYPE_FILE_NAME_REQ, send_file_name_req_encode, send_file_name_req_decode},
-	{PACKET_TYPE_FILE_NAME_RSP, send_file_name_rsp_encode, send_file_name_rsp_decode},
-	{PACKET_TYPE_DATA_REQ, send_data_req_encode, send_data_req_decode},
-	{PACKET_TYPE_DATA_RSP, send_data_rsp_encode, send_data_rsp_decode},
-	{PACKET_TYPE_FILE_END_REQ, send_data_req_encode, send_data_req_decode},
-	{PACKET_TYPE_FILE_END_RSP, send_data_rsp_encode, send_data_rsp_decode},
-	{PACKET_TYPE_SEND_COMPLETE_REQ, send_end_complete_req_encode, send_end_complete_req_decode},
-	{PACKET_TYPE_SEND_COMPLETE_RSP, send_end_complete_rsp_encode, send_end_complete_rsp_decode},
-	{PACKET_TYPE_PWD_REQ, pwd_req_encode, pwd_req_decode},
-	{PACKET_TYPE_PWD_RSP, pwd_rsp_encode, pwd_rsp_decode},
-	{-1, NULL, NULL},
-};
-
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
@@ -33,11 +21,11 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_validate_req(&xdr, (validate_req *)req);
-	fclose(fp);
+	int ret = xdr_validate_req(&xdr, (struct validate_req*)req);
 
+	fclose(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encoded_len=%d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d", __func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -46,7 +34,7 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 bool validate_req_decode(unsigned char *buf, int len, void **req)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
-	validate_req *_req = (validate_req *)mp_malloc(g_mp, sizeof(validate_req));
+	struct validate_req *_req = (struct validate_req *)mp_malloc(g_mp, sizeof(struct validate_req));
 
 	FILE *fp = fmemopen(buf, len, "r");
 
@@ -59,11 +47,10 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	*req = _req;
 	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
-
 	return ret;
 }
 
-bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
+bool validate_resp_encode(void *req, unsigned char **buf, int *len)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
 	size_t size = 0;
@@ -72,138 +59,33 @@ bool validate_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_validate_resp(&xdr, (validate_resp *)rsp);
+	int ret = xdr_validate_resp(&xdr, (struct validate_resp*)req);
+
 	fclose(fp);
-
 	*len = size;
-#if 0
-	int i = 0, j = 0, step = 16;
-	for (i = 0; i < *len; i += step) {
-		for (j = 0; j < step; ++j)
-			printf("0x%0x ", (*buf)[i + j]);
-		printf("\n");
-	}
-	printf("%s: len: %d\n", __func__, *len);
-#endif
-
-	add_log(LOG_INFO, "%s: encode ret: %d, encode_len: %d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d", __func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
 }
 
-bool validate_rsp_decode(unsigned char *buf, int len, void **rsp)
+bool validate_resp_decode(unsigned char *buf, int len, void **req)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
-	validate_resp *_rsp = (validate_resp *)mp_malloc(g_mp, sizeof(validate_resp));
-#if 0
-	printf("%s: len: %d\n", __func__, len);
-	int i = 0, j = 0, step = 16;
-	for (i = 0; i < len; i += step) {
-		for (j = 0; j < step; ++j)
-			printf("0x%0x ", buf[i + j]);
-		printf("\n");
-	}
-#endif
+	struct validate_resp *_req = (struct validate_resp *)mp_malloc(g_mp, sizeof(struct validate_resp));
 
-	FILE *fp = fmemopen(buf, len, "rb");
+	FILE *fp = fmemopen(buf, len, "r");
 
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_validate_resp(&xdr, _rsp);
+	int ret = xdr_validate_resp(&xdr, _req);
 	fclose(fp);
 
-	*rsp = _rsp;
-	//printf("%s: status: %d, uid: %d\n", __func__, _rsp->status, _rsp->uid);
-	add_log(LOG_INFO, "%s: decode ret: %d", __func__, ret);
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
-
 	return ret;
-}
-
-
-bool send_file_name_req_encode(void *req, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_file_name_req_decode(unsigned char *buf, int len, void **req)
-{
-	return true;
-}
-
-bool send_file_name_rsp_encode(void *rsp, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_file_name_rsp_decode(unsigned char *buf, int len, void **rsp)
-{
-	return true;
-}
-
-
-bool send_data_req_encode(void *req, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_data_req_decode(unsigned char *buf, int len, void **req)
-{
-	return true;
-}
-
-bool send_data_rsp_encode(void *rsp, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_data_rsp_decode(unsigned char *buf, int len, void **rsp)
-{
-	return true;
-}
-
-
-bool send_file_end_req_encode(void *req, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_file_end_req_decode(unsigned char *buf, int len, void **req)
-{
-	return true;
-}
-
-bool send_file_end_rsp_encode(void *rsp, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_file_end_rsp_decode(unsigned char *buf, int len, void **rsp)
-{
-	return true;
-}
-
-
-bool send_end_complete_req_encode(void *req, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_end_complete_req_decode(unsigned char *buf, int len, void **req)
-{
-	return true;
-}
-
-bool send_end_complete_rsp_encode(void *rsp, unsigned char **buf, int *len)
-{
-	return true;
-}
-
-bool send_end_complete_rsp_decode(unsigned char *buf, int len, void **rsp)
-{
-	return true;
 }
 
 bool pwd_req_encode(void *req, unsigned char **buf, int *len)
@@ -215,21 +97,20 @@ bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_pwd_req(&xdr, (pwd_req *)req);
-	fclose(fp);
+	int ret = xdr_pwd_req(&xdr, (struct pwd_req*)req);
 
+	fclose(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encoded_len=%d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d", __func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
-
 }
 
 bool pwd_req_decode(unsigned char *buf, int len, void **req)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
-	pwd_req *_req = (pwd_req *)mp_malloc(g_mp, sizeof(pwd_req));
+	struct pwd_req *_req = (struct pwd_req *)mp_malloc(g_mp, sizeof(struct pwd_req));
 
 	FILE *fp = fmemopen(buf, len, "r");
 
@@ -242,12 +123,10 @@ bool pwd_req_decode(unsigned char *buf, int len, void **req)
 	*req = _req;
 	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
-
 	return ret;
-
 }
 
-bool pwd_rsp_encode(void *rsp, unsigned char **buf, int *len)
+bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
 	size_t size = 0;
@@ -256,54 +135,31 @@ bool pwd_rsp_encode(void *rsp, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_pwd_resp(&xdr, (pwd_resp *)rsp);
+	int ret = xdr_pwd_resp(&xdr, (struct pwd_resp*)req);
+
 	fclose(fp);
-
 	*len = size;
-#if 0
-	int i = 0, j = 0, step = 16;
-	for (i = 0; i < *len; i += step) {
-		for (j = 0; j < step; ++j)
-			printf("0x%0x ", (*buf)[i + j]);
-		printf("\n");
-	}
-	printf("%s: len: %d\n", __func__, *len);
-#endif
-
-	add_log(LOG_INFO, "%s: encode ret: %d, encode_len: %d", __func__, ret, *len);
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d", __func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
-
 }
 
-bool pwd_rsp_decode(unsigned char *buf, int len, void **rsp)
+bool pwd_resp_decode(unsigned char *buf, int len, void **req)
 {
 	add_log(LOG_INFO, "%s: in", __func__);
-	pwd_resp *_rsp = (pwd_resp *)mp_malloc(g_mp, sizeof(pwd_resp));
-#if 0
-	printf("%s: len: %d\n", __func__, len);
-	int i = 0, j = 0, step = 16;
-	for (i = 0; i < len; i += step) {
-		for (j = 0; j < step; ++j)
-			printf("0x%0x ", buf[i + j]);
-		printf("\n");
-	}
-#endif
+	struct pwd_resp *_req = (struct pwd_resp *)mp_malloc(g_mp, sizeof(struct pwd_resp));
 
-	FILE *fp = fmemopen(buf, len, "rb");
+	FILE *fp = fmemopen(buf, len, "r");
 
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_pwd_resp(&xdr, _rsp);
+	int ret = xdr_pwd_resp(&xdr, _req);
 	fclose(fp);
 
-	*rsp = _rsp;
-	//printf("%s: status: %d, uid: %d\n", __func__, _rsp->status, _rsp->uid);
-	add_log(LOG_INFO, "%s: decode ret: %d", __func__, ret);
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
-
 	return ret;
-
 }
