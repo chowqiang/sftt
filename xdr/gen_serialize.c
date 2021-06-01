@@ -56,24 +56,12 @@ char *fetch_next_str(char **str)
 	return p;
 }
 
-int find_char(char *str, char ch)
-{
-	int i = 0;
-
-	while (str[i]) {
-		if (str[i] == ch)
-			return i;
-		++i;
-	}
-
-	return -1;
-}
-
 int get_struct_list(char *xdr_file, struct st_list **phead)
 {
 	FILE *xdr_fp = NULL;
 	char *content = NULL;
 	char *p = NULL;
+	char *q = NULL;
 	char *key_word = NULL;
 	char *struct_name = NULL;
 	char *word = NULL;
@@ -117,9 +105,9 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 			if (len == 0)
 				break;
 
-			idx = find_char(struct_name, '{');
-			if (idx != -1) {
-				struct_name[idx] = 0;
+			q = strchr(struct_name, '{');
+			if (q) {
+				*q = 0;
 				assert(strlen(struct_name) < 1024);
 
 				//printf("find a struct: %s\n", struct_name);

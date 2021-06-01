@@ -9,8 +9,9 @@ int main(int argc, char **argv) {
 	char *optarg = NULL;
 	bool has_passwd_opt = false;
 	char user_name[USER_NAME_MAX_LEN];
-	char password[PASSWD_MAX_LEN];
+	char password[PASSWD_MD5_LEN];
 	char host[HOST_MAX_LEN];
+	char passwd_prompt[128];
 	int port = -1;
 	const struct sftt_option *opt = NULL;	
 	bool ret = false;
@@ -19,6 +20,12 @@ int main(int argc, char **argv) {
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
 	memset(host, 0, sizeof(host));
+
+	if (argc == 2 && try_fetch_login_info(argv[1], user_name, host) == 0) {
+		has_passwd_opt = true;
+		goto input_passwd;
+	}
+
 	for (;;) {
 		if (optind >= argc) {
 			break;
@@ -55,15 +62,6 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
-
-	if (has_passwd_opt) {
-		passwd_len = get_pass("password: ", password, sizeof(password));
-		if (passwd_len <= 0) {
-			printf("password is invalid!\n");
-			client_usage_help(-1);
-		}
-	}
-
 	if (strlen(user_name) == 0) {
 		printf("user name is invalid!\n");
 		client_usage_help(-1);
@@ -72,6 +70,16 @@ int main(int argc, char **argv) {
 	if (strlen(host) == 0) {
 		printf("host is invalid!\n");
 		client_usage_help(-1);
+	}
+
+input_passwd:
+	snprintf(passwd_prompt, 127, "%s@%s's password: ", user_name, host);
+	if (has_passwd_opt) {
+		passwd_len = get_pass(passwd_prompt, password, sizeof(password));
+		if (passwd_len <= 0) {
+			printf("password is invalid!\n");
+			client_usage_help(-1);
+		}
 	}
 
 #ifdef DEBUG_ENABLE

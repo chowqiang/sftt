@@ -18,4 +18,6 @@ int ymd_hm_str(char *buf, int max_len);
 
 time_t get_ts(void);
 
+void strip(char *line);
+
 #endif

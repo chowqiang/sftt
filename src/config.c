@@ -6,6 +6,7 @@
 #include "config.h"
 #include "file.h"
 #include "req_rsp.h"
+#include "utils.h"
 
 char *config_search_pathes[] = {"/etc/sftt", "./conf", ".", NULL};
 
@@ -21,32 +22,6 @@ char *search_config(char *fname)
 	}
 
 	return NULL;
-}
-
-void strip(char *line) {
-	int len = strlen(line);
-	
-	while (len > 0 && line[len - 1] == ' ') {
-		line[--len] = 0;
-	}				
-	
-	if (len < 1) {
-		return ;
-	}
-	
-	int i = 0;
-	while (i < len && line[i] == ' ') {
-		++i;
-	}
-	if (i >= len) {
-		line[0] = 0;
-		return ;
-	}
-		
-	int j = 0;
-	for (j = 0; i <= len; ++i, ++j) {
-		line[j] = line[i];
-	}
 }
 
 #if 0

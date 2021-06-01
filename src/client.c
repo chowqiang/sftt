@@ -27,6 +27,7 @@
 #include "req_rsp.h"
 #include "state.h"
 #include "user.h"
+#include "utils.h"
 #include "version.h"
 
 extern int errno;
@@ -1234,4 +1235,26 @@ int reader_loop2(struct sftt_client_v2 *client)
 		execute_cmd(client, cmd, -1);
 		dlist_append(his_cmds, strdup(cmd));
 	}
+}
+
+int try_fetch_login_info(char *input, char *user_name, char *host)
+{
+	int len = 0;
+	char *p = NULL;
+	if (input == NULL || user_name == NULL || host == NULL)
+	       return -1;
+
+	strip(input);
+	len = strlen(input);
+	if (!len)
+		return -1;
+
+	if ((p = strchr(input, '@')) && (strchr(p + 1, '@') == NULL)) {
+		strncpy(user_name, input, p - input);
+		strcpy(host, p + 1);
+
+		return 0;
+	}
+
+	return -1;
 }

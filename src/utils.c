@@ -114,3 +114,30 @@ time_t get_ts(void)
 
 	return (time_t)t.tv_sec;
 }
+
+void strip(char *line)
+{
+	int len = strlen(line);
+
+	while (len > 0 && line[len - 1] == ' ') {
+		line[--len] = 0;
+	}
+
+	if (len < 1) {
+		return ;
+	}
+
+	int i = 0;
+	while (i < len && line[i] == ' ') {
+		++i;
+	}
+	if (i >= len) {
+		line[0] = 0;
+		return ;
+	}
+
+	int j = 0;
+	for (j = 0; i <= len; ++i, ++j) {
+		line[j] = line[i];
+	}
+}

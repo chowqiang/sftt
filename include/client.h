@@ -160,6 +160,8 @@ bool parse_port(char *arg, int *port);
 
 int reader_loop2(struct sftt_client_v2 *client);
 
+int try_fetch_login_info(char *input, char *user_name, char *host);
+
 static struct cmd_handler sftt_client_cmds[] = {
 	{
 		.name = "help",
