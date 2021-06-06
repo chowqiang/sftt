@@ -17,6 +17,9 @@ extern "C" {
 #define PASSWD_MD5_LEN 33
 #define SESSION_ID_LEN 32
 #define DIR_PATH_MAX_LEN 256
+#define FILE_NAME_MAX_LEN 256
+#define FILE_ENTRY_MAX_CNT 16
+#define CONTENT_BLOCK_SIZE 4096
 
 struct validate_req {
 	int name_len;
@@ -45,6 +48,75 @@ struct pwd_resp {
 };
 typedef struct pwd_resp pwd_resp;
 
+struct ll_req {
+	char session_id[SESSION_ID_LEN];
+	char path[DIR_PATH_MAX_LEN];
+};
+typedef struct ll_req ll_req;
+
+struct file_entry {
+	char name[FILE_NAME_MAX_LEN];
+	int type;
+	int size;
+	int c_time;
+	int a_time;
+	int m_time;
+};
+typedef struct file_entry file_entry;
+
+struct ll_resp {
+	int nr;
+	struct file_entry entries[FILE_ENTRY_MAX_CNT];
+	int idx;
+};
+typedef struct ll_resp ll_resp;
+
+struct cd_req {
+	char session_id[SESSION_ID_LEN];
+};
+typedef struct cd_req cd_req;
+
+struct cd_resp {
+	int status;
+	char pwd[DIR_PATH_MAX_LEN];
+};
+typedef struct cd_resp cd_resp;
+
+struct get_req {
+	char session_id[SESSION_ID_LEN];
+	char path[DIR_PATH_MAX_LEN];
+};
+typedef struct get_req get_req;
+
+struct trans_entry {
+	int type;
+	int total_size;
+	int idx;
+	int len;
+	u_char content[CONTENT_BLOCK_SIZE];
+};
+typedef struct trans_entry trans_entry;
+
+struct get_resp {
+	int nr;
+	int idx;
+	struct trans_entry entry;
+};
+typedef struct get_resp get_resp;
+
+struct put_req {
+	char session_id[SESSION_ID_LEN];
+	int nr;
+	int idx;
+	struct trans_entry entry;
+};
+typedef struct put_req put_req;
+
+struct put_resp {
+	int status;
+};
+typedef struct put_resp put_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -52,12 +124,32 @@ extern  bool_t xdr_validate_req (XDR *, validate_req*);
 extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
 extern  bool_t xdr_pwd_req (XDR *, pwd_req*);
 extern  bool_t xdr_pwd_resp (XDR *, pwd_resp*);
+extern  bool_t xdr_ll_req (XDR *, ll_req*);
+extern  bool_t xdr_file_entry (XDR *, file_entry*);
+extern  bool_t xdr_ll_resp (XDR *, ll_resp*);
+extern  bool_t xdr_cd_req (XDR *, cd_req*);
+extern  bool_t xdr_cd_resp (XDR *, cd_resp*);
+extern  bool_t xdr_get_req (XDR *, get_req*);
+extern  bool_t xdr_trans_entry (XDR *, trans_entry*);
+extern  bool_t xdr_get_resp (XDR *, get_resp*);
+extern  bool_t xdr_put_req (XDR *, put_req*);
+extern  bool_t xdr_put_resp (XDR *, put_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
 extern bool_t xdr_validate_resp ();
 extern bool_t xdr_pwd_req ();
 extern bool_t xdr_pwd_resp ();
+extern bool_t xdr_ll_req ();
+extern bool_t xdr_file_entry ();
+extern bool_t xdr_ll_resp ();
+extern bool_t xdr_cd_req ();
+extern bool_t xdr_cd_resp ();
+extern bool_t xdr_get_req ();
+extern bool_t xdr_trans_entry ();
+extern bool_t xdr_get_resp ();
+extern bool_t xdr_put_req ();
+extern bool_t xdr_put_resp ();
 
 #endif /* K&R C */
 

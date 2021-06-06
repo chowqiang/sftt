@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -29,6 +30,25 @@ static size_t file_size(char *filename) {
 	return length;
 }
 
+static bool endswith(char *src, char *foo)
+{
+	int src_len = 0, foo_len = 0;
+	char *pos = NULL;
+
+	if (src == NULL || foo == NULL)
+		return false;
+
+	src_len = strlen(src);
+	foo_len = strlen(foo);
+	if (src_len < foo_len)
+		return false;
+
+	if ((pos = strstr(src, foo)) == NULL)
+		return false;
+
+	return strlen(pos) == foo_len;
+}
+
 char *fetch_next_str(char **str)
 {
 	char *p, *q;
@@ -54,6 +74,17 @@ char *fetch_next_str(char **str)
 	}
 
 	return p;
+}
+
+int req_resp_filter(char *struct_name)
+{
+	if (endswith(struct_name, "_req") ||
+		endswith(struct_name, "_resp")) {
+		printf("%s:%d, strct_name=%s\n", __func__, __LINE__, struct_name);
+		return 0;
+	}
+
+	return 1;
 }
 
 int get_struct_list(char *xdr_file, struct st_list **phead)
@@ -109,7 +140,8 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 			if (q) {
 				*q = 0;
 				assert(strlen(struct_name) < 1024);
-
+				if (req_resp_filter(struct_name))
+					goto fetch_next;
 				//printf("find a struct: %s\n", struct_name);
 				node = malloc(sizeof(struct st_list));
 				assert(node != NULL);
@@ -131,6 +163,8 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 
 				if (word[0] == '{') {
 					assert(strlen(struct_name) < 1024);
+					if (req_resp_filter(struct_name))
+						goto fetch_next;
 					//printf("find a struct: %s\n", struct_name);
 
 					node = malloc(sizeof(struct st_list));
@@ -148,6 +182,7 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 				}
 			}
 		}
+fetch_next:
 		key_word = fetch_next_str(&p);
 #if DEBUG
 		if (key_word)
@@ -213,7 +248,7 @@ void output_encode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tFILE *fp = open_memstream((char **)buf, &size);\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_ENCODE);\n\n");
-	fprintf(fp, "\tint ret = xdr_%s(&xdr, (struct %s*)req);\n\n", struct_name, struct_name);
+	fprintf(fp, "\tint ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
 	fprintf(fp, "\tfclose(fp);\n");
 	fprintf(fp, "\t*len = size;\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encode ret=%%d, encode_len=%%d\", __func__, ret, *len);\n");
@@ -236,7 +271,7 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*req = _req;\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: decode ret=%%d\", __func__, ret);\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n");
+	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
 	fprintf(fp, "\treturn ret;\n");
 	fprintf(fp, "}\n");
 }
