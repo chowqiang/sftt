@@ -51,6 +51,7 @@ struct ll_resp {
 
 struct cd_req {
 	char session_id[SESSION_ID_LEN];
+	char path[DIR_PATH_MAX_LEN];
 };
 
 struct cd_resp {

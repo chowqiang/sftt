@@ -1093,12 +1093,64 @@ void sftt_client_help_usage(void)
 
 int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
+	struct sftt_packet *req_packet, *resp_packet;
+	struct cd_req *req_info;
+	struct cd_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
+
+	if (argc != 1 || strlen(argv[0]) == 0) {
+		sftt_client_cd_usage();
+		return -1;
+	}
+	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_CD_REQ;
+
+	req_info = mp_malloc(g_mp, sizeof(struct cd_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+	strncpy(req_info->path, argv[0], DIR_PATH_MAX_LEN);
+
+	// how to serialize and deserialize properly ???
+	req_packet->obj = req_info;
+	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct cd_resp *)resp_packet->obj;
+	if (resp_info->status != RESP_OK) {
+		printf("change directory failed!\n");
+	} else {
+		printf("pwd change to: %s\n", resp_info->pwd);
+	}
+
+
 	return 0;
 }
 
 void sftt_client_cd_usage(void)
 {
-
+	printf("Usage: cd path");
 }
 
 int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)

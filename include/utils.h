@@ -20,4 +20,6 @@ time_t get_ts(void);
 
 void strip(char *line);
 
+void simplify_path(char *path);
+
 #endif

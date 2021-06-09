@@ -35,7 +35,8 @@ enum session_status {
 enum resp_status {
 	SESSION_INVALID,
 	SERVER_EXCEPTION,
-	RESP_OK
+	RESP_OK,
+	CANNOT_CD,
 };
 
 struct client_session {

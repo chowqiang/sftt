@@ -182,6 +182,9 @@ xdr_cd_req (XDR *xdrs, cd_req *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->path, DIR_PATH_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
 	return TRUE;
 }
 

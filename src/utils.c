@@ -141,3 +141,32 @@ void strip(char *line)
 		line[j] = line[i];
 	}
 }
+
+void simplify_path(char *path)
+{
+	int i = 0, j = 0, len = 0;
+	char *tmp = NULL;
+	bool slash = false;
+
+	len = strlen(path);
+	if (len == 0)
+		return ;
+
+	tmp = (char *)malloc(sizeof(char) * (len + 1));
+	assert(tmp);
+
+	while (path[i]) {
+		if (path[i] == '/' && slash == true) {
+			++i;
+			continue;
+		}
+		tmp[j++] = path[i];
+		slash = path[i] == '/';
+		++i;
+	}
+
+	tmp[j] = 0;
+	strcpy(path, tmp);
+
+	free(tmp);
+}

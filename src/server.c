@@ -473,6 +473,45 @@ void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packe
 	}
 }
 
+int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct cd_req *req_info;
+	struct cd_resp *resp_info;
+	char buf[DIR_PATH_MAX_LEN];
+
+	req_info = req_packet->obj;
+	assert(req_info != NULL);
+
+	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
+	assert(resp_info != NULL);
+
+	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
+			client->pwd, req_info->path);
+	simplify_path(buf);
+	printf("cd to %s ...\n", buf);
+
+	if (chdir(buf)) {
+		resp_info->status = CANNOT_CD;
+		resp_info->pwd[0] = 0;
+		printf("cd failed!\n");
+	} else {
+		resp_info->status = RESP_OK;
+		strncpy(resp_info->pwd, buf, DIR_PATH_MAX_LEN - 1);
+		strncpy(client->pwd, buf, DIR_PATH_MAX_LEN - 1);
+		printf("cd successfully!\n");
+	}
+
+	resp_packet->type = PACKET_TYPE_CD_RSP;
+	resp_packet->obj = resp_info;
+	int ret = send_sftt_packet(client->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("send cd response failed!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
@@ -524,6 +563,9 @@ void *handle_client_session(void *args)
 			break;
 		case PACKET_TYPE_PWD_REQ:
 			handle_pwd_req(client, req, resp);
+			break;
+		case PACKET_TYPE_CD_REQ:
+			handle_cd_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);

@@ -73,6 +73,7 @@ typedef struct ll_resp ll_resp;
 
 struct cd_req {
 	char session_id[SESSION_ID_LEN];
+	char path[DIR_PATH_MAX_LEN];
 };
 typedef struct cd_req cd_req;
 
