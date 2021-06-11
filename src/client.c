@@ -1143,9 +1143,8 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		printf("change directory failed!\n");
 	} else {
 		printf("pwd change to: %s\n", resp_info->pwd);
+		strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 	}
-
-	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 
 	return 0;
 }

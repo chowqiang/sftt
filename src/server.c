@@ -486,8 +486,12 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
 	assert(resp_info != NULL);
 
+#if 0
 	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
 			client->pwd, req_info->path);
+#endif
+	strncpy(buf, req_info->path, DIR_PATH_MAX_LEN - 1);
+
 	simplify_path(buf);
 	printf("cd to %s ...\n", buf);
 
