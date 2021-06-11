@@ -22,4 +22,6 @@ void strip(char *line);
 
 void simplify_path(char *path);
 
+int get_right_most_path(char *path, char *sub_path);
+
 #endif

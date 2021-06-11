@@ -983,6 +983,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	add_log(LOG_INFO, "uid: %d", client->uinfo->uid);
 
 	strncpy(client->session_id, resp_info->session_id, SESSION_ID_LEN - 1);
+	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 
 	return 0;
 }
@@ -1144,6 +1145,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		printf("pwd change to: %s\n", resp_info->pwd);
 	}
 
+	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 
 	return 0;
 }
@@ -1272,13 +1274,28 @@ struct user_cmd *user_cmd_construct(void)
 		
 }
 
+void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
+{
+	char sub_path[DIR_PATH_MAX_LEN];
+	int ret = 0;
+
+	ret = get_right_most_path(client->pwd, sub_path);
+	if (ret == -1)
+		strcpy(sub_path, "~");
+
+	snprintf(prompt, len, "[%s@%s %s]$ ", client->uinfo->name,
+			client->host, sub_path);
+}
+
 int reader_loop2(struct sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
+	char prompt[PROMPT_MAX_LEN];
 	his_cmds = dlist_create(free);
 
 	for (;;) {
-		printf("sftt>> ");
+		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
+		printf("%s", prompt);
 		fgets(cmd, CMD_MAX_LEN - 1, stdin);
 		cmd[strlen(cmd) - 1] = 0;
 		if (!strcmp(cmd, "quit")) {

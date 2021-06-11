@@ -26,6 +26,7 @@ struct table_info user_table = {
 
 char *db_search_pathes[] = {
 	"/etc/sftt",
+	"/root/sftt/db",
 	"./db",
 	".",
 	NULL,

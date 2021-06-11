@@ -402,6 +402,7 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 		resp_info->status = UVS_PASS;
 		resp_info->uid = user_base->uid;
 		client->status = ACTIVE;
+		strncpy(resp_info->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
 		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
 		memcpy(&client->user, user_base, sizeof(struct user_base_info));
 		printf("%s:%d, user pwd is: %s\n", __func__, __LINE__, client->pwd);
@@ -490,7 +491,7 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	simplify_path(buf);
 	printf("cd to %s ...\n", buf);
 
-	if (chdir(buf)) {
+	if (chdir(buf) || getcwd(buf, DIR_PATH_MAX_LEN - 1) == NULL) {
 		resp_info->status = CANNOT_CD;
 		resp_info->pwd[0] = 0;
 		printf("cd failed!\n");

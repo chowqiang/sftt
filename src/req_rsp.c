@@ -40,6 +40,9 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
 	return TRUE;
 }
 

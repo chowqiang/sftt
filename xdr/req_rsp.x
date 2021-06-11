@@ -18,6 +18,7 @@ struct validate_resp {
 	int uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
+	char pwd[DIR_PATH_MAX_LEN];
 };
 
 struct pwd_req {

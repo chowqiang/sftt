@@ -155,6 +155,11 @@ void simplify_path(char *path)
 	tmp = (char *)malloc(sizeof(char) * (len + 1));
 	assert(tmp);
 
+	i = len - 1;
+	while (i >= 0 && path[i] == '/')
+		path[i--] = 0;
+
+	i = 0;
 	while (path[i]) {
 		if (path[i] == '/' && slash == true) {
 			++i;
@@ -169,4 +174,29 @@ void simplify_path(char *path)
 	strcpy(path, tmp);
 
 	free(tmp);
+}
+
+int get_right_most_path(char *path, char *sub_path)
+{
+	int len = 0, idx = 0;
+	char *pos = NULL;
+
+	if (path == NULL || sub_path == NULL)
+		return -1;
+
+	simplify_path(path);
+
+	if ((len = strlen(path)) == 0) {
+		sub_path[0] = 0;
+		return 0;
+	}
+
+	if ((pos = rindex(path, '/')) == NULL) {
+		strcpy(sub_path, path);
+		return 0;
+	}
+
+	strcpy(sub_path, pos + 1);
+
+	return 0;
 }

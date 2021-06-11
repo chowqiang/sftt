@@ -28,6 +28,8 @@
 
 #define CLIENT_LOG_DIR			"/var/log/"PROC_NAME"/"
 
+#define PROMPT_MAX_LEN			1024
+
 struct path_entry {
 	char abs_path[FILE_NAME_MAX_LEN];
 	char rel_path[FILE_NAME_MAX_LEN];
@@ -64,6 +66,7 @@ struct sftt_client_v2 {
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
+	char pwd[DIR_PATH_MAX_LEN];
 };
 
 struct thread_input_params {
