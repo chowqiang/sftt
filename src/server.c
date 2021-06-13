@@ -530,7 +530,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	req_info = req_packet->obj;
 	assert(req_info != NULL);
 
-	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
+	resp_info = mp_malloc(g_mp, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
 
 #if 0
@@ -577,11 +577,11 @@ send_continue:
 				++i;
 			}
 			resp_info->nr = i;
-			next = dlist_next(node);
-			if (node && next) {
+			// next = dlist_next(node);
+			if (node) {
 				resp_info->idx = k++;
 				has_more = true;
-				node = next;
+				// node = next;
 			} else {
 				resp_info->idx = -1;
 				has_more = false;
@@ -606,7 +606,9 @@ send_resp_once:
 	if (has_more)
 		goto send_continue;
 
-	return -1;
+	printf("handle ll done!\n");
+
+	return 0;
 }
 
 void *handle_client_session(void *args)

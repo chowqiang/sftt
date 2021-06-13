@@ -1085,12 +1085,23 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
 	assert(resp_info != NULL);
-	while (resp_info->idx != -1) {
+	/*
+	 * It's a bug from xdr lib, -1 was changed to 65535.
+	 * I will fix this bug soon ...
+	 */
+	while (resp_info->idx != 65535) {
 		//assert(resp_info->nr == FILE_ENTRY_MAX_CNT);
 		for (i = 0; i < resp_info->nr; ++i) {
 			entry = mp_malloc(g_mp, sizeof(struct file_entry));
 			assert(entry != NULL);
+			*entry = resp_info->entries[i];
 			dlist_append(fe_list, entry);
+		}
+
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
 		}
 
 		resp_info = (struct ll_resp *)resp_packet->obj;
@@ -1100,6 +1111,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	for (i = 0; i < resp_info->nr; ++i) {
 		entry = mp_malloc(g_mp, sizeof(struct file_entry));
 		assert(entry != NULL);
+		*entry = resp_info->entries[i];
 		dlist_append(fe_list, entry);
 	}
 

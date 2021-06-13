@@ -117,12 +117,34 @@ void test_ll_req(void)
 	printf("ll req decode: ret=%d, path=%s\n", ret, _req->path);
 }
 
+void test_ll_resp_v2(void)
+{
+	struct ll_resp resp = {
+		3,
+		{{"a.txt", 1, 12, 0, 0, 0},
+		{"b.txt", 1, 24, 0, 0, 0},
+		{"c.txt", 1, 36, 0, 0, 0}},
+		-1
+	};
+	struct ll_resp *_resp = NULL;
+
+	bool ret = 0;
+	int len = 0;
+	unsigned char *buf = NULL;
+
+	ret = ll_resp_encode(&resp, &buf, &len);
+	printf("ll resp encode: ret=%d, len=%d\n", ret, len);
+
+	ret = ll_resp_decode(buf, len, (void **)&_resp);
+	printf("ll resp decode: ret=%d, nr=%d, idx=%d\n", ret, _resp->nr, _resp->idx);
+}
+
 int main(void)
 {
 	test_validate_req();
 	test_validate_resp();
 	test_ll_req();
-	test_ll_resp();
+	test_ll_resp_v2();
 
 	return 0;
 }
