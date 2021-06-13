@@ -517,14 +517,107 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	return 0;
 }
 
+int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct ll_req *req_info;
+	struct ll_resp *resp_info;
+	char buf[DIR_PATH_MAX_LEN];
+	int i, j, k, ret;
+	struct dlist *file_list;
+	struct dlist_node *node, *next;
+	bool has_more = false;
+
+	req_info = req_packet->obj;
+	assert(req_info != NULL);
+
+	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
+	assert(resp_info != NULL);
+
+#if 0
+	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
+			client->pwd, req_info->path);
+#endif
+	strncpy(buf, req_info->path, DIR_PATH_MAX_LEN - 1);
+
+	simplify_path(buf);
+	printf("ll %s ...\n", buf);
+
+	if (!file_is_existed(req_info->path)) {
+		goto cannot_get_files;
+	}
+
+	if (is_file(req_info->path)) {
+		resp_info->nr = 1;
+		resp_info->idx = -1;
+
+		strncpy(resp_info->entries[0].name, req_info->path, FILE_NAME_MAX_LEN - 1);
+		resp_info->entries[0].type = FILE_TYPE_FILE;
+
+		goto send_resp_once;
+	} else if (is_dir(req_info->path)) {
+		file_list = get_file_list(req_info->path);
+		if (file_list == NULL)
+			goto cannot_get_files;
+		printf("file count: %d\n", dlist_size(file_list));
+		k = 0;
+		node = dlist_head(file_list);
+		while (node) {
+send_continue:
+			i = 0;
+			dlist_for_each_pos(node) {
+				if (i == FILE_ENTRY_MAX_CNT)
+					break;
+				strncpy(resp_info->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
+				if (is_file(node->data))
+					resp_info->entries[i].type = FILE_TYPE_FILE;
+				else if (is_dir(node->data))
+					resp_info->entries[i].type = FILE_TYPE_DIR;
+				else
+					resp_info->entries[i].type = FILE_TYPE_UNKNOWN;
+				++i;
+			}
+			resp_info->nr = i;
+			next = dlist_next(node);
+			if (node && next) {
+				resp_info->idx = k++;
+				has_more = true;
+				node = next;
+			} else {
+				resp_info->idx = -1;
+				has_more = false;
+			}
+			goto send_resp_once;
+		}
+	}
+
+cannot_get_files:
+	resp_info->nr = -1;
+	resp_info->idx = -1;
+
+send_resp_once:
+	resp_packet->type = PACKET_TYPE_LL_RSP;
+	resp_packet->obj = resp_info;
+
+	ret = send_sftt_packet(client->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("send cd response failed!\n");
+		return -1;
+	}
+	if (has_more)
+		goto send_continue;
+
+	return -1;
+}
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
 	int sock = client->connect_fd;
+	struct sftt_packet *resp;
+	struct sftt_packet *req;
 
-	struct sftt_packet *req = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
-	struct sftt_packet *resp = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
-	if (!req || !resp) {
+	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
+	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
 		return NULL;
 	}
@@ -552,13 +645,18 @@ void *handle_client_session(void *args)
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
+			resp = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+
 			ret = validate_user_info(client, req, resp);
 			if (ret == -1) {
+				free_sftt_packet(&resp);
 				goto exit;
 			}
 			break;
 		case PACKET_TYPE_FILE_NAME_REQ:
-			
 			break;
 		case PACKET_TYPE_DATA_REQ:
 			break;
@@ -567,10 +665,25 @@ void *handle_client_session(void *args)
 		case PACKET_TYPE_SEND_COMPLETE_REQ:
 			break;
 		case PACKET_TYPE_PWD_REQ:
+			resp = malloc_sftt_packet(PWD_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
 			handle_pwd_req(client, req, resp);
 			break;
 		case PACKET_TYPE_CD_REQ:
+			resp = malloc_sftt_packet(CD_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
 			handle_cd_req(client, req, resp);
+			break;
+		case PACKET_TYPE_LL_REQ:
+			resp = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_ll_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);

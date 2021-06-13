@@ -105,10 +105,6 @@ int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t siz
 
 int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
 
-int is_dir(char *file_name);
-
-int is_file(char *file_name);
-
 struct file_input_stream *create_file_input_stream(char *file_name);
 
 void destory_file_input_stream(struct file_input_stream *fis);

@@ -4,12 +4,22 @@
 #include <stdint.h>
 #include "config.h"
 #include "md5.h"
+#include "req_rsp.h"
 #include "session.h"
 
 #define PACKET_TYPE_SIZE		(sizeof(int))
 #define PACKET_LEN_SIZE			(sizeof(int))	
 
-#define VALIDATE_PACKET_MIN_LEN		10240
+#define REQ_PACKET_MIN_LEN		51200
+
+#define EXTERN_PACKET_MIN_LEN(type) \
+	extern int type##_REQ_PACKET_MIN_LEN; \
+	extern int type##_RESP_PACKET_MIN_LEN;
+
+EXTERN_PACKET_MIN_LEN(VALIDATE);
+EXTERN_PACKET_MIN_LEN(PWD);
+EXTERN_PACKET_MIN_LEN(CD);
+EXTERN_PACKET_MIN_LEN(LL);
 
 enum packet_type {
 	PACKET_TYPE_VALIDATE_REQ,
@@ -25,7 +35,9 @@ enum packet_type {
 	PACKET_TYPE_PWD_REQ,
 	PACKET_TYPE_PWD_RSP,
 	PACKET_TYPE_CD_REQ,
-	PACKET_TYPE_CD_RSP
+	PACKET_TYPE_CD_RSP,
+	PACKET_TYPE_LL_REQ,
+	PACKET_TYPE_LL_RSP,
 };
 
 

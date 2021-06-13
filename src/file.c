@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 #include "file.h"
 #include "mem_pool.h"
 
@@ -65,4 +67,44 @@ bool file_is_existed(char *path)
 		return false;
 
 	return access(path, F_OK) != -1;
+}
+
+int is_dir(char *file_name) {
+	struct stat file_stat;
+	stat(file_name, &file_stat);
+
+	return S_ISDIR(file_stat.st_mode);
+}
+
+int is_file(char *file_name) {
+	struct stat file_stat;
+	stat(file_name, &file_stat);
+
+	return S_ISREG(file_stat.st_mode);
+}
+
+struct dlist *get_file_list(char *dir)
+{
+	struct dlist *list;
+	DIR *dp;
+	struct dirent *entry;
+	char *name;
+
+	if (!file_is_existed(dir) || !is_dir(dir))
+		return NULL;
+
+	list = dlist_create(NULL);
+
+	if ((dp = opendir(dir)) == NULL) {
+		return NULL;
+	}
+
+	while ((entry = readdir(dp)) != NULL) {
+		name = strdup(entry->d_name);
+		dlist_append(list, name);
+	}
+
+	closedir(dp);
+
+	return list;
 }

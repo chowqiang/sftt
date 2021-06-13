@@ -9,5 +9,7 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_PWD_RSP, pwd_resp_encode, pwd_resp_decode},
 	{PACKET_TYPE_CD_REQ, cd_req_encode, cd_req_decode},
 	{PACKET_TYPE_CD_RSP, cd_resp_encode, cd_resp_decode},
+	{PACKET_TYPE_LL_REQ, ll_req_encode, ll_req_decode},
+	{PACKET_TYPE_LL_RSP, ll_resp_encode, ll_resp_decode},
 	{-1, NULL, NULL},
 };

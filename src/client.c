@@ -18,6 +18,7 @@
 #include "config.h"
 #include "client.h"
 #include "encrypt.h"
+#include "file.h"
 #include "log.h"
 #include "net_trans.h"
 #include "validate.h"
@@ -66,19 +67,6 @@ void free_path_entry_list(struct path_entry_list *head) {
 		free(p);
 		p = q;
 	}
-}
-int is_dir(char *file_name) {
-	struct stat file_stat;
-	stat(file_name, &file_stat);	
-
-	return S_ISDIR(file_stat.st_mode);
-}
-
-int is_file(char *file_name) {
-	struct stat file_stat;
-	stat(file_name, &file_stat);	
-
-	return S_ISREG(file_stat.st_mode);
 }
 
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size) {
@@ -903,7 +891,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
 
-	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet(VALIDATE_REQ_PACKET_MIN_LEN);
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
 		return -1;
@@ -931,7 +919,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 
 	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
-	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
+	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
@@ -939,7 +927,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
 		return -1;
@@ -1033,12 +1021,94 @@ int show_options(char *host, char *user_name, char *password) {
 
 void sftt_client_ll_usage(void)
 {
-	printf("ll\n");
+	printf("Usage: ll [path]\n");
 }
 
 int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	printf("I'm %s handler of ll\n", __func__);
+	struct sftt_packet *req_packet, *resp_packet;
+	struct ll_req *req_info;
+	struct ll_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
+	struct dlist *fe_list;
+	struct file_entry *entry;
+	struct dlist_node *node;
+	char *path = NULL;
+	int i = 0;
+
+	if (argc > 1 || argc < 0) {
+		sftt_client_ll_usage();
+		return -1;
+	}
+	if (argc == 0)
+		path = client->pwd;
+	else
+		path = argv[0];
+
+	req_packet = malloc_sftt_packet(LL_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_LL_REQ;
+
+	req_info = mp_malloc(g_mp, sizeof(struct ll_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+	strncpy(req_info->path, path, DIR_PATH_MAX_LEN - 1);
+
+	// how to serialize and deserialize properly ???
+	req_packet->obj = req_info;
+	req_packet->block_size = LL_REQ_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	fe_list = dlist_create(free);
+	assert(fe_list != NULL);
+
+	resp_info = (struct ll_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+	while (resp_info->idx != -1) {
+		//assert(resp_info->nr == FILE_ENTRY_MAX_CNT);
+		for (i = 0; i < resp_info->nr; ++i) {
+			entry = mp_malloc(g_mp, sizeof(struct file_entry));
+			assert(entry != NULL);
+			dlist_append(fe_list, entry);
+		}
+
+		resp_info = (struct ll_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+	}
+
+	for (i = 0; i < resp_info->nr; ++i) {
+		entry = mp_malloc(g_mp, sizeof(struct file_entry));
+		assert(entry != NULL);
+		dlist_append(fe_list, entry);
+	}
+
+	dlist_for_each(fe_list, node) {
+		entry = (struct file_entry *)node->data;
+		printf("%s\t%s\n", entry->type == 1 ? "file" : "dir", entry->name);
+	}
+
+	return 0;
 }
 
 int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check)
@@ -1085,11 +1155,12 @@ int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_his_usage(void)
 {
+	printf("Usage: his\n");
 }
 
 void sftt_client_help_usage(void)
 {
-
+	printf("Usage: help\n");
 }
 
 int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
@@ -1103,7 +1174,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		sftt_client_cd_usage();
 		return -1;
 	}
-	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet(CD_REQ_PACKET_MIN_LEN);
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
 		return -1;
@@ -1118,7 +1189,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
-	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
+	req_packet->block_size = CD_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
@@ -1126,7 +1197,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet(CD_RESP_PACKET_MIN_LEN);
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
 		return -1;
@@ -1151,7 +1222,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_cd_usage(void)
 {
-	printf("Usage: cd path");
+	printf("Usage: cd path\n");
 }
 
 int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
@@ -1161,7 +1232,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct pwd_resp *resp_info;
 	struct sftt_client_v2 *client = obj;
 
-	req_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet(PWD_REQ_PACKET_MIN_LEN);
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
 		return -1;
@@ -1175,7 +1246,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
-	req_packet->block_size = VALIDATE_PACKET_MIN_LEN;
+	req_packet->block_size = PWD_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
@@ -1183,7 +1254,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(VALIDATE_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet(PWD_RESP_PACKET_MIN_LEN);
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
 		return -1;
@@ -1205,7 +1276,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_pwd_usage(void)
 {
-
+	printf("Usage: pwd\n");
 }
 
 int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
@@ -1215,17 +1286,16 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_get_usage(void)
 {
-
+	printf("Usage: get file|dir [file|dir]\n");
 }
 
 int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-
 }
 
 void sftt_client_put_usage(void)
 {
-
+	printf("Usage: put file|dir [file|dir]\n");
 }
 
 /* Read and execute commands until user inputs 'quit' command */
@@ -1276,11 +1346,14 @@ struct user_cmd *user_cmd_construct(void)
 void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
 {
 	char sub_path[DIR_PATH_MAX_LEN];
-	int ret = 0;
+	char *pos;
 
-	ret = get_right_most_path(client->pwd, sub_path);
-	if (ret == -1)
+	pos = basename(client->pwd);
+	if (pos == NULL)
 		strcpy(sub_path, "~");
+	else {
+		strncpy(sub_path, pos, DIR_PATH_MAX_LEN);
+	}
 
 	snprintf(prompt, len, "[%s@%s %s]$ ", client->uinfo->name,
 			client->host, sub_path);
