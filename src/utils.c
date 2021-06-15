@@ -200,3 +200,32 @@ int get_right_most_path(char *path, char *sub_path)
 
 	return 0;
 }
+
+int get_first_word(char *buf, char *word, int len)
+{
+	char *pos = NULL;
+	int blen = 0;
+
+	if (buf == NULL || word == NULL || len <= 0)
+		return -1;
+
+	blen = strlen(buf);
+	if (blen == 0)
+		return -1;
+
+	if ((pos = index(buf, ' ')) == NULL) {
+		if (blen < len)
+			return -1;
+
+		strcpy(word, buf);
+
+		return 0;
+	}
+
+	if ((pos - buf) > len)
+		return -1;
+
+	strncpy(word, buf, buf - pos);
+
+	return 0;
+}

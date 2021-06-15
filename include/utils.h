@@ -24,4 +24,6 @@ void simplify_path(char *path);
 
 int get_right_most_path(char *path, char *sub_path);
 
+int get_first_word(char *buf, char *word, int len);
+
 #endif

@@ -816,19 +816,28 @@ void add_cmd_log(struct user_cmd *cmd)
 void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag) {
 	add_log(LOG_INFO, "input command: %s", buf);
 	int i = 0;
-	struct user_cmd *cmd = parse_command(buf);
+	bool found = false;
+	struct user_cmd *cmd = NULL;
+
+	cmd = parse_command(buf);
 	if (!cmd) {
-		printf("your input cannot be recognized!\n");
+		printf("sftt client: cannot find command: %s\n"
+			"please input 'help' to get the usage.\n", buf);
 		return ;
 	}
 
 	add_cmd_log(cmd);
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
+			found = true;
 			run_command(client, &sftt_client_cmds[i], cmd->argc, cmd->argv);
 			break;
 		}
 	}
+
+	if (!found)
+		printf("sftt client: cannot find command: %s\n"
+			"please input 'help' to get the usage.\n", cmd->name);
 }
 
 bool parse_user_name(char *optarg, char *user_name, int max_len) {
@@ -1141,6 +1150,7 @@ int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		printf("\t%s\t\t%s\n", sftt_client_cmds[i].name, sftt_client_cmds[i].help);
 	}
+	printf("\t%s\t\t%s\n", "quit", "quit this session");
 
 	return 0;
 }
