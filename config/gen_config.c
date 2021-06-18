@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HEAD_ENCRYPT_H_
-#define _HEAD_ENCRYPT_H_
+#include <stdio.h>
 
-char *  sftt_encrypt_func(char * source, int size );
-char *  sftt_decrypt_func(char * aim , int size);
+int main(int argc, char *argv[])
+{
 
-#endif
+	return 0;
+}
