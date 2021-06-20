@@ -31,6 +31,7 @@
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <time.h>
+#include "autoconf.h"
 #include "base.h"
 #include "config.h"
 #include "debug.h"
@@ -426,7 +427,8 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
 	gen_session_id(client->session_id, SESSION_ID_LEN);
 	strncpy(resp_info->session_id, client->session_id, SESSION_ID_LEN);
-#if 0
+
+#if CONFIG_DEBUG
 	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
 		resp_info->name, resp_info->uid, resp_info->status,
 		resp_info->session_id);
@@ -434,7 +436,7 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 
 	resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
 	resp_packet->obj = resp_info;
-#if 0
+#if CONFIG_DEBUG
 	printf("name: %s, uid: %d, status: %d, session_id: %s\n",
 		resp_info->name, resp_info->uid, resp_info->status,
 		resp_info->session_id);
@@ -502,7 +504,7 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
 	assert(resp_info != NULL);
 
-#if 0
+#if CONFIG_DEBUG
 	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
 			client->pwd, req_info->path);
 #endif
@@ -549,7 +551,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	resp_info = mp_malloc(g_mp, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
 
-#if 0
+#if CONFIG_DEBUG
 	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
 			client->pwd, req_info->path);
 #endif

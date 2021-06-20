@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include "autoconf.h"
 
 #define DEBUG_DEBUG			0x0000
 #define	DEBUG_INFO			0x1001
@@ -77,7 +78,7 @@ static inline void print_nch(char ch, int num) {
 			##__VA_ARGS__);						\
 	}
 
-#if defined(DEBUG_ENABLE)
+#if defined(CONFIG_DEBUG)
 	#define DEBUG(Expression)	\
 		do {					\
 			debug_print Expression \

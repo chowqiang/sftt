@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include "autoconf.h"
 #include "client.h"
 #include "cmdline.h"
 #include "log.h"
@@ -98,7 +99,7 @@ input_passwd:
 		}
 	}
 
-#ifdef DEBUG_ENABLE
+#ifdef CONFIG_DEBUG
 	show_options(host, user_name, password);
 #endif
 

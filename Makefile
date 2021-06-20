@@ -1,5 +1,5 @@
 CC=gcc
-CFLAG=-g -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3 -DDEBUG_ENABLE
+CFLAG=-g -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
 
 ROOT_DIR=$(shell pwd)
 OBJS_DIR=$(ROOT_DIR)/src
