@@ -24,6 +24,8 @@
 
 struct mem_pool *g_mp = NULL;
 
+static LIST_HEAD(mem_nodes);
+
 static void __attribute__((constructor)) mem_pool_init(void)
 {
 	get_singleton_mp();	
@@ -53,6 +55,8 @@ struct mem_node *mem_node_create(size_t size) {
 	p->is_using = 0;
 	p->used_cnt = 0;
 
+	INIT_LIST_HEAD(&p->list);
+
 	return p;
 }
 
@@ -71,8 +75,7 @@ struct mem_pool *mp_create(void) {
 	if (mp == NULL) {
 		return NULL;
 	}
-	mp->list = dlist_create(mem_node_free);
-	assert(mp->list != NULL);
+	mp->nodes = NULL;
 
 	mp->mutex = new(pthread_mutex);
 	assert(mp->mutex != NULL);
@@ -82,18 +85,17 @@ struct mem_pool *mp_create(void) {
 
 void *mp_malloc(struct mem_pool *mp, size_t n)
 {
-	if (mp == NULL || mp->list == NULL || n == 0) {
+	if (mp == NULL || n == 0) {
 		return NULL;
 	}
 
 	struct mem_node *m_node = NULL, *p = NULL;
-	struct dlist_node *l_node = NULL;
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_malloc failed: cannot lock mem pool. ");
 		return NULL;
 	}
-	dlist_for_each(mp->list, l_node) {
-		p = (struct mem_node *)l_node->data;
+
+	list_for_each_entry(p, &mem_nodes, list) {
 		if (p->is_using || p->size < n) {
 			continue;
 		}
@@ -111,7 +113,11 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 		if (m_node == NULL) {
 			return NULL;
 		}
-		dlist_append(mp->list, m_node);
+
+		if (list_empty(&mem_nodes))
+			mp->nodes = m_node;
+
+		list_add(&mem_nodes, &m_node->list);
 	}
 
 	m_node->is_using = 1;
@@ -125,8 +131,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 {
-	struct mem_node *m_node;
-	struct dlist_node *l_node;
+	struct mem_node *p = NULL;
 	bool found = false;
 	void *tmp;
 
@@ -134,9 +139,9 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 		perror("mp_realloc failed: cannot lock mem pool. ");
 		return NULL;
 	}
-	dlist_for_each(mp->list, l_node) {
-		m_node = (struct mem_node *)l_node->data;
-		if (m_node->address == addr) {
+
+	list_for_each_entry(p, &mem_nodes, list) {
+		if (p->address == addr) {
 			found = true;
 			break;
 		}
@@ -148,10 +153,10 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 	if (tmp == NULL)
 		return NULL;
 
-	if (n < m_node->size) {
+	if (n < p->size) {
 		memcpy(tmp, addr, n);
 	} else {
-		memcpy(tmp, addr, m_node->size);
+		memcpy(tmp, addr, p->size);
 	}
 
 	mp_free(mp, addr);
@@ -160,17 +165,15 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 }
 
 void mp_free(struct mem_pool *mp, void *p) {
-	if (mp == NULL || mp->list == NULL || p == NULL) {
+	if (mp == NULL || p == NULL) {
 		return ;
 	}
 	struct mem_node *m_node = NULL;
-	struct dlist_node *l_node = NULL;
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_free failed: cannot lock mem pool. ");
 		return ;
 	}
-	dlist_for_each(mp->list, l_node) {
-		m_node = (struct mem_node *)l_node->data;
+	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->address == p) {
 			m_node->is_using = 0;
 			m_node->used_cnt += 1;
@@ -181,27 +184,20 @@ void mp_free(struct mem_pool *mp, void *p) {
 }
 
 void mp_destroy(struct mem_pool *mp) {
-	if (mp == NULL || mp->list == NULL) {
+	if (mp == NULL) {
 		return ;
 	}
+
 	struct mem_node *m_node = NULL;
-	struct dlist_node *l_node = NULL;
-	dlist_for_each(mp->list, l_node) {
-		m_node = (struct mem_node *)l_node->data;
+	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->is_using) {
 			return ;
 		}
 	}
-
-	dlist_destroy(mp->list);
 }
 
 int mp_node_cnt(struct mem_pool *mp) {
-	if (mp == NULL || mp->list == NULL) {
-		return 0;
-	}
-
-	return dlist_size(mp->list);
+	return 0;
 }
 
 struct mem_pool *mem_pool_construct(void)
@@ -216,22 +212,19 @@ void mem_pool_destruct(struct mem_pool *ptr)
 
 bool mp_valid(struct mem_pool *mp)
 {
-	return mp && mp->list;
+	return mp && mp->nodes;
 }
 
 int mp_size(struct mem_pool *mp)
 {
-	if (mp == NULL || mp->list == NULL) {
+	if (mp == NULL) {
 		return 0;
 	}
 
 	int sum =0;
 	struct mem_node *m_node = NULL;
-	struct dlist_node *l_node = NULL;
-	dlist_for_each(mp->list, l_node) {
-		m_node = (struct mem_node *)l_node->data;
+	list_for_each_entry(m_node, &mem_nodes, list) {
 		sum += m_node->size;
-
 	}
 
 	return sum;

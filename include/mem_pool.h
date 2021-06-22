@@ -19,7 +19,7 @@
 
 #include <pthread.h>
 #include <stddef.h>
-#include "dlist.h"
+#include "list.h"
 #include "lock.h"
 
 struct mem_node {
@@ -27,10 +27,11 @@ struct mem_node {
 	int is_using;
 	void *address;
 	unsigned long long used_cnt;
+	struct list_head list;
 };
 
 struct mem_pool {
-	struct dlist *list;
+	struct mem_node *nodes;
 	struct pthread_mutex *mutex;
 };
 

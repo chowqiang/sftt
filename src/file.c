@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include "dlist.h"
 #include "file.h"
 #include "mem_pool.h"
 

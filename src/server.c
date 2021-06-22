@@ -629,6 +629,18 @@ send_resp_once:
 	return 0;
 }
 
+#ifdef CONFIG_GET_OVERLAP
+int handle_get_req()
+{
+
+}
+#else
+int handle_get_req()
+{
+
+}
+#endif
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
