@@ -21,11 +21,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "endpoint.h"
+#include "mem_pool.h"
 #include "net_trans.h"
 #include "user.h"
 #include "utils.h"
 
 #define PROG	"net_trans"
+
+extern struct mem_pool *g_mp;
 
 void help(void)
 {
@@ -56,7 +59,7 @@ int run_client(int port, char *user_name)
 	}
 	req_packet->type = PACKET_TYPE_VALIDATE_REQ;
 
-	req_info = malloc(sizeof(struct validate_req));
+	req_info = mp_malloc(g_mp, sizeof(struct validate_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->name, user_name, USER_NAME_MAX_LEN - 1);
@@ -120,7 +123,7 @@ int run_server(void)
 	resp_packet = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
 	assert(resp_packet != NULL);
 
-	resp_info = malloc(sizeof(struct validate_resp));
+	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
 
 	while (1) {

@@ -263,7 +263,7 @@ char dec_to_hex_char(int dec)
 
 char *md5_printable_str(unsigned char *digest) {
 	int i = 0;
-	char *str = malloc(sizeof(char) * (MD5_LEN * 2 + 1)) ;
+	char *str = mp_malloc(g_mp, sizeof(char) * (MD5_LEN * 2 + 1)) ;
 	if (!str) {
 		return str;
 	}

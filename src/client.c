@@ -812,7 +812,7 @@ static int run_command(struct sftt_client_v2 *client, const struct cmd_handler *
 void add_cmd_log(struct user_cmd *cmd)
 {
 	int i = 0, ret = 0;
-	char *buf = malloc(sizeof(char) * 1024);
+	char *buf = mp_malloc(g_mp, sizeof(char) * 1024);
 
 	if (cmd->argc == 0) {
 		ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
