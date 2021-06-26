@@ -573,7 +573,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 
 		goto send_resp_once;
 	} else if (is_dir(req_info->path)) {
-		file_list = get_file_list(req_info->path);
+		file_list = get_top_file_list(req_info->path);
 		if (file_list == NULL)
 			goto cannot_get_files;
 		printf("file count: %d\n", dlist_size(file_list));

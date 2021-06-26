@@ -24,6 +24,8 @@
 #include "file.h"
 #include "mem_pool.h"
 
+extern struct mem_pool *g_mp;
+
 size_t file_size(char *filename) {
 	FILE *pfile = fopen(filename, "rb");
 	if (pfile == NULL)
@@ -100,7 +102,72 @@ int is_file(char *file_name) {
 	return S_ISREG(file_stat.st_mode);
 }
 
-struct dlist *get_file_list(char *dir)
+char *path_join(char *dir, char *fname)
+{
+	char *path = NULL;
+	char *pos;
+
+	if (dir == NULL || fname == NULL)
+		return NULL;
+
+	path = mp_malloc(g_mp, strlen(dir) + strlen(fname) + 2);
+	if (path == NULL)
+		return NULL;
+
+	pos = stpcpy(path, dir);
+	pos = stpcpy(pos, "/");
+	stpcpy(pos, fname);
+
+	return path;
+}
+
+struct dlist *get_all_file_list(char *dir)
+{
+	struct dlist *list;
+	struct dlist *sub_list;
+	DIR *dp;
+	struct dirent *entry;
+	char *name;
+	char *rp;
+	static int count = 0;
+
+	if (!file_is_existed(dir) || !is_dir(dir))
+		return NULL;
+
+	list = dlist_create(NULL);
+
+	if ((dp = opendir(dir)) == NULL) {
+		return NULL;
+	}
+
+	while ((entry = readdir(dp)) != NULL) {
+		//printf("%s\n", entry->d_name);
+		if (strcmp(entry->d_name, ".") == 0 ||
+			strcmp(entry->d_name, "..") == 0)
+			continue;
+
+		rp = path_join(dir, entry->d_name);
+		dlist_append(list, rp);
+#if 0
+		count++;
+		if (count > 1000)
+			break;
+		printf("%s\n", rp);
+#endif
+
+		if (is_dir(rp)) {
+			sub_list = get_all_file_list(rp);
+			if (sub_list && !dlist_empty(sub_list))
+				dlist_merge(list, sub_list);
+		}
+	}
+
+	closedir(dp);
+
+	return list;
+}
+
+struct dlist *get_top_file_list(char *dir)
 {
 	struct dlist *list;
 	DIR *dp;

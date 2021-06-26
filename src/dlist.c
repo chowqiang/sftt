@@ -288,7 +288,7 @@ void dlist_show(struct dlist *list) {
 	printf(" )\n");
 }
 
-int dlist_is_empty(struct dlist *list) {
+int dlist_empty(struct dlist *list) {
 	if (list == NULL) {
 		return 1;
 	}
@@ -364,4 +364,23 @@ struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b
 	}
 
 	return node;
+}
+
+struct dlist *dlist_merge(struct dlist *list_a, struct dlist *list_b)
+{
+	if (list_a == NULL && list_b == NULL)
+		return NULL;
+
+	if (list_a == NULL || dlist_empty(list_a))
+		return list_b;
+
+	if (list_b == NULL || dlist_empty(list_b))
+		return list_a;
+
+	list_a->tail->next = list_b->head;
+	list_b->head->prev = list_a->tail;
+
+	list_a->tail = list_b->tail;
+
+	return list_a;
 }

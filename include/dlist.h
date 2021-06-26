@@ -75,13 +75,15 @@ void dlist_set_show(struct dlist *list, void (*show) (void *data));
 
 void dlist_show(struct dlist *list);
  
-int dlist_is_empty(struct dlist *list);
+int dlist_empty(struct dlist *list);
 
 void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc);
 
 struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b));
 
 struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b));
+
+struct dlist *dlist_merge(struct dlist *list_a, struct dlist *list_b);
 
 #define dlist_for_each(list, node) \
 	for (node = list->head; node != NULL; node = node->next)

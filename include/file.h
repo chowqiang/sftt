@@ -35,6 +35,8 @@ int is_dir(char *file_name);
 
 int is_file(char *file_name);
 
-struct dlist *get_file_list(char *dir);
+struct dlist *get_top_file_list(char *dir);
+
+struct dlist *get_all_file_list(char *dir);
 
 #endif

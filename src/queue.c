@@ -78,7 +78,7 @@ void queue_show(struct queue *q, void (*show)(void *data)) {
 }
 
 int queue_is_empty(struct queue *q) {
-	return q == NULL || q->list == NULL ? 0 : dlist_is_empty(q->list);
+	return q == NULL || q->list == NULL ? 0 : dlist_empty(q->list);
 }
 
 int queue_test(void) {

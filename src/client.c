@@ -1327,13 +1327,167 @@ void sftt_client_get_usage(void)
 	printf("Usage: get file|dir [file|dir]\n");
 }
 
+int send_trans_entry_by_put_req(struct sftt_client_v2 *client, struct put_req *req)
+{
+	struct sftt_packet *req_packet, *resp_packet;
+	struct put_resp *resp;
+
+	req_packet = malloc_sftt_packet(PUT_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_PUT_REQ;
+
+	// how to serialize and deserialize properly ???
+	req_packet->obj = req;
+	req_packet->block_size = PUT_REQ_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp = (struct put_resp *)resp_packet->obj;
+	if (resp == NULL || resp->status != RESP_OK) {
+		printf("%s: send trans entry failed!\n", __func__);
+		return -1;
+	}
+	//printf("pwd: %s\n", resp_info->pwd);
+
+	return 0;
+}
+
+int send_file_name_by_put_req(struct sftt_client_v2 *client, char *file, struct put_req *req)
+{
+	if (is_dir(file))
+		req->entry.type = FILE_TYPE_DIR;
+	else
+		req->entry.type = FILE_TYPE_FILE;
+
+	strncpy(req->entry.content, file, FILE_NAME_MAX_LEN);
+	req->entry.len = strlen(file);
+
+	return send_trans_entry_by_put_req(client, req);
+}
+
+int send_file_md5_by_put_req(struct sftt_client_v2 *client, char *file, struct put_req *req)
+{
+	int ret;
+
+	if (is_dir(file))
+		return 0;
+
+	req->entry.total_size = file_size(file);
+
+	ret = md5_file(file, req->entry.content);
+	if (ret == -1)
+		return -1;
+
+	req->entry.len = strlen(req->entry.content);
+
+	return send_trans_entry_by_put_req(client, req);
+}
+
+int send_file_content_by_put_req(struct sftt_client_v2 *client, struct put_req *req)
+{
+	return send_trans_entry_by_put_req(client, req);
+}
+
+int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, int idx)
+{
+	struct put_req *req;
+	int ret;
+	int len;
+	int i = 0;
+	FILE *fp;
+
+	req = (struct put_req *)mp_malloc(g_mp, sizeof(struct put_req));
+	if (req == NULL)
+		return -1;
+
+	strncpy(req->session_id, client->session_id, SESSION_ID_LEN);
+	req->nr = nr;
+	req->idx = idx;
+
+	if (is_dir(file))
+		return send_file_name_by_put_req(client, file, req);
+
+	ret = send_file_name_by_put_req(client, file, req);
+	if (ret == -1)
+		return -1;
+
+	ret = send_file_md5_by_put_req(client, file, req);
+	if (ret == -1)
+		return -1;
+
+	fp = fopen(file, "r");
+	if (fp == NULL)
+		return -1;
+
+	req->entry.idx = 0;
+	while (!feof(fp)) {
+		ret = fread(req->entry.content, CONTENT_BLOCK_SIZE, 1, fp);
+		if (ret <= 0)
+			break;
+
+		req->entry.len = ret;
+		ret = send_file_content_by_put_req(client, req);
+		if (ret == -1)
+			break;
+
+		req->entry.idx += 1;
+	}
+
+	if (!feof(fp))
+		ret = -1;
+
+	fclose(fp);
+
+	return ret;
+}
+
 int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
+	struct sftt_client_v2 *client = obj;
+	FILE *fp;
+	int i = 0;
+
+	if (argc != 1) {
+		sftt_client_put_usage();
+		return -1;
+	}
+
+	if (!is_file(argv[0]) || !is_dir(argv[0])) {
+		printf("cannot access: %s\n", argv[0]);
+		return -1;
+	}
+
+	if (is_file(argv[0])) {
+		send_one_file_by_put_req(client, argv[0], 1, 0);
+	} else {
+
+		printf("don't support dir transport now!\n");
+		return -1;
+	}
 }
 
 void sftt_client_put_usage(void)
 {
-	printf("Usage: put file|dir [file|dir]\n");
+	printf("Usage: put file|dir\n");
 }
 
 /* Read and execute commands until user inputs 'quit' command */

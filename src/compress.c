@@ -114,7 +114,7 @@ int get_min_freq_char(int *char_freq, char *visited) {
 }
 
 struct btree_node *fetch_min_btree_node(struct dlist *list) {
-	if (list == NULL || dlist_is_empty(list)) {
+	if (list == NULL || dlist_empty(list)) {
 		return NULL;
 	}
 
