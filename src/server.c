@@ -411,7 +411,7 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 		resp_info->status = UVS_INVALID;
 		resp_info->uid = -1;
 		printf("%s:%d, passwd not correct!\n", __func__, __LINE__);
-	} else if (!file_is_existed(user_base->home_dir)) {
+	} else if (!file_existed(user_base->home_dir)) {
 		resp_info->status = UVS_MISSHOME;
 		resp_info->uid = -1;
 		printf("%s:%d, user's home dir not found!\n", __func__, __LINE__);
@@ -560,7 +560,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	simplify_path(buf);
 	printf("ll %s ...\n", buf);
 
-	if (!file_is_existed(req_info->path)) {
+	if (!file_existed(req_info->path)) {
 		goto cannot_get_files;
 	}
 
@@ -630,16 +630,122 @@ send_resp_once:
 }
 
 #ifdef CONFIG_GET_OVERLAP
-int handle_get_req()
+int handle_get_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 
 }
 #else
-int handle_get_req()
+int handle_get_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 
 }
 #endif
+
+int handle_put_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	int total_size = 0;
+	struct put_req *req_info;
+	struct put_resp *resp_info;
+	char md5[MD5_STR_LEN];
+	char file[FILE_NAME_MAX_LEN];
+	char *rp;
+	FILE *fp;
+	int ret;
+
+	resp_info = (struct put_resp *)mp_malloc(g_mp, sizeof(struct put_resp));
+	assert(resp_info != NULL);
+
+	for (;;) {
+		req_info = (struct put_req *)req_packet->obj;
+		assert(req_info != NULL);
+
+		assert(req_info->entry.idx == 0);
+		rp = path_join(client->pwd, req_info->entry.content);
+		if (req_info->entry.type == FILE_TYPE_DIR) {
+			if (!file_existed(rp)) {
+				mkdir(rp, req_info->entry.mode);
+			}
+
+			/* send response */
+			resp_info->status = RESP_OK;
+			resp_packet->obj = resp_info;
+			resp_packet->type = PACKET_TYPE_PUT_RSP;
+
+			ret = send_sftt_packet(client->connect_fd, resp_packet);
+			if (ret == -1) {
+				printf("send put response failed!\n");
+				break;
+			}
+
+			if (req_info->idx == req_info->nr - 1)
+				break;
+		} else {
+			total_size = 0;
+			/* save file name */
+			strncpy(file, req_info->entry.content, FILE_NAME_MAX_LEN);
+			rp = path_join(client->pwd, file);
+
+			/* recv next packet */
+			ret = recv_sftt_packet(client->connect_fd, req_packet);
+			if (!(ret > 0)) {
+				printf("recv encountered unrecoverable error ...\n");
+				break;
+			}
+			req_info = req_packet->obj;
+
+			/* save md5 */
+			strncpy(md5, req_info->entry.content, MD5_STR_LEN);
+			if (same_file(rp, md5))
+			      goto recv_next_file;
+
+			fp = fopen(rp, "w");
+			if (fp == NULL) {
+				printf("create file failed: %s\n", rp);
+				break;
+			}
+
+			do {
+				ret = recv_sftt_packet(client->connect_fd, req_packet);
+				if (!(ret > 0)) {
+					printf("recv encountered unrecoverable error ...\n");
+					break;
+				}
+				req_info = req_packet->obj;
+
+				fwrite(req_info->entry.content, req_info->entry.len, 1, fp);
+
+				/* send response */
+				resp_info->status = RESP_OK;
+				resp_packet->obj = resp_info;
+				resp_packet->type = PACKET_TYPE_PUT_RSP;
+
+				ret = send_sftt_packet(client->connect_fd, resp_packet);
+				if (ret == -1) {
+					printf("send put response failed!\n");
+					break;
+				}
+
+				total_size += req_info->entry.len;
+			} while (total_size < req_info->entry.total_size);
+
+			fclose(fp);
+
+			if (total_size == req_info->entry.total_size) {
+				printf("received one file: %s\n", rp);
+			} else {
+				printf("receive file failed: %s\n", rp);
+				break;
+			}
+		}
+
+recv_next_file:
+		ret = recv_sftt_packet(client->connect_fd, req_packet);
+		if (!(ret > 0)) {
+			printf("recv encountered unrecoverable error ...\n");
+			break;
+		}
+	}
+}
 
 void *handle_client_session(void *args)
 {
@@ -716,6 +822,20 @@ void *handle_client_session(void *args)
 				goto exit;
 			}
 			handle_ll_req(client, req, resp);
+			break;
+		case PACKET_TYPE_PUT_REQ:
+			resp = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_put_req(client, req, resp);
+			break;
+		case PACKET_TYPE_GET_REQ:
+			resp = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_get_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);

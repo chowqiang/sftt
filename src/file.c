@@ -22,6 +22,7 @@
 #include <dirent.h>
 #include "dlist.h"
 #include "file.h"
+#include "md5.h"
 #include "mem_pool.h"
 
 extern struct mem_pool *g_mp;
@@ -80,7 +81,7 @@ size_t file_put_contents(char *path, unsigned char *text, size_t length) {
 	return cnt; 
 }
 
-bool file_is_existed(char *path)
+bool file_existed(char *path)
 {
 	if (path == NULL || strlen(path) == 0)
 		return false;
@@ -131,7 +132,7 @@ struct dlist *get_all_file_list(char *dir)
 	char *rp;
 	static int count = 0;
 
-	if (!file_is_existed(dir) || !is_dir(dir))
+	if (!file_existed(dir) || !is_dir(dir))
 		return NULL;
 
 	list = dlist_create(NULL);
@@ -174,7 +175,7 @@ struct dlist *get_top_file_list(char *dir)
 	struct dirent *entry;
 	char *name;
 
-	if (!file_is_existed(dir) || !is_dir(dir))
+	if (!file_existed(dir) || !is_dir(dir))
 		return NULL;
 
 	list = dlist_create(NULL);
@@ -191,4 +192,16 @@ struct dlist *get_top_file_list(char *dir)
 	closedir(dp);
 
 	return list;
+}
+
+bool same_file(char *path, char *md5)
+{
+	char real_md5[MD5_STR_LEN];
+
+	if (!file_existed(path))
+		return false;
+
+	md5_file(path, real_md5);
+
+	return strcmp(real_md5, md5) == 0;
 }

@@ -33,7 +33,7 @@ char *search_config(char *fname)
 
 	for (i = 0; config_search_pathes[i] != NULL; ++i) {
 		snprintf(tmp, 255, "%s/%s", config_search_pathes[i], fname);
-		if (file_is_existed(tmp))
+		if (file_existed(tmp))
 			return strdup(tmp);
 	}
 

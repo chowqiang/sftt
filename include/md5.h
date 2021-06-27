@@ -21,6 +21,8 @@
 
 #define MD5_LEN	16
 
+#define MD5_STR_LEN	(MD5_LEN * 2 + 1)
+
 typedef struct {  
     unsigned int count[2];  
     unsigned int state[4];  

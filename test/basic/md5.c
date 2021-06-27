@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	char md5[33];
 	//char *md5_print;
 
-	if (file_is_existed(argv[1])) {
+	if (file_existed(argv[1])) {
 		printf("md5 file: %s\n", argv[1]);
 		md5_file(argv[1], md5);	
 	} else {

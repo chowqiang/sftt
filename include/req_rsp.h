@@ -57,6 +57,7 @@ typedef struct ll_req ll_req;
 
 struct file_entry {
 	char name[FILE_NAME_MAX_LEN];
+	u_long mode;
 	int type;
 	int size;
 	int c_time;
@@ -95,6 +96,7 @@ struct trans_entry {
 	int total_size;
 	int idx;
 	int len;
+	u_long mode;
 	u_char content[CONTENT_BLOCK_SIZE];
 };
 typedef struct trans_entry trans_entry;

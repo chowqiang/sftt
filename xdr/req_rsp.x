@@ -37,6 +37,7 @@ struct ll_req {
 
 struct file_entry {
 	char name[FILE_NAME_MAX_LEN];
+	unsigned long mode;
 	int type;
 	int size;
 	int c_time;
@@ -70,6 +71,7 @@ struct trans_entry {
 	int total_size;
 	int idx;
 	int len;
+	unsigned long mode;
 	unsigned char content[CONTENT_BLOCK_SIZE];
 };
 

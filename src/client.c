@@ -1410,10 +1410,18 @@ int send_file_content_by_put_req(struct sftt_client_v2 *client, struct put_req *
 int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, int idx)
 {
 	struct put_req *req;
+	struct put_resp *resp;
+	struct sftt_packet *resp_packet;
 	int ret;
 	int len;
 	int i = 0;
 	FILE *fp;
+
+	resp_packet = (struct sftt_packet *)mp_malloc(g_mp, sizeof(struct sftt_packet));
+	if (resp_packet == NULL) {
+		printf("malloc sftt packet failed!\n");
+		return -1;
+	}
 
 	req = (struct put_req *)mp_malloc(g_mp, sizeof(struct put_req));
 	if (req == NULL)
@@ -1422,6 +1430,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, 
 	strncpy(req->session_id, client->session_id, SESSION_ID_LEN);
 	req->nr = nr;
 	req->idx = idx;
+	req->entry.idx = 0;
 
 	if (is_dir(file))
 		return send_file_name_by_put_req(client, file, req);
@@ -1429,16 +1438,17 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, 
 	ret = send_file_name_by_put_req(client, file, req);
 	if (ret == -1)
 		return -1;
+	req->entry.idx += 1;
 
 	ret = send_file_md5_by_put_req(client, file, req);
 	if (ret == -1)
 		return -1;
+	req->entry.idx += 1;
 
 	fp = fopen(file, "r");
 	if (fp == NULL)
 		return -1;
 
-	req->entry.idx = 0;
 	while (!feof(fp)) {
 		ret = fread(req->entry.content, CONTENT_BLOCK_SIZE, 1, fp);
 		if (ret <= 0)
@@ -1448,6 +1458,18 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, 
 		ret = send_file_content_by_put_req(client, req);
 		if (ret == -1)
 			break;
+
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			break;
+		}
+
+		resp = resp_packet->obj;
+		if (resp->status != RESP_OK) {
+			printf("recv response failed!\n");
+			break;
+		}
 
 		req->entry.idx += 1;
 	}
@@ -1465,6 +1487,9 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct sftt_client_v2 *client = obj;
 	FILE *fp;
 	int i = 0;
+	struct dlist *file_list;
+	struct dlist_node *node;
+	int file_count;
 
 	if (argc != 1) {
 		sftt_client_put_usage();
@@ -1479,10 +1504,18 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	if (is_file(argv[0])) {
 		send_one_file_by_put_req(client, argv[0], 1, 0);
 	} else {
-
-		printf("don't support dir transport now!\n");
-		return -1;
+		file_list = get_all_file_list(argv[0]);
+		file_count = dlist_size(file_list);
+		dlist_for_each(file_list, node) {
+			if (send_one_file_by_put_req(client,
+				node->data, file_count, i) == -1) {
+				printf("send file failed: %s\n", node->data);
+			}
+		}
+		++i;
 	}
+
+	return 0;
 }
 
 void sftt_client_put_usage(void)

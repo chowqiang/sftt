@@ -98,8 +98,10 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 		 if (!xdr_vector (xdrs, (char *)objp->name, FILE_NAME_MAX_LEN,
 			sizeof (char), (xdrproc_t) xdr_char))
 			 return FALSE;
-		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 6 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->mode))
+				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->type))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->size))
@@ -111,6 +113,7 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 			 if (!xdr_int (xdrs, &objp->m_time))
 				 return FALSE;
 		} else {
+			IXDR_PUT_U_LONG(buf, objp->mode);
 			IXDR_PUT_LONG(buf, objp->type);
 			IXDR_PUT_LONG(buf, objp->size);
 			IXDR_PUT_LONG(buf, objp->c_time);
@@ -122,8 +125,10 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 		 if (!xdr_vector (xdrs, (char *)objp->name, FILE_NAME_MAX_LEN,
 			sizeof (char), (xdrproc_t) xdr_char))
 			 return FALSE;
-		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 6 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->mode))
+				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->type))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->size))
@@ -135,6 +140,7 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 			 if (!xdr_int (xdrs, &objp->m_time))
 				 return FALSE;
 		} else {
+			objp->mode = IXDR_GET_U_LONG(buf);
 			objp->type = IXDR_GET_LONG(buf);
 			objp->size = IXDR_GET_LONG(buf);
 			objp->c_time = IXDR_GET_LONG(buf);
@@ -146,6 +152,8 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 
 	 if (!xdr_vector (xdrs, (char *)objp->name, FILE_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->mode))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->type))
 		 return FALSE;
@@ -228,7 +236,7 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 	int i;
 
 	if (xdrs->x_op == XDR_ENCODE) {
-		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->type))
 				 return FALSE;
@@ -237,6 +245,8 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 			 if (!xdr_int (xdrs, &objp->idx))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->len))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mode))
 				 return FALSE;
 
 		} else {
@@ -244,13 +254,14 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 		IXDR_PUT_LONG(buf, objp->total_size);
 		IXDR_PUT_LONG(buf, objp->idx);
 		IXDR_PUT_LONG(buf, objp->len);
+		IXDR_PUT_U_LONG(buf, objp->mode);
 		}
 		 if (!xdr_vector (xdrs, (char *)objp->content, CONTENT_BLOCK_SIZE,
 			sizeof (u_char), (xdrproc_t) xdr_u_char))
 			 return FALSE;
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
-		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->type))
 				 return FALSE;
@@ -260,12 +271,15 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->len))
 				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mode))
+				 return FALSE;
 
 		} else {
 		objp->type = IXDR_GET_LONG(buf);
 		objp->total_size = IXDR_GET_LONG(buf);
 		objp->idx = IXDR_GET_LONG(buf);
 		objp->len = IXDR_GET_LONG(buf);
+		objp->mode = IXDR_GET_U_LONG(buf);
 		}
 		 if (!xdr_vector (xdrs, (char *)objp->content, CONTENT_BLOCK_SIZE,
 			sizeof (u_char), (xdrproc_t) xdr_u_char))
@@ -280,6 +294,8 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 	 if (!xdr_int (xdrs, &objp->idx))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->len))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->mode))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->content, CONTENT_BLOCK_SIZE,
 		sizeof (u_char), (xdrproc_t) xdr_u_char))

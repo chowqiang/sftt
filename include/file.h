@@ -29,14 +29,18 @@ unsigned char *file_get_contents(char *path, size_t *length);
 
 size_t file_put_contents(char *path, unsigned char *text, size_t length); 
 
-bool file_is_existed(char *path);
+bool file_existed(char *path);
 
 int is_dir(char *file_name);
 
 int is_file(char *file_name);
 
+char *path_join(char *dir, char *fname);
+
 struct dlist *get_top_file_list(char *dir);
 
 struct dlist *get_all_file_list(char *dir);
+
+bool same_file(char *path, char *md5);
 
 #endif
