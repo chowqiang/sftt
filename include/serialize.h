@@ -55,4 +55,8 @@ bool put_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool put_resp_decode(unsigned char *buf, int len, void **req);
 
+bool common_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool common_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

@@ -91,3 +91,7 @@ struct put_req {
 struct put_resp {
 	int status;
 };
+
+struct common_resp {
+	int status;
+};

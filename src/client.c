@@ -1319,7 +1319,151 @@ void sftt_client_pwd_usage(void)
 
 int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
+	struct sftt_packet *req_packet;
+	struct sftt_packet *resp_packet;
+	struct get_req *req;
+	struct get_resp *resp;
+	struct sftt_client_v2 *client = obj;
+	char file[FILE_NAME_MAX_LEN];
+	char md5[MD5_STR_LEN];
+	int total_size;
+	struct common_resp *com_resp;
+	char *rp;
+	FILE *fp;
+	int ret;
 
+	if (argc != 3) {
+		sftt_client_get_usage();
+		return -1;
+	}
+
+	req_packet = mp_malloc(g_mp, sizeof(struct sftt_packet));
+	if (req_packet == NULL) {
+		printf("%s: malloc sftt paceket failed!\n");
+		return -1;
+	}
+
+	resp_packet = mp_malloc(g_mp, sizeof(struct sftt_packet));
+	if (resp_packet == NULL) {
+		printf("%s: malloc sftt paceket failed!\n");
+		return -1;
+	}
+
+	req = mp_malloc(g_mp, sizeof(struct get_req));
+	if (req == NULL) {
+		printf("%s: malloc get req failed!\n");
+		return -1;
+	}
+
+	com_resp = mp_malloc(g_mp, sizeof(struct common_resp));
+	if (com_resp == NULL) {
+		printf("%s: malloc common resp failed!\n");
+		return -1;
+	}
+
+	/* send get req */
+	strncpy(req->session_id, client->session_id, SESSION_ID_LEN);
+	strncpy(req->path, argv[1], FILE_NAME_MAX_LEN);
+	req_packet->obj = req;
+
+	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	/* recv file name */
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+	resp = resp_packet->obj;
+	if (!(resp->nr > 0)) {
+		printf("%s: target file not exist\n", __func__);
+		return -1;
+	}
+
+	do {
+		total_size = 0;
+
+		strncpy(file, resp->entry.content, FILE_NAME_MAX_LEN);
+		rp = path_join(argv[2], file);
+
+		if (resp->entry.type == FILE_TYPE_DIR) {
+			if (!file_existed(rp))
+				mkdir(rp, resp->entry.mode);
+
+			com_resp->status = RESP_OK;
+			resp_packet->obj = com_resp;
+			ret = send_sftt_packet(client->conn_ctrl.sock, resp_packet);
+			if (ret == -1) {
+				printf("%s: send sftt packet failed!\n", __func__);
+				break;
+			}
+		} else {
+			/* recv md5 */
+			ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+			if (ret == -1) {
+				printf("%s: recv sftt packet failed!\n", __func__);
+				break;
+			}
+			resp = resp_packet->obj;
+			strncpy(md5, resp->entry.content, MD5_STR_LEN);
+			if (same_file(rp, md5)) {
+				goto recv_next_file;
+			}
+
+			fp = fopen(rp, "w");
+			if (fp == NULL) {
+				printf("%s: open file for write failed!\n", __func__);
+				break;
+			}
+
+			/* recv content */
+			ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+			if (ret == -1) {
+				printf("%s: recv sftt packet failed!\n", __func__);
+				break;
+			}
+			resp = resp_packet->obj;
+
+			do {
+				fwrite(resp->entry.content, resp->entry.len, 1, fp);
+
+				/* send resp */
+				com_resp->status = RESP_OK;
+				resp_packet->obj = com_resp;
+				ret = send_sftt_packet(client->conn_ctrl.sock, resp_packet);
+				if (ret == -1) {
+					printf("%s: send resp failed!\n", __func__);
+					break;
+				}
+
+				total_size += resp->entry.len;
+
+				/* recv content */
+				ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+				if (ret == -1) {
+					printf("%s: recv sftt packet failed!\n", __func__);
+					break;
+				}
+				resp = resp_packet->obj;
+
+			} while (total_size < resp->entry.total_size);
+
+			if (total_size < resp->entry.total_size) {
+				printf("%s: recv one file failed: %s\n", __func__, rp);
+				break;
+			}
+		}
+recv_next_file:
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			break;
+		}
+	} while (resp->idx < resp->nr - 1);
 }
 
 void sftt_client_get_usage(void)

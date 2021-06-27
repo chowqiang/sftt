@@ -344,3 +344,13 @@ xdr_put_resp (XDR *xdrs, put_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_common_resp (XDR *xdrs, common_resp *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->status))
+		 return FALSE;
+	return TRUE;
+}

@@ -121,6 +121,11 @@ struct put_resp {
 };
 typedef struct put_resp put_resp;
 
+struct common_resp {
+	int status;
+};
+typedef struct common_resp common_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -138,6 +143,7 @@ extern  bool_t xdr_trans_entry (XDR *, trans_entry*);
 extern  bool_t xdr_get_resp (XDR *, get_resp*);
 extern  bool_t xdr_put_req (XDR *, put_req*);
 extern  bool_t xdr_put_resp (XDR *, put_resp*);
+extern  bool_t xdr_common_resp (XDR *, common_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -154,6 +160,7 @@ extern bool_t xdr_trans_entry ();
 extern bool_t xdr_get_resp ();
 extern bool_t xdr_put_req ();
 extern bool_t xdr_put_resp ();
+extern bool_t xdr_common_resp ();
 
 #endif /* K&R C */
 
