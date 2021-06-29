@@ -1332,18 +1332,18 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	FILE *fp;
 	int ret;
 
-	if (argc != 3) {
+	if (argc != 2) {
 		sftt_client_get_usage();
 		return -1;
 	}
 
-	req_packet = mp_malloc(g_mp, sizeof(struct sftt_packet));
+	req_packet = malloc_sftt_packet(GET_REQ_PACKET_MIN_LEN);
 	if (req_packet == NULL) {
 		printf("%s: malloc sftt paceket failed!\n");
 		return -1;
 	}
 
-	resp_packet = mp_malloc(g_mp, sizeof(struct sftt_packet));
+	resp_packet = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
 	if (resp_packet == NULL) {
 		printf("%s: malloc sftt paceket failed!\n");
 		return -1;
@@ -1561,7 +1561,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, 
 	int i = 0;
 	FILE *fp;
 
-	resp_packet = (struct sftt_packet *)mp_malloc(g_mp, sizeof(struct sftt_packet));
+	resp_packet = (struct sftt_packet *)malloc_sftt_packet(PUT_REQ_PACKET_MIN_LEN);
 	if (resp_packet == NULL) {
 		printf("malloc sftt packet failed!\n");
 		return -1;

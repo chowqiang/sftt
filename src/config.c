@@ -24,7 +24,7 @@
 #include "req_rsp.h"
 #include "utils.h"
 
-char *config_search_pathes[] = {"/etc/sftt", "./conf", ".", NULL};
+char *config_search_pathes[] = {"/etc/sftt", "./config", ".", NULL};
 
 char *search_config(char *fname)
 {
@@ -171,7 +171,7 @@ int get_sftt_server_config(struct sftt_server_config *ssc) {
 */
 	char *server_config_path;
 	if ((server_config_path	= search_config("sftt_server.conf")) == NULL) {
-		printf("cannot find client config file!");
+		printf("cannot find server config file!\n");
 		return -1;
 	}
 
@@ -290,7 +290,7 @@ int get_sftt_client_config(struct sftt_client_config *scc) {
 */
 	char *client_config_path;
 	if ((client_config_path	= search_config("sftt_client.conf")) == NULL) {
-		printf("cannot find client config file!");
+		printf("cannot find client config file!\n");
 		return -1;
 	}
 
