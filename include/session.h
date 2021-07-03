@@ -53,6 +53,7 @@ enum resp_status {
 	SERVER_EXCEPTION,
 	RESP_OK,
 	CANNOT_CD,
+	CONTINUE,
 };
 
 struct client_session {

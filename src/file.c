@@ -387,6 +387,8 @@ struct dlist *__get_path_entry_list(struct path_entry *root)
 
 	list = dlist_create(NULL);
 
+	dlist_append(list, root);
+
 	while ((item = readdir(dp)) != NULL) {
 		//printf("%s\n", item->d_name);
 		if (strcmp(item->d_name, ".") == 0 ||

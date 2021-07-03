@@ -16,13 +16,28 @@
 
 #include "req_rsp.h"
 
-#define SET_PACKET_MIN_LEN(type, ltype) \
-	int type##_REQ_PACKET_MIN_LEN = (sizeof(struct ltype##_req) * 10); \
+#define SET_REQ_PACKET_MIN_LEN(type, ltype) \
+	int type##_REQ_PACKET_MIN_LEN = (sizeof(struct ltype##_req) * 10);
+
+#define SET_RESP_PACKET_MIN_LEN(type, ltype) \
 	int type##_RESP_PACKET_MIN_LEN = (sizeof(struct ltype##_resp) * 10);
 
-SET_PACKET_MIN_LEN(VALIDATE, validate)
-SET_PACKET_MIN_LEN(PWD, pwd)
-SET_PACKET_MIN_LEN(CD, cd)
-SET_PACKET_MIN_LEN(LL, ll)
-SET_PACKET_MIN_LEN(PUT, put)
-SET_PACKET_MIN_LEN(GET, get)
+SET_REQ_PACKET_MIN_LEN(VALIDATE, validate)
+SET_RESP_PACKET_MIN_LEN(VALIDATE, validate)
+
+SET_REQ_PACKET_MIN_LEN(PWD, pwd)
+SET_RESP_PACKET_MIN_LEN(PWD, pwd)
+
+SET_REQ_PACKET_MIN_LEN(CD, cd)
+SET_RESP_PACKET_MIN_LEN(CD, cd)
+
+SET_REQ_PACKET_MIN_LEN(LL, ll)
+SET_RESP_PACKET_MIN_LEN(LL, ll)
+
+SET_REQ_PACKET_MIN_LEN(PUT, put)
+SET_RESP_PACKET_MIN_LEN(PUT, put)
+
+SET_REQ_PACKET_MIN_LEN(GET, get)
+SET_RESP_PACKET_MIN_LEN(GET, get)
+
+SET_RESP_PACKET_MIN_LEN(COMMON, common)

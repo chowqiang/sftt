@@ -22,16 +22,16 @@ extern "C" {
 #define CONTENT_BLOCK_SIZE 4096
 
 struct validate_req {
-	int name_len;
-	int passwd_len;
+	long name_len;
+	long passwd_len;
 	char name[USER_NAME_MAX_LEN];
 	char passwd_md5[PASSWD_MD5_LEN];
 };
 typedef struct validate_req validate_req;
 
 struct validate_resp {
-	int status;
-	int uid;
+	long status;
+	long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
@@ -44,7 +44,7 @@ struct pwd_req {
 typedef struct pwd_req pwd_req;
 
 struct pwd_resp {
-	int status;
+	long status;
 	char pwd[DIR_PATH_MAX_LEN];
 };
 typedef struct pwd_resp pwd_resp;
@@ -58,18 +58,18 @@ typedef struct ll_req ll_req;
 struct file_entry {
 	char name[FILE_NAME_MAX_LEN];
 	u_long mode;
-	int type;
-	int size;
-	int c_time;
-	int a_time;
-	int m_time;
+	long type;
+	long size;
+	long c_time;
+	long a_time;
+	long m_time;
 };
 typedef struct file_entry file_entry;
 
 struct ll_resp {
-	int nr;
+	long nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
-	int idx;
+	long idx;
 };
 typedef struct ll_resp ll_resp;
 
@@ -80,7 +80,7 @@ struct cd_req {
 typedef struct cd_req cd_req;
 
 struct cd_resp {
-	int status;
+	long status;
 	char pwd[DIR_PATH_MAX_LEN];
 };
 typedef struct cd_resp cd_resp;
@@ -92,37 +92,37 @@ struct get_req {
 typedef struct get_req get_req;
 
 struct trans_entry {
-	int type;
-	int total_size;
-	int idx;
-	int len;
+	long type;
+	long total_size;
+	long idx;
+	long len;
 	u_long mode;
 	u_char content[CONTENT_BLOCK_SIZE];
 };
 typedef struct trans_entry trans_entry;
 
 struct get_resp {
-	int nr;
-	int idx;
+	long nr;
+	long idx;
 	struct trans_entry entry;
 };
 typedef struct get_resp get_resp;
 
 struct put_req {
 	char session_id[SESSION_ID_LEN];
-	int nr;
-	int idx;
+	long nr;
+	long idx;
 	struct trans_entry entry;
 };
 typedef struct put_req put_req;
 
 struct put_resp {
-	int status;
+	long status;
 };
 typedef struct put_resp put_resp;
 
 struct common_resp {
-	int status;
+	long status;
 };
 typedef struct common_resp common_resp;
 

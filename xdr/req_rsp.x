@@ -7,15 +7,15 @@ const FILE_ENTRY_MAX_CNT = 16;
 const CONTENT_BLOCK_SIZE = 4096;
 
 struct validate_req {
-	int name_len;
-	int passwd_len;
+	long name_len;
+	long passwd_len;
 	char name[USER_NAME_MAX_LEN];
 	char passwd_md5[PASSWD_MD5_LEN];
 };
 
 struct validate_resp {
-	int status;
-	int uid;
+	long status;
+	long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
@@ -26,7 +26,7 @@ struct pwd_req {
 };
 
 struct pwd_resp {
-	int status;
+	long status;
 	char pwd[DIR_PATH_MAX_LEN];
 };
 
@@ -38,17 +38,17 @@ struct ll_req {
 struct file_entry {
 	char name[FILE_NAME_MAX_LEN];
 	unsigned long mode;
-	int type;
-	int size;
-	int c_time;
-	int a_time;
-	int m_time;
+	long type;
+	long size;
+	long c_time;
+	long a_time;
+	long m_time;
 };
 
 struct ll_resp {
-	int nr;
+	long nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
-	int idx;
+	long idx;
 };
 
 struct cd_req {
@@ -57,7 +57,7 @@ struct cd_req {
 };
 
 struct cd_resp {
-	int status;
+	long status;
 	char pwd[DIR_PATH_MAX_LEN];
 };
 
@@ -67,31 +67,31 @@ struct get_req {
 };
 
 struct trans_entry {
-	int type;
-	int total_size;
-	int idx;
-	int len;
+	long type;
+	long total_size;
+	long idx;
+	long len;
 	unsigned long mode;
 	unsigned char content[CONTENT_BLOCK_SIZE];
 };
 
 struct get_resp {
-	int nr;
-	int idx;
+	long nr;
+	long idx;
 	struct trans_entry entry;
 };
 
 struct put_req {
 	char session_id[SESSION_ID_LEN];
-	int nr;
-	int idx;
+	long nr;
+	long idx;
 	struct trans_entry entry;
 };
 
 struct put_resp {
-	int status;
+	long status;
 };
 
 struct common_resp {
-	int status;
+	long status;
 };

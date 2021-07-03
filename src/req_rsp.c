@@ -11,9 +11,9 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->name_len))
+	 if (!xdr_long (xdrs, &objp->name_len))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->passwd_len))
+	 if (!xdr_long (xdrs, &objp->passwd_len))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -30,9 +30,9 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->status))
+	 if (!xdr_long (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->uid))
+	 if (!xdr_long (xdrs, &objp->uid))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -64,7 +64,7 @@ xdr_pwd_resp (XDR *xdrs, pwd_resp *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->status))
+	 if (!xdr_long (xdrs, &objp->status))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -102,15 +102,15 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 		if (buf == NULL) {
 			 if (!xdr_u_long (xdrs, &objp->mode))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->type))
+			 if (!xdr_long (xdrs, &objp->type))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->size))
+			 if (!xdr_long (xdrs, &objp->size))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->c_time))
+			 if (!xdr_long (xdrs, &objp->c_time))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->a_time))
+			 if (!xdr_long (xdrs, &objp->a_time))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->m_time))
+			 if (!xdr_long (xdrs, &objp->m_time))
 				 return FALSE;
 		} else {
 			IXDR_PUT_U_LONG(buf, objp->mode);
@@ -129,15 +129,15 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 		if (buf == NULL) {
 			 if (!xdr_u_long (xdrs, &objp->mode))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->type))
+			 if (!xdr_long (xdrs, &objp->type))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->size))
+			 if (!xdr_long (xdrs, &objp->size))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->c_time))
+			 if (!xdr_long (xdrs, &objp->c_time))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->a_time))
+			 if (!xdr_long (xdrs, &objp->a_time))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->m_time))
+			 if (!xdr_long (xdrs, &objp->m_time))
 				 return FALSE;
 		} else {
 			objp->mode = IXDR_GET_U_LONG(buf);
@@ -155,15 +155,15 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 		 return FALSE;
 	 if (!xdr_u_long (xdrs, &objp->mode))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->type))
+	 if (!xdr_long (xdrs, &objp->type))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->size))
+	 if (!xdr_long (xdrs, &objp->size))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->c_time))
+	 if (!xdr_long (xdrs, &objp->c_time))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->a_time))
+	 if (!xdr_long (xdrs, &objp->a_time))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->m_time))
+	 if (!xdr_long (xdrs, &objp->m_time))
 		 return FALSE;
 	return TRUE;
 }
@@ -174,12 +174,12 @@ xdr_ll_resp (XDR *xdrs, ll_resp *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->nr))
+	 if (!xdr_long (xdrs, &objp->nr))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->entries, FILE_ENTRY_MAX_CNT,
 		sizeof (file_entry), (xdrproc_t) xdr_file_entry))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->idx))
+	 if (!xdr_long (xdrs, &objp->idx))
 		 return FALSE;
 	return TRUE;
 }
@@ -205,7 +205,7 @@ xdr_cd_resp (XDR *xdrs, cd_resp *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->status))
+	 if (!xdr_long (xdrs, &objp->status))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -238,13 +238,13 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 	if (xdrs->x_op == XDR_ENCODE) {
 		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_int (xdrs, &objp->type))
+			 if (!xdr_long (xdrs, &objp->type))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->total_size))
+			 if (!xdr_long (xdrs, &objp->total_size))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->idx))
+			 if (!xdr_long (xdrs, &objp->idx))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->len))
+			 if (!xdr_long (xdrs, &objp->len))
 				 return FALSE;
 			 if (!xdr_u_long (xdrs, &objp->mode))
 				 return FALSE;
@@ -263,13 +263,13 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 	} else if (xdrs->x_op == XDR_DECODE) {
 		buf = XDR_INLINE (xdrs, 5 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_int (xdrs, &objp->type))
+			 if (!xdr_long (xdrs, &objp->type))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->total_size))
+			 if (!xdr_long (xdrs, &objp->total_size))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->idx))
+			 if (!xdr_long (xdrs, &objp->idx))
 				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->len))
+			 if (!xdr_long (xdrs, &objp->len))
 				 return FALSE;
 			 if (!xdr_u_long (xdrs, &objp->mode))
 				 return FALSE;
@@ -287,13 +287,13 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 	 return TRUE;
 	}
 
-	 if (!xdr_int (xdrs, &objp->type))
+	 if (!xdr_long (xdrs, &objp->type))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->total_size))
+	 if (!xdr_long (xdrs, &objp->total_size))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->idx))
+	 if (!xdr_long (xdrs, &objp->idx))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->len))
+	 if (!xdr_long (xdrs, &objp->len))
 		 return FALSE;
 	 if (!xdr_u_long (xdrs, &objp->mode))
 		 return FALSE;
@@ -308,9 +308,9 @@ xdr_get_resp (XDR *xdrs, get_resp *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_int (xdrs, &objp->nr))
+	 if (!xdr_long (xdrs, &objp->nr))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->idx))
+	 if (!xdr_long (xdrs, &objp->idx))
 		 return FALSE;
 	 if (!xdr_trans_entry (xdrs, &objp->entry))
 		 return FALSE;
@@ -326,9 +326,9 @@ xdr_put_req (XDR *xdrs, put_req *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->nr))
+	 if (!xdr_long (xdrs, &objp->nr))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->idx))
+	 if (!xdr_long (xdrs, &objp->idx))
 		 return FALSE;
 	 if (!xdr_trans_entry (xdrs, &objp->entry))
 		 return FALSE;
@@ -340,7 +340,7 @@ xdr_put_resp (XDR *xdrs, put_resp *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_int (xdrs, &objp->status))
+	 if (!xdr_long (xdrs, &objp->status))
 		 return FALSE;
 	return TRUE;
 }
@@ -350,7 +350,7 @@ xdr_common_resp (XDR *xdrs, common_resp *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_int (xdrs, &objp->status))
+	 if (!xdr_long (xdrs, &objp->status))
 		 return FALSE;
 	return TRUE;
 }

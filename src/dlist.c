@@ -382,5 +382,7 @@ struct dlist *dlist_merge(struct dlist *list_a, struct dlist *list_b)
 
 	list_a->tail = list_b->tail;
 
+	list_a->size += list_b->size;
+
 	return list_a;
 }
