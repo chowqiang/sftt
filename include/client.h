@@ -22,6 +22,7 @@
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
+#include "file.h"
 #include "mem_pool.h"
 #include "option.h"
 #include "session.h"
@@ -45,16 +46,6 @@
 #define CLIENT_LOG_DIR			"/var/log/"PROC_NAME"/"
 
 #define PROMPT_MAX_LEN			1024
-
-struct path_entry {
-	char abs_path[FILE_NAME_MAX_LEN];
-	char rel_path[FILE_NAME_MAX_LEN];
-};
-
-struct path_entry_list {
-	struct path_entry entry;
-	struct path_entry_list *next;
-};
 
 struct file_input_stream {
 	char target[FILE_NAME_MAX_LEN + 1];
@@ -106,8 +97,6 @@ struct dir_trans_session{
         int fts_count;
 	struct path_entry pe;
 };
-
-struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
 
 int find_unfinished_session(struct path_entry *pe, char *ip);
 

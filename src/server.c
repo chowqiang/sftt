@@ -651,6 +651,7 @@ int send_trans_entry_by_get_resp(struct client_session *client, struct get_resp 
 		return -1;
 	}
 
+#if 0
 	ret = recv_sftt_packet(client->connect_fd, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
@@ -663,6 +664,7 @@ int send_trans_entry_by_get_resp(struct client_session *client, struct get_resp 
 		return -1;
 	}
 	//printf("pwd: %s\n", resp_info->pwd);
+#endif
 
 	return 0;
 }
@@ -703,7 +705,7 @@ int send_file_content_by_get_resp(struct client_session *client, struct get_resp
 	return send_trans_entry_by_get_resp(client, resp);
 }
 
-int send_one_file_by_get_resp(struct client_session *client, char *file, int nr, int idx)
+int send_one_file_by_get_resp(struct client_session *client, char *path, char *fname, int nr, int idx)
 {
 	struct get_resp *resp;
 	struct sftt_packet *resp_packet;
@@ -726,20 +728,20 @@ int send_one_file_by_get_resp(struct client_session *client, char *file, int nr,
 	resp->idx = idx;
 	resp->entry.idx = 0;
 
-	if (is_dir(file))
-		return send_file_name_by_get_resp(client, file, resp);
+	if (is_dir(path))
+		return send_file_name_by_get_resp(client, fname, resp);
 
-	ret = send_file_name_by_get_resp(client, file, resp);
+	ret = send_file_name_by_get_resp(client, fname, resp);
 	if (ret == -1)
 		return -1;
 	resp->entry.idx += 1;
 
-	ret = send_file_md5_by_get_resp(client, file, resp);
+	ret = send_file_md5_by_get_resp(client, path, resp);
 	if (ret == -1)
 		return -1;
 	resp->entry.idx += 1;
 
-	fp = fopen(file, "r");
+	fp = fopen(path, "r");
 	if (fp == NULL)
 		return -1;
 
@@ -781,17 +783,25 @@ int handle_get_req(struct client_session *client, struct sftt_packet *req_packet
 {
 	struct get_req *req;
 	struct get_resp *resp;
-	char *rp;
 	FILE *fp;
 	char file[FILE_NAME_MAX_LEN];
 	int ret;
 	struct dlist *file_list;
 	struct dlist_node *node;
 	int file_count, i = 0;
+	struct path_entry *entry;
 
-	resp = req_packet->obj;
-	rp = path_join(client->pwd, resp->entry.content);
-	if (!file_existed(rp)) {
+	req = req_packet->obj;
+	strncpy(file, req->path, FILE_NAME_MAX_LEN);
+	printf("client want to get file: %s\n", file);
+
+	resp = mp_malloc(g_mp, sizeof(struct get_resp));
+	assert(resp != NULL);
+
+	entry = get_path_entry(file, client->pwd);
+
+	if (!file_existed(entry->abs_path)) {
+		printf("%s not existed!\n", entry->abs_path);
 		resp->nr = -1;
 		resp_packet->obj = resp;
 		ret = send_sftt_packet(client->connect_fd, resp_packet);
@@ -802,14 +812,15 @@ int handle_get_req(struct client_session *client, struct sftt_packet *req_packet
 		return 0;
 	}
 
-	if (is_file(rp)) {
-		send_one_file_by_get_resp(client, rp, 1, 0);
+	if (is_file(entry->abs_path)) {
+		send_one_file_by_get_resp(client, entry->abs_path, entry->rel_path, 1, 0);
 	} else {
-		file_list = get_all_file_list(rp);
+		file_list = get_path_entry_list(file, client->pwd);
 		file_count = dlist_size(file_list);
 		dlist_for_each(file_list, node) {
+			entry = node->data;
 			if (send_one_file_by_get_resp(client,
-				node->data, file_count, i) == -1) {
+				entry->abs_path, entry->rel_path, file_count, i) == -1) {
 				printf("send file failed: %s\n", node->data);
 			}
 		}

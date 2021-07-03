@@ -64,27 +64,6 @@ int consult_block_size_with_server(int sock, struct sftt_client_config *client_c
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp);
 
-struct path_entry *get_file_path_entry(char *file_name) {
-	struct path_entry *pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
-	if (pe == NULL) {
-		return NULL;
-	}	
-	realpath(file_name, pe->abs_path);
-	char *p = basename(pe->abs_path);
-	strcpy(pe->rel_path, p);
-	
-	return pe;
-}
-
-void free_path_entry_list(struct path_entry_list *head) {
-	struct path_entry_list *p = head, *q = head;
-	while (p) {
-		q = p->next;
-		free(p);
-		p = q;
-	}
-}
-
 int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size) {
 	int ret = fread(buffer, 1, size, fis->fp);		
 	
@@ -328,114 +307,6 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 
 
 	return 0;
-}
-
-struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
-	*pcnt = 0;
-	struct path_entry_list *head = get_dir_path_entry_list(file_name, prefix);			
-	if (head == NULL) {
-		return NULL;
-	}
-
-	int count = 0;
-	struct path_entry_list *p = head;
-	while (p) {
-		++count;
-		p = p->next;
-	}
-
-	struct path_entry *array = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry) * count);
-	if (array == NULL) {
-		free_path_entry_list(head);
-		return NULL;
-	}
-	
-	int i = 0;
-	p = head;
-	for (i = 0; i < count; ++i) {
-		if (p == NULL) {
-			printf("Error. Unexpected fatal when copy path entry!\n");
-		}
-		strcpy(array[i].abs_path, (p->entry).abs_path);
-		strcpy(array[i].rel_path, (p->entry).rel_path);
-		p = p->next;
-	}
-	
-	*pcnt = count;
-
-	free_path_entry_list(head);
-	
-	return array;
-}
-
-struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
-	struct path_entry_list *head = NULL;
-	struct path_entry_list *current_entry = NULL;
-	struct path_entry_list *sub_list = NULL;
-
-	char dir_abs_path[FILE_NAME_MAX_LEN];
-	char dir_rel_path[FILE_NAME_MAX_LEN];
-	char tmp_path[FILE_NAME_MAX_LEN];
-
-	realpath(file_name, dir_abs_path);
-	char *p = basename(dir_abs_path);
-	sprintf(dir_rel_path, "%s/%s", prefix, p);
-		
-	DIR *dp;
-	struct dirent *entry;
-	struct stat statbuf;
- 
-	if ((dp = opendir(file_name)) == NULL) {
-		printf("Error. cannot open dir: %s\n", file_name);
-		return NULL;
-	}
-	
-	chdir(file_name);
-	while ((entry = readdir(dp)) != NULL) {
-		sprintf(tmp_path, "%s/%s", dir_abs_path, entry->d_name);
-		lstat(tmp_path, &statbuf);
-		if (S_ISDIR(statbuf.st_mode)) {
-			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-				continue;
-			}
-			//printf("dir tmp path: %s\n", tmp_path);
-			sub_list = get_dir_path_entry_list(tmp_path, dir_rel_path);	
-			if (sub_list == NULL) {
-				continue;	
-			}
-
-			if (current_entry == NULL) {
-				current_entry = head = sub_list;
-			} else {
-				current_entry->next = sub_list;
-			}
-
-			while (current_entry->next) {
-				current_entry = current_entry->next;
-			}				
-				
-		} else {
-			struct path_entry_list *node = (struct path_entry_list *)mp_malloc(g_mp, sizeof(struct path_entry_list));
-			if (node == NULL) {
-				continue;
-			}
-
-			sprintf(node->entry.abs_path, "%s/%s", dir_abs_path, entry->d_name);
-			sprintf(node->entry.rel_path, "%s/%s", dir_rel_path, entry->d_name);
-			//printf("file: %s\n", node->entry.abs_path);
-			node->next = NULL;
-
-			if (current_entry == NULL) {
-				current_entry = head = node;
-			} else {
-				current_entry->next = node;
-				current_entry = node;
-			}
-		}
-	}
-	closedir(dp);	
-
-	return head;
 }
 
 void destory_sftt_client(struct sftt_client *client) {
@@ -1363,8 +1234,9 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	/* send get req */
 	strncpy(req->session_id, client->session_id, SESSION_ID_LEN);
-	strncpy(req->path, argv[1], FILE_NAME_MAX_LEN);
+	strncpy(req->path, argv[0], FILE_NAME_MAX_LEN);
 	req_packet->obj = req;
+	req_packet->type = PACKET_TYPE_GET_REQ;
 
 	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
@@ -1388,12 +1260,13 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		total_size = 0;
 
 		strncpy(file, resp->entry.content, FILE_NAME_MAX_LEN);
-		rp = path_join(argv[2], file);
+		rp = path_join(argv[1], file);
 
 		if (resp->entry.type == FILE_TYPE_DIR) {
 			if (!file_existed(rp))
 				mkdir(rp, resp->entry.mode);
 
+#if 0
 			com_resp->status = RESP_OK;
 			resp_packet->obj = com_resp;
 			ret = send_sftt_packet(client->conn_ctrl.sock, resp_packet);
@@ -1401,6 +1274,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 				printf("%s: send sftt packet failed!\n", __func__);
 				break;
 			}
+#endif
 		} else {
 			/* recv md5 */
 			ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
@@ -1551,7 +1425,7 @@ int send_file_content_by_put_req(struct sftt_client_v2 *client, struct put_req *
 	return send_trans_entry_by_put_req(client, req);
 }
 
-int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, int idx)
+int send_one_file_by_put_req(struct sftt_client_v2 *client, char *path, char *fname, int nr, int idx)
 {
 	struct put_req *req;
 	struct put_resp *resp;
@@ -1576,20 +1450,20 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *file, int nr, 
 	req->idx = idx;
 	req->entry.idx = 0;
 
-	if (is_dir(file))
-		return send_file_name_by_put_req(client, file, req);
+	if (is_dir(path))
+		return send_file_name_by_put_req(client, fname, req);
 
-	ret = send_file_name_by_put_req(client, file, req);
+	ret = send_file_name_by_put_req(client, fname, req);
 	if (ret == -1)
 		return -1;
 	req->entry.idx += 1;
 
-	ret = send_file_md5_by_put_req(client, file, req);
+	ret = send_file_md5_by_put_req(client, path, req);
 	if (ret == -1)
 		return -1;
 	req->entry.idx += 1;
 
-	fp = fopen(file, "r");
+	fp = fopen(path, "r");
 	if (fp == NULL)
 		return -1;
 
@@ -1634,25 +1508,30 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct dlist *file_list;
 	struct dlist_node *node;
 	int file_count;
+	char file[FILE_NAME_MAX_LEN];
+	struct path_entry *entry;
 
 	if (argc != 1) {
 		sftt_client_put_usage();
 		return -1;
 	}
 
-	if (!is_file(argv[0]) || !is_dir(argv[0])) {
-		printf("cannot access: %s\n", argv[0]);
+	strncpy(file, argv[0], FILE_NAME_MAX_LEN - 1);
+	if (!is_file(file) && !is_dir(file)) {
+		printf("cannot access: %s\n", file);
 		return -1;
 	}
 
-	if (is_file(argv[0])) {
-		send_one_file_by_put_req(client, argv[0], 1, 0);
+	if (is_file(file)) {
+		entry = get_path_entry(file, NULL);
+		send_one_file_by_put_req(client, entry->abs_path, entry->rel_path, 1, 0);
 	} else {
-		file_list = get_all_file_list(argv[0]);
+		file_list = get_path_entry_list(file, NULL);
 		file_count = dlist_size(file_list);
 		dlist_for_each(file_list, node) {
+			entry = node->data;
 			if (send_one_file_by_put_req(client,
-				node->data, file_count, i) == -1) {
+				entry->abs_path, entry->rel_path, file_count, i) == -1) {
 				printf("send file failed: %s\n", node->data);
 			}
 		}

@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -149,12 +151,6 @@ struct dlist *get_all_file_list(char *dir)
 
 		rp = path_join(dir, entry->d_name);
 		dlist_append(list, rp);
-#if 0
-		count++;
-		if (count > 1000)
-			break;
-		printf("%s\n", rp);
-#endif
 
 		if (is_dir(rp)) {
 			sub_list = get_all_file_list(rp);
@@ -204,4 +200,270 @@ bool same_file(char *path, char *md5)
 	md5_file(path, real_md5);
 
 	return strcmp(real_md5, md5) == 0;
+}
+
+struct path_entry *get_file_path_entry(char *file_name) {
+	struct path_entry *pe;
+
+        pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
+	if (pe == NULL) {
+		return NULL;
+	}
+
+	realpath(file_name, pe->abs_path);
+	char *p = basename(pe->abs_path);
+	strcpy(pe->rel_path, p);
+
+	return pe;
+}
+
+void free_path_entry_list(struct path_entry_list *head) {
+	struct path_entry_list *p = head, *q = head;
+	while (p) {
+		q = p->next;
+		free(p);
+		p = q;
+	}
+}
+struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
+	*pcnt = 0;
+	struct path_entry_list *head = get_dir_path_entry_list(file_name, prefix);
+	if (head == NULL) {
+		return NULL;
+	}
+
+	int count = 0;
+	struct path_entry_list *p = head;
+	while (p) {
+		++count;
+		p = p->next;
+	}
+
+	struct path_entry *array = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry) * count);
+	if (array == NULL) {
+		free_path_entry_list(head);
+		return NULL;
+	}
+
+	int i = 0;
+	p = head;
+	for (i = 0; i < count; ++i) {
+		if (p == NULL) {
+			printf("Error. Unexpected fatal when copy path entry!\n");
+		}
+		strcpy(array[i].abs_path, (p->entry).abs_path);
+		strcpy(array[i].rel_path, (p->entry).rel_path);
+		p = p->next;
+	}
+
+	*pcnt = count;
+
+	free_path_entry_list(head);
+
+	return array;
+}
+
+struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
+	struct path_entry_list *head = NULL;
+	struct path_entry_list *current_entry = NULL;
+	struct path_entry_list *sub_list = NULL;
+
+	char dir_abs_path[FILE_NAME_MAX_LEN];
+	char dir_rel_path[FILE_NAME_MAX_LEN];
+	char tmp_path[FILE_NAME_MAX_LEN];
+
+	realpath(file_name, dir_abs_path);
+	char *p = basename(dir_abs_path);
+	sprintf(dir_rel_path, "%s/%s", prefix, p);
+
+	DIR *dp;
+	struct dirent *entry;
+	struct stat statbuf;
+
+	if ((dp = opendir(file_name)) == NULL) {
+		printf("Error. cannot open dir: %s\n", file_name);
+		return NULL;
+	}
+
+	chdir(file_name);
+	while ((entry = readdir(dp)) != NULL) {
+		sprintf(tmp_path, "%s/%s", dir_abs_path, entry->d_name);
+		lstat(tmp_path, &statbuf);
+		if (S_ISDIR(statbuf.st_mode)) {
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
+			//printf("dir tmp path: %s\n", tmp_path);
+			sub_list = get_dir_path_entry_list(tmp_path, dir_rel_path);
+			if (sub_list == NULL) {
+				continue;
+			}
+
+			if (current_entry == NULL) {
+				current_entry = head = sub_list;
+			} else {
+				current_entry->next = sub_list;
+			}
+
+			while (current_entry->next) {
+				current_entry = current_entry->next;
+			}
+
+		} else {
+			struct path_entry_list *node = (struct path_entry_list *)mp_malloc(g_mp, sizeof(struct path_entry_list));
+			if (node == NULL) {
+				continue;
+			}
+
+			sprintf(node->entry.abs_path, "%s/%s", dir_abs_path, entry->d_name);
+			sprintf(node->entry.rel_path, "%s/%s", dir_rel_path, entry->d_name);
+			//printf("file: %s\n", node->entry.abs_path);
+			node->next = NULL;
+
+			if (current_entry == NULL) {
+				current_entry = head = node;
+			} else {
+				current_entry->next = node;
+				current_entry = node;
+			}
+		}
+	}
+	closedir(dp);
+
+	return head;
+}
+
+bool is_absolute_path(char *path)
+{
+	return path && path[0] == '/';
+}
+
+bool is_relative_path(char *path)
+{
+	return path && path[0] != '/';
+}
+
+void set_path_entry(struct path_entry *entry, char *abs, char *rel)
+{
+	strncpy(entry->abs_path, abs, FILE_NAME_MAX_LEN - 1);
+	strncpy(entry->rel_path, rel, FILE_NAME_MAX_LEN - 1);
+}
+
+int path_append(char *path, char *sub_path, int max_len)
+{
+	if (strlen(path) + strlen(sub_path) > max_len - 2)
+		return -1;
+
+	strcat(path, "/");
+	strcat(path, sub_path);
+
+	return 0;
+}
+
+struct path_entry *dup_path_entry(struct path_entry *src)
+{
+	struct path_entry *entry;
+
+	entry = mp_malloc(g_mp, sizeof(struct path_entry));
+	set_path_entry(entry, src->abs_path, src->rel_path);
+
+	return entry;
+}
+
+struct dlist *__get_path_entry_list(struct path_entry *root)
+{
+	DIR *dp;
+	struct dirent *item;
+	struct path_entry *entry;
+	struct dlist *list;
+	struct dlist *sub_list;
+
+	if (!is_dir(root->abs_path))
+		return NULL;
+
+	if ((dp = opendir(root->abs_path)) == NULL) {
+		return NULL;
+	}
+
+	list = dlist_create(NULL);
+
+	while ((item = readdir(dp)) != NULL) {
+		//printf("%s\n", item->d_name);
+		if (strcmp(item->d_name, ".") == 0 ||
+			strcmp(item->d_name, "..") == 0)
+			continue;
+
+		entry = dup_path_entry(root);
+		path_append(entry->abs_path, item->d_name, FILE_NAME_MAX_LEN - 1);
+		path_append(entry->rel_path, item->d_name, FILE_NAME_MAX_LEN - 1);
+
+		dlist_append(list, entry);
+
+		if (is_dir(entry->abs_path)) {
+			sub_list = __get_path_entry_list(entry);
+			if (sub_list && !dlist_empty(sub_list))
+				dlist_merge(list, sub_list);
+		}
+	}
+
+	closedir(dp);
+
+	return list;
+}
+
+struct dlist *get_path_entry_list(char *path, char *pwd)
+{
+	struct path_entry *root = NULL;
+	char *p, *rp, *base;
+
+	if (!is_dir(path))
+		return NULL;
+
+	root = mp_malloc(g_mp, sizeof(struct path_entry));
+	if (root == NULL)
+		return NULL;
+
+	if (is_absolute_path(path)) {
+		rp = path;
+	} else {
+		rp = path_join(pwd, path);
+	}
+
+	if (!file_existed(rp))
+		return NULL;
+
+	base = basename(rp);
+	set_path_entry(root, rp, base);
+
+	return __get_path_entry_list(root);
+}
+
+struct path_entry *get_path_entry(char *path, char *pwd)
+{
+	char *p;
+	char *rp;
+	struct path_entry *entry = NULL;
+
+	if (!file_existed(path)) {
+		if (is_absolute_path(path) || pwd == NULL)
+			return NULL;
+
+		rp = path_join(pwd, path);
+		assert(is_absolute_path(rp));
+
+		if (!file_existed(rp))
+			return NULL;
+
+	} else {
+		rp = path;
+	}
+
+	entry = mp_malloc(g_mp, sizeof(struct path_entry));
+	if (entry == NULL)
+		return NULL;
+
+	p = basename(rp);
+	set_path_entry(entry, rp, p);
+
+	return entry;
 }
