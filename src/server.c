@@ -855,140 +855,148 @@ int handle_get_req(struct client_session *client, struct sftt_packet *req_packet
 }
 #endif
 
-int handle_put_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int recv_one_file_by_put_req(struct client_session *client, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet, struct common_resp *com_resp, bool *has_more)
 {
+	struct put_req *req_info = NULL;
+	char *rp = NULL;
 	int total_size = 0;
-	struct put_req *req_info;
-	struct put_resp *resp_info;
-	struct common_resp *com_resp;
-	char md5[MD5_STR_LEN];
 	char file[FILE_NAME_MAX_LEN];
-	char *rp;
-	FILE *fp;
-	int ret, i = 0;
+	char md5[MD5_STR_LEN];
+	FILE *fp = NULL;
+	int i = 0, ret;
+	struct put_resp *resp_info;
+
+	*has_more = true;
+
+	req_info = (struct put_req *)req_packet->obj;
+	assert(req_info != NULL);
+	assert(req_info->entry.idx == 0);
 
 	resp_info = (struct put_resp *)mp_malloc(g_mp, sizeof(struct put_resp));
 	assert(resp_info != NULL);
+
+	rp = path_join(client->pwd, req_info->entry.content);
+
+	printf("receive put req, file: %s\n", rp);
+	if (req_info->entry.type == FILE_TYPE_DIR) {
+		if (!file_existed(rp)) {
+			mkdirp(rp, req_info->entry.mode);
+		}
+
+		goto recv_one_file_done;
+	}
+
+	/* save file name */
+	strncpy(file, req_info->entry.content, FILE_NAME_MAX_LEN);
+	rp = path_join(client->pwd, file);
+
+	/* recv md5 packet */
+	printf("begin receive file md5 ...\n");
+	ret = recv_sftt_packet(client->connect_fd, req_packet);
+	if (!(ret > 0)) {
+		printf("recv encountered unrecoverable error ...\n");
+		return -1;
+	}
+	req_info = req_packet->obj;
+
+	printf("file total size: %d\n", req_info->entry.total_size);
+
+	/* save md5 */
+	strncpy(md5, req_info->entry.content, MD5_STR_LEN);
+	if (same_file(rp, md5)) {
+		printf("file not changed: %s\n", rp);
+
+		/* send resp */
+		com_resp->status = RESP_OK;
+		resp_packet->obj = com_resp;
+		resp_packet->type = PACKET_TYPE_COMMON_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: send resp failed!\n", __func__);
+			return -1;
+		}
+
+		goto recv_one_file_done;
+
+	} else {
+		/* send resp */
+		com_resp->status = CONTINUE;
+		resp_packet->obj = com_resp;
+		resp_packet->type = PACKET_TYPE_COMMON_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: send resp failed!\n", __func__);
+			return -1;
+		}
+	}
+
+	printf("begin receive file content ...\n");
+
+	fp = fopen(rp, "w+");
+	if (fp == NULL) {
+		printf("create file failed: %s\n", rp);
+		return -1;
+	}
+
+	i = 0;
+	do {
+		ret = recv_sftt_packet(client->connect_fd, req_packet);
+		if (!(ret > 0)) {
+			printf("recv encountered unrecoverable error ...\n");
+			break;
+		}
+		req_info = req_packet->obj;
+		printf("receive %d-th block file content, size: %d\n", (i + 1), req_info->entry.len);
+
+		fwrite(req_info->entry.content, req_info->entry.len, 1, fp);
+
+		/* send response */
+		resp_info->status = RESP_OK;
+		resp_packet->obj = resp_info;
+		resp_packet->type = PACKET_TYPE_PUT_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("send put response failed!\n");
+			break;
+		}
+
+		total_size += req_info->entry.len;
+		i += 1;
+	} while (total_size < req_info->entry.total_size);
+
+	fclose(fp);
+
+	if (total_size == req_info->entry.total_size) {
+		printf("received one file: %s\n", rp);
+	} else {
+		printf("receive file failed: %s\n", rp);
+		return -1;
+	}
+
+recv_one_file_done:
+	if (req_info->idx == req_info->nr - 1)
+		*has_more = false;
+
+	return 0;
+}
+
+int handle_put_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct common_resp *com_resp;
+	int ret, i = 0;
+	bool has_more = true;
+
 
 	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
 	assert(com_resp != NULL);
 
 	do {
-		req_info = (struct put_req *)req_packet->obj;
-		assert(req_info != NULL);
-
-		assert(req_info->entry.idx == 0);
-		rp = path_join(client->pwd, req_info->entry.content);
-		printf("receive put req, file: %s\n", rp);
-		if (req_info->entry.type == FILE_TYPE_DIR) {
-			if (!file_existed(rp)) {
-				mkdirp(rp, req_info->entry.mode);
-			}
-
-#if 0
-			/* send response */
-			resp_info->status = RESP_OK;
-			resp_packet->obj = resp_info;
-			resp_packet->type = PACKET_TYPE_PUT_RSP;
-
-			ret = send_sftt_packet(client->connect_fd, resp_packet);
-			if (ret == -1) {
-				printf("send put response failed!\n");
-				break;
-			}
-#endif
-
-			if (req_info->idx == req_info->nr - 1)
-				break;
-		} else {
-			total_size = 0;
-			/* save file name */
-			strncpy(file, req_info->entry.content, FILE_NAME_MAX_LEN);
-			rp = path_join(client->pwd, file);
-
-			printf("begin receive file md5 ...\n");
-			/* recv next packet */
-			ret = recv_sftt_packet(client->connect_fd, req_packet);
-			if (!(ret > 0)) {
-				printf("recv encountered unrecoverable error ...\n");
-				break;
-			}
-			req_info = req_packet->obj;
-			printf("file total size: %d\n", req_info->entry.total_size);
-
-			/* save md5 */
-			strncpy(md5, req_info->entry.content, MD5_STR_LEN);
-			if (same_file(rp, md5)) {
-				printf("file not changed: %s\n", rp);
-				/* send resp */
-				com_resp->status = RESP_OK;
-				resp_packet->obj = com_resp;
-				resp_packet->type = PACKET_TYPE_COMMON_RSP;
-				ret = send_sftt_packet(client->connect_fd, resp_packet);
-				if (ret == -1) {
-					printf("%s: send resp failed!\n", __func__);
-					break;
-				}
-				goto recv_next_file;
-			} else {
-				/* send resp */
-				com_resp->status = CONTINUE;
-				resp_packet->obj = com_resp;
-				resp_packet->type = PACKET_TYPE_COMMON_RSP;
-				ret = send_sftt_packet(client->connect_fd, resp_packet);
-				if (ret == -1) {
-					printf("%s: send resp failed!\n", __func__);
-					break;
-				}
-			}
-
-			printf("begin receive file content ...\n");
-
-			fp = fopen(rp, "w+");
-			if (fp == NULL) {
-				printf("create file failed: %s\n", rp);
-				break;
-			}
-
-			i = 0;
-			do {
-				ret = recv_sftt_packet(client->connect_fd, req_packet);
-				if (!(ret > 0)) {
-					printf("recv encountered unrecoverable error ...\n");
-					break;
-				}
-				req_info = req_packet->obj;
-				printf("receive %d-th block file content, size: %d\n", (i + 1), req_info->entry.len);
-
-				fwrite(req_info->entry.content, req_info->entry.len, 1, fp);
-
-				/* send response */
-				resp_info->status = RESP_OK;
-				resp_packet->obj = resp_info;
-				resp_packet->type = PACKET_TYPE_PUT_RSP;
-
-				ret = send_sftt_packet(client->connect_fd, resp_packet);
-				if (ret == -1) {
-					printf("send put response failed!\n");
-					break;
-				}
-
-				total_size += req_info->entry.len;
-				i += 1;
-			} while (total_size < req_info->entry.total_size);
-
-			fclose(fp);
-
-			if (total_size == req_info->entry.total_size) {
-				printf("received one file: %s\n", rp);
-			} else {
-				printf("receive file failed: %s\n", rp);
-				break;
-			}
-		}
-
-recv_next_file:
-		if (req_info->idx == req_info->nr - 1)
+		ret = recv_one_file_by_put_req(client, req_packet, resp_packet, com_resp, &has_more);
+		if (ret == -1 || has_more == false)
 			break;
 
 		ret = recv_sftt_packet(client->connect_fd, req_packet);
@@ -996,7 +1004,9 @@ recv_next_file:
 			printf("recv encountered unrecoverable error ...\n");
 			break;
 		}
-	} while (req_info->idx < req_info->nr - 1);
+	} while (ret == 0 && has_more);
+
+	return ret;
 }
 
 void *handle_client_session(void *args)

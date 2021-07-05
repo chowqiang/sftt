@@ -25,6 +25,7 @@
 #include "file.h"
 #include "mem_pool.h"
 #include "option.h"
+#include "packet.h"
 #include "session.h"
 #include "user.h"
 
@@ -165,6 +166,9 @@ bool parse_port(char *arg, int *port);
 int reader_loop2(struct sftt_client_v2 *client);
 
 int try_fetch_login_info(char *input, char *user_name, char *host);
+
+int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
+		struct common_resp *com_resp, char *target, bool *has_more);
 
 static struct cmd_handler sftt_client_cmds[] = {
 	{
