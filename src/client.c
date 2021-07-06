@@ -259,7 +259,6 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 	
 	printf("sending file %s\n", pe->abs_path);
 
-//	strcpy(sp->type, PACKET_TYPE_FILE_NAME);
 	sp->type = PACKET_TYPE_FILE_NAME_REQ;
 	sp->data_len = strlen(pe->rel_path);
 	strcpy(sp->content, pe->rel_path);
@@ -273,7 +272,6 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 	int prefix_len = PACKET_TYPE_SIZE;
 	do {
 		printf("%d-th transport ...\n", ++j);
-//		strcpy(sp->type, PACKET_TYPE_DATA);
 		sp->type = PACKET_TYPE_DATA_REQ;
 		read_count = fread(sp->content, 1, sp->block_size, fp);		
 		printf("read block size: %d\n", read_count);
@@ -295,7 +293,6 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 	
 	} while (read_count == sp->block_size);
 
-//	strcpy(sp->type, PACKET_TYPE_FILE_END);
 	sp->type = PACKET_TYPE_FILE_END_REQ;
 	sp->data_len = 0;
 	ret = send_sftt_packet(sock, sp);
@@ -346,7 +343,6 @@ void *send_files_by_thread(void *args) {
 }
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp) {
-//	strcpy(sp->type, PACKET_TYPE_SEND_COMPLETE);
 	sp->type = PACKET_TYPE_SEND_COMPLETE_REQ;
 	sp->data_len = 0;
 	int ret = send_sftt_packet(sock, sp);
@@ -1024,16 +1020,6 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-#if 0
-	printf("sftt client commands:\n\n"
-		"\tll	list contents of current directory.\n"
-		"\tcd	change the current directory.\n"
-		"\tpwd	get current directory.\n"
-		"\tget	get the file on server.\n"
-		"\tput	put the file to server.\n"
-		"\this	get history command.\n"
-		"\thelp	show help info.\n\n");
-#endif
 	int i;
 	*argv_check = true;
 	printf("sftt client commands:\n\n");
@@ -1385,16 +1371,9 @@ void sftt_client_get_usage(void)
 	printf("Usage: get file|dir [file|dir]\n");
 }
 
-int send_trans_entry_by_put_req(struct sftt_client_v2 *client, struct put_req *req)
+int send_trans_entry_by_put_req(struct sftt_client_v2 *client,
+		struct sftt_packet *req_packet, struct put_req *req)
 {
-	struct sftt_packet *req_packet, *resp_packet;
-	struct put_resp *resp;
-
-	req_packet = malloc_sftt_packet(PUT_REQ_PACKET_MIN_LEN);
-	if (!req_packet) {
-		printf("allocate request packet failed!\n");
-		return -1;
-	}
 	req_packet->type = PACKET_TYPE_PUT_REQ;
 
 	// how to serialize and deserialize properly ???
@@ -1406,31 +1385,13 @@ int send_trans_entry_by_put_req(struct sftt_client_v2 *client, struct put_req *r
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
 	}
-#if 0
-	resp_packet = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
-	if (!resp_packet) {
-		printf("allocate response packet failed!\n");
-		return -1;
-	}
-
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
-	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	resp = (struct put_resp *)resp_packet->obj;
-	if (resp == NULL || resp->status != RESP_OK) {
-		printf("%s: send trans entry failed!\n", __func__);
-		return -1;
-	}
-	//printf("pwd: %s\n", resp_info->pwd);
-#endif
 
 	return 0;
 }
 
-int send_file_name_by_put_req(struct sftt_client_v2 *client, char *path, char *fname, struct put_req *req)
+int send_file_name_by_put_req(struct sftt_client_v2 *client,
+		struct sftt_packet *req_packet,
+		char *path, char *fname, struct put_req *req)
 {
 	if (is_dir(path))
 		req->entry.type = FILE_TYPE_DIR;
@@ -1440,10 +1401,12 @@ int send_file_name_by_put_req(struct sftt_client_v2 *client, char *path, char *f
 	strncpy(req->entry.content, fname, FILE_NAME_MAX_LEN);
 	req->entry.len = strlen(fname);
 
-	return send_trans_entry_by_put_req(client, req);
+	return send_trans_entry_by_put_req(client, req_packet, req);
 }
 
-int send_file_md5_by_put_req(struct sftt_client_v2 *client, char *file, struct put_req *req)
+int send_file_md5_by_put_req(struct sftt_client_v2 *client,
+		struct sftt_packet *req_packet,
+		char *file, struct put_req *req)
 {
 	int ret;
 
@@ -1458,30 +1421,27 @@ int send_file_md5_by_put_req(struct sftt_client_v2 *client, char *file, struct p
 
 	req->entry.len = strlen(req->entry.content);
 
-	return send_trans_entry_by_put_req(client, req);
+	return send_trans_entry_by_put_req(client, req_packet, req);
 }
 
-int send_file_content_by_put_req(struct sftt_client_v2 *client, struct put_req *req)
+int send_file_content_by_put_req(struct sftt_client_v2 *client,
+		struct sftt_packet *req_packet, struct put_req *req)
 {
-	return send_trans_entry_by_put_req(client, req);
+	return send_trans_entry_by_put_req(client, req_packet, req);
 }
 
-int send_one_file_by_put_req(struct sftt_client_v2 *client, char *path, char *fname, int nr, int idx)
+int send_one_file_by_put_req(struct sftt_client_v2 *client,
+		struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet,
+		char *path, char *fname, int nr, int idx)
 {
 	struct put_req *req;
 	struct put_resp *resp;
-	struct sftt_packet *resp_packet;
 	struct common_resp *com_resp;
 	int ret;
 	int len;
 	int i = 0;
 	FILE *fp;
-
-	resp_packet = (struct sftt_packet *)malloc_sftt_packet(PUT_REQ_PACKET_MIN_LEN);
-	if (resp_packet == NULL) {
-		printf("malloc sftt packet failed!\n");
-		return -1;
-	}
 
 	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
 	assert(com_resp != NULL);
@@ -1496,14 +1456,14 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *path, char *fn
 	req->entry.idx = 0;
 
 	if (is_dir(path))
-		return send_file_name_by_put_req(client, path, fname, req);
+		return send_file_name_by_put_req(client, req_packet, path, fname, req);
 
-	ret = send_file_name_by_put_req(client, path, fname, req);
+	ret = send_file_name_by_put_req(client, req_packet, path, fname, req);
 	if (ret == -1)
 		return -1;
 	req->entry.idx += 1;
 
-	ret = send_file_md5_by_put_req(client, path, req);
+	ret = send_file_md5_by_put_req(client, req_packet, path, req);
 	if (ret == -1)
 		return -1;
 
@@ -1532,7 +1492,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client, char *path, char *fn
 		//printf("read block size: %d\n", ret);
 
 		req->entry.len = ret;
-		ret = send_file_content_by_put_req(client, req);
+		ret = send_file_content_by_put_req(client, req_packet, req);
 		if (ret == -1) {
 			break;
 		}
@@ -1570,9 +1530,23 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	int file_count;
 	char file[FILE_NAME_MAX_LEN];
 	struct path_entry *entry;
+	struct sftt_packet *req_packet;
+	struct sftt_packet *resp_packet;
 
 	if (argc != 1) {
 		sftt_client_put_usage();
+		return -1;
+	}
+
+	req_packet = mp_malloc(g_mp, PUT_REQ_PACKET_MIN_LEN);
+	if (req_packet == NULL) {
+		printf("%s:%d, alloc req packet failed!\n", __func__, __LINE__);
+		return -1;
+	}
+
+	resp_packet = mp_malloc(g_mp, PUT_RESP_PACKET_MIN_LEN);
+	if (resp_packet == NULL) {
+		printf("%s:%d, alloc resp packet failed!\n", __func__, __LINE__);
 		return -1;
 	}
 
@@ -1584,14 +1558,15 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	if (is_file(file)) {
 		entry = get_path_entry(file, NULL);
-		send_one_file_by_put_req(client, entry->abs_path, entry->rel_path, 1, 0);
+		send_one_file_by_put_req(client, req_packet, resp_packet,
+				entry->abs_path, entry->rel_path, 1, 0);
 	} else {
 		file_list = get_path_entry_list(file, NULL);
 		file_count = dlist_size(file_list);
 		dlist_for_each(file_list, node) {
 			entry = node->data;
 			printf("begin to send %s\n", entry->abs_path);
-			if (send_one_file_by_put_req(client,
+			if (send_one_file_by_put_req(client, req_packet, resp_packet,
 				entry->abs_path, entry->rel_path, file_count, i) == -1) {
 				printf("send file failed: %s\n", node->data);
 			}
