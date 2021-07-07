@@ -41,12 +41,12 @@ $(TEST): $(LIB_NAME) ECHO
 	make -C $(TEST_DIR)
 
 gettest: $(TEST)
-	cd test && ./Run testcases/get
+	cd test && ./scripts/gettest
 
 puttest: $(TEST)
-	cd test && ./Run testcases/put
+	cd test && ./scripts/puttest
 
-alltest: $(TEST)
+basictest: $(TEST)
 	cd test && ./Run testcases
 
 ECHO:
