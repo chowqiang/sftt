@@ -866,6 +866,11 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	strncpy(client->session_id, resp_info->session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 
+	mp_free(g_mp, req_info);
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
 	return 0;
 }
 
@@ -1015,6 +1020,9 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		printf("%s\t%s\n", entry->type == 1 ? "file" : "dir", entry->name);
 	}
 
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
 	return 0;
 }
 
@@ -1115,6 +1123,9 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 	}
 
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
 	return 0;
 }
 
@@ -1167,9 +1178,10 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	resp_info = (pwd_resp *)resp_packet->obj;
 	printf("pwd: %s\n", resp_info->pwd);
 
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
 
 	return 0;
-
 }
 
 void sftt_client_pwd_usage(void)
@@ -1363,6 +1375,12 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		ret = recv_one_file_by_get_resp(client, resp_packet, com_resp, target, &has_more);
 	} while (ret == 0 && has_more);
 
+	mp_free(g_mp, req);
+	mp_free(g_mp, com_resp);
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
 	return ret;
 }
 
@@ -1443,9 +1461,6 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	int i = 0;
 	FILE *fp;
 
-	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
-	assert(com_resp != NULL);
-
 	req = (struct put_req *)mp_malloc(g_mp, sizeof(struct put_req));
 	if (req == NULL)
 		return -1;
@@ -1454,6 +1469,9 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	req->nr = nr;
 	req->idx = idx;
 	req->entry.idx = 0;
+
+	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
+	assert(com_resp != NULL);
 
 	if (is_dir(path))
 		return send_file_name_by_put_req(client, req_packet, path, fname, req);
@@ -1517,6 +1535,9 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 
 	fclose(fp);
 
+	mp_free(g_mp, req);
+	mp_free(g_mp, com_resp);
+
 	return ret;
 }
 
@@ -1538,13 +1559,13 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	req_packet = mp_malloc(g_mp, PUT_REQ_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet(PUT_REQ_PACKET_MIN_LEN);
 	if (req_packet == NULL) {
 		printf("%s:%d, alloc req packet failed!\n", __func__, __LINE__);
 		return -1;
 	}
 
-	resp_packet = mp_malloc(g_mp, PUT_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
 	if (resp_packet == NULL) {
 		printf("%s:%d, alloc resp packet failed!\n", __func__, __LINE__);
 		return -1;
@@ -1573,6 +1594,9 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 			++i;
 		}
 	}
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
 
 	return 0;
 }
