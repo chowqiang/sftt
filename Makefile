@@ -40,6 +40,15 @@ $(CLIENT_BIN): $(CONFIG) $(LIB_NAME) ECHO
 $(TEST): $(LIB_NAME) ECHO
 	make -C $(TEST_DIR)
 
+gettest: $(TEST)
+	cd test && ./Run testcases/get
+
+puttest: $(TEST)
+	cd test && ./Run testcases/put
+
+alltest: $(TEST)
+	cd test && ./Run testcases
+
 ECHO:
 	@echo $(LIB_NAME) $(SERVER_BIN) $(CLIENT_BIN) $(TEST) $(XDR)
 
