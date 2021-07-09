@@ -33,10 +33,18 @@ int main(int argc, char **argv) {
 	const struct sftt_option *opt = NULL;	
 	bool ret = false;
 	int passwd_len = 0;
+	bool run_once = false;
+	struct trans_info trans;
 
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
 	memset(host, 0, sizeof(host));
+
+	if (argc == 3 && try_fetch_trans_info(argv[1], argv[2], user_name, host, &trans) == 0) {
+		has_passwd_opt = true;
+		run_once = true;
+		goto input_passwd;
+	}
 
 	if (argc == 2 && try_fetch_login_info(argv[1], user_name, host) == 0) {
 		has_passwd_opt = true;
@@ -109,8 +117,10 @@ input_passwd:
 		exit(-1);
 	}
 
-
 	add_log(LOG_INFO, "client validate successfully!");
+
+	if (run_once)
+		return do_trans(&client, &trans);
 
 	reader_loop2(&client);
 

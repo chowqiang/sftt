@@ -48,6 +48,17 @@
 
 #define PROMPT_MAX_LEN			1024
 
+enum trans_type {
+	TRANS_GET,
+	TRANS_PUT,
+};
+
+struct trans_info {
+	enum trans_type type;
+	char src[FILE_NAME_MAX_LEN];
+	char dest[FILE_NAME_MAX_LEN];
+};
+
 struct file_input_stream {
 	char target[FILE_NAME_MAX_LEN + 1];
 	int cursor;
@@ -166,6 +177,10 @@ bool parse_port(char *arg, int *port);
 int reader_loop2(struct sftt_client_v2 *client);
 
 int try_fetch_login_info(char *input, char *user_name, char *host);
+
+int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host, struct trans_info *trans);
+
+int do_trans(struct sftt_client_v2 *client, struct trans_info *trans);
 
 int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
 		struct common_resp *com_resp, char *target, bool *has_more);

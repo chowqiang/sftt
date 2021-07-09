@@ -1707,3 +1707,102 @@ int try_fetch_login_info(char *input, char *user_name, char *host)
 
 	return -1;
 }
+
+bool is_remote_path(char *buf)
+{
+	char *pos;
+
+	if ((pos = index(buf, '@')) == NULL)
+		return false;
+
+	if ((pos = index(pos, ':')) == NULL)
+		return false;
+
+	return true;
+}
+
+int fetch_remote_info(char *buf, char *user_name, char *host, char *path)
+{
+	char *pos;
+
+	pos = index(buf, '@');
+	if (pos == NULL || buf == pos)
+	       return -1;
+
+	strncpy(user_name, buf, pos - buf);
+
+	buf = pos + 1;
+	pos = index(buf, ':');
+	if (pos == NULL || buf == pos)
+		return -1;
+
+	strncpy(host, buf, pos - buf);
+
+	buf = pos + 1;
+	strncpy(path, buf, FILE_NAME_MAX_LEN);
+
+	if (strlen(path) == 0)
+		return -1;
+
+	return 0;
+}
+
+int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host, struct trans_info *trans)
+{
+	int ret;
+
+	if (is_remote_path(arg1)) {
+		trans->type = TRANS_GET;
+
+		/* copy src */
+		ret = fetch_remote_info(arg1, user_name, host, trans->src);
+		if (ret)
+			return ret;
+
+		/* copy dest */
+		strncpy(trans->dest, arg2, FILE_NAME_MAX_LEN);
+
+	} else {
+		if (!file_existed(arg1))
+			return -1;
+
+		if (!is_remote_path(arg2))
+			return -1;
+
+		trans->type = TRANS_PUT;
+
+		/* copy src */
+		strncpy(trans->src, arg1, FILE_NAME_MAX_LEN);
+
+		/* copy dest */
+		ret = fetch_remote_info(arg2, user_name, host, trans->dest);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+int do_trans(struct sftt_client_v2 *client, struct trans_info *trans)
+{
+	char *args[2];
+	bool argv_check = true;
+	int ret;
+
+	if (trans->type == TRANS_GET) {
+		args[0] = trans->src;
+		args[1] = trans->dest;
+
+		return sftt_client_get_handler(client, 2, args, &argv_check);
+	} else {
+		args[0] = trans->dest;
+
+		ret = sftt_client_cd_handler(client, 1, args, &argv_check);
+		if (ret)
+			return ret;
+
+		args[0] = trans->src;
+
+		return sftt_client_put_handler(client, 1, args, &argv_check);
+	}
+}
