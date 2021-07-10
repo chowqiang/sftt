@@ -24,7 +24,8 @@
 #include "req_rsp.h"
 #include "utils.h"
 
-char *config_search_pathes[] = {"/etc/sftt", "./config", ".", NULL};
+char *config_search_pathes[] = {"/etc/sftt", "./config", ".",
+	"/root/sftt/config", NULL};
 
 char *search_config(char *fname)
 {

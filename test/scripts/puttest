@@ -1,0 +1,13 @@
+#!/bin/bash
+
+server_bin=/root/sftt/server/sfttd
+client_bin=/root/sftt/client/sftt
+
+
+$server_bin stop
+nohup $server_bin start &
+
+sleep 1
+
+$client_bin /var/sftt/tmp3/ root@127.0.0.1:/var/sftt/tmp4/
+$client_bin /var/sftt/tmp3/README.md root@127.0.0.1:/var/sftt/tmp5/

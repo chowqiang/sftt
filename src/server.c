@@ -839,19 +839,25 @@ int handle_get_req(struct client_session *client, struct sftt_packet *req_packet
 int recv_one_file_by_put_req(struct client_session *client, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet, struct common_resp *com_resp, bool *has_more)
 {
-	struct put_req *req_info = NULL;
 	char *rp = NULL;
-	int total_size = 0;
 	char file[FILE_NAME_MAX_LEN];
 	char md5[MD5_STR_LEN];
+
 	FILE *fp = NULL;
-	int i = 0, ret;
+
+	int i = 0, ret = 0, total_size = 0;
+
+	struct put_req *req_info = NULL;
 	struct put_resp *resp_info;
 
 	*has_more = true;
 
 	req_info = (struct put_req *)req_packet->obj;
 	assert(req_info != NULL);
+	printf("first idx: %d\n", req_info->entry.idx);
+	printf("file name: %s\n", req_info->entry.content);
+	printf("req_info->nr: %d, req_info->idx: %d\n", req_info->nr,
+		req_info->idx);
 	assert(req_info->entry.idx == 0);
 
 	resp_info = (struct put_resp *)mp_malloc(g_mp, sizeof(struct put_resp));
@@ -962,6 +968,8 @@ recv_one_file_done:
 	if (req_info->idx == req_info->nr - 1)
 		*has_more = false;
 
+	printf("%s:%d, recv %s done!\n", __func__, __LINE__, rp);
+
 	return 0;
 }
 
@@ -975,7 +983,10 @@ int handle_put_req(struct client_session *client, struct sftt_packet *req_packet
 	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
 	assert(com_resp != NULL);
 
+	printf("begin to handle put req ...\n");
+
 	do {
+		printf("recv %d-th file ...\n", i);
 		ret = recv_one_file_by_put_req(client, req_packet, resp_packet, com_resp, &has_more);
 		if (ret == -1 || has_more == false)
 			break;
@@ -985,7 +996,8 @@ int handle_put_req(struct client_session *client, struct sftt_packet *req_packet
 			printf("recv encountered unrecoverable error ...\n");
 			break;
 		}
-	} while (ret == 0 && has_more);
+		++i;
+	} while (has_more);
 
 	return ret;
 }

@@ -17,3 +17,4 @@ lib/*
 xdr/gen_serialize
 config/gen_config
 tool/add_copyright
+test/nohup.out

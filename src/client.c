@@ -1214,6 +1214,7 @@ int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet 
 		printf("%s: target file not exist\n", __func__);
 		return -1;
 	}
+	assert(resp->entry.idx == 0);
 
 	strncpy(file, resp->entry.content, FILE_NAME_MAX_LEN);
 	rp = path_join(target, file);
@@ -1484,6 +1485,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	ret = send_file_md5_by_put_req(client, req_packet, path, req);
 	if (ret == -1)
 		return -1;
+	req->entry.idx += 1;
 
 	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
 	if (ret == -1) {
@@ -1495,8 +1497,6 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 		printf("file not changed: %s, skip ...\n", path);
 		return 0;
 	}
-
-	req->entry.idx += 1;
 
 	printf("open file: %s\n", path);
 	fp = fopen(path, "r");

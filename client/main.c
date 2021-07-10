@@ -22,18 +22,21 @@
 
 extern struct sftt_option sftt_client_opts[];
 int main(int argc, char **argv) {
-	int optind = 1;
 	char *optarg = NULL;
-	bool has_passwd_opt = false;
 	char user_name[USER_NAME_MAX_LEN];
 	char password[PASSWD_MD5_LEN];
 	char host[HOST_MAX_LEN];
 	char passwd_prompt[128];
-	int port = -1;
-	const struct sftt_option *opt = NULL;	
+
 	bool ret = false;
-	int passwd_len = 0;
+	bool has_passwd_opt = false;
 	bool run_once = false;
+
+	int port = -1;
+	int passwd_len = 0;
+	int optind = 1;
+
+	const struct sftt_option *opt = NULL;
 	struct trans_info trans;
 
 	memset(user_name, 0, sizeof(user_name));
