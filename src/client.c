@@ -1080,12 +1080,6 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		sftt_client_cd_usage();
 		return -1;
 	}
-	req_packet = malloc_sftt_packet(CD_REQ_PACKET_MIN_LEN);
-	if (!req_packet) {
-		printf("allocate request packet failed!\n");
-		return -1;
-	}
-	req_packet->type = PACKET_TYPE_CD_REQ;
 
 	req_info = mp_malloc(g_mp, sizeof(struct cd_req));
 	assert(req_info != NULL);
@@ -1093,7 +1087,13 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 	strncpy(req_info->path, argv[0], DIR_PATH_MAX_LEN);
 
-	// how to serialize and deserialize properly ???
+	req_packet = malloc_sftt_packet(CD_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_CD_REQ;
+
 	req_packet->obj = req_info;
 	req_packet->block_size = CD_REQ_PACKET_MIN_LEN;
 
@@ -1118,15 +1118,17 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	resp_info = (struct cd_resp *)resp_packet->obj;
 	if (resp_info->status != RESP_OK) {
 		printf("change directory failed!\n");
+		ret = -1;
 	} else {
 		printf("pwd change to: %s\n", resp_info->pwd);
 		strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
+		ret = 0;
 	}
 
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
 
-	return 0;
+	return ret;
 }
 
 void sftt_client_cd_usage(void)
@@ -1314,6 +1316,8 @@ recv_one_file_done:
 	if (resp->idx == resp->nr - 1)
 		*has_more = false;
 
+	set_file_mode(rp, resp->entry.mode);
+
 	return 0;
 }
 
@@ -1417,6 +1421,7 @@ int send_file_name_by_put_req(struct sftt_client_v2 *client,
 	else
 		req->entry.type = FILE_TYPE_FILE;
 
+	req->entry.mode = file_mode(path);
 	strncpy(req->entry.content, fname, FILE_NAME_MAX_LEN);
 	req->entry.len = strlen(fname);
 

@@ -659,6 +659,7 @@ int send_file_name_by_get_resp(struct client_session *client,
 	else
 		resp->entry.type = FILE_TYPE_FILE;
 
+	resp->entry.mode = file_mode(path);
 	strncpy(resp->entry.content, fname, FILE_NAME_MAX_LEN);
 	resp->entry.len = strlen(fname);
 
@@ -968,6 +969,7 @@ recv_one_file_done:
 	if (req_info->idx == req_info->nr - 1)
 		*has_more = false;
 
+	set_file_mode(rp, req_info->entry.mode);
 	printf("%s:%d, recv %s done!\n", __func__, __LINE__, rp);
 
 	return 0;

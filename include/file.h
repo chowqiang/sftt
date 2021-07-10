@@ -64,4 +64,8 @@ struct path_entry *get_file_path_entry(char *file_name);
 
 struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt);
 
+mode_t file_mode(char *path);
+
+int set_file_mode(char *path, mode_t mode);
+
 #endif

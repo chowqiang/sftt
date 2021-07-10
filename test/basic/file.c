@@ -35,9 +35,28 @@ void test_get_all_file_list(void)
 #endif
 }
 
+void test_mode(void)
+{
+	char *path = "/root/sftt/README.md";
+	char *path2 = "/root/sftt/README.md2";
+	FILE *fp = NULL;
+
+	mode_t mode = file_mode(path);
+	printf("0x%0x\n", mode);
+
+	fp = fopen(path2, "w");
+	fclose(fp);
+
+	set_file_mode(path2, mode);
+
+	mode = file_mode(path);
+	printf("0x%0x\n", mode);
+}
+
 int main(void)
 {
-	test_get_all_file_list();
+	//test_get_all_file_list();
+	test_mode();
 
 	return 0;
 }

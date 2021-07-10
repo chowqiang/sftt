@@ -469,3 +469,16 @@ struct path_entry *get_path_entry(char *path, char *pwd)
 
 	return entry;
 }
+
+mode_t file_mode(char *path)
+{
+	struct stat file_stat;
+	stat(path, &file_stat);
+
+	return file_stat.st_mode;
+}
+
+int set_file_mode(char *path, mode_t mode)
+{
+	return chmod(path, mode);
+}
