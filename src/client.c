@@ -1312,11 +1312,19 @@ int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet 
 		return -1;
 	}
 
+	if (!same_file(rp, md5)) {
+		printf("%s: recv one file failed: %s, "
+			"md5 not correct!\n", __func__, rp);
+		return -1;
+	}
+
 recv_one_file_done:
 	if (resp->idx == resp->nr - 1)
 		*has_more = false;
 
 	set_file_mode(rp, resp->entry.mode);
+
+	printf("%s:%d, recv %s done!\n", __func__, __LINE__, rp);
 
 	return 0;
 }

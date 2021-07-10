@@ -965,11 +965,18 @@ int recv_one_file_by_put_req(struct client_session *client, struct sftt_packet *
 		return -1;
 	}
 
+	if (!same_file(rp, md5)) {
+		printf("%s: recv one file failed: %s, "
+			"md5 not correct!\n", __func__, rp);
+		return -1;
+	}
+
 recv_one_file_done:
 	if (req_info->idx == req_info->nr - 1)
 		*has_more = false;
 
 	set_file_mode(rp, req_info->entry.mode);
+
 	printf("%s:%d, recv %s done!\n", __func__, __LINE__, rp);
 
 	return 0;

@@ -3,11 +3,16 @@
 server_bin=/root/sftt/server/sfttd
 client_bin=/root/sftt/client/sftt
 
+home=/root/sftt
+src=/root/sftt/test
+dest=/var/sftt/tmp12
+
+[ ! -d $dest ] && mkdir $dest
 
 $server_bin stop
 nohup $server_bin start > /tmp/nohup.txt 2>&1 &
 
 sleep 1
 
-$client_bin /var/sftt/tmp8/ root@127.0.0.1:/var/sftt/tmp9/
-$client_bin /var/sftt/tmp8/README.md root@127.0.0.1:/var/sftt/tmp9/
+$client_bin $home/README.md root@127.0.0.1:$dest
+$client_bin $src root@127.0.0.1:$dest
