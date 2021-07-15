@@ -1,5 +1,5 @@
 /*
- * Copyright (C)  2020-2021 Min Zhou <zhoumin@bupt.cn>, all rights reserved.
+ * Copyright (C) copy from linux kernel.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,19 +17,14 @@
 #ifndef _KSTRTOX_H_
 #define _KSTRTOX_H_
 
+#include <stdint.h>
 #include <string.h>
 
 #define KSTRTOX_OVERFLOW    (1U << 31)
 
-#define parse_even_earlier(res, option, p)              \
-do {                                    \
-    unsigned int tmp;                \
-                                    \
-    if (strncmp(option, (char *)p, strlen(option)) == 0)        \
-        tmp = kstrtou32((char *)p + strlen(option"="), 10, &res); \
-} while (0)
+typedef unsigned int u32;
 
-static inline int kstrtou32(const char *s, unsigned int base, u32 *res);
+int kstrtou32(const char *s, unsigned int base, u32 *res);
 
 int kstrtouint(const char *s, unsigned int base, unsigned int *res);
 
@@ -46,5 +41,7 @@ static inline int isdigit(int ch);
 static inline int isxdigit(int ch);
 
 unsigned int _parse_integer(const char *s, unsigned int base, unsigned long long *p);
+
+int parse_even_earlier(u32 *res, const char *option, char *p);
 
 #endif

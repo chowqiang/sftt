@@ -218,7 +218,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 	assert(tmp != NULL);
 
 	strcpy(digest, tmp);
-	free(tmp);
+	mp_free(g_mp, tmp);
 
 	return 0;
 }
@@ -247,7 +247,7 @@ int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 	assert(tmp != NULL);
 
 	strcpy(digest, tmp);
-	free(tmp);
+	mp_free(g_mp, tmp);
 
 	return 0;
 }

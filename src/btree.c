@@ -18,11 +18,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "btree.h"
+#include "mem_pool.h"
 #include "queue.h"
 #include "destroy.h"
 
+extern struct mem_pool *g_mp;
+
 struct btree_node *btree_node_create(void *data) {
-	struct btree_node *node = (struct btree_node *)malloc(sizeof(struct btree_node));
+	struct btree_node *node = (struct btree_node *)mp_malloc(g_mp,
+			sizeof(struct btree_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -33,7 +37,7 @@ struct btree_node *btree_node_create(void *data) {
 	return node;
 }
 struct btree *btree_create(void (*destroy)(void *data)) {
-	struct btree *tree = (struct btree *)malloc(sizeof(struct btree));
+	struct btree *tree = (struct btree *)mp_malloc(g_mp, sizeof(struct btree));
 	if (tree == NULL) {
 		return NULL;
 	}
@@ -68,7 +72,7 @@ int btree_node_destroy(struct btree_node *node, void (*destroy) (void *data)) {
 	if (destroy) {
 		destroy(node->data);
 	}
-	free(node);
+	mp_free(g_mp, node);
 
 	return left_cnt + right_cnt + 1;
 }

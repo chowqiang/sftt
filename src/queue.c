@@ -17,17 +17,20 @@
 #include <assert.h> 
 #include <stdlib.h>
 #include <stdio.h>
+#include "mem_pool.h"
 #include "queue.h"
 #include "show.h"
 
+extern struct mem_pool *g_mp;
+
 struct queue *queue_create(void (*destroy)(void *data)) {
-	struct queue *q = (struct queue *)malloc(sizeof(struct queue));
+	struct queue *q = (struct queue *)mp_malloc(g_mp, sizeof(struct queue));
 	if (q == NULL) {
 		return NULL;
 	}
 	q->list = dlist_create(destroy);
 	if (q->list == NULL) {
-		free(q);
+		mp_free(g_mp, q);
 		return NULL;
 	}
 

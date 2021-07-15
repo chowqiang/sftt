@@ -31,7 +31,7 @@ struct pthread_mutex *pthread_mutex_construct(void)
 	
 	/*
 	 * here cannot use mem_pool to alloc memory,
-	 * because mem_pool depend on pthred_mutex.
+	 * because mem_pool depends on pthred_mutex.
 	 */
 	pm = malloc(sizeof(struct pthread_mutex));
 	assert(pm != NULL);

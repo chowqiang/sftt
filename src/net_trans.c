@@ -43,7 +43,7 @@ struct sftt_packet *malloc_sftt_packet(int block_size) {
 
 	sp->content = (unsigned char *)mp_malloc(g_mp, sizeof(unsigned char) * block_size);
 	if (sp->content == NULL) {
-		free(sp);
+		mp_free(g_mp, sp);
 		return NULL;
 	}
 	sp->block_size = block_size;	

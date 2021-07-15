@@ -17,6 +17,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "map.h"
+#include "mem_pool.h"
+
+extern struct mem_pool *g_mp;
 
 int map_init(struct map *m)
 {
@@ -26,7 +29,7 @@ int map_init(struct map *m)
 
 	m->list = dlist_create(free);
 	if (m->list == NULL) {
-		free(m);
+		mp_free(g_mp, m);
 		return -1;
 	}
 
@@ -34,13 +37,13 @@ int map_init(struct map *m)
 }
 
 struct map *map_create(void){
-	struct map *m = (struct map *)malloc(sizeof(struct map));
+	struct map *m = (struct map *)mp_malloc(g_mp, sizeof(struct map));
 	if (m == NULL) {
 		return NULL;
 	}
 	m->list = dlist_create(free);
 	if (m->list == NULL) {
-		free(m);
+		mp_free(g_mp, m);
 		return NULL;
 	}
 
@@ -52,7 +55,8 @@ int map_add(struct map *m, void *key, void *value){
 		return -1;
 	}
 
-	struct kv_node *data = (struct kv_node *)malloc(sizeof(struct kv_node));
+	struct kv_node *data = (struct kv_node *)mp_malloc(g_mp,
+			sizeof(struct kv_node));
 	if (data == NULL) {
 		printf("cannot alloc kv_node object\n");
 		return -1;
@@ -68,7 +72,7 @@ int map_add(struct map *m, void *key, void *value){
 		//printf("%s:%d, kvn->key=%s\n", kvn->key);
 		if (kvn->key == data->key) {
 			kvn->value = data->value;
-			free(data);
+			mp_free(g_mp, data);
 			return 0;
 		}
 	} 

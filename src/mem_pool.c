@@ -22,15 +22,24 @@
 #include "base.h"
 #include "mem_pool.h"
 
+/*
+ * The global mem pool pointer
+ */
 struct mem_pool *g_mp = NULL;
 
 static LIST_HEAD(mem_nodes);
 
+/*
+ * Make the g_mp available
+ */
 static void __attribute__((constructor)) mem_pool_init(void)
 {
 	get_singleton_mp();	
 }
 
+/*
+ * Return the g_mp and initialise it if necessary
+ */
 struct mem_pool *get_singleton_mp() {
 	if (g_mp) {
 		return g_mp;
@@ -41,6 +50,12 @@ struct mem_pool *get_singleton_mp() {
 	return g_mp;
 }
 
+/*
+ * Create a mem node
+ * @size: The size of mem node
+ *
+ * Return: mem node pointer
+ */
 struct mem_node *mem_node_create(size_t size) {
 	struct mem_node *p = (struct mem_node *)malloc(sizeof(struct mem_node));
 	if (p == NULL) {
@@ -60,6 +75,10 @@ struct mem_node *mem_node_create(size_t size) {
 	return p;
 }
 
+/*
+ * Free a mem node
+ * @data: The mem node pointer to be freed
+ */
 void mem_node_free(void *data) {
 	if (data == NULL) {
 		return ;
@@ -70,6 +89,11 @@ void mem_node_free(void *data) {
 	}
 }
 
+/*
+ * Create a mem pool
+ *
+ * Return: The mem pool pointer created
+ */
 struct mem_pool *mp_create(void) {
 	struct mem_pool *mp = (struct mem_pool *)malloc(sizeof(struct mem_pool));
 	if (mp == NULL) {
@@ -83,6 +107,13 @@ struct mem_pool *mp_create(void) {
 	return mp;
 }
 
+/*
+ * Alloc memory from mem pool
+ * @mp: The mem pool pointer
+ * @n: The size of memory to be allocated
+ *
+ * Return: The address of memory allocated
+ */
 void *mp_malloc(struct mem_pool *mp, size_t n)
 {
 	if (mp == NULL || n == 0) {
@@ -129,6 +160,14 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 	return m_node->address;
 }
 
+/*
+ * Realloc memmory
+ * @mp: mem pool pointer
+ * @addr: the address of memory to realloc
+ * @n: the size of memory to realloc
+ *
+ * Return: the address reallocated
+ */
 void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 {
 	struct mem_node *p = NULL;
@@ -164,6 +203,11 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 	return tmp;
 }
 
+/*
+ * Free the memory from mem pool
+ * @mp: mem pool pointer
+ * @p: the address of memory from mem pool
+ */
 void mp_free(struct mem_pool *mp, void *p) {
 	if (mp == NULL || p == NULL) {
 		return ;
@@ -183,6 +227,10 @@ void mp_free(struct mem_pool *mp, void *p) {
 	mp->mutex->ops->unlock(mp->mutex);
 }
 
+/*
+ * Destroy the mem pool
+ * @mp: mem pool pointer
+ */
 void mp_destroy(struct mem_pool *mp) {
 	if (mp == NULL) {
 		return ;
@@ -194,20 +242,48 @@ void mp_destroy(struct mem_pool *mp) {
 			return ;
 		}
 	}
+
+	list_for_each_entry(m_node, &mem_nodes, list)
+		free(m_node);
+
+	delete(pthread_mutex, mp->mutex);
 }
 
-int mp_node_cnt(struct mem_pool *mp) {
-	return 0;
+/*
+ * Get the node count of mem pool
+ * @mp: mem pool pointer
+ */
+int mp_node_cnt(struct mem_pool *mp)
+{
+	int num = 0;
+
+	if (mp == NULL)
+		return 0;
+
+	struct mem_node *m_node = NULL;
+	list_for_each_entry(m_node, &mem_nodes, list)
+		++num;
+
+	return num;
 }
 
+/*
+ * Get the global mem pool pointer
+ *
+ * Return: mem pool pointer
+ */
 struct mem_pool *mem_pool_construct(void)
 {
 	return get_singleton_mp();
 }
 
-void mem_pool_destruct(struct mem_pool *ptr)
+/*
+ * Destruct the mem pool
+ * @mp: mem pool pointer
+ */
+void mem_pool_destruct(struct mem_pool *mp)
 {
-	mp_destroy(ptr);	
+	mp_destroy(mp);
 }
 
 bool mp_valid(struct mem_pool *mp)
@@ -215,6 +291,12 @@ bool mp_valid(struct mem_pool *mp)
 	return mp && mp->nodes;
 }
 
+/*
+ * Get the size of mem pool
+ * @mp: mem pool pointer
+ *
+ * Return: the size of mem pool
+ */
 int mp_size(struct mem_pool *mp)
 {
 	if (mp == NULL) {
@@ -234,9 +316,11 @@ void mp_stat(struct mem_pool *mp)
 {
 	if (!mp_valid(mp))
 		return ;
+
 	/* total cached memory */
 	/* number of memory node */
 	/* map of memory size and memory node */
+
 	printf("mem_pool(%p): size -- %d, node -- %d\n", mp,
 		mp_size(mp), mp_node_cnt(mp));
 

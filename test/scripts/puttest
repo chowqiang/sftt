@@ -5,7 +5,7 @@ client_bin=/root/sftt/client/sftt
 
 home=/root/sftt
 src=/root/sftt/test
-dest=/var/sftt/tmp12
+dest=/var/sftt/tmp14
 
 [ ! -d $dest ] && mkdir $dest
 

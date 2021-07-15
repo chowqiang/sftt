@@ -22,7 +22,10 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include "mem_pool.h"
 #include "utils.h"
+
+extern struct mem_pool *g_mp;
 
 int gen_int(int begin, int end)
 {
@@ -168,7 +171,7 @@ void simplify_path(char *path)
 	if (len == 0)
 		return ;
 
-	tmp = (char *)malloc(sizeof(char) * (len + 1));
+	tmp = (char *)mp_malloc(g_mp, sizeof(char) * (len + 1));
 	assert(tmp);
 
 	i = len - 1;
@@ -189,7 +192,7 @@ void simplify_path(char *path)
 	tmp[j] = 0;
 	strcpy(path, tmp);
 
-	free(tmp);
+	mp_free(g_mp, tmp);
 }
 
 int get_right_most_path(char *path, char *sub_path)

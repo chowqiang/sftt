@@ -23,6 +23,7 @@
 #include "lock.h"
 
 struct mem_node {
+	/* Memory size of this node */
 	size_t size;
 	int is_using;
 	void *address;
@@ -31,6 +32,10 @@ struct mem_node {
 };
 
 struct mem_pool {
+	/*
+	 * Memory pool contains a list of mem_node
+	 * The mutex prevent race.
+	 */
 	struct mem_node *nodes;
 	struct pthread_mutex *mutex;
 };

@@ -21,15 +21,17 @@
 #include "dlist.h"
 #include "show.h"
 
+extern struct mem_pool *g_mp;
+
 struct stack *stack_create(void (*destroy)(void *data)) {
-	struct stack *s = (struct stack *)malloc(sizeof(struct stack));
+	struct stack *s = (struct stack *)mp_malloc(sizeof(struct stack));
 	if (s == NULL) {
 		return NULL;
 	}
 
 	s->list = dlist_create(destroy);
 	if (s->list == NULL) {
-		free(s);
+		mp_free(g_mp, s);
 		return NULL;
 	}
 

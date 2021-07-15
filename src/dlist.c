@@ -19,10 +19,20 @@
 #include <stdlib.h>
 #include "dlist.h"
 #include "destroy.h"
+#include "mem_pool.h"
 #include "show.h"
 
+extern struct mem_pool *g_mp;
+
+/*
+ * Create a node of dlist
+ * @data: the data for the node
+ *
+ * Return: dlist node pointer
+ */
 struct dlist_node *dlist_node_create(void *data) {
-	struct dlist_node *node = (struct dlist_node *)malloc(sizeof(struct dlist_node));
+	struct dlist_node *node = (struct dlist_node *)mp_malloc(g_mp,
+			sizeof(struct dlist_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -34,7 +44,8 @@ struct dlist_node *dlist_node_create(void *data) {
 }
 
 struct dlist *dlist_create(void (*destroy)(void *data)) {
-	struct dlist *list = (struct dlist *)malloc(sizeof(struct dlist));
+	struct dlist *list = (struct dlist *)mp_malloc(g_mp,
+			sizeof(struct dlist));
 	dlist_init(list, destroy);
 
 	return list;
@@ -64,7 +75,7 @@ void dlist_destroy(struct dlist *list) {
 			list->destroy(p->data);	
 		}
 		q = p->next;
-		free(p);
+		mp_free(g_mp, p);
 		p = q;
 	}
 }
@@ -186,7 +197,7 @@ int dlist_remove(struct dlist *list, struct dlist_node *elem, void **data, int n
 		*data = elem->data;
 	}
 	if (need_free) {
-		free(elem);
+		mp_free(g_mp, elem);
 	} else {
 		elem->prev = elem->next = NULL;
 	}

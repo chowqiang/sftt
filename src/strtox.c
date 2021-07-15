@@ -1,5 +1,5 @@
 /*
- * Copyright (C)  2020-2021 Min Zhou <zhoumin@bupt.cn>, all rights reserved.
+ * Copyright (C) copy from linux kernel.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,9 +21,18 @@
 #include "strtox.h"
 #include "compiler.h"
 
-static inline int kstrtou32(const char *s, unsigned int base, u32 *res)
+int kstrtou32(const char *s, unsigned int base, u32 *res)
 {
     return kstrtouint(s, base, res);
+}
+
+int parse_even_earlier(u32 *res, const char *option, char *p)
+{
+    unsigned int tmp;                \
+                                    \
+    if (strncmp(option, (char *)p, strlen(option)) == 0)        \
+        tmp = kstrtou32((char *)p + strlen(option) + 1, 10, res); \
+
 }
 
 /**
@@ -176,24 +185,3 @@ unsigned int _parse_integer(const char *s, unsigned int base, unsigned long long
     *p = res;
     return rv;
 }
-
-#if 0
-int main(void) {
-	char *str[] = {"freq=1300", "memsize1=60", "memsize2=180"};
-	int freq = 0;
-	int memsize1 = 0;
-	int memsize2 = 0;
-
-	char **p = str;
-	parse_even_earlier(freq, "freq", *p);
-	++p;
-	parse_even_earlier(memsize1, "memsize1", *p);
-	++p;
-	parse_even_earlier(memsize2, "memsize2", *p);
-	++p;
-
-	printf("freq: %d, memsize1: %d, memsize2: %d\n", freq, memsize1, memsize2);
-
-	return 0;
-}
-#endif

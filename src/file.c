@@ -221,7 +221,7 @@ void free_path_entry_list(struct path_entry_list *head) {
 	struct path_entry_list *p = head, *q = head;
 	while (p) {
 		q = p->next;
-		free(p);
+		mp_free(g_mp, p);
 		p = q;
 	}
 }

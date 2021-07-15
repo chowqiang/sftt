@@ -124,8 +124,3 @@ void test_set_bit(void) {
 	set_bit(a + 1, 1, 0);
 	printf("0x%x0x%x\n", a[0], a[1]);
 }
-#if 0
-int main(void) {
-	test_set_bit();
-}
-#endif

@@ -522,9 +522,3 @@ void test_file(void) {
 
 	return ;	
 }
-#if 0
-int main(void) {
-	test_file();
-}
-#endif 
-

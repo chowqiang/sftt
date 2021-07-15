@@ -151,7 +151,7 @@ struct sftt_client *create_client(char *ip, struct sftt_client_config *config, i
 
 	fprintf(stderr, "Value of errno: %d\n", errno);
 	fprintf(stderr, "Error opening file: %s\n", strerror(errno));
-	free(client);
+	mp_free(g_mp, client);
 	
 	return NULL;
 }
@@ -221,7 +221,7 @@ struct file_input_stream *create_file_input_stream(char *file_name) {
 
 void destory_file_input_stream(struct file_input_stream *fis) {
 	if (fis) {
-		free(fis);
+		mp_free(g_mp, fis);
 	}
 }
 
@@ -479,7 +479,7 @@ int client_main_old(int argc, char **argv) {
 		send_complete_end_packet(client->connects[0].sock, sp);
 
 		free_sftt_packet(&sp);
-		free(pe);
+		mp_free(g_mp, pe);
 
 	} else if (is_dir(target)) {
 		connects_num = CLIENT_MAX_CONNECT_NUM;
@@ -501,7 +501,7 @@ int client_main_old(int argc, char **argv) {
 
 		send_multiple_file(client, pes, count);
 
-		free(pes);
+		mp_free(g_mp, pes);
 	}
 
 	destory_sftt_client(client);
@@ -694,7 +694,7 @@ void add_cmd_log(struct user_cmd *cmd)
 	buf[ret] = 0;
 
 	add_log(LOG_INFO, "%s", buf);
-	free(buf);
+	mp_free(g_mp, buf);
 }
 
 void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag) {
@@ -803,7 +803,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 		//char *md5_str = md5_printable_str(req_info->passwd_md5);
 		//if (md5_str) {
 		//	add_log(LOG_INFO, "%s", md5_str);
-		//	free(md5_str);
+		//	mp_free(g_mp, md5_str);
 		//}
 	} else {
 		req_info->passwd_md5[0] = 0;

@@ -122,7 +122,7 @@ void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_serv
 		FILE * fd;
 		int i = 0 ;
 		int j = 0 ; 
-		char *data_buff = (char *)malloc(consulted_block_size * sizeof(char));
+		char *data_buff = (char *)mp_malloc(g_mp, consulted_block_size * sizeof(char));
 		memset(data_buff, '\0', consulted_block_size);
 		while(1) {
 			if (j >= 5) {
@@ -396,7 +396,7 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 	char *md5_str = md5_printable_str(req_info->passwd_md5);
 	if (md5_str) {
 		add_log(LOG_INFO, "passwd md5: %s", md5_str);
-		free(md5_str);
+		mp_free(g_mp, md5_str);
 	}
 
 	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));

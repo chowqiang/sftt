@@ -14,15 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "encrypt.h"
 #include <stdio.h>
 #include <string.h>
+#include "encrypt.h"
 
-//char * sftt_encrypt_func(char * source);
-//char * sftt_decrypt_func(char * aim);
 void  print_bytes(char *aim);
 
-void print_bytes(char * aim) {
+void print_bytes(char * aim)
+{
 	int len = strlen(aim);
 	int j;
         for (j=0; j < len; j++) {
@@ -31,7 +30,8 @@ void print_bytes(char * aim) {
         printf("\n");
 }
 
-char * sftt_encrypt_func(char * source , int size){
+char * sftt_encrypt_func(char * source , int size)
+{
 
 //	print_bytes(source);
 	
@@ -51,15 +51,8 @@ char * sftt_decrypt_func(char * aim, int size){
 		aim[i] = aim[i] - i - 5;
 		
 	}
+
 //	print_bytes(aim);
+
 	return aim;
-
 }
-
-/*
-int main(){
-	char source[] = {255,'e','l','l','o','s','s','3','\0'};
-	char * tmp = sftt_encrypt_func(source);
-	sftt_decrypt_func(tmp);
-}
-*/
