@@ -534,7 +534,7 @@ char *parse_exec_name(char *buf, int *offset)
 	exec_name[j] = 0;
 	*offset = i;
 
-	return strdup(exec_name);
+	return __strdup(exec_name);
 }
 
 char **parse_args(char *buf, int *argc)
@@ -556,7 +556,7 @@ char **parse_args(char *buf, int *argc)
 			case INIT:
 				if (arg_len) {
 					arg[arg_len] = 0;
-					dlist_append(args_list, strdup(arg));
+					dlist_append(args_list, __strdup(arg));
 					arg_len = 0;
 				}
 				continue;
@@ -616,7 +616,7 @@ char **parse_args(char *buf, int *argc)
 
 	if (state == INIT && arg_len) {
 		arg[arg_len] = 0;
-		dlist_append(args_list, strdup(arg));
+		dlist_append(args_list, __strdup(arg));
 	}
 
 	*argc = dlist_size(args_list);
@@ -1650,7 +1650,7 @@ int reader_loop(struct sftt_client_v2 *client)
 		if (!strcmp(cmd.buf, "quit")) {
 			exit(0);
 		} else {
-			dlist_append(his_cmds, strdup(cmd.buf));
+			dlist_append(his_cmds, __strdup(cmd.buf));
 			last = dlist_tail(his_cmds);
 			execute_cmd(client, cmd.buf, -1);
 			start = 0;
@@ -1695,7 +1695,7 @@ int reader_loop2(struct sftt_client_v2 *client)
 			exit(0);
 		}
 		execute_cmd(client, cmd, -1);
-		dlist_append(his_cmds, strdup(cmd));
+		dlist_append(his_cmds, __strdup(cmd));
 	}
 }
 

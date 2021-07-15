@@ -181,7 +181,7 @@ struct dlist *get_top_file_list(char *dir)
 	}
 
 	while ((entry = readdir(dp)) != NULL) {
-		name = strdup(entry->d_name);
+		name = __strdup(entry->d_name);
 		dlist_append(list, name);
 	}
 

@@ -248,3 +248,20 @@ int get_first_word(char *buf, char *word, int len)
 
 	return 0;
 }
+
+char *__strdup(const char *buf)
+{
+	int len;
+	char *tmp;
+
+	if (buf == NULL || (len = strlen(buf)) == 0)
+		return NULL;
+
+	tmp = mp_malloc(g_mp, len);
+	if (tmp == NULL)
+		return tmp;
+
+	strcpy(tmp, buf);
+
+	return tmp;
+}

@@ -57,7 +57,7 @@ char *get_user_db_file(void)
 	for (i = 0; db_search_pathes[i] != NULL; ++i) {
 		snprintf(tmp, 255, "%s/%s", db_search_pathes[i], db_name);
 		if (file_existed(tmp))
-			return strdup(tmp);
+			return __strdup(tmp);
 
 	}
 

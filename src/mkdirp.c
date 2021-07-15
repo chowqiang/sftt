@@ -10,14 +10,18 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "path-normalize.h"
+#include "mem_pool.h"
 #include "mkdirp.h"
+#include "path-normalize.h"
+#include "utils.h"
 
 #ifdef _WIN32
 #define PATH_SEPARATOR   '\\'
 #else
 #define PATH_SEPARATOR   '/'
 #endif
+
+extern struct mem_pool *g_mp;
 
 /*
  * Recursively `mkdir(path, mode)`
@@ -33,7 +37,7 @@ mkdirp(const char *path, mode_t mode) {
   pathname = path_normalize(path);
   if (NULL == pathname) goto fail;
 
-  parent = strdup(pathname);
+  parent = __strdup(pathname);
   if (NULL == parent) goto fail;
 
   char *p = parent + strlen(parent);
@@ -44,7 +48,7 @@ mkdirp(const char *path, mode_t mode) {
 
   // make parent dir
   if (p != parent && 0 != mkdirp(parent, mode)) goto fail;
-  free(parent);
+  mp_free(g_mp, parent);
 
   // make this one if parent has been made
   #ifdef _WIN32
@@ -54,14 +58,14 @@ mkdirp(const char *path, mode_t mode) {
     int rc = mkdir(pathname, mode);
   #endif
 
-  free(pathname);
+  mp_free(g_mp, pathname);
 
   return 0 == rc || EEXIST == errno
     ? 0
     : -1;
 
 fail:
-  free(pathname);
-  free(parent);
+  mp_free(g_mp, pathname);
+  mp_free(g_mp, parent);
   return -1;
 }

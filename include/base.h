@@ -31,7 +31,6 @@
 #define delete(TYPE, ptr)	do				\
 				{				\
 					TYPE ## _destruct(ptr);	\
-					/*free(ptr);*/		\
 				}				\
 				while(0)
 // clang-format on

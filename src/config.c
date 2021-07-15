@@ -21,8 +21,11 @@
 #include <stdlib.h>
 #include "config.h"
 #include "file.h"
+#include "mem_pool.h"
 #include "req_rsp.h"
 #include "utils.h"
+
+extern struct mem_pool *g_mp;
 
 char *config_search_pathes[] = {"/etc/sftt", "./config", ".",
 	"/root/sftt/config", NULL};
@@ -35,7 +38,7 @@ char *search_config(char *fname)
 	for (i = 0; config_search_pathes[i] != NULL; ++i) {
 		snprintf(tmp, 255, "%s/%s", config_search_pathes[i], fname);
 		if (file_existed(tmp))
-			return strdup(tmp);
+			return __strdup(tmp);
 	}
 
 	return NULL;
@@ -213,13 +216,13 @@ int get_sftt_server_config(struct sftt_server_config *ssc) {
 	}
 
 	fclose(fp);
-	free(server_config_path);
+	mp_free(g_mp, server_config_path);
 
 	return 0;
 
 ERR_RET:
 	printf("server config file parse failed!\n");
-	free(server_config_path);
+	mp_free(g_mp, server_config_path);
 
 	return -1;
 }
@@ -332,13 +335,13 @@ int get_sftt_client_config(struct sftt_client_config *scc) {
 	}
 
 	fclose(fp);
-	free(client_config_path);
+	mp_free(g_mp, client_config_path);
 
 	return 0;
 
 ERR_RET:
 	printf("client config file parse failed!\n");
-	free(client_config_path);
+	mp_free(g_mp, client_config_path);
 
 	return -1;
 }
