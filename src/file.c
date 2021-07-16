@@ -26,6 +26,7 @@
 #include "file.h"
 #include "md5.h"
 #include "mem_pool.h"
+#include "utils.h"
 
 extern struct mem_pool *g_mp;
 

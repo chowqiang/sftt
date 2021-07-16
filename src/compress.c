@@ -246,25 +246,35 @@ void show_char_stat_node(char *prefix, struct char_stat_node *csn) {
 	}
 }
 
-int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
-	if (tree == NULL || tree->root == NULL || char_codes == NULL) {
-		return -1;
-	}
-
+int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE])
+{
 	struct map *m = map_create();
-	struct btree_node *root = tree->root;
+	struct btree_node *root = NULL;
 	struct btree_node *tn = NULL;
 	struct char_stat_node *csn = NULL;
 
 	struct stack *sc = stack_create(NULL);
 	struct stack *stn = stack_create(NULL);
+
+	int ret = 0;
+
+	if (tree == NULL || tree->root == NULL || char_codes == NULL) {
+		goto get_char_codes_done;
+		ret = -1;
+	}
+
+	root = tree->root;
 	stack_push(stn, root);
 
+	/*
+	 * access each node by DFS and record the codes of leaf.
+	 */
 	while (!stack_is_empty(stn)) {
 		tn = stack_peek(stn);
 		if (tn == NULL) {
 			continue;
 		}
+
 		if (btree_is_leaf(tn)) {
 			csn = (struct char_stat_node *)tn->data;
 			char_codes[csn->ch] = get_char_code(sc);
@@ -290,7 +300,12 @@ int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
 		}
 	}
 
-	return 0;
+get_char_codes_done:
+	map_destroy(m);
+	stack_destroy(sc);
+	stack_destroy(stn);
+
+	return ret;
 }
 
 void free_char_codes(char *char_codes[CHARSET_SIZE]) {
@@ -320,15 +335,22 @@ int copy_char_freq(unsigned char *pos, int *char_freq) {
 	return (pos - head); 
 }
 
-int huffman_encode(unsigned char *input, int input_len, char *char_codes[CHARSET_SIZE], unsigned char *pos) {
+/*
+ * generate codes for each byte and put it into encoded bytes.
+ */
+int huffman_encode(unsigned char *input, int input_len,
+		char *char_codes[CHARSET_SIZE], unsigned char *pos)
+{
 	//printf("huffman_encode input_len: %d\n", input_len);
 
 	int i = 0, j = 0, index = CHAR_BIT_LEN;
 	unsigned char *head = pos;
+	char *tmp;
+
 	memcpy(head, &input_len, sizeof(int));
 	pos += sizeof(int);
 
-	char *tmp = NULL;
+	tmp = NULL;
 	for (i = 0; i < input_len; ++i) {
 		tmp = char_codes[input[i]];
 		if (tmp == NULL) {
@@ -360,7 +382,14 @@ void show_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
 	}
 }
 
-int huffman_compress(unsigned char *input, int input_len, unsigned char *output) {
+int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
+{
+	int char_freq[CHARSET_SIZE];
+	struct btree *tree;
+	char *char_codes[CHARSET_SIZE];
+	unsigned char *pos;
+	int ret, char_freq_len, char_code_len;
+
 	if (input == NULL || input_len < 1) {
 		printf("params error!\n");
 		return -1;
@@ -370,31 +399,43 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 		return -1;
 	}
 	
-	int char_freq[CHARSET_SIZE];
-	int ret = calc_char_freq(input, input_len, char_freq);
+	/*
+	 * calculate the frequency of chars.
+	 */
+	ret = calc_char_freq(input, input_len, char_freq);
 	if (ret == -1) {
 		printf("calc char freq failed!\n");
 		return -1;
 	}
 	//show_char_freq(char_freq);
 
-	struct btree *tree = generate_huffman_tree(char_freq);	
+	/*
+	 * generate huffman tree by the frequency of chars.
+	 * the node of huffman tree is the frequency of char.
+	 */
+	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
 		return -1;
 	}
 
-	char *char_codes[CHARSET_SIZE];
 	memset(char_codes, 0, sizeof(char_codes));
+	/*
+	 * get the codes of chars according to the huffman tree.
+	 */
 	if (get_char_codes(tree, char_codes) == -1) {
 		printf("get char codes failed!\n");
 		return -1;
 	}
 
-	unsigned char *pos = output;
-	int char_freq_len = copy_char_freq(pos, char_freq);	
+	pos = output;
+	/*
+	 * put the frequency of chars into encoded bytes.
+	 */
+	char_freq_len = copy_char_freq(pos, char_freq);
 	//printf("char freq block size: %d\n", char_freq_len);
 
-	int char_code_len = huffman_encode(input, input_len, char_codes, pos + char_freq_len);	
+	char_code_len = huffman_encode(input, input_len, char_codes,
+			pos + char_freq_len);
 
 	free_char_codes(char_codes);
 
@@ -420,18 +461,26 @@ unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos) {
 	return pos;
 }
 
-int huffman_decode(struct btree *tree, unsigned char *input, int input_len, unsigned char *output) {
-	if (tree == NULL || tree->root == NULL || input == NULL || input_len < 1 || output == NULL) {
-		printf("huffman decode pararms error!\n");
-		return 0;
-	}	
-	struct btree_node *root = tree->root, *tn = NULL;
+int huffman_decode(struct btree *tree, unsigned char *input, int input_len,
+		unsigned char *output)
+{
+	struct btree_node *root = NULL, *tn = NULL;
 	struct char_stat_node *csn = NULL;
 	int i = 0, j = 0, index = CHAR_BIT_LEN;
 	unsigned char *pos = input, bit = 0;
 
+	if (tree == NULL || tree->root == NULL || input == NULL ||
+			input_len < 1 || output == NULL) {
+		printf("huffman decode pararms error!\n");
+		return 0;
+	}
+
+	root = tree->root;
 	for (i = 0; i < input_len; ++i) {
 		tn = root;
+		/*
+		 * the leaf of huffman tree stores the info of char.
+		 */
 		while (!btree_is_leaf(tn)) {
 			if (index == 0) {
 				index = CHAR_BIT_LEN;
@@ -452,28 +501,38 @@ int huffman_decode(struct btree *tree, unsigned char *input, int input_len, unsi
 	return j;
 }
 
-int huffman_decompress(unsigned char *input, unsigned char *output) {
+int huffman_decompress(unsigned char *input, unsigned char *output)
+{
+	int char_freq[CHARSET_SIZE];
+	unsigned char *pos = input;
+	struct btree *tree;
+	int input_len, out_len;
+
 	if (input == NULL || output == NULL) {
 		printf("decompress: input and output cannot be NULL!\n");
 		return -1;
 	}
 
-	int char_freq[CHARSET_SIZE];
-	unsigned char *pos = input;
+	/*
+	 * get the frequency of chars from encoded bytes.
+	 */
 	pos = get_char_freq(char_freq, pos);
 	//show_char_freq(char_freq);
 
-	struct btree *tree = generate_huffman_tree(char_freq);	
+	/*
+	 * generate the huffman tree by the frequency of chars.
+	 */
+	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
 		printf("decompress: generate_huffman_tree failed!\n");
 		return -1;
 	}
 
-	int input_len = *(int *)pos;
+	input_len = *(int *)pos;
 	//printf("encoded char count: %d\n", input_len);
 	pos += sizeof(int);
 
-	int out_len = huffman_decode(tree, pos, input_len, output);
+	out_len = huffman_decode(tree, pos, input_len, output);
 	
 	return out_len;
 }

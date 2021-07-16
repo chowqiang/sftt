@@ -45,7 +45,7 @@ static inline bool str_equal(void *a, void *b)
 	return strcmp((char *)a, (char *)b) == 0;
 }
 
-struct map *map_create();
+struct map *map_create(void);
 int map_init(struct map *m);
 int map_add(struct map *m, void *key, void *value);
 int map_find(struct map *m, key_equal_t is_equal, void *key, void **value);

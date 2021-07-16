@@ -19,12 +19,13 @@
 #include <assert.h>
 #include "stack.h"
 #include "dlist.h"
+#include "mem_pool.h"
 #include "show.h"
 
 extern struct mem_pool *g_mp;
 
 struct stack *stack_create(void (*destroy)(void *data)) {
-	struct stack *s = (struct stack *)mp_malloc(sizeof(struct stack));
+	struct stack *s = (struct stack *)mp_malloc(g_mp, sizeof(struct stack));
 	if (s == NULL) {
 		return NULL;
 	}
