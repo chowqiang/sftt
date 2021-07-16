@@ -21,6 +21,12 @@
 
 extern struct mem_pool *g_mp;
 
+/*
+ * Init the map struct
+ * @m: Map struct pointer
+ *
+ * Return: 0 if init successfully; < 0 if an error occurred
+ */
 int map_init(struct map *m)
 {
 	if (m == NULL) {

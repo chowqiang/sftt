@@ -30,7 +30,11 @@
 
 extern struct mem_pool *g_mp;
 
-size_t file_size(char *filename) {
+/*
+ * Get the size of file in bytes.
+ */
+size_t file_size(char *filename)
+{
 	FILE *pfile = fopen(filename, "rb");
 	if (pfile == NULL)
 	{
@@ -46,6 +50,9 @@ size_t file_size(char *filename) {
 	return length;
 }
 
+/*
+ * Get the whole contents of file.
+ */
 unsigned char *file_get_contents(char *path, size_t *length)
 {
 	FILE *pfile = NULL;
@@ -72,7 +79,11 @@ unsigned char *file_get_contents(char *path, size_t *length)
 	return data;
 }
 
-size_t file_put_contents(char *path, unsigned char *text, size_t length) {
+/*
+ * Write the contents into file.
+ */
+size_t file_put_contents(char *path, unsigned char *text, size_t length)
+{
 	FILE *fp = fopen(path, "wb");
 	if (fp == NULL) {
 		return -1;
@@ -84,6 +95,9 @@ size_t file_put_contents(char *path, unsigned char *text, size_t length) {
 	return cnt; 
 }
 
+/*
+ * Is file existed.
+ */
 bool file_existed(char *path)
 {
 	if (path == NULL || strlen(path) == 0)
@@ -125,6 +139,9 @@ char *path_join(char *dir, char *fname)
 	return path;
 }
 
+/*
+ * Get all files by DFS and link that in dlist.
+ */
 struct dlist *get_all_file_list(char *dir)
 {
 	struct dlist *list;
@@ -165,6 +182,9 @@ struct dlist *get_all_file_list(char *dir)
 	return list;
 }
 
+/*
+ * Get the files of the top level in dir.
+ */
 struct dlist *get_top_file_list(char *dir)
 {
 	struct dlist *list;
@@ -203,7 +223,8 @@ bool same_file(char *path, char *md5)
 	return strcmp(real_md5, md5) == 0;
 }
 
-struct path_entry *get_file_path_entry(char *file_name) {
+struct path_entry *get_file_path_entry(char *file_name)
+{
 	struct path_entry *pe;
 
         pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
@@ -218,7 +239,8 @@ struct path_entry *get_file_path_entry(char *file_name) {
 	return pe;
 }
 
-void free_path_entry_list(struct path_entry_list *head) {
+void free_path_entry_list(struct path_entry_list *head)
+{
 	struct path_entry_list *p = head, *q = head;
 	while (p) {
 		q = p->next;
@@ -226,7 +248,9 @@ void free_path_entry_list(struct path_entry_list *head) {
 		p = q;
 	}
 }
-struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt) {
+
+struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt)
+{
 	*pcnt = 0;
 	struct path_entry_list *head = get_dir_path_entry_list(file_name, prefix);
 	if (head == NULL) {
@@ -264,7 +288,8 @@ struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *
 	return array;
 }
 
-struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix) {
+struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
+{
 	struct path_entry_list *head = NULL;
 	struct path_entry_list *current_entry = NULL;
 	struct path_entry_list *sub_list = NULL;

@@ -199,7 +199,8 @@ struct file_input_stream *create_file_input_stream(char *file_name) {
 		return NULL;
 	}
 
-	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(g_mp, sizeof(struct file_input_stream));
+	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(g_mp,
+			sizeof(struct file_input_stream));
 	if (fis == NULL) {
 		return NULL;
 	}
@@ -332,7 +333,10 @@ void *send_files_by_thread(void *args) {
 	for (i = tip->index; i < tip->pe_count; i += tip->step) {
 		ret = send_single_file((tip->connect).sock, sp, tip->pes + i);
 		if (ret == -1) {
-			printf("Error. send single file in thread %d failed! abs path: %s, rel path: %s\n", tip->index, tip->pes[i].abs_path, tip->pes[i].rel_path);
+			printf("Error. send single file in thread %d failed!"
+					"abs path: %s, rel path: %s\n",
+					tip->index, tip->pes[i].abs_path,
+					tip->pes[i].rel_path);
 			break;
 		}
 	}
@@ -354,7 +358,8 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp) {
 	return 0;
 }
 
-int send_multiple_file(struct sftt_client *client, struct path_entry *pes, int count) {
+int send_multiple_file(struct sftt_client *client, struct path_entry *pes, int count)
+{
 	if (count == 0) {
 		return -1;
 	}
@@ -385,23 +390,28 @@ int send_multiple_file(struct sftt_client *client, struct path_entry *pes, int c
 		}
 	}	
 	
-
 	return 0;
 }
 
-int find_unfinished_session(struct path_entry *pe, char *ip) {
+int find_unfinished_session(struct path_entry *pe, char *ip)
+{
 	return 0;		
 }
 
-int file_trans_session_diff(struct file_trans_session *old_session, struct file_trans_session *new_seesion) {
+int file_trans_session_diff(struct file_trans_session *old_session,
+		struct file_trans_session *new_seesion)
+{
 	return 0;
 }
 
-int dir_trans_session_diff(struct dir_trans_session *old_session, struct dir_trans_session *new_session) {
+int dir_trans_session_diff(struct dir_trans_session *old_session,
+		struct dir_trans_session *new_session)
+{
 	return 0;
 }
 
-int save_trans_session(struct sftt_client *client) {
+int save_trans_session(struct sftt_client *client)
+{
 	return 0;
 }
 
@@ -567,7 +577,8 @@ char **parse_args(char *buf, int *argc)
 				arg[arg_len++] = buf[i];
 				continue;
 			default:
-				printf("unexpected state: %d in %s:%d\n", state, __FILE__, __LINE__);
+				printf("unexpected state: %d in %s:%d\n",
+						state, __FILE__, __LINE__);
 				goto out;
 			}
 		}
@@ -663,7 +674,8 @@ struct user_cmd *parse_command(char *buf)
 	return cmd;
 }
 
-static int run_command(struct sftt_client_v2 *client, const struct cmd_handler *cmd, int argc, char *argv[])
+static int run_command(struct sftt_client_v2 *client,
+		const struct cmd_handler *cmd, int argc, char *argv[])
 {
 	int ret;
 	bool argv_check = true;
@@ -810,7 +822,6 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) 
 	}
 	req_info->passwd_len = strlen(req_info->passwd_md5);
 
-	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
 	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
 
@@ -956,7 +967,6 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 	strncpy(req_info->path, path, DIR_PATH_MAX_LEN - 1);
 
-	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
 	req_packet->block_size = LL_REQ_PACKET_MIN_LEN;
 
@@ -983,12 +993,6 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
 	assert(resp_info != NULL);
-	/*
-	 * @todo delete the comment ...
-	 *
-	 * It's a bug from xdr lib, -1 was changed to 65535.
-	 * I will fix this bug soon ...
-	 */
 	while (resp_info->idx != -1) {
 		//assert(resp_info->nr == FILE_ENTRY_MAX_CNT);
 		for (i = 0; i < resp_info->nr; ++i) {
@@ -1155,7 +1159,6 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
-	// how to serialize and deserialize properly ???
 	req_packet->obj = req_info;
 	req_packet->block_size = PWD_REQ_PACKET_MIN_LEN;
 
@@ -1407,7 +1410,6 @@ int send_trans_entry_by_put_req(struct sftt_client_v2 *client,
 {
 	req_packet->type = PACKET_TYPE_PUT_REQ;
 
-	// how to serialize and deserialize properly ???
 	req_packet->obj = req;
 	req_packet->block_size = PUT_REQ_PACKET_MIN_LEN;
 

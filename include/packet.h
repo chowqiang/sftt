@@ -54,6 +54,9 @@ EXTERN_RESP_PACKET_MIN_LEN(GET);
 
 EXTERN_RESP_PACKET_MIN_LEN(COMMON);
 
+/*
+ * The packet type used to send and recv packet.
+ */
 enum packet_type {
 	PACKET_TYPE_VALIDATE_REQ,
 	PACKET_TYPE_VALIDATE_RSP,
@@ -78,7 +81,11 @@ enum packet_type {
 	PACKET_TYPE_COMMON_RSP,
 };
 
-
+/*
+ * The packet struct to describe a packet.
+ * @obj: the pointer of struct which will be (de)serialized
+ * 	according to the packet type.
+ */
 struct sftt_packet {
 	int type;
 	void *obj;

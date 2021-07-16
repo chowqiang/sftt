@@ -267,7 +267,7 @@ int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE])
 	stack_push(stn, root);
 
 	/*
-	 * access each node by DFS and record the codes of leaf.
+	 * Access each node by DFS and record the codes of leaf.
 	 */
 	while (!stack_is_empty(stn)) {
 		tn = stack_peek(stn);
@@ -336,7 +336,7 @@ int copy_char_freq(unsigned char *pos, int *char_freq) {
 }
 
 /*
- * generate codes for each byte and put it into encoded bytes.
+ * Generate codes for each byte and put it into encoded bytes.
  */
 int huffman_encode(unsigned char *input, int input_len,
 		char *char_codes[CHARSET_SIZE], unsigned char *pos)
@@ -400,7 +400,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 	}
 	
 	/*
-	 * calculate the frequency of chars.
+	 * Calculate the frequency of chars.
 	 */
 	ret = calc_char_freq(input, input_len, char_freq);
 	if (ret == -1) {
@@ -410,8 +410,8 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 	//show_char_freq(char_freq);
 
 	/*
-	 * generate huffman tree by the frequency of chars.
-	 * the node of huffman tree is the frequency of char.
+	 * Generate huffman tree by the frequency of chars.
+	 * The node of huffman tree is the frequency of char.
 	 */
 	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
@@ -420,7 +420,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 
 	memset(char_codes, 0, sizeof(char_codes));
 	/*
-	 * get the codes of chars according to the huffman tree.
+	 * Get the codes of chars according to the huffman tree.
 	 */
 	if (get_char_codes(tree, char_codes) == -1) {
 		printf("get char codes failed!\n");
@@ -429,7 +429,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 
 	pos = output;
 	/*
-	 * put the frequency of chars into encoded bytes.
+	 * Put the frequency of chars into encoded bytes.
 	 */
 	char_freq_len = copy_char_freq(pos, char_freq);
 	//printf("char freq block size: %d\n", char_freq_len);
@@ -479,7 +479,7 @@ int huffman_decode(struct btree *tree, unsigned char *input, int input_len,
 	for (i = 0; i < input_len; ++i) {
 		tn = root;
 		/*
-		 * the leaf of huffman tree stores the info of char.
+		 * The leaf of huffman tree stores the info of char.
 		 */
 		while (!btree_is_leaf(tn)) {
 			if (index == 0) {
@@ -514,13 +514,13 @@ int huffman_decompress(unsigned char *input, unsigned char *output)
 	}
 
 	/*
-	 * get the frequency of chars from encoded bytes.
+	 * Get the frequency of chars from encoded bytes.
 	 */
 	pos = get_char_freq(char_freq, pos);
 	//show_char_freq(char_freq);
 
 	/*
-	 * generate the huffman tree by the frequency of chars.
+	 * Generate the huffman tree by the frequency of chars.
 	 */
 	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
