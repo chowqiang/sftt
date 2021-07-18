@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "base.h"
+#include "context.h"
 #include "mem_pool.h"
 
 /*
@@ -108,7 +109,38 @@ struct mem_pool *mp_create(void)
 	mp->mutex = new(pthread_mutex);
 	assert(mp->mutex != NULL);
 
+	mp->stat.total_size = 0;
+	mp->stat.total_nodes = 0;
+	mp->stat.using_nodes = 0;
+	mp->stat.free_nodes = 0;
+
+	mp->shm_space = NULL;
+
 	return mp;
+}
+
+void mp_update_stat(struct mem_pool *mp)
+{
+	struct context *ctx;
+
+	if (mp == NULL)
+		return ;
+
+	if (mp->shm_space == NULL) {
+		ctx = get_current_context();
+		if (ctx == NULL)
+			return ;
+
+		mp->shm_space = new(shm_space, ctx->shm_key, SHM_SPACE_SIZE);
+		if (mp->shm_space == NULL)
+			return ;
+
+		if (shm_space_create_section(mp->shm_space, MEM_POOL_STAT,
+			sizeof(struct mem_pool_stat) == -1))
+			return ;
+	}
+
+	shm_space_dump_section(mp->shm_space, MEM_POOL_STAT, &mp->stat);
 }
 
 /*
@@ -157,6 +189,9 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
+
+	mp_update_stat(mp);
+
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);

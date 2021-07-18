@@ -23,7 +23,7 @@
 
 #define SHM_SPACE_SIZE	(1024 * 1024)
 
-#define SHM_SPACE_NAME_LEN	128
+#define SHM_KEY_NAME_LEN	128
 #define SHM_SECTION_NAME_LEN	32
 
 struct shm_section {
@@ -34,7 +34,7 @@ struct shm_section {
 };
 
 struct shm_space {
-	char name[SHM_SPACE_NAME_LEN];
+	char name[SHM_KEY_NAME_LEN];
 	int nr;
 	void *start;
 	void *end;

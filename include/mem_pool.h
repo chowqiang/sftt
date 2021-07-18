@@ -21,6 +21,9 @@
 #include <stddef.h>
 #include "list.h"
 #include "lock.h"
+#include "shm_space.h"
+
+#define MEM_POOL_STAT "mem_pool_stat"
 
 struct mem_node {
 	/* Memory size of this node */
@@ -31,6 +34,13 @@ struct mem_node {
 	struct list_head list;
 };
 
+struct mem_pool_stat {
+	int total_size;
+	int total_nodes;
+	int using_nodes;
+	int free_nodes;
+};
+
 struct mem_pool {
 	/*
 	 * Memory pool contains a list of mem_node
@@ -38,6 +48,8 @@ struct mem_pool {
 	 */
 	struct mem_node *nodes;
 	struct pthread_mutex *mutex;
+	struct mem_pool_stat stat;
+	struct shm_space *shm_space;
 };
 
 struct mem_pool *mem_pool_construct(void);
