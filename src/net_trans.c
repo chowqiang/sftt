@@ -267,7 +267,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 		return -1;
 	}
 	add_log(LOG_INFO, "%s, receive content: ret=%d, sp->data_len=%d", __func__,
-		ret, sp->data_len)
+		ret, sp->data_len);
 
 #if 0
 	if (sp->type == PACKET_TYPE_FILE_NAME_REQ) {

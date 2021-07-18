@@ -9,6 +9,7 @@ client/client
 client/sftt
 server/server
 server/sfttd
+tools/mp_stat
 test/a.out
 test/bin/*
 debug/*

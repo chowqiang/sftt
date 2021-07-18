@@ -19,21 +19,26 @@
 
 #include <stdbool.h>
 
-#define SHM_MAX_SECTION	128
+#define SHM_MAX_SECTION_NR	8
+
+#define SHM_SPACE_SIZE	(1024 * 1024)
+
+#define SHM_SPACE_NAME_LEN	128
+#define SHM_SECTION_NAME_LEN	32
 
 struct shm_section {
-	char *name;
+	char name[SHM_SECTION_NAME_LEN];
 	bool valid;
 	void *start;
 	int size;
 };
 
 struct shm_space {
-	char *name;
+	char name[SHM_SPACE_NAME_LEN];
 	int nr;
 	void *start;
 	void *end;
-	struct shm_section sections[SHM_MAX_SECTION];
+	struct shm_section sections[SHM_MAX_SECTION_NR];
 };
 
 struct shm_space *shm_space_construct(char *name, int size);
@@ -41,5 +46,8 @@ void shm_space_destruct(struct shm_space *ptr);
 int shm_space_create_section(struct shm_space *ptr, char *name, int size);
 int shm_space_dump_section(struct shm_space *ptr, char *name, void *data);
 int shm_space_delete_section(struct shm_space *ptr, char *name);
+struct shm_space *get_shm_space(char *name);
+int shm_space_get_section_content(struct shm_space *ptr, char *name, char *data);
+struct shm_section *shm_space_get_section(struct shm_space *ptr, char *name);
 
 #endif

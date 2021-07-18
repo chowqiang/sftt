@@ -332,7 +332,8 @@ void mp_stat(struct mem_pool *mp)
 
 }
 
-int mem_pool_test(void) {
+int mem_pool_test(void)
+{
 	struct mem_pool *mp = mp_create();
 	printf("node count: %d\n", mp_node_cnt(mp));
 
