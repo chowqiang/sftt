@@ -19,7 +19,8 @@
 #include <string.h>
 #include "cmdline.h"
 
-void refill(char *prefix, char ch, int num) {
+void refill(char *prefix, char ch, int num)
+{
     int i = 0;
     //putchar('\r');
 	printf("\r%s", prefix);
@@ -37,7 +38,8 @@ void refill_str(char *prefix, char *str, int num)
 	}
 }
 
-int get_pass(char *prompt, char *passwd, int max_len) {
+int get_pass(char *prompt, char *passwd, int max_len)
+{
 	if (prompt) {
 		printf("%s", prompt);
 	}

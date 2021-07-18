@@ -40,7 +40,8 @@ static void __attribute__((constructor)) mem_pool_init(void)
 /*
  * Return the g_mp and initialise it if necessary
  */
-struct mem_pool *get_singleton_mp() {
+struct mem_pool *get_singleton_mp()
+{
 	if (g_mp) {
 		return g_mp;
 	}
@@ -56,7 +57,8 @@ struct mem_pool *get_singleton_mp() {
  *
  * Return: mem node pointer
  */
-struct mem_node *mem_node_create(size_t size) {
+struct mem_node *mem_node_create(size_t size)
+{
 	struct mem_node *p = (struct mem_node *)malloc(sizeof(struct mem_node));
 	if (p == NULL) {
 		return NULL;
@@ -79,7 +81,8 @@ struct mem_node *mem_node_create(size_t size) {
  * Free a mem node
  * @data: The mem node pointer to be freed
  */
-void mem_node_free(void *data) {
+void mem_node_free(void *data)
+{
 	if (data == NULL) {
 		return ;
 	}
@@ -94,7 +97,8 @@ void mem_node_free(void *data) {
  *
  * Return: The mem pool pointer created
  */
-struct mem_pool *mp_create(void) {
+struct mem_pool *mp_create(void)
+{
 	struct mem_pool *mp = (struct mem_pool *)malloc(sizeof(struct mem_pool));
 	if (mp == NULL) {
 		return NULL;
@@ -208,7 +212,8 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
  * @mp: mem pool pointer
  * @p: the address of memory from mem pool
  */
-void mp_free(struct mem_pool *mp, void *p) {
+void mp_free(struct mem_pool *mp, void *p)
+{
 	if (mp == NULL || p == NULL) {
 		return ;
 	}
@@ -231,7 +236,8 @@ void mp_free(struct mem_pool *mp, void *p) {
  * Destroy the mem pool
  * @mp: mem pool pointer
  */
-void mp_destroy(struct mem_pool *mp) {
+void mp_destroy(struct mem_pool *mp)
+{
 	if (mp == NULL) {
 		return ;
 	}

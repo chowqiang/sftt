@@ -75,7 +75,8 @@ struct sftt_server_stat *alloc_sftt_server_stat(void);
 
 void sync_server_stat(void);
 
-void server_init_func(struct sftt_server_config *server_config){
+void server_init_func(struct sftt_server_config *server_config)
+{
 	DIR *mydir = NULL;
 	if (get_sftt_server_config(server_config) != 0) {
 		printf(PROC_NAME ": get server config failed!\n");
@@ -94,7 +95,8 @@ void server_init_func(struct sftt_server_config *server_config){
 
 }
 
-int server_consult_block_size(int connect_fd,char *buff,int server_block_size){
+int server_consult_block_size(int connect_fd,char *buff,int server_block_size)
+{
 	int trans_len = recv(connect_fd, buff, BUFFER_SIZE, 0);
 	if (trans_len <= 0 ) {
 		printf("consult block size recv failed!\n");
@@ -103,7 +105,8 @@ int server_consult_block_size(int connect_fd,char *buff,int server_block_size){
 
 	char *mybuff = sftt_decrypt_func(buff,trans_len);
 	int client_block_size = atoi(buff);
-	int min_block_size = client_block_size < server_block_size ? client_block_size : server_block_size;
+	int min_block_size = client_block_size < server_block_size ?
+		client_block_size : server_block_size;
 
 	sprintf(buff,"%d",min_block_size);
 	int size = strlen(buff);
@@ -114,15 +117,20 @@ int server_consult_block_size(int connect_fd,char *buff,int server_block_size){
 
 }
 
-void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_server_config init_conf){
+void server_file_resv(int connect_fd, int consulted_block_size,
+	struct sftt_server_config init_conf)
+{
 	int trans_len;
 	struct sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
 	int connected = 1;
+
 	while (connected){
 		FILE * fd;
 		int i = 0 ;
 		int j = 0 ; 
-		char *data_buff = (char *)mp_malloc(g_mp, consulted_block_size * sizeof(char));
+		char *data_buff = (char *)mp_malloc(g_mp,
+			consulted_block_size * sizeof(char));
+
 		memset(data_buff, '\0', consulted_block_size);
 		while(1) {
 			if (j >= 5) {
@@ -171,13 +179,16 @@ void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_serv
 	}
 }
 
-void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp ){
+void server_transport_data_to_file(FILE *fd, struct sftt_packet *sp)
+{
 	int write_len=fwrite(sp->content, 1, sp->data_len, fd);
 	add_log(LOG_INFO, "write len is %d", write_len);
 }
 
 
-FILE * server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_conf, char * data_buff){
+FILE *server_creat_file(struct sftt_packet *sp,
+	struct sftt_server_config init_conf, char *data_buff)
+{
 	int i;
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
@@ -195,57 +206,63 @@ FILE * server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_
 	return fd;
 }
 
-void  is_exit(char * filepath){
-	char * tmp_path = (char * ) malloc (strlen(filepath)*sizeof(char));
+void is_exit(char *filepath)
+{
+	char *tmp_path = (char *) malloc(strlen(filepath) * sizeof(char));
 	printf("%s ======file_path\n",filepath);
 	memset(tmp_path,'\0',strlen(filepath));
 	strcpy(tmp_path,filepath);
 	printf("tmp_path == %s ",tmp_path);
 	int str_len = strlen(filepath);
-	int i ;
+	int i;
+
 	for (i = 0; i <= str_len; i ++ ) {
 		if (tmp_path[i] == '/'){ 
 			tmp_path[i+1] = '\0';
 			if (access(tmp_path, F_OK) == -1) {
-				int status = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+				int status = mkdir(tmp_path,
+					S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 				if (status == -1) {
-                    printf("%s\n",tmp_path);
-                }
-			}else {
+					printf("%s\n",tmp_path);
+				}
+			} else {
 				printf("%s\n", tmp_path);
 			}
 			memset(tmp_path,'\0',str_len);
-            strcpy(tmp_path,filepath);
+			strcpy(tmp_path,filepath);
 			printf("%s=====",tmp_path);
-            continue;
+			continue;
 		}
 	}
 }
 
-int server_main_old(){
+int server_main_old(void)
+{
 //	int	socket_fd = sftt_server();
-    int socket_fd = 0;
+	int socket_fd = 0;
 	int	connect_fd;
 	int	trans_len;
 	pid_t   pid;
-    char	buff[BUFFER_SIZE] = {'\0'};
+	char	buff[BUFFER_SIZE] = {'\0'};
 	char    quit[BUFFER_SIZE] = {'q','u','i','t'};
 	struct sftt_server_config  init_conf;
 	//init server 
 	server_init_func(&init_conf);
 	
 	while(1){
-		if( (connect_fd = accept(socket_fd, (struct sockaddr*)NULL, NULL)) == -1){  
-		printf("connect filed");	
-		continue;
+		if( (connect_fd = accept(socket_fd, (struct sockaddr*)NULL,
+			NULL)) == -1) {
+			printf("connect filed");
+			continue;
 		}
 		pid = fork();
-		if ( pid == 0 ){
+		if (pid == 0) {
 			int consulted_block_size;
-			consulted_block_size = server_consult_block_size(connect_fd,buff,init_conf.block_size);
+			consulted_block_size = server_consult_block_size(
+				connect_fd, buff, init_conf.block_size);
 			printf("consulted_block_size : %d\n",consulted_block_size);
-			server_file_resv(connect_fd, consulted_block_size,init_conf );
-		} else if (pid < 0 ){
+			server_file_resv(connect_fd, consulted_block_size, init_conf);
+		} else if (pid < 0){
 			printf("fork failed!\n");
 		} else {
 			wait(NULL);
@@ -255,11 +272,13 @@ int server_main_old(){
 	close(socket_fd);
 }
 
-void sighandler(int signum) {
+void sighandler(int signum)
+{
    add_log(LOG_INFO, "Caught signal %d, coming out ...", signum);
 }
 
-bool init_sftt_server_stat(pid_t log_pid) {
+bool init_sftt_server_stat(pid_t log_pid)
+{
 	struct sftt_server_stat *sss = alloc_sftt_server_stat();
 	assert(sss != NULL);
 
@@ -272,7 +291,8 @@ bool init_sftt_server_stat(pid_t log_pid) {
 	return true;
 }
 
-int get_sftt_server_shmid(int create_flag) {
+int get_sftt_server_shmid(int create_flag)
+{
 	key_t key;
 	int shmid;
 
@@ -291,7 +311,8 @@ int get_sftt_server_shmid(int create_flag) {
 	return shmid;
 }
 
-void *get_sftt_server_shmaddr(int create_flag) {
+void *get_sftt_server_shmaddr(int create_flag)
+{
 	int shmid = get_sftt_server_shmid(create_flag);
 	if (shmid == -1) {
 		printf(PROC_NAME " get shmid failed!\n");
@@ -312,7 +333,8 @@ struct sftt_server_stat *alloc_sftt_server_stat(void)
 	return (struct sftt_server_stat *)get_sftt_server_shmaddr(1);
 }
 
-struct sftt_server_stat *get_sftt_server_stat(void) {
+struct sftt_server_stat *get_sftt_server_stat(void)
+{
 	return (struct sftt_server_stat *)get_sftt_server_shmaddr(0);
 }
 
@@ -321,7 +343,8 @@ void put_sftt_server_stat(struct sftt_server_stat *sss)
 	shmdt(sss);
 }
 
-bool free_sftt_server_stat(void) {
+bool free_sftt_server_stat(void)
+{
 	int shmid = get_sftt_server_shmid(0);
 	if (shmid == -1) {
 		printf(PROC_NAME " get shmid failed!\n");
@@ -336,7 +359,8 @@ bool free_sftt_server_stat(void) {
 	return true;
 }
 
-bool sftt_server_is_running(void) {
+bool sftt_server_is_running(void)
+{
 	key_t key;
 	int shmid;
 
@@ -357,7 +381,8 @@ bool sftt_server_is_running(void) {
 	return sss->status == RUNNING;
 }
 
-void update_server(struct sftt_server *server) {
+void update_server(struct sftt_server *server)
+{
 	int sock = 0;
 	uint64_t current_ts = (uint64_t)time(NULL);
 	int port = get_random_port();
@@ -369,8 +394,9 @@ void update_server(struct sftt_server *server) {
 			return ;
 		}
 
-		sprintf(buf, "update main port and main sock. sock(%d -> %d), port(%d -> %d)",
-			server->main_sock, sock, server->main_port, port);
+		sprintf(buf, "update main port and main sock. "
+			"sock(%d -> %d), port(%d -> %d)", server->main_sock,
+			sock, server->main_port, port);
 		add_log(LOG_INFO, buf);
 
 		if (sock != -1) {
@@ -383,7 +409,8 @@ void update_server(struct sftt_server *server) {
 	sync_server_stat();
 }
 
-static int validate_user_info(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+static int validate_user_info(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
@@ -453,18 +480,21 @@ static int validate_user_info(struct client_session *client, struct sftt_packet 
 	return 0;
 }
 
-void child_process_exception_handler(int sig) {
+void child_process_exception_handler(int sig)
+{
 	add_log(LOG_WARN, "child thread encounter seg fault!");
 	printf("I'm child process and encountered segmental fault!\n");
 	exit(-1);
 }
 
-void child_process_exit(int sig) {
+void child_process_exit(int sig)
+{
 	add_log(LOG_INFO, "I'm child process and exit for received signal.");
 	exit(-1);
 }
 
-void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet,
+	struct sftt_packet *resp_packet)
 {
 	struct pwd_req *req_info;
 	struct pwd_resp *resp_info;
@@ -493,7 +523,8 @@ void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packe
 	}
 }
 
-int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
+	struct sftt_packet *resp_packet)
 {
 	struct cd_req *req_info;
 	struct cd_resp *resp_info;
@@ -536,7 +567,8 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	return 0;
 }
 
-int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
+	struct sftt_packet *resp_packet)
 {
 	struct ll_req *req_info;
 	struct ll_resp *resp_info;
@@ -631,8 +663,7 @@ send_resp_once:
 }
 
 int send_trans_entry_by_get_resp(struct client_session *client,
-		struct sftt_packet *resp_packet,
-		struct get_resp *resp)
+	struct sftt_packet *resp_packet, struct get_resp *resp)
 {
 	resp_packet->type = PACKET_TYPE_GET_RSP;
 
@@ -650,8 +681,8 @@ int send_trans_entry_by_get_resp(struct client_session *client,
 }
 
 int send_file_name_by_get_resp(struct client_session *client,
-		struct sftt_packet *resp_packet,
-		char *path, char *fname, struct get_resp *resp)
+	struct sftt_packet *resp_packet, char *path,
+	char *fname, struct get_resp *resp)
 {
 	printf("%s: path=%s, fname=%s\n", __func__, path, fname);
 	if (is_dir(path))
@@ -667,8 +698,8 @@ int send_file_name_by_get_resp(struct client_session *client,
 }
 
 int send_file_md5_by_get_resp(struct client_session *client,
-		struct sftt_packet *resp_packet,
-		char *file, struct get_resp *resp)
+	struct sftt_packet *resp_packet, char *file,
+	struct get_resp *resp)
 {
 	int ret;
 
@@ -688,15 +719,14 @@ int send_file_md5_by_get_resp(struct client_session *client,
 }
 
 int send_file_content_by_get_resp(struct client_session *client,
-		struct sftt_packet *resp_packet,
-		struct get_resp *resp)
+	struct sftt_packet *resp_packet, struct get_resp *resp)
 {
 	return send_trans_entry_by_get_resp(client, resp_packet, resp);
 }
 
 int send_one_file_by_get_resp(struct client_session *client,
-		struct sftt_packet *resp_packet,
-		char *path, char *fname, int nr, int idx)
+	struct sftt_packet *resp_packet, char *path,
+	char *fname, int nr, int idx)
 {
 	struct get_resp *resp;
 	struct common_resp *com_resp;
@@ -775,7 +805,8 @@ int send_one_file_by_get_resp(struct client_session *client,
 }
 
 #ifdef CONFIG_GET_OVERLAP
-int handle_get_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int handle_get_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct get_req *req;
 	struct get_resp *resp;
@@ -831,14 +862,16 @@ int handle_get_req(struct client_session *client, struct sftt_packet *req_packet
 	return 0;
 }
 #else
-int handle_get_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int handle_get_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 
 }
 #endif
 
-int recv_one_file_by_put_req(struct client_session *client, struct sftt_packet *req_packet,
-		struct sftt_packet *resp_packet, struct common_resp *com_resp, bool *has_more)
+int recv_one_file_by_put_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet,
+	struct common_resp *com_resp, bool *has_more)
 {
 	char *rp = NULL;
 	char file[FILE_NAME_MAX_LEN];
@@ -982,7 +1015,8 @@ recv_one_file_done:
 	return 0;
 }
 
-int handle_put_req(struct client_session *client, struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+int handle_put_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct common_resp *com_resp;
 	int ret, i = 0;
@@ -996,7 +1030,8 @@ int handle_put_req(struct client_session *client, struct sftt_packet *req_packet
 
 	do {
 		printf("recv %d-th file ...\n", i);
-		ret = recv_one_file_by_put_req(client, req_packet, resp_packet, com_resp, &has_more);
+		ret = recv_one_file_by_put_req(client, req_packet, resp_packet,
+			com_resp, &has_more);
 		if (ret == -1 || has_more == false)
 			break;
 
@@ -1150,7 +1185,8 @@ void init_sessions(void)
 	}
 }
 
-void main_loop(void) {
+void main_loop(void)
+{
 	int connect_fd = 0;
 	pid_t pid = 0;
 	int idx = 0;
@@ -1184,7 +1220,8 @@ void main_loop(void) {
 	}
 }
 
-int create_non_block_sock(int *pport) {
+int create_non_block_sock(int *pport)
+{
 	int	sockfd;
 	struct sockaddr_in serveraddr;
 	int rand_port = get_random_port();
@@ -1222,11 +1259,13 @@ int create_non_block_sock(int *pport) {
 	return sockfd;
 }
 
-struct database *start_sftt_db_server(void) {
+struct database *start_sftt_db_server(void)
+{
 	return (void *)-1;
 }
 
-pid_t start_sftt_log_server(struct sftt_server *server) {
+pid_t start_sftt_log_server(struct sftt_server *server)
+{
 	pid_t pid = fork();
 	if (pid == 0) {
 		signal(SIGTERM, logger_exit);
@@ -1238,7 +1277,8 @@ pid_t start_sftt_log_server(struct sftt_server *server) {
 	}
 }
 
-bool init_sftt_server(char *store_path) {
+bool init_sftt_server(char *store_path)
+{
 	int port = 0;
 	int sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
@@ -1274,7 +1314,8 @@ bool init_sftt_server(char *store_path) {
 
 	bool ret = init_sftt_server_stat(log_pid);
 	if (!ret) {
-		printf(PROC_NAME " start failed! Because cannot init " PROC_NAME " server info.\n");
+		printf(PROC_NAME " start failed! Because cannot init "
+			PROC_NAME " server info.\n");
 		return false;
 	}
 	server->pm = new(pthread_mutex);
@@ -1313,7 +1354,8 @@ int sftt_server_start(char *store_path, bool background) {
 	main_loop();
 }
 
-int sftt_server_restart(char *store_path, bool background) {
+int sftt_server_restart(char *store_path, bool background)
+{
 	if (!sftt_server_is_running()) {
 		printf("cannot restart " PROC_NAME ", because it is not running.\n");
 		exit(-1);
@@ -1334,7 +1376,8 @@ int sftt_server_restart(char *store_path, bool background) {
  * we should wait all children exit before sftt server exits.
  * todo: fix this bug.
  **/
-int sftt_server_stop(void) {
+int sftt_server_stop(void)
+{
 	if (!sftt_server_is_running()) {
 		printf("cannot stop " PROC_NAME ", because it is not running.\n");
 		exit(-1);
@@ -1357,7 +1400,7 @@ int sftt_server_stop(void) {
 	*	to be: the child terminated; the child was stopped by a signal;
 	*	or the child was resumed by a signal. In the case of a terminated
 	*	child, performing a wait allows the system to release the resources
-	*   associated with the child; if a wait is not performed, then
+	*   	associated with the child; if a wait is not performed, then
 	*	the terminated child remains in a "zombie" state (see NOTES below).
 	*
 	*	If  a  child  has  already changed state, then these calls return
@@ -1378,7 +1421,8 @@ int sftt_server_stop(void) {
 	return 0;
 }
 
-void notify_all_child_to_exit(void) {
+void notify_all_child_to_exit(void)
+{
 	int i = 0;
 	for (i = 0; i < MAX_CHILD_NUM; ++i) {
 		if (server->sessions[i].status != ACTIVE) {
@@ -1388,7 +1432,8 @@ void notify_all_child_to_exit(void) {
 	}
 }
 
-void sftt_server_exit(int sig) {
+void sftt_server_exit(int sig)
+{
 	printf(PROC_NAME " is exit ...!\n");
 	notify_all_child_to_exit();
 	free_sftt_server_stat();
@@ -1396,7 +1441,8 @@ void sftt_server_exit(int sig) {
 	exit(-1);
 }
 
-void server_usage_help(int exitcode) {
+void server_usage_help(int exitcode)
+{
 	version();
 	printf("usage:\t" PROC_NAME " options\n"
 		"\t" PROC_NAME " start [-d] [-s dir]\n"
@@ -1407,7 +1453,8 @@ void server_usage_help(int exitcode) {
 	exit(exitcode);
 }
 
-bool parse_store_path(char *optarg, char *store_path, int max_len) {
+bool parse_store_path(char *optarg, char *store_path, int max_len)
+{
 	if (!optarg || !store_path) {
 		return false;
 	}
@@ -1417,7 +1464,8 @@ bool parse_store_path(char *optarg, char *store_path, int max_len) {
 	return true;
 }
 
-const char *status_desc(enum sftt_server_status status) {
+const char *status_desc(enum sftt_server_status status)
+{
 	switch (status) {
 	case SERVERING:
 		return "running";
@@ -1428,7 +1476,8 @@ const char *status_desc(enum sftt_server_status status) {
 	}
 }
 
-void sftt_server_status(void) {
+void sftt_server_status(void)
+{
 	if (!sftt_server_is_running()) {
 		printf(PROC_NAME " is not running.\n");
 		return ;
@@ -1611,7 +1660,8 @@ void execute_db_cmd(struct db_connect *db_con, char *cmd, int flag)
 
 }
 
-void sftt_server_db(void) {
+void sftt_server_db(void)
+{
 	char cmd[1024];
 	struct db_connect *db_con;
 	char *user_db_file = get_user_db_file();

@@ -304,7 +304,8 @@ void logger_destruct(struct logger *ptr)
 	mp_free(g_mp, ptr);
 }
 
-int do_log(struct logger *log, struct trace_info *trace, int level, const char *fmt, va_list args)
+int do_log(struct logger *log, struct trace_info *trace,
+	int level, const char *fmt, va_list args)
 {
 	char log_file[FILE_NAME_MAX_LEN];
 	char buf[LOG_STR_MAX_LEN];

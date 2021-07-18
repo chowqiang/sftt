@@ -24,9 +24,10 @@
 
 extern struct mem_pool *g_mp;
 
-struct btree_node *btree_node_create(void *data) {
+struct btree_node *btree_node_create(void *data)
+{
 	struct btree_node *node = (struct btree_node *)mp_malloc(g_mp,
-			sizeof(struct btree_node));
+		sizeof(struct btree_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -36,8 +37,11 @@ struct btree_node *btree_node_create(void *data) {
 
 	return node;
 }
-struct btree *btree_create(void (*destroy)(void *data)) {
-	struct btree *tree = (struct btree *)mp_malloc(g_mp, sizeof(struct btree));
+
+struct btree *btree_create(void (*destroy)(void *data))
+{
+	struct btree *tree = (struct btree *)mp_malloc(g_mp,
+		sizeof(struct btree));
 	if (tree == NULL) {
 		return NULL;
 	}
@@ -46,7 +50,8 @@ struct btree *btree_create(void (*destroy)(void *data)) {
 	return tree;	
 }
 
-void btree_init(struct btree *tree, void (*destroy) (void *data)) {
+void btree_init(struct btree *tree, void (*destroy) (void *data))
+{
 	if (tree == NULL) {
 		return ;
 	}
@@ -55,7 +60,8 @@ void btree_init(struct btree *tree, void (*destroy) (void *data)) {
 	tree->root = NULL;
 }
 
-void btree_set_root(struct btree *tree, struct btree_node *root) {
+void btree_set_root(struct btree *tree, struct btree_node *root)
+{
 	if (tree == NULL) {
 		return ;
 	}
@@ -63,7 +69,9 @@ void btree_set_root(struct btree *tree, struct btree_node *root) {
 	tree->size = btree_node_count(root); 
 }
 
-int btree_node_destroy(struct btree_node *node, void (*destroy) (void *data)) {
+int btree_node_destroy(struct btree_node *node,
+	void (*destroy)(void *data))
+{
 	if (node == NULL) {
 		return 0;
 	}
@@ -77,7 +85,8 @@ int btree_node_destroy(struct btree_node *node, void (*destroy) (void *data)) {
 	return left_cnt + right_cnt + 1;
 }
 
-void btree_destroy(struct btree *tree) {
+void btree_destroy(struct btree *tree)
+{
 	if (tree == NULL) {
 		return ;
 	}
@@ -86,7 +95,8 @@ void btree_destroy(struct btree *tree) {
 	tree->root = NULL;
 }
 
-int btree_ins_left(struct btree *tree, struct btree_node *node, void *data) {
+int btree_ins_left(struct btree *tree, struct btree_node *node, void *data)
+{
 	if (tree == NULL) {
 		return -1;
 	} 
@@ -106,11 +116,14 @@ int btree_ins_left(struct btree *tree, struct btree_node *node, void *data) {
 	return tree->size;
 }
 
-int btree_is_empty(struct btree *tree) {
+int btree_is_empty(struct btree *tree)
+{
 	return tree == NULL ? 1 : tree->root == NULL;
 }
 
-int btree_ins_right(struct btree *tree, struct btree_node *node, void *data) {
+int btree_ins_right(struct btree *tree, struct btree_node *node,
+	void *data)
+{
 	if (tree == NULL) {
 		return -1;
 	}
@@ -131,7 +144,8 @@ int btree_ins_right(struct btree *tree, struct btree_node *node, void *data) {
 	return tree->size;
 }
 
-int btree_rm_left(struct btree *tree, struct btree_node *node) {
+int btree_rm_left(struct btree *tree, struct btree_node *node)
+{
 	if (tree == NULL || node == NULL) {
 		return -1;	
 	} 
@@ -142,7 +156,8 @@ int btree_rm_left(struct btree *tree, struct btree_node *node) {
 	return tree->size;
 }
 
-int btree_rm_right(struct btree *tree, struct btree_node *node) {
+int btree_rm_right(struct btree *tree, struct btree_node *node)
+{
 	if (tree == NULL || node == NULL) {
 		return -1;
 	}
@@ -153,19 +168,24 @@ int btree_rm_right(struct btree *tree, struct btree_node *node) {
 	return tree->size;
 }
 
-int btree_size(struct btree *tree) {
+int btree_size(struct btree *tree)
+{
 	return tree == NULL ? 0 : tree->size;
 }
 
-struct btree_node *btree_root(struct btree *tree) {
+struct btree_node *btree_root(struct btree *tree)
+{
 	return tree == NULL ? NULL : tree->root;
 }
 
-int btree_is_leaf(struct btree_node *node) {
+int btree_is_leaf(struct btree_node *node)
+{
 	return node == NULL ? 0 : node->left == NULL && node->right == NULL;
 }
 
-struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left, struct btree_node *right) {
+struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left,
+	struct btree_node *right)
+{
 	struct btree_node *parent = btree_node_create(data);
 	if (parent == NULL) {
 		return NULL;
@@ -176,11 +196,13 @@ struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left, st
 	return parent;
 }
 
-void *btree_data(struct btree_node *node) {
+void *btree_data(struct btree_node *node)
+{
 	return node == NULL ? NULL : node->data;
 }
 
-struct dlist *btree_bfs(struct btree *tree) {
+struct dlist *btree_bfs(struct btree *tree)
+{
 	if (tree == NULL) {
 		return NULL;
 	}
@@ -207,7 +229,8 @@ struct dlist *btree_bfs(struct btree *tree) {
 	return list;
 }
 
-int btree_node_count(struct btree_node *node) {
+int btree_node_count(struct btree_node *node)
+{
 	if (node == NULL) {
 		return 0;
 	} else {
@@ -215,7 +238,8 @@ int btree_node_count(struct btree_node *node) {
 	}
 }
 
-int btree_test(void) {
+int btree_test(void)
+{
 	struct btree tree;
 	btree_init(&tree, destroy_int);
 

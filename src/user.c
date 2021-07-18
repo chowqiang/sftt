@@ -93,37 +93,39 @@ struct user_base_info *find_user_base_by_name(char *name)
 	if (map_find(&data[0], str_equal, "uid", (void **)&value) == -1 || value == NULL) {
 		printf("uid's value: %d\n", atoi(value));
 		printf("cannot find uid\n");
-		return NULL;
+		goto find_done;
 	}
 	user_base->uid = atoi(value);
 
 	if (map_find(&data[0], str_equal, "name", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find name\n");
-		return NULL;
+		goto find_done;
 	}
 	strcpy(user_base->name, value);
 
 	if (map_find(&data[0], str_equal, "home_dir", (void **)&value) == -1) {
 		printf("cannot find home dir\n");
-		return NULL;
+		goto find_done;
 	}
 	if (value)
 		strcpy(user_base->home_dir, value);
 
 	if (map_find(&data[0], str_equal, "create_time", (void **)&value) == -1) {
 		printf("cannot find create_time\n");
-		return NULL;
+		goto find_done;
 	}
 	if (value)
 		user_base->create_time = atoi(value);
 
 	if (map_find(&data[0], str_equal, "update_time", (void **)&value) == -1) {
 		printf("cannot find update_time\n");
-		return NULL;
+		goto find_done;
 	}
 	if (value)
 		user_base->update_time = atoi(value);
 
+find_done:
+	map_destroy(&data[0]);
 
 	return user_base;
 }
@@ -135,7 +137,7 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 	struct db_connect *db_con;
 	char *err_msg, *value, *db_file;
 	char sql[1024];
-	struct user_auth_info *user_auth;
+	struct user_auth_info *user_auth = NULL;
 
 	db_file = get_user_db_file();
 	db_con = create_db_connect(db_file);
@@ -153,15 +155,18 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 
 	if (map_find(&data[0], str_equal, "name", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find uid\n");
-		return NULL;
+		goto find_done;
 	}
 	strcpy(user_auth->name, value);
 
 	if (map_find(&data[0], str_equal, "passwd_md5", (void **)&value) == -1 || value == NULL) {
 		printf("cannot find name\n");
-		return NULL;
+		goto find_done;
 	}
 	strcpy(user_auth->passwd_md5, value);
+
+find_done:
+	map_destroy(&data[0]);
 
 	return user_auth;
 }

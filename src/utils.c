@@ -92,7 +92,8 @@ bool is_int(char *buf, int *num)
 	return atol(buf) == atoi(buf);
 }
 
-int ymd_hm_str(char *buf, int max_len) {
+int ymd_hm_str(char *buf, int max_len)
+{
 	time_t ts = time(NULL);
 	const char *format = "%Y%m%d%H";
     struct tm lt;
@@ -106,12 +107,14 @@ int ymd_hm_str(char *buf, int max_len) {
 	return ret;
 }
 
-int now_time_str(char *buf, int max_len) {
+int now_time_str(char *buf, int max_len)
+{
 	time_t ts = time(NULL);
 	return ts_to_str((uint64_t)ts, buf, max_len);
 }
 
-int ts_to_str(uint64_t ts, char *buf, int max_len) {
+int ts_to_str(uint64_t ts, char *buf, int max_len)
+{
 	time_t t = (time_t)ts;
     const char *format = "%Y-%m-%d %H:%M:%S";
     struct tm lt;

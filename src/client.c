@@ -61,21 +61,28 @@ struct sftt_option sftt_client_opts[] = {
 
 struct dlist *his_cmds;
 
-int consult_block_size_with_server(int sock, struct sftt_client_config *client_config);
+int consult_block_size_with_server(int sock,
+	struct sftt_client_config *client_config);
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp);
 
-int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size) {
+int file_get_next_buffer(struct file_input_stream *fis,
+	char *buffer, size_t size)
+{
 	int ret = fread(buffer, 1, size, fis->fp);		
 	
 	return ret;
 }
 
-int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size) {
+int dir_get_next_buffer(struct file_input_stream *fis, char *buffer,
+	size_t size)
+{
 	return 0;
 }
 
-int new_connect(char *ip, int port, struct sftt_client_config *config, struct sock_connect *psc) {
+int new_connect(char *ip, int port, struct sftt_client_config *config,
+	struct sock_connect *psc)
+{
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	struct sockaddr_in serv_addr;
@@ -95,7 +102,8 @@ int new_connect(char *ip, int port, struct sftt_client_config *config, struct so
 		printf("Error. consult block size with server failed!\n");
 		return -1;
 	}
-	printf("consulting block size done!\nconsulted block size is: %d\n", consulted_block_size);	
+	printf("consulting block size done!\nconsulted block size is: %d\n",
+		consulted_block_size);
 
 	psc->sock = sock;
 	psc->block_size = consulted_block_size;
@@ -103,8 +111,11 @@ int new_connect(char *ip, int port, struct sftt_client_config *config, struct so
 	return 0;
 }
 
-struct sftt_client *create_client(char *ip, struct sftt_client_config *config, int connects_num) {
-	struct sftt_client *client = (struct sftt_client *)mp_malloc(g_mp, sizeof(struct sftt_client));
+struct sftt_client *create_client(char *ip, struct sftt_client_config *config,
+	int connects_num)
+{
+	struct sftt_client *client = (struct sftt_client *)mp_malloc(g_mp,
+			sizeof(struct sftt_client));
 	if (client == NULL) {
 		return NULL;
 	}
@@ -156,7 +167,8 @@ struct sftt_client *create_client(char *ip, struct sftt_client_config *config, i
 	return NULL;
 }
 
-int get_cache_port() {
+int get_cache_port()
+{
 	FILE *fp = fopen(PORT_CACHE_FILE, "r");
 	if (fp == NULL) {
 		return -1;
@@ -182,7 +194,8 @@ int get_cache_port() {
 	return port;
 }
 
-void set_cache_port(int port) {
+void set_cache_port(int port)
+{
 	FILE *fp = fopen(PORT_CACHE_FILE, "w+");
 	if (fp == NULL || port > MAX_PORT_NUM) {
 		return ;
@@ -194,13 +207,14 @@ void set_cache_port(int port) {
 	fputs(str, fp);
 }
 
-struct file_input_stream *create_file_input_stream(char *file_name) {
+struct file_input_stream *create_file_input_stream(char *file_name)
+{
 	if (strlen(file_name) > FILE_NAME_MAX_LEN) {
 		return NULL;
 	}
 
-	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(g_mp,
-			sizeof(struct file_input_stream));
+	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(
+		g_mp, sizeof(struct file_input_stream));
 	if (fis == NULL) {
 		return NULL;
 	}
@@ -220,13 +234,16 @@ struct file_input_stream *create_file_input_stream(char *file_name) {
 	return fis;
 }
 
-void destory_file_input_stream(struct file_input_stream *fis) {
+void destory_file_input_stream(struct file_input_stream *fis)
+{
 	if (fis) {
 		mp_free(g_mp, fis);
 	}
 }
 
-int consult_block_size_with_server(int sock, struct sftt_client_config *client_config) {
+int consult_block_size_with_server(int sock,
+	struct sftt_client_config *client_config)
+{
 	char buffer[BUFFER_SIZE];
 		
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
@@ -251,7 +268,8 @@ int consult_block_size_with_server(int sock, struct sftt_client_config *client_c
 	return consulted_block_size; 
 }
 
-int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
+int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe)
+{
 	FILE *fp = fopen(pe->abs_path, "rb");
 	if (fp == NULL) {
 		printf("Error. cannot open file: %s\n", pe->abs_path);
@@ -308,7 +326,8 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe) {
 	return 0;
 }
 
-void destory_sftt_client(struct sftt_client *client) {
+void destory_sftt_client(struct sftt_client *client)
+{
 	if (client == NULL) {
 		return ;
 	}
@@ -318,11 +337,13 @@ void destory_sftt_client(struct sftt_client *client) {
 	}
 }
 
-void usage(char *exec_file) {
+void usage(char *exec_file)
+{
 	fprintf (stdout, "\nUsage: %s -h ip <input_file>\n\n", exec_file);
 }
 
-void *send_files_by_thread(void *args) {
+void *send_files_by_thread(void *args)
+{
 	struct thread_input_params *tip = (struct thread_input_params *)args;
 	struct sftt_packet *sp = malloc_sftt_packet((tip->connect).block_size);
 	if (sp == NULL) {
@@ -346,7 +367,8 @@ void *send_files_by_thread(void *args) {
 	return NULL;
 }
 
-int send_complete_end_packet(int sock, struct sftt_packet *sp) {
+int send_complete_end_packet(int sock, struct sftt_packet *sp)
+{
 	sp->type = PACKET_TYPE_SEND_COMPLETE_REQ;
 	sp->data_len = 0;
 	int ret = send_sftt_packet(sock, sp);
@@ -358,7 +380,8 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp) {
 	return 0;
 }
 
-int send_multiple_file(struct sftt_client *client, struct path_entry *pes, int count)
+int send_multiple_file(struct sftt_client *client, struct path_entry *pes,
+	int count)
 {
 	if (count == 0) {
 		return -1;
@@ -399,13 +422,13 @@ int find_unfinished_session(struct path_entry *pe, char *ip)
 }
 
 int file_trans_session_diff(struct file_trans_session *old_session,
-		struct file_trans_session *new_seesion)
+	struct file_trans_session *new_seesion)
 {
 	return 0;
 }
 
 int dir_trans_session_diff(struct dir_trans_session *old_session,
-		struct dir_trans_session *new_session)
+	struct dir_trans_session *new_session)
 {
 	return 0;
 }
@@ -416,7 +439,8 @@ int save_trans_session(struct sftt_client *client)
 }
 
 
-int client_main_old(int argc, char **argv) {
+int client_main_old(int argc, char **argv)
+{
 	if (argc < 4) {
 		usage(argv[0]);
 		return -1;
@@ -459,7 +483,8 @@ int client_main_old(int argc, char **argv) {
 		printf("Error. get client config failed!\n");
 		return -1;
 	}
-	printf("reading config done!\nconfigured block size is: %d\n", client_config.block_size);
+	printf("reading config done!\nconfigured block size is: %d\n",
+		client_config.block_size);
 
 	int connects_num = 0; 
 	struct sftt_client *client = NULL;
@@ -675,7 +700,7 @@ struct user_cmd *parse_command(char *buf)
 }
 
 static int run_command(struct sftt_client_v2 *client,
-		const struct cmd_handler *cmd, int argc, char *argv[])
+	const struct cmd_handler *cmd, int argc, char *argv[])
 {
 	int ret;
 	bool argv_check = true;
@@ -709,7 +734,8 @@ void add_cmd_log(struct user_cmd *cmd)
 	mp_free(g_mp, buf);
 }
 
-void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag) {
+void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
+{
 	add_log(LOG_INFO, "input command: %s", buf);
 	int i = 0;
 	bool found = false;
@@ -736,7 +762,8 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag) {
 			"please input 'help' to get the usage.\n", cmd->name);
 }
 
-bool parse_user_name(char *optarg, char *user_name, int max_len) {
+bool parse_user_name(char *optarg, char *user_name, int max_len)
+{
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len )) {
 		return false;
@@ -746,7 +773,8 @@ bool parse_user_name(char *optarg, char *user_name, int max_len) {
 	return true;
 }
 
-bool parse_host(char *optarg, char *host, int max_len) {
+bool parse_host(char *optarg, char *host, int max_len)
+{
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len)) {
 		return false;
@@ -756,7 +784,8 @@ bool parse_host(char *optarg, char *host, int max_len) {
 	return true;
 }
 
-bool parse_port(char *optarg, int *port) {
+bool parse_port(char *optarg, int *port)
+{
 	if (!isdigit(optarg)) {
 		return false;
 	}
@@ -774,7 +803,8 @@ void client_usage_help(int exitcode)
     exit(exitcode);
 }
 
-static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
+static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
+{
 	assert(client);
 	if (port == -1) {
 		port = get_random_port();
@@ -791,7 +821,8 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port) {
 	return 0;
 }
 
-static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd) {
+static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
+{
 	struct sftt_packet *req_packet, *resp_packet;
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
@@ -891,7 +922,9 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd) {
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
+	char *user, char *passwd)
+{
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
@@ -922,7 +955,8 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, cha
 	return 0;
 }
 
-int show_options(char *host, char *user_name, char *password) {
+int show_options(char *host, char *user_name, char *password)
+{
 	add_log(LOG_INFO, "host: %s", host);
 	add_log(LOG_INFO, "your name: %s", user_name);
 	add_log(LOG_INFO, "your password: %s", password);
@@ -1194,8 +1228,9 @@ void sftt_client_pwd_usage(void)
 	printf("Usage: pwd\n");
 }
 
-int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
-		struct common_resp *com_resp, char *target, bool *has_more)
+int recv_one_file_by_get_resp(struct sftt_client_v2 *client,
+	struct sftt_packet *resp_packet, struct common_resp *com_resp,
+	char *target, bool *has_more)
 {
 	int ret = 0;
 	int total_size = 0;
@@ -1388,7 +1423,8 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 
 	do {
-		ret = recv_one_file_by_get_resp(client, resp_packet, com_resp, target, &has_more);
+		ret = recv_one_file_by_get_resp(client, resp_packet,
+			com_resp, target, &has_more);
 	} while (ret == 0 && has_more);
 
 	mp_free(g_mp, req);
@@ -1406,7 +1442,7 @@ void sftt_client_get_usage(void)
 }
 
 int send_trans_entry_by_put_req(struct sftt_client_v2 *client,
-		struct sftt_packet *req_packet, struct put_req *req)
+	struct sftt_packet *req_packet, struct put_req *req)
 {
 	req_packet->type = PACKET_TYPE_PUT_REQ;
 
@@ -1423,8 +1459,8 @@ int send_trans_entry_by_put_req(struct sftt_client_v2 *client,
 }
 
 int send_file_name_by_put_req(struct sftt_client_v2 *client,
-		struct sftt_packet *req_packet,
-		char *path, char *fname, struct put_req *req)
+	struct sftt_packet *req_packet, char *path, char *fname,
+	struct put_req *req)
 {
 	if (is_dir(path))
 		req->entry.type = FILE_TYPE_DIR;
@@ -1439,8 +1475,8 @@ int send_file_name_by_put_req(struct sftt_client_v2 *client,
 }
 
 int send_file_md5_by_put_req(struct sftt_client_v2 *client,
-		struct sftt_packet *req_packet,
-		char *file, struct put_req *req)
+	struct sftt_packet *req_packet, char *file,
+	struct put_req *req)
 {
 	int ret;
 
@@ -1459,15 +1495,14 @@ int send_file_md5_by_put_req(struct sftt_client_v2 *client,
 }
 
 int send_file_content_by_put_req(struct sftt_client_v2 *client,
-		struct sftt_packet *req_packet, struct put_req *req)
+	struct sftt_packet *req_packet, struct put_req *req)
 {
 	return send_trans_entry_by_put_req(client, req_packet, req);
 }
 
 int send_one_file_by_put_req(struct sftt_client_v2 *client,
-		struct sftt_packet *req_packet,
-		struct sftt_packet *resp_packet,
-		char *path, char *fname, int nr, int idx)
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet,
+	char *path, char *fname, int nr, int idx)
 {
 	struct put_req *req;
 	struct put_resp *resp;
@@ -1762,7 +1797,8 @@ int fetch_remote_info(char *buf, char *user_name, char *host, char *path)
 	return 0;
 }
 
-int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host, struct trans_info *trans)
+int try_fetch_trans_info(char *arg1, char *arg2, char *user_name,
+	char *host, struct trans_info *trans)
 {
 	int ret;
 

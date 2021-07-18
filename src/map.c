@@ -42,7 +42,8 @@ int map_init(struct map *m)
 	return 0;
 }
 
-struct map *map_create(void){
+struct map *map_create(void)
+{
 	struct map *m = (struct map *)mp_malloc(g_mp, sizeof(struct map));
 	if (m == NULL) {
 		return NULL;
@@ -55,7 +56,9 @@ struct map *map_create(void){
 
 	return m;
 }
-int map_add(struct map *m, void *key, void *value){
+
+int map_add(struct map *m, void *key, void *value)
+{
 	if (m == NULL) {
 		printf("map object cannot be NULL\n");
 		return -1;
@@ -86,7 +89,8 @@ int map_add(struct map *m, void *key, void *value){
 	return dlist_append(m->list, (void *)data);
 }
 
-int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
+int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
+{
 	if (m == NULL) {
 		printf("map object cannot be NULL\n");
 		return -1; 
@@ -108,7 +112,8 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value){
 	return -1;
 }
 
-int map_remove(struct map *m, void *key, void **value){
+int map_remove(struct map *m, void *key, void **value)
+{
 	if (m == NULL) {
 		return -1;
 	}
@@ -124,7 +129,8 @@ int map_remove(struct map *m, void *key, void **value){
 	return -1;
 }
 
-void map_destroy(struct map *m){
+void map_destroy(struct map *m)
+{
 	if (m == NULL || m->list == NULL) {
 		return ;
 	} 	

@@ -25,7 +25,8 @@
 
 extern struct mem_pool *g_mp;
 
-int sds_init(struct sds *str, int size) {
+int sds_init(struct sds *str, int size)
+{
 	if (str == NULL) {
 		return -1;
 	}	
@@ -117,7 +118,8 @@ int sds_add_str(struct sds *ptr, char *str)
 	return 0;
 }
 
-int sds_add_char(struct sds *ptr, char c) {
+int sds_add_char(struct sds *ptr, char c)
+{
 	assert(ptr != NULL);
 
 	int len = 1;

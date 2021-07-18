@@ -23,7 +23,8 @@
 
 extern struct mem_pool *g_mp;
 
-struct queue *queue_create(void (*destroy)(void *data)) {
+struct queue *queue_create(void (*destroy)(void *data))
+{
 	struct queue *q = (struct queue *)mp_malloc(g_mp, sizeof(struct queue));
 	if (q == NULL) {
 		return NULL;
@@ -37,54 +38,63 @@ struct queue *queue_create(void (*destroy)(void *data)) {
 	return q;
 }
 
-void queue_init(struct queue *q, void (*destroy)(void *data)) {
+void queue_init(struct queue *q, void (*destroy)(void *data))
+{
 	assert(q != NULL);
 	q->list = dlist_create(destroy);
 }
 
-void queue_destroy(struct queue *q) {
+void queue_destroy(struct queue *q)
+{
 	assert(q != NULL);
 	dlist_destroy(q->list);	
 	q->list = NULL;
 }
 
-int queue_enqueue(struct queue *q, void *data) {
+int queue_enqueue(struct queue *q, void *data)
+{
 	assert(q != NULL);
 
 	return dlist_append(q->list, data);
 }
 
-int queue_dequeue(struct queue *q, void **data) {
+int queue_dequeue(struct queue *q, void **data)
+{
 	assert(q != NULL);
 
 	return dlist_pop_front(q->list, data);
 }
 
-void *queue_peek(struct queue *q) {
+void *queue_peek(struct queue *q)
+{
 	assert(q != NULL);
 	struct dlist_node *head = dlist_head(q->list);
 
 	return head == NULL ? NULL : dlist_data(head);
 }
 
-int queue_size(struct queue *q) {
+int queue_size(struct queue *q)
+{
 	assert(q != NULL);
 
 	return dlist_size(q->list);
 }
 
-void queue_show(struct queue *q, void (*show)(void *data)) {
+void queue_show(struct queue *q, void (*show)(void *data))
+{
 	assert(q != NULL);
 	
 	dlist_set_show(q->list, show);
 	dlist_show(q->list); 
 }
 
-int queue_is_empty(struct queue *q) {
+int queue_is_empty(struct queue *q)
+{
 	return q == NULL || q->list == NULL ? 0 : dlist_empty(q->list);
 }
 
-int queue_test(void) {
+int queue_test(void)
+{
 	struct queue *q = queue_create(NULL);
 
 	queue_enqueue(q, (void *)1);

@@ -21,7 +21,12 @@
 #include "encrypt.h"
 #include "encode.h"
 
-int sftt_buffer_encode(unsigned char *input, int len, unsigned char *output, bool zip, bool crypt) {
+/*
+ * Encode a sftt packet.
+ */
+int sftt_buffer_encode(unsigned char *input, int len, unsigned char *output,
+		bool zip, bool crypt)
+{
 	if (!zip && !crypt) {
 		memcpy(output, input, len);
 		return len;
@@ -40,7 +45,12 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char *output, boo
 
 }
 
-int sftt_buffer_decode(unsigned char *input, int len, unsigned char *output, bool unzip, bool decrypt) {
+/*
+ * Decode a sftt packet.
+ */
+int sftt_buffer_decode(unsigned char *input, int len, unsigned char *output,
+		bool unzip, bool decrypt)
+{
 	if (!unzip && !decrypt) {
 		memcpy(output, input, len);
 		return len;
@@ -56,5 +66,4 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char *output, boo
 	}
 
 	return unzip_len;
-
 }

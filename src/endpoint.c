@@ -24,7 +24,8 @@
 #include "connect.h"
 #include "endpoint.h"
 
-int get_random_port(){
+int get_random_port(void)
+{
 	time_t t;
 	int port;
 

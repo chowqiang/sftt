@@ -19,7 +19,8 @@
 #include <string.h>
 #include "bits.h"
 
-void set_bit(unsigned char *ch, int pos, unsigned char bit) {
+void set_bit(unsigned char *ch, int pos, unsigned char bit)
+{
 	unsigned char mask = 0;
 	if (bit == 0) {
 		mask = 0xff;
@@ -31,7 +32,8 @@ void set_bit(unsigned char *ch, int pos, unsigned char bit) {
 	}	
 }
 
-unsigned char get_bit(unsigned char ch, int pos) {
+unsigned char get_bit(unsigned char ch, int pos)
+{
 	unsigned char mask = 1;
 	if (ch & (mask << (pos - 1))) {
 		return 1;
@@ -40,11 +42,14 @@ unsigned char get_bit(unsigned char ch, int pos) {
 	return 0;
 }
 
-unsigned char *set_bits(unsigned char *dst, int pos, unsigned int src, int len, int *end) {
+unsigned char *set_bits(unsigned char *dst, int pos, unsigned int src,
+	int len, int *end)
+{
 	return NULL;
 }
 
-void test_code(void) {
+void test_code(void)
+{
 	char *ac = "1";
 	char *bc = "01";
 	char *cc = "000";
@@ -88,7 +93,8 @@ void test_code(void) {
 	printf("\n");
 }
 
-void test_bit_layout(void) {
+void test_bit_layout(void)
+{
 	unsigned char c = 1;
 	int i = 0; 
 	for (i = 0; i < 8; ++i) {
@@ -97,7 +103,9 @@ void test_bit_layout(void) {
 		} 
 	}
 }
-void test_set_bit(void) {
+
+void test_set_bit(void)
+{
 	//unsigned char c = 0;
 	//set_bit(&c, 8, 1);
 	//set_bit(&c, 7, 1);

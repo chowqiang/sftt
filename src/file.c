@@ -106,14 +106,16 @@ bool file_existed(char *path)
 	return access(path, F_OK) != -1;
 }
 
-int is_dir(char *file_name) {
+int is_dir(char *file_name)
+{
 	struct stat file_stat;
 	stat(file_name, &file_stat);
 
 	return S_ISDIR(file_stat.st_mode);
 }
 
-int is_file(char *file_name) {
+int is_file(char *file_name)
+{
 	struct stat file_stat;
 	stat(file_name, &file_stat);
 
@@ -336,7 +338,9 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 			}
 
 		} else {
-			struct path_entry_list *node = (struct path_entry_list *)mp_malloc(g_mp, sizeof(struct path_entry_list));
+			struct path_entry_list *node =
+				(struct path_entry_list *)mp_malloc(g_mp,
+					sizeof(struct path_entry_list));
 			if (node == NULL) {
 				continue;
 			}

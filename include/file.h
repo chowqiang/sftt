@@ -24,9 +24,12 @@
 #define FILE_TYPE_FILE		1
 #define FILE_TYPE_DIR		2
 
+/*
+ * Use absolute path and relative path to represent a path.
+ */
 struct path_entry {
-	char abs_path[FILE_NAME_MAX_LEN];
-	char rel_path[FILE_NAME_MAX_LEN];
+	char abs_path[FILE_NAME_MAX_LEN]; /* absolute path */
+	char rel_path[FILE_NAME_MAX_LEN]; /* relative path */
 };
 
 struct path_entry_list {
@@ -37,35 +40,26 @@ struct path_entry_list {
 size_t file_size(char *filename);
 
 unsigned char *file_get_contents(char *path, size_t *length);
-
 size_t file_put_contents(char *path, unsigned char *text, size_t length); 
 
 bool file_existed(char *path);
-
 int is_dir(char *file_name);
-
 int is_file(char *file_name);
+bool same_file(char *path, char *md5);
 
 char *path_join(char *dir, char *fname);
 
 struct dlist *get_top_file_list(char *dir);
-
 struct dlist *get_all_file_list(char *dir);
 
-bool same_file(char *path, char *md5);
-
 struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix);
-
 struct path_entry *get_path_entry(char *path, char *pwd);
 
 struct dlist *get_path_entry_list(char *path, char *pwd);
-
 struct path_entry *get_file_path_entry(char *file_name);
-
 struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *pcnt);
 
 mode_t file_mode(char *path);
-
 int set_file_mode(char *path, mode_t mode);
 
 #endif

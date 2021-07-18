@@ -89,7 +89,8 @@ char *next_arg(char *args, char **param, char **val)
 }
 
 const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg,
-		int *optind, const struct sftt_option *sftt_opts) {
+	int *optind, const struct sftt_option *sftt_opts)
+{
 	*optarg = NULL;
 	if (*optind >= argc) {
 		return NULL;
@@ -121,7 +122,8 @@ const struct sftt_option *lookup_opt(int argc, char **argv, char **optarg,
 	return opt;
 }
 
-int sftt_option_test(void) {
+int sftt_option_test(void)
+{
 	char *str = "a=12 b=12";
 	char *param = NULL, *value = NULL;
 	

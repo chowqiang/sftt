@@ -105,7 +105,8 @@ ERROR_RET:
 }
 #endif
 
-int deal_server_config_line(char *line, struct sftt_server_config *ssc) {
+int deal_server_config_line(char *line, struct sftt_server_config *ssc)
+{
 	strip(line);
 	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
@@ -164,7 +165,8 @@ int deal_server_config_line(char *line, struct sftt_server_config *ssc) {
 	return 0;
 }
 
-int get_sftt_server_config(struct sftt_server_config *ssc) {
+int get_sftt_server_config(struct sftt_server_config *ssc)
+{
 	if (ssc == NULL) {
 		return -1;
 	}
@@ -227,7 +229,8 @@ ERR_RET:
 	return -1;
 }
 
-int deal_client_config_line(char *line, struct sftt_client_config *scc) {
+int deal_client_config_line(char *line, struct sftt_client_config *scc)
+{
 	strip(line);
 	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
@@ -283,7 +286,8 @@ int deal_client_config_line(char *line, struct sftt_client_config *scc) {
 }
 
 
-int get_sftt_client_config(struct sftt_client_config *scc) {
+int get_sftt_client_config(struct sftt_client_config *scc)
+{
 	if (scc == NULL) {
 		return -1;
 	}

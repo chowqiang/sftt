@@ -20,7 +20,8 @@
 #include <stdlib.h>
 #include "validate.h"
 
-char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid) {
+char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid)
+{
 	//printf("input dotted decimal: %s\n", p);
 	if (!is_first) {
 		if (p[0] != '.') {
@@ -69,7 +70,8 @@ RET_INVALID:
 	return NULL;
 }
  
-int is_valid_ipv4(char *ip) {
+int is_valid_ipv4(char *ip)
+{
 	int len = strlen(ip);
 	if (len < 7 || len > 15) {
 		printf("invalid length for ipv4!\n");
