@@ -32,6 +32,7 @@
 #include "endpoint.h"
 #include "command.h"
 #include "config.h"
+#include "context.h"
 #include "client.h"
 #include "encrypt.h"
 #include "file.h"
@@ -925,7 +926,19 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	char *user, char *passwd)
 {
+	char tmp_file[32];
+	char template[16] = "sftt_xxxxxx";
+
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
+
+	mktemp(template);
+	if (errno) {
+		printf("create tmp file failed!\n");
+		return -1;
+	}
+
+	sprintf(tmp_file, "/tmp/%s", template);
+	set_current_context(tmp_file);
 
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));

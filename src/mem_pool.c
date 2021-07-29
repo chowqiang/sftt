@@ -39,6 +39,17 @@ static void __attribute__((constructor)) mem_pool_init(void)
 }
 
 /*
+ * remove global shm space
+ */
+static void __attribute__((destructor)) mem_pool_del(void)
+{
+	if (g_mp == NULL)
+		return;
+
+	delete(shm_space, g_mp->shm_space);
+}
+
+/*
  * Return the g_mp and initialise it if necessary
  */
 struct mem_pool *get_singleton_mp()

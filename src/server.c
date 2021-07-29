@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>  
 #include <signal.h>
@@ -34,6 +35,7 @@
 #include "autoconf.h"
 #include "base.h"
 #include "config.h"
+#include "context.h"
 #include "debug.h"
 #include "encrypt.h"
 #include "file.h"
@@ -1280,10 +1282,22 @@ pid_t start_sftt_log_server(struct sftt_server *server)
 bool init_sftt_server(char *store_path)
 {
 	int port = 0;
+	char tmp_file[32];
+	char template[16] = "sftt_xxxxxx";
+
 	int sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
 		return false;
 	}
+
+	mktemp(template);
+	if (errno) {
+		printf("create tmp file failed!\n");
+		return -1;
+	}
+
+	sprintf(tmp_file, "/tmp/%s", template);
+	set_current_context(tmp_file);
 
 	server = (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
 	assert(server != NULL);

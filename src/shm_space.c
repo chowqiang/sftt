@@ -39,7 +39,7 @@ struct shm_space *shm_space_construct(char *name, int size)
 	if (name == NULL || size <= 1024)
 		return NULL;
 
-	if (strlen(name) > SHM_SPACE_NAME_LEN - 1)
+	if (strlen(name) > SHM_KEY_NAME_LEN - 1)
 		return NULL;
 
 	if ((key = ftok(name, 'S')) == -1) {
@@ -60,7 +60,7 @@ struct shm_space *shm_space_construct(char *name, int size)
 		return NULL;
 	}
 
-	strncpy(ptr->name, name, SHM_SPACE_NAME_LEN - 1);
+	strncpy(ptr->name, name, SHM_KEY_NAME_LEN - 1);
 	ptr->nr = 0;
 	ptr->start = ptr + sizeof(struct shm_space);
 	ptr->end = ptr->start + size;
@@ -77,7 +77,7 @@ struct shm_space *shm_space_construct(char *name, int size)
 
 void shm_space_destruct(struct shm_space *ptr)
 {
-
+	shmdt(ptr);
 }
 
 bool shm_space_try_this_range(struct shm_space *ptr, void *start, void *end)
