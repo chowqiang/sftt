@@ -307,11 +307,12 @@ int gen_c_file(struct st_list *head, char *c_file)
 	fprintf(fp, "/*\n * Automatically generated - do not edit\n */\n\n");
 	fprintf(fp, "#include <stdbool.h>\n");
 	fprintf(fp, "#include <stdio.h>\n");
+	fprintf(fp, "#include <rpc/types.h>\n");
+	fprintf(fp, "#include <rpc/xdr.h>\n");
 	fprintf(fp, "#include \"log.h\"\n");
 	fprintf(fp, "#include \"mem_pool.h\"\n");
 	fprintf(fp, "#include \"req_rsp.h\"\n");
-	fprintf(fp, "#include \"serialize.h\"\n");
-	fprintf(fp, "#include \"xdr.h\"\n\n");
+	fprintf(fp, "#include \"serialize.h\"\n\n");
 	fprintf(fp, "extern struct mem_pool *g_mp;\n\n");
 
 	while (p) {

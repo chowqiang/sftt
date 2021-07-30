@@ -24,7 +24,7 @@ CFLAGS=-g -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
-	CFLAGS += -lportablexdr
+	CFLAGS += -ltirpc
 endif
 
 export CC ROOT_DIR CFLAGS OBJS_DIR LIB_NAME LIB LIB_DIR SERVER_BIN \
