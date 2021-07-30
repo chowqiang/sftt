@@ -1,7 +1,7 @@
 all: mp_stat
 
 mp_stat: mp_stat.c
-	$(CC) -o $@ $^ $(CFLAG) -L$(LIB_DIR) -l$(LIB)
+	$(CC) -o $@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 .PHONY: clean
 

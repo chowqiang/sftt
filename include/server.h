@@ -74,6 +74,13 @@ FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_c
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 void is_exit(char * filepath);
 
+int sftt_server_start(char *store_path, bool background);
+int sftt_server_restart(char *store_path, bool background);
+int sftt_server_stop(void);
+
+bool parse_store_path(char *optarg, char *store_path, int max_len);
+
+void sftt_server_status(void);
 void sftt_server_db(void); 
 void sftt_server_exit(int sig);
 void server_usage_help(int exitcode);

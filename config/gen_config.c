@@ -191,7 +191,7 @@ int gen_config(char *in_file, char *out_file)
 
 	ok = true;
 out:
-	if (in_fp);
+	if (in_fp)
 		fclose(in_fp);
 	if (out_fp)
 		fclose(out_fp);

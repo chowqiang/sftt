@@ -1,5 +1,4 @@
 CC=gcc
-CFLAG=-g -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
 
 ROOT_DIR=$(shell pwd)
 OBJS_DIR=$(ROOT_DIR)/src
@@ -20,7 +19,15 @@ TEST=test
 XDR=xdr
 CONFIG=config
 
-export CC ROOT_DIR CFLAG OBJS_DIR LIB_NAME LIB LIB_DIR SERVER_BIN \
+CFLAGS=-g -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+	CFLAGS += -lportablexdr
+endif
+
+export CC ROOT_DIR CFLAGS OBJS_DIR LIB_NAME LIB LIB_DIR SERVER_BIN \
 	CLIENT_BIN TOOLS_DIR TEST_DIR
 
 all: $(CONFIG) $(XDR) $(SERVER_BIN) $(CLIENT_BIN) $(LIB_NAME) $(TEST) \
@@ -62,8 +69,7 @@ ECHO:
 .PHONY: clean
 
 clean:
-	@rm -f $(ROOT_DIR)/src/*.o
-	@rm -f $(ROOT_DIR)/lib/$(LIB_NAME)
-	@rm -f $(ROOT_DIR)/client/$(CLIENT_BIN)
-	@rm -f $(ROOT_DIR)/server/$(SERVER_BIN)
+	make clean -C $(OBJS_DIR)
+	make clean -C $(SERVER_DIR)
+	make clean -C $(CLIENT_DIR)
 	make clean -C $(TEST_DIR)

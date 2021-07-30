@@ -4,11 +4,12 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <rpc/types.h>
+#include <rpc/xdr.h>
 #include "log.h"
 #include "mem_pool.h"
 #include "req_rsp.h"
 #include "serialize.h"
-#include "xdr.h"
 
 extern struct mem_pool *g_mp;
 
