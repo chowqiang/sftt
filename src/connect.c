@@ -15,23 +15,33 @@
  */
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <sys/socket.h>
+#include <stdio.h>
 #include <string.h>
 #include "connect.h"
 
 int make_connect(char *ip, int port)
 {
-	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int ret, sock;
 	struct sockaddr_in serv_addr;
+
+	printf("%s:%d, ip=%s, port=%d\n", __func__, __LINE__, ip, port);
+	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock == -1) {
+		perror("create socket failed");
+		return -1;
+	}
+
 	memset(&serv_addr, 0, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(ip);
 	serv_addr.sin_port = htons(port);
 
-	int ret = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	ret = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (ret == -1) {
+		perror("connect failed");
 		return -1;
 	}
 

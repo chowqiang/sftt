@@ -1279,24 +1279,19 @@ pid_t start_sftt_log_server(struct sftt_server *server)
 	}
 }
 
-bool init_sftt_server(char *store_path)
+int init_sftt_server(char *store_path)
 {
 	int port = 0;
 	char tmp_file[32];
-	char template[16] = "sftt_xxxxxx";
 
 	int sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
 		return false;
 	}
 
-	mktemp(template);
-	if (errno) {
-		printf("create tmp file failed!\n");
+	if (create_temp_file(tmp_file, "sfttd_") == -1)
 		return -1;
-	}
 
-	sprintf(tmp_file, "/tmp/%s", template);
 	set_current_context(tmp_file);
 
 	server = (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
@@ -1337,7 +1332,8 @@ bool init_sftt_server(char *store_path)
 	return true;
 }
 
-int sftt_server_start(char *store_path, bool background) {
+int sftt_server_start(char *store_path, bool background)
+{
 	if (sftt_server_is_running()) {
 		printf("cannot start " PROC_NAME ", because it has been running.\n");
 		exit(-1);
@@ -1355,8 +1351,7 @@ int sftt_server_start(char *store_path, bool background) {
 		exit(-1);
 	}
 
-	bool ret = init_sftt_server(store_path);
-	if (!ret) {
+	if (init_sftt_server(store_path) == -1) {
 		printf(PROC_NAME " create server failed!\n");
 		exit(-1);
 	}

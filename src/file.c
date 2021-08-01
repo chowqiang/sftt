@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -511,4 +512,25 @@ mode_t file_mode(char *path)
 int set_file_mode(char *path, mode_t mode)
 {
 	return chmod(path, mode);
+}
+
+int create_temp_file(char *buf, char *prefix)
+{
+	int fd;
+	char template[32];
+
+	if (strlen(prefix) >= 10)
+		return -1;
+
+	sprintf(template, "/tmp/%sXXXXXX", prefix);
+	fd = mkstemp(template);
+	if (fd == -1) {
+		perror("create temp file failed");
+		return -1;
+	}
+
+	close(fd);
+	strcpy(buf, template);
+
+	return 0;
 }

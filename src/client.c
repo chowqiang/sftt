@@ -927,18 +927,12 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	char *user, char *passwd)
 {
 	char tmp_file[32];
-	char template[16] = "sftt_xxxxxx";
+
+	if (create_temp_file(tmp_file, "sftt_") == -1)
+		return -1;
+	set_current_context(tmp_file);
 
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
-
-	mktemp(template);
-	if (errno) {
-		printf("create tmp file failed!\n");
-		return -1;
-	}
-
-	sprintf(tmp_file, "/tmp/%s", template);
-	set_current_context(tmp_file);
 
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));
