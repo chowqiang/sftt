@@ -55,10 +55,10 @@ $(TEST): $(LIB_NAME) ECHO
 	make -C $(TEST_DIR)
 
 gettest: $(TEST)
-	cd test && ./scripts/gettest file
+	cd test/scripts && ./gettest file
 
 puttest: $(TEST)
-	cd test && ./scripts/puttest file
+	cd test/scripts && ./puttest file
 
 basictest: $(TEST)
 	cd test && ./Run testcases

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-server_bin=/root/sftt/server/sfttd
-client_bin=/root/sftt/client/sftt
+home=../../
+server_bin=$home/server/sfttd
+client_bin=$home/client/sftt
 
-home=/root/sftt
-src=/root/sftt/test
+src=$home/test
 dest=/var/sftt/tmp13
 
 case "$1" in
