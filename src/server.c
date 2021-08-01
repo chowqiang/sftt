@@ -1282,17 +1282,19 @@ pid_t start_sftt_log_server(struct sftt_server *server)
 int init_sftt_server(char *store_path)
 {
 	int port = 0;
-	char tmp_file[32];
+	int sockfd;
 
-	int sockfd = create_non_block_sock(&port);
+#if 0
+	char tmp_file[32];
+	if (create_temp_file(tmp_file, "sfttd_") == -1)
+		return -1;
+#endif
+	set_current_context("server");
+
+	sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
 		return false;
 	}
-
-	if (create_temp_file(tmp_file, "sfttd_") == -1)
-		return -1;
-
-	set_current_context(tmp_file);
 
 	server = (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
 	assert(server != NULL);

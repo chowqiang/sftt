@@ -25,6 +25,8 @@
 
 #define MEM_POOL_STAT "mem_pool_stat"
 
+#define MEM_POOL_STAT_MSGKEY "/var/lib/sftt/mps_msgkey"
+
 struct mem_node {
 	/* Memory size of this node */
 	size_t size;
@@ -49,7 +51,8 @@ struct mem_pool {
 	struct mem_node *nodes;
 	struct pthread_mutex *mutex;
 	struct mem_pool_stat stat;
-	struct shm_space *shm_space;
+	struct msg_queue *msg_queue;
+	pthread_t thread_mps;
 };
 
 struct mem_pool *mem_pool_construct(void);

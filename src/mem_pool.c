@@ -19,9 +19,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "base.h"
 #include "context.h"
 #include "mem_pool.h"
+#include "msg_queue.h"
+
+void *mp_update_stat_loop(void *arg);
 
 /*
  * The global mem pool pointer
@@ -39,14 +43,11 @@ static void __attribute__((constructor)) mem_pool_init(void)
 }
 
 /*
- * remove global shm space
  */
 static void __attribute__((destructor)) mem_pool_del(void)
 {
 	if (g_mp == NULL)
 		return;
-
-	delete(shm_space, g_mp->shm_space);
 }
 
 /*
@@ -111,6 +112,7 @@ void mem_node_free(void *data)
  */
 struct mem_pool *mp_create(void)
 {
+	int ret;
 	struct mem_pool *mp = (struct mem_pool *)malloc(sizeof(struct mem_pool));
 	if (mp == NULL) {
 		return NULL;
@@ -125,33 +127,52 @@ struct mem_pool *mp_create(void)
 	mp->stat.using_nodes = 0;
 	mp->stat.free_nodes = 0;
 
-	mp->shm_space = NULL;
+	mp->msg_queue = NULL;
+
+	ret = pthread_create(&mp->thread_mps, NULL, mp_update_stat_loop, mp);
+	if (ret) {
+		printf("create thread for mem_pool failed\n");
+	}
 
 	return mp;
 }
 
-void mp_update_stat(struct mem_pool *mp)
+void *mp_update_stat_loop(void *arg)
 {
 	struct context *ctx;
+	struct mem_pool *mp;
+	struct msgbuf msg;
 
+	mp = (struct mem_pool *)arg;
 	if (mp == NULL)
-		return ;
+		return NULL;
 
-	if (mp->shm_space == NULL) {
+	for (;;) {
+		if (mp->msg_queue == NULL)
+			mp->msg_queue = get_msg_queue(MEM_POOL_STAT_MSGKEY);
+
+		if (mp->msg_queue == NULL) {
+			sleep(1);
+			continue;
+		}
+
 		ctx = get_current_context();
-		if (ctx == NULL)
-			return ;
+		if (ctx) {
+			strncpy(msg.name, ctx->name, 15);
+		} else {
+			strncpy(msg.name, "unknown", strlen("unknown"));
+		}
 
-		mp->shm_space = new(shm_space, ctx->shm_key, SHM_SPACE_SIZE);
-		if (mp->shm_space == NULL)
-			return ;
+		msg.pid = getpid();
+		msg.mtype = MSG_TYPE_MPSTAT;
+		msg.length = sizeof(struct mem_pool_stat);
+		memcpy(msg.mtext, &mp->stat, sizeof(struct mem_pool_stat));
 
-		if (shm_space_create_section(mp->shm_space, MEM_POOL_STAT,
-			sizeof(struct mem_pool_stat) == -1))
-			return ;
+		send_msg(mp->msg_queue, &msg);
+		sleep(1);
 	}
 
-	shm_space_dump_section(mp->shm_space, MEM_POOL_STAT, &mp->stat);
+	return NULL;
 }
 
 /*
@@ -200,8 +221,6 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
-
-	mp_update_stat(mp);
 
 	mp->mutex->ops->unlock(mp->mutex);
 

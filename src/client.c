@@ -926,11 +926,13 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	char *user, char *passwd)
 {
+#if 0
 	char tmp_file[32];
 
 	if (create_temp_file(tmp_file, "sftt_") == -1)
 		return -1;
-	set_current_context(tmp_file);
+#endif
+	set_current_context("client");
 
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 

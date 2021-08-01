@@ -28,7 +28,7 @@
 #define LOG_WARN	3
 #define LOG_ERROR	4
 
-#define LOG_MSG_TYPE	1
+#define MSG_TYPE_LOG	1
 
 #define SFTT_LOG_MSQKEY_FILE	"/var/lib/sfttd/msgkey"
 

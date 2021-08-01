@@ -29,14 +29,10 @@
 #include "config.h"
 #include "log.h"
 #include "mem_pool.h"
+#include "msg_queue.h"
 #include "ratelimit.h"
 #include "req_rsp.h"
 #include "utils.h"
-
-struct msgbuf {
-    long    mtype;
-    char    mtext[LOG_STR_MAX_LEN];
-};
 
 extern struct mem_pool *g_mp;
 
@@ -101,6 +97,9 @@ void logger_daemon(char *dir, char *prefix)
 	int msqid;
     	key_t key;
     	struct msgbuf msg;
+	char file1[FILE_NAME_MAX_LEN];
+	char file2[FILE_NAME_MAX_LEN];
+	int ret = 0;
 
 	server_limit = new(ratelimit_state, 10, 1000);
 	assert(server_limit != NULL);
@@ -111,9 +110,6 @@ void logger_daemon(char *dir, char *prefix)
 		return ;
 	}
 
-	char file1[FILE_NAME_MAX_LEN];
-	char file2[FILE_NAME_MAX_LEN];
-
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
@@ -121,9 +117,8 @@ void logger_daemon(char *dir, char *prefix)
 		return ;
 	}
 
-	int ret = 0;
 	for (;;) {
-		ret = msgrcv(msqid, &msg, LOG_STR_MAX_LEN, LOG_MSG_TYPE, 0);
+		ret = msgrcv(msqid, &msg, MSG_MAX_LEN, MSG_TYPE_LOG, 0);
 		if (ratelimit_try_inc(server_limit) == false) {
 			continue;
 		}
@@ -146,6 +141,7 @@ int get_log_msqid(int create_flag)
 {
 	key_t key;
 	int msqid;
+	int msgflag;
 
 	if ((key = ftok(SFTT_LOG_MSQKEY_FILE, 'S')) == -1) {
 		printf("sfttd ftok failed!\n"
@@ -153,7 +149,7 @@ int get_log_msqid(int create_flag)
 		return -1;
 	}
 
-	int msgflag = (create_flag ? IPC_CREAT : 0) | 0666;
+	msgflag = (create_flag ? IPC_CREAT : 0) | 0666;
 	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
 		perror("sfftd msgget failed");
 		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
@@ -185,7 +181,7 @@ void logger_exit(int sig)
 int add_client_log(int level, const char *fmt, va_list args)
 {
 	char log_file[FILE_NAME_MAX_LEN];
-	char buf[LOG_STR_MAX_LEN];
+	char buf[MSG_MAX_LEN];
 	char now[32];
 
 	if (ratelimit_try_inc(client_limit) == false) {
@@ -199,7 +195,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 	//va_list args;
 	//va_start(args, fmt);
-	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
+	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 	//va_end(args);
 
 	//printf("client log dir: %s\n", client_log_dir);
@@ -219,7 +215,16 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 int add_server_log(int level, const char *fmt, va_list args)
 {
-	int msqid = get_log_msqid(0);
+	struct msgbuf msg;
+	int msqid;
+	char *buf = msg.mtext;
+	char now[32];
+	char *desc;
+	int ret;
+
+	desc = get_log_level_desc(level);
+
+	msqid = get_log_msqid(0);
 	if (msqid == -1) {
 		if (errno == ENOENT) {
 			msqid = get_log_msqid(1);
@@ -229,26 +234,21 @@ int add_server_log(int level, const char *fmt, va_list args)
 		}
 	}
 
-	struct msgbuf msg;
-	msg.mtype = LOG_MSG_TYPE;
-	char *buf = msg.mtext;
-	char now[32];
-
-	char *desc = get_log_level_desc(level);
+	msg.mtype = MSG_TYPE_LOG;
 	now_time_str(now, 31);
 
-	int ret = sprintf(buf, "[%s] %s ", desc, now);
+	ret = sprintf(buf, "[%s] %s ", desc, now);
 
 	//va_list args;
 	//va_start(args, fmt);
-	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
+	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 	//va_end(args);
 
 	strcat(buf + ret, "\n");
 	ret += 1;
 
-	if (msgsnd(msqid, &msg, ret, IPC_NOWAIT) < 0) {
-		printf("send log msg failed!\n");
+	if (msgsnd(msqid, &msg, MSG_MAX_LEN, IPC_NOWAIT) < 0) {
+		perror("send log msg failed");
 		return -1;
 	}
 
@@ -308,7 +308,7 @@ int do_log(struct logger *log, struct trace_info *trace,
 	int level, const char *fmt, va_list args)
 {
 	char log_file[FILE_NAME_MAX_LEN];
-	char buf[LOG_STR_MAX_LEN];
+	char buf[MSG_MAX_LEN];
 	char now[32];
 
 	if (ratelimit_try_inc(client_limit) == false) {
@@ -322,7 +322,7 @@ int do_log(struct logger *log, struct trace_info *trace,
 
 	//va_list args;
 	//va_start(args, fmt);
-	ret += vsnprintf(buf + ret, LOG_STR_MAX_LEN - ret - 1, fmt, args);
+	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 	//va_end(args);
 
 	//printf("client log dir: %s\n", client_log_dir);
