@@ -67,9 +67,9 @@ struct file_entry {
 typedef struct file_entry file_entry;
 
 struct ll_resp {
-	long nr;
+	int nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
-	long idx;
+	int idx;
 };
 typedef struct ll_resp ll_resp;
 

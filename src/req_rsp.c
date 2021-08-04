@@ -174,12 +174,12 @@ xdr_ll_resp (XDR *xdrs, ll_resp *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_long (xdrs, &objp->nr))
+	 if (!xdr_int (xdrs, &objp->nr))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->entries, FILE_ENTRY_MAX_CNT,
 		sizeof (file_entry), (xdrproc_t) xdr_file_entry))
 		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->idx))
+	 if (!xdr_int (xdrs, &objp->idx))
 		 return FALSE;
 	return TRUE;
 }

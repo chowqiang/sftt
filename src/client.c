@@ -1036,14 +1036,17 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
 	assert(resp_info != NULL);
-	while (resp_info->idx != -1) {
-		//assert(resp_info->nr == FILE_ENTRY_MAX_CNT);
+
+	while (resp_info->nr > 0) {
 		for (i = 0; i < resp_info->nr; ++i) {
 			entry = mp_malloc(g_mp, sizeof(struct file_entry));
 			assert(entry != NULL);
 			*entry = resp_info->entries[i];
 			dlist_append(fe_list, entry);
 		}
+
+		if (resp_info->idx == -1)
+			break;
 
 		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
 		if (ret == -1) {

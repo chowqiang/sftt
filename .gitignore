@@ -1,6 +1,7 @@
 .idea
 .cache_port
 tags
+cscope.out
 src/*.o
 client/*.o
 server/*.o

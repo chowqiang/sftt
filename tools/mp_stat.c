@@ -47,8 +47,10 @@ int main(void)
 	for (;;) {
 		system("clear");
 		ret = recv_msg(queue, &msg);
+#if 0
 		if (ret < 0)
 			continue;
+#endif
 
 		stat = (struct mem_pool_stat *)msg.mtext;
 

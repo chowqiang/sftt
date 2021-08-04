@@ -46,9 +46,9 @@ struct file_entry {
 };
 
 struct ll_resp {
-	long nr;
+	int nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
-	long idx;
+	int idx;
 };
 
 struct cd_req {
