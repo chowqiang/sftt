@@ -21,8 +21,13 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "list.h"
 #include "msg_queue.h"
+#include "req_rsp.h"
 
 struct msq_mgr {
 	struct list_head queues[MSQ_TYPE_CNT];
@@ -172,17 +177,55 @@ void delete_msg_queue_ipc(char *name)
 
 int send_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 {
+	char path[FILE_NAME_MAX_LEN];
+	int fd;
 
+	snprintf(path, FILE_NAME_MAX_LEN - 1, "/var/sftt/msq/%s_%d",
+			queue->name, getpid());
+
+	fd = open(path, O_CREAT | O_WRONLY, 0600);
+	if (fd == -1)
+		return -1;
+
+	write(fd, msg, sizeof(struct msgbuf));
+
+	close(fd);
 }
 
 int recv_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 {
+	char path[FILE_NAME_MAX_LEN];
+	int fd;
 
+	snprintf(path, FILE_NAME_MAX_LEN - 1, "/var/sftt/msq/%s_%d",
+			queue->name, getpid());
+
+	fd = open(path, O_RDONLY, 0600);
+	if (fd == -1)
+		return -1;
+
+	read(fd, msg, sizeof(struct msgbuf));
+
+	close(fd);
 }
 
 struct msg_queue *create_msg_queue_file(char *name)
 {
+	struct msg_queue *queue;
 
+	queue = malloc(sizeof(struct msg_queue));
+	if (queue == NULL)
+		return NULL;
+
+	bzero(queue, sizeof(struct msg_queue));
+
+	strncpy(queue->name, name, MSQ_NAME_LEN - 1);
+	queue->type = MSQ_TYPE_FILE;
+	queue->msqid = -1;
+	queue->ops = &msq_file;
+	INIT_LIST_HEAD(&queue->list);
+
+	return queue;
 }
 
 struct msg_queue *get_msg_queue_file(char *name)
@@ -247,22 +290,41 @@ int recv_msg(struct msg_queue *queue, struct msgbuf *msg)
 
 struct msg_queue *create_msg_queue(char *name, enum msq_type type)
 {
+	struct list_head *head;
+	struct msg_queue *queue;
+
 	if (name == NULL)
+		return NULL;
+
+	if (!(type >= 0 && type < MSQ_TYPE_CNT))
 		return NULL;
 
 	if (get_msg_queue(name, type) != NULL)
 		return NULL;
 
+	head = &msq_mgr.queues[type];
+
 	switch (type) {
 	case MSQ_TYPE_IPC:
-		return create_msg_queue_ipc(name);
+		queue = create_msg_queue_ipc(name);
+		break;
 	case MSQ_TYPE_FILE:
-		return create_msg_queue_file(name);
+		queue = create_msg_queue_file(name);
+		break;
 	case MSQ_TYPE_NET:
-		return create_msg_queue_net(name);
+		queue = create_msg_queue_net(name);
+		break;
 	default:
-		return NULL;
+		queue = NULL;
+		break;
 	}
+
+	if (queue == NULL)
+		return NULL;
+
+	list_add(&queue->list, head);
+
+	return queue;
 }
 
 struct msg_queue *get_msg_queue(char *name, enum msq_type type)
@@ -274,7 +336,7 @@ struct msg_queue *get_msg_queue(char *name, enum msq_type type)
 	if (name == NULL)
 		return NULL;
 
-	if (!(type >= MSQ_TYPE_IPC && type < MSQ_TYPE_CNT))
+	if (!(type >= 0 && type < MSQ_TYPE_CNT))
 		return NULL;
 
 	head = &msq_mgr.queues[type];
