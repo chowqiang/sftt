@@ -59,4 +59,16 @@ bool common_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool common_resp_decode(unsigned char *buf, int len, void **req);
 
+bool write_msg_req_encode(void *req, unsigned char **buf, int *len);
+
+bool write_msg_req_decode(unsigned char *buf, int len, void **req);
+
+bool read_msg_req_encode(void *req, unsigned char **buf, int *len);
+
+bool read_msg_req_decode(unsigned char *buf, int len, void **req);
+
+bool read_msg_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool read_msg_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

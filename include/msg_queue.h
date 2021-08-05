@@ -31,7 +31,7 @@ enum msq_type {
 };
 
 struct msgbuf {
-	long mtype;
+	int mtype;
 	char name[16];
 	int pid;
 	int length;

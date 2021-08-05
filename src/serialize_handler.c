@@ -32,5 +32,8 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_PUT_REQ, put_req_encode, put_req_decode},
 	{PACKET_TYPE_PUT_RSP, put_resp_encode, put_resp_decode},
 	{PACKET_TYPE_COMMON_RSP, common_resp_encode, common_resp_decode},
+	{PACKET_TYPE_WRITE_MSG_REQ, write_msg_req_encode, write_msg_req_decode},
+	{PACKET_TYPE_READ_MSG_REQ, read_msg_req_encode, read_msg_req_decode},
+	{PACKET_TYPE_READ_MSG_RSP, read_msg_resp_encode, read_msg_resp_decode},
 	{-1, NULL, NULL},
 };

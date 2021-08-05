@@ -17,6 +17,8 @@
 #ifndef _CONNECT_H_
 #define _CONNECT_H_
 
+#include <pthread.h>
+
 enum connect_result {
 	CONN_RET_CONNECT_FAILED,
 	CONN_RET_VALIDATE_FAILED,
@@ -41,5 +43,7 @@ struct client_sock_conn {
 };
 
 int make_connect(char *ip, int port);
+
+pthread_t start_server(int port, void *(*func)(void *arg));
 
 #endif

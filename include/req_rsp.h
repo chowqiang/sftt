@@ -20,6 +20,7 @@ extern "C" {
 #define FILE_NAME_MAX_LEN 256
 #define FILE_ENTRY_MAX_CNT 16
 #define CONTENT_BLOCK_SIZE 4096
+#define MSG_MAX_LEN 4096
 
 struct validate_req {
 	long name_len;
@@ -126,6 +127,29 @@ struct common_resp {
 };
 typedef struct common_resp common_resp;
 
+struct write_msg_req {
+	int mtype;
+	char name[16];
+	int pid;
+	int length;
+	char mtext[MSG_MAX_LEN];
+};
+typedef struct write_msg_req write_msg_req;
+
+struct read_msg_req {
+	int mtype;
+};
+typedef struct read_msg_req read_msg_req;
+
+struct read_msg_resp {
+	int mtype;
+	char name[16];
+	int pid;
+	int length;
+	char mtext[MSG_MAX_LEN];
+};
+typedef struct read_msg_resp read_msg_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -144,6 +168,9 @@ extern  bool_t xdr_get_resp (XDR *, get_resp*);
 extern  bool_t xdr_put_req (XDR *, put_req*);
 extern  bool_t xdr_put_resp (XDR *, put_resp*);
 extern  bool_t xdr_common_resp (XDR *, common_resp*);
+extern  bool_t xdr_write_msg_req (XDR *, write_msg_req*);
+extern  bool_t xdr_read_msg_req (XDR *, read_msg_req*);
+extern  bool_t xdr_read_msg_resp (XDR *, read_msg_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -161,6 +188,9 @@ extern bool_t xdr_get_resp ();
 extern bool_t xdr_put_req ();
 extern bool_t xdr_put_resp ();
 extern bool_t xdr_common_resp ();
+extern bool_t xdr_write_msg_req ();
+extern bool_t xdr_read_msg_req ();
+extern bool_t xdr_read_msg_resp ();
 
 #endif /* K&R C */
 

@@ -354,3 +354,55 @@ xdr_common_resp (XDR *xdrs, common_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_write_msg_req (XDR *xdrs, write_msg_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->mtype))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->name, 16,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->pid))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->length))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->mtext, MSG_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_read_msg_req (XDR *xdrs, read_msg_req *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->mtype))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_read_msg_resp (XDR *xdrs, read_msg_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->mtype))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->name, 16,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->pid))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->length))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->mtext, MSG_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
