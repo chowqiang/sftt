@@ -30,10 +30,14 @@ int main(void)
 
 	set_current_context("mpstat");
 
+	delete_msg_queue(MEM_POOL_STAT_MSGKEY);
+
 	queue = create_msg_queue(MEM_POOL_STAT_MSGKEY);
 	printf("queue: 0x%0lx\n", queue);
+
 	if (queue == NULL)
 		get_msg_queue(MEM_POOL_STAT_MSGKEY);
+
 	printf("queue: 0x%0lx\n", queue);
 
 	printf("press any key to continue ...\n");
@@ -44,8 +48,11 @@ int main(void)
 		return -1;
 	}
 
+	printf("%s:%d, msqid=%d\n", __func__, __LINE__, queue->msqid);
+
+	msg.mtype = MSG_TYPE_MPSTAT;
 	for (;;) {
-		system("clear");
+		//system("clear");
 		ret = recv_msg(queue, &msg);
 #if 0
 		if (ret < 0)

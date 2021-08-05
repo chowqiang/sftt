@@ -59,5 +59,6 @@ int main(int argc, char *argv[])
 	mp_stat(mp);
 
 	delete(mem_pool, mp);
+
 	return 0;
 }

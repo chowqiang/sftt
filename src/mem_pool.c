@@ -32,6 +32,8 @@ void *mp_update_stat_loop(void *arg);
  */
 struct mem_pool *g_mp = NULL;
 
+static bool updated = false;
+
 static LIST_HEAD(mem_nodes);
 
 /*
@@ -142,16 +144,21 @@ void *mp_update_stat_loop(void *arg)
 	struct context *ctx;
 	struct mem_pool *mp;
 	struct msgbuf msg;
+	int ret = 0;
 
 	mp = (struct mem_pool *)arg;
-	if (mp == NULL)
+	if (mp == NULL) {
+		printf("%s:%d, thread arg error!\n", __func__, __LINE__);
 		return NULL;
+	}
+
+	//printf("%s:%d, begin to send mp stat by loop\n", __func__, __LINE__);
 
 	for (;;) {
 		if (mp->msg_queue == NULL)
 			mp->msg_queue = get_msg_queue(MEM_POOL_STAT_MSGKEY);
 
-		if (mp->msg_queue == NULL) {
+		if (mp->msg_queue == NULL || mp->msg_queue->msqid == -1) {
 			sleep(1);
 			continue;
 		}
@@ -168,7 +175,18 @@ void *mp_update_stat_loop(void *arg)
 		msg.length = sizeof(struct mem_pool_stat);
 		memcpy(msg.mtext, &mp->stat, sizeof(struct mem_pool_stat));
 
-		send_msg(mp->msg_queue, &msg);
+		if (ret == -1 && !updated)
+			continue;
+
+		ret = send_msg(mp->msg_queue, &msg);
+		if (ret == -1) {
+			printf("%s:%d, send msg failed!\n", __func__, __LINE__);
+		}
+
+		mp->mutex->ops->lock(mp->mutex);
+		updated = false;
+		mp->mutex->ops->unlock(mp->mutex);
+
 		sleep(1);
 	}
 
@@ -222,6 +240,8 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
 
+	updated = true;
+
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);
@@ -254,6 +274,9 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 			break;
 		}
 	}
+
+	mp->mutex->ops->unlock(mp->mutex);
+
 	if (!found)
 		return NULL;
 

@@ -1058,12 +1058,14 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		assert(resp_info != NULL);
 	}
 
+#if 0
 	for (i = 0; i < resp_info->nr; ++i) {
 		entry = mp_malloc(g_mp, sizeof(struct file_entry));
 		assert(entry != NULL);
 		*entry = resp_info->entries[i];
 		dlist_append(fe_list, entry);
 	}
+#endif
 
 	dlist_for_each(fe_list, node) {
 		entry = (struct file_entry *)node->data;
@@ -1739,6 +1741,8 @@ int reader_loop2(struct sftt_client_v2 *client)
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
 		printf("%s", prompt);
 		fgets(cmd, CMD_MAX_LEN - 1, stdin);
+		if (strlen(cmd) <= 1)
+			continue;
 		cmd[strlen(cmd) - 1] = 0;
 		if (!strcmp(cmd, "quit")) {
 			exit(0);

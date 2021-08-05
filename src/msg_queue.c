@@ -27,6 +27,9 @@ int send_msg(struct msg_queue *queue, struct msgbuf *msg)
 	int ret;
 
 	ret = msgsnd(queue->msqid, msg, MSG_MAX_LEN, IPC_NOWAIT);
+	if (errno) {
+		perror("msgsnd failed");
+	}
 
 	return ret;
 }
@@ -37,6 +40,9 @@ int recv_msg(struct msg_queue *queue, struct msgbuf *msg)
 	int ret;
 
 	ret = msgrcv(queue->msqid, msg, MSG_MAX_LEN, msg->mtype, 0);
+	if (errno) {
+		perror("msgrecv failed");
+	}
 
 	return ret;
 }
@@ -49,13 +55,14 @@ struct msg_queue *create_msg_queue(char *name)
 	struct msg_queue *queue;
 
 	if ((key = ftok(name, 'S')) == -1) {
+		perror("ftok failed");
 		printf("msg queue ftok failed!\n"
 			"\tFile \"%s\" is existed?\n", name);
 		return NULL;
 	}
 
 	msgflag = IPC_CREAT | 0666;
-	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
+	if ((msqid = msgget(key, msgflag)) == -1) {
 		perror("msgget failed");
 		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
 		return NULL;
@@ -77,13 +84,14 @@ struct msg_queue *get_msg_queue(char *name)
 	struct msg_queue *queue;
 
 	if ((key = ftok(name, 'S')) == -1) {
+		perror("ftok failed");
 		printf("msg queue ftok failed!\n"
 			"\tFile \"%s\" is existed?\n", name);
 		return NULL;
 	}
 
 	msgflag = 0666;
-	if ((msqid = msgget(key, msgflag)) == -1 && (errno != ENOENT)) {
+	if ((msqid = msgget(key, msgflag)) == -1) {
 		perror("msgget failed");
 		printf("key: 0x%0x, msgflag: 0x%0x\n", key, msgflag);
 		return NULL;
@@ -97,8 +105,16 @@ struct msg_queue *get_msg_queue(char *name)
 	return queue;
 }
 
-void delete_msg_queue(char *key)
+void delete_msg_queue(char *name)
 {
+	struct msg_queue *queue;
 
+	queue = get_msg_queue(name);
+	if (queue == NULL) {
+
+		return;
+	}
+
+	msgctl(queue->msqid, IPC_RMID, NULL);
 }
 
