@@ -156,7 +156,7 @@ void *mp_update_stat_loop(void *arg)
 
 	for (;;) {
 		if (mp->msg_queue == NULL)
-			mp->msg_queue = get_msg_queue(MEM_POOL_STAT_MSGKEY);
+			mp->msg_queue = get_msg_queue(MEM_POOL_STAT_MSGKEY, MSQ_TYPE_IPC);
 
 		if (mp->msg_queue == NULL || mp->msg_queue->msqid == -1) {
 			sleep(1);

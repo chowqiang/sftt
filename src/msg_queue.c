@@ -18,36 +18,88 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include "list.h"
 #include "msg_queue.h"
 
-int send_msg(struct msg_queue *queue, struct msgbuf *msg)
+struct msq_mgr {
+	struct list_head queues[MSQ_TYPE_CNT];
+};
+
+static struct msq_mgr msq_mgr;
+
+/*
+ * Message queue implemented by ipc.
+ */
+int send_msg_ipc(struct msg_queue *queue, struct msgbuf *msg);
+int recv_msg_ipc(struct msg_queue *queue, struct msgbuf *msg);
+struct msg_queue *create_msg_queue_ipc(char *name);
+struct msg_queue *get_msg_queue_ipc(char *name);
+void delete_msg_queue_ipc(char *name);
+
+/*
+ * Message queue implemented by file.
+ */
+int send_msg_file(struct msg_queue *queue, struct msgbuf *msg);
+int recv_msg_file(struct msg_queue *queue, struct msgbuf *msg);
+struct msg_queue *create_msg_queue_file(char *name);
+struct msg_queue *get_msg_queue_file(char *name);
+void delete_msg_queue_file(char *name);
+
+/*
+ * Message queue implemented by net.
+ */
+int send_msg_net(struct msg_queue *queue, struct msgbuf *msg);
+int recv_msg_net(struct msg_queue *queue, struct msgbuf *msg);
+struct msg_queue *create_msg_queue_net(char *name);
+struct msg_queue *get_msg_queue_net(char *name);
+void delete_msg_queue_net(char *name);
+
+/*
+ * Message queue operations for ipc msq.
+ */
+struct msq_ops msq_ipc = {
+	.send_msg = send_msg_ipc,
+	.recv_msg = recv_msg_ipc,
+};
+
+/*
+ * Message queue operations for file msq.
+ */
+struct msq_ops msq_file = {
+	.send_msg = send_msg_file,
+	.recv_msg = recv_msg_file,
+};
+
+/*
+ * Message queue operations for net msq.
+ */
+struct msq_ops msq_net = {
+	.send_msg = send_msg_net,
+	.recv_msg = recv_msg_net,
+};
+
+static void __attribute__((constructor)) msq_mgr_init(void)
 {
-	int ret;
+	int i = 0;
 
-	ret = msgsnd(queue->msqid, msg, MSG_MAX_LEN, IPC_NOWAIT);
-	if (errno) {
-		perror("msgsnd failed");
-	}
-
-	return ret;
+	for (i = 0; i < MSQ_TYPE_CNT; ++i)
+		INIT_LIST_HEAD(&msq_mgr.queues[i]);
 }
 
-int recv_msg(struct msg_queue *queue, struct msgbuf *msg)
+int send_msg_ipc(struct msg_queue *queue, struct msgbuf *msg)
 {
 
-	int ret;
-
-	ret = msgrcv(queue->msqid, msg, MSG_MAX_LEN, msg->mtype, 0);
-	if (errno) {
-		perror("msgrecv failed");
-	}
-
-	return ret;
 }
 
-struct msg_queue *create_msg_queue(char *name)
+int recv_msg_ipc(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+}
+
+struct msg_queue *create_msg_queue_ipc(char *name)
 {
 	key_t key;
 	int msqid;
@@ -76,7 +128,7 @@ struct msg_queue *create_msg_queue(char *name)
 	return queue;
 }
 
-struct msg_queue *get_msg_queue(char *name)
+struct msg_queue *get_msg_queue_ipc(char *name)
 {
 	key_t key;
 	int msqid;
@@ -105,16 +157,142 @@ struct msg_queue *get_msg_queue(char *name)
 	return queue;
 }
 
-void delete_msg_queue(char *name)
+void delete_msg_queue_ipc(char *name)
 {
 	struct msg_queue *queue;
 
-	queue = get_msg_queue(name);
+	queue = get_msg_queue_ipc(name);
 	if (queue == NULL) {
 
 		return;
 	}
 
 	msgctl(queue->msqid, IPC_RMID, NULL);
+}
+
+int send_msg_file(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+}
+
+int recv_msg_file(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+}
+
+struct msg_queue *create_msg_queue_file(char *name)
+{
+
+}
+
+struct msg_queue *get_msg_queue_file(char *name)
+{
+
+}
+
+void delete_msg_queue_file(char *name)
+{
+
+}
+
+int send_msg_net(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+}
+
+int recv_msg_net(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+}
+
+struct msg_queue *create_msg_queue_net(char *name)
+{
+
+}
+
+struct msg_queue *get_msg_queue_net(char *name)
+{
+
+}
+
+void delete_msg_queue_net(char *name)
+{
+
+}
+
+int send_msg(struct msg_queue *queue, struct msgbuf *msg)
+{
+	int ret;
+
+	if (queue == NULL || msg == NULL)
+		return -1;
+
+	ret = queue->ops->send_msg(queue, msg);
+
+	return ret;
+}
+
+int recv_msg(struct msg_queue *queue, struct msgbuf *msg)
+{
+
+	int ret;
+
+	if (queue == NULL || msg == NULL)
+		return -1;
+
+	ret = queue->ops->recv_msg(queue, msg);
+
+	return ret;
+}
+
+struct msg_queue *create_msg_queue(char *name, enum msq_type type)
+{
+	if (name == NULL)
+		return NULL;
+
+	if (get_msg_queue(name, type) != NULL)
+		return NULL;
+
+	switch (type) {
+	case MSQ_TYPE_IPC:
+		return create_msg_queue_ipc(name);
+	case MSQ_TYPE_FILE:
+		return create_msg_queue_file(name);
+	case MSQ_TYPE_NET:
+		return create_msg_queue_net(name);
+	default:
+		return NULL;
+	}
+}
+
+struct msg_queue *get_msg_queue(char *name, enum msq_type type)
+{
+	struct list_head *head;
+	struct msg_queue *queue;
+	bool found = false;
+
+	if (name == NULL)
+		return NULL;
+
+	if (!(type >= MSQ_TYPE_IPC && type < MSQ_TYPE_CNT))
+		return NULL;
+
+	head = &msq_mgr.queues[type];
+
+	list_for_each_entry(queue, head, list) {
+		if (strcmp(queue->name, name) == 0) {
+			found = true;
+			break;
+		}
+	}
+
+	if (found)
+		return queue;
+
+	return NULL;
+}
+
+void delete_msg_queue(struct msg_queue *queue)
+{
 }
 

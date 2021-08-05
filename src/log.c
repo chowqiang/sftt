@@ -118,7 +118,7 @@ void logger_daemon(char *dir, char *prefix)
 	}
 
 	for (;;) {
-		ret = msgrcv(msqid, &msg, MSG_MAX_LEN, MSG_TYPE_LOG, 0);
+		ret = msgrcv(msqid, &msg, MSG_BUF_SIZE, MSG_TYPE_LOG, 0);
 		if (ratelimit_try_inc(server_limit) == false) {
 			continue;
 		}
@@ -247,7 +247,7 @@ int add_server_log(int level, const char *fmt, va_list args)
 	strcat(buf + ret, "\n");
 	ret += 1;
 
-	if (msgsnd(msqid, &msg, MSG_MAX_LEN, IPC_NOWAIT) < 0) {
+	if (msgsnd(msqid, &msg, MSG_BUF_SIZE, IPC_NOWAIT) < 0) {
 		perror("send log msg failed");
 		return -1;
 	}
