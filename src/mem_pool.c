@@ -76,14 +76,17 @@ struct mem_pool *get_singleton_mp()
 struct mem_node *mem_node_create(size_t size)
 {
 	struct mem_node *p = (struct mem_node *)malloc(sizeof(struct mem_node));
+
 	if (p == NULL) {
 		return NULL;
 	}
+
 	p->address = malloc(size);
 	if (p->address == NULL) {
 		free(p);
 		return NULL;
 	}
+
 	p->size = size;
 	p->is_using = 0;
 	p->used_cnt = 0;
@@ -99,10 +102,12 @@ struct mem_node *mem_node_create(size_t size)
  */
 void mem_node_free(void *data)
 {
+	struct mem_node *node = (struct mem_node *)data;
+
 	if (data == NULL) {
 		return ;
 	}
-	struct mem_node *node = (struct mem_node *)data;
+
 	if (!node->is_using && node->address) {
 		free(node->address);
 	}
@@ -117,6 +122,7 @@ struct mem_pool *mp_create(void)
 {
 	int ret;
 	struct mem_pool *mp = (struct mem_pool *)malloc(sizeof(struct mem_pool));
+
 	if (mp == NULL) {
 		return NULL;
 	}
@@ -209,11 +215,12 @@ void *mp_update_stat_loop(void *arg)
  */
 void *mp_malloc(struct mem_pool *mp, size_t n)
 {
+	struct mem_node *m_node = NULL, *p = NULL;
+
 	if (mp == NULL || n == 0) {
 		return NULL;
 	}
 
-	struct mem_node *m_node = NULL, *p = NULL;
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_malloc failed: cannot lock mem pool. ");
 		return NULL;
@@ -242,6 +249,11 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 			mp->nodes = m_node;
 
 		list_add(&mem_nodes, &m_node->list);
+
+		mp->stat.total_nodes += 1;
+		mp->stat.total_size += n;
+	} else {
+		mp->stat.free_nodes -= 1;
 	}
 
 	m_node->is_using = 1;
@@ -249,6 +261,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 
 	updated = true;
 
+	mp->stat.using_nodes += 1;
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);
@@ -309,21 +322,27 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
  */
 void mp_free(struct mem_pool *mp, void *p)
 {
+	struct mem_node *m_node = NULL;
+
 	if (mp == NULL || p == NULL) {
 		return ;
 	}
-	struct mem_node *m_node = NULL;
+
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		perror("mp_free failed: cannot lock mem pool. ");
 		return ;
 	}
+
 	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->address == p) {
 			m_node->is_using = 0;
 			m_node->used_cnt += 1;
+			mp->stat.free_nodes += 1;
+			mp->stat.using_nodes -= 1;
 			break;
 		}
 	}
+
 	mp->mutex->ops->unlock(mp->mutex);
 }
 
@@ -333,11 +352,12 @@ void mp_free(struct mem_pool *mp, void *p)
  */
 void mp_destroy(struct mem_pool *mp)
 {
+	struct mem_node *m_node = NULL;
+
 	if (mp == NULL) {
 		return ;
 	}
 
-	struct mem_node *m_node = NULL;
 	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->is_using) {
 			return ;
@@ -357,11 +377,11 @@ void mp_destroy(struct mem_pool *mp)
 int mp_node_cnt(struct mem_pool *mp)
 {
 	int num = 0;
+	struct mem_node *m_node = NULL;
 
 	if (mp == NULL)
 		return 0;
 
-	struct mem_node *m_node = NULL;
 	list_for_each_entry(m_node, &mem_nodes, list)
 		++num;
 
@@ -400,12 +420,13 @@ bool mp_valid(struct mem_pool *mp)
  */
 int mp_size(struct mem_pool *mp)
 {
+	int sum =0;
+	struct mem_node *m_node = NULL;
+
 	if (mp == NULL) {
 		return 0;
 	}
 
-	int sum =0;
-	struct mem_node *m_node = NULL;
 	list_for_each_entry(m_node, &mem_nodes, list) {
 		sum += m_node->size;
 	}

@@ -54,13 +54,13 @@ int main(void)
 
 		stat = (struct mem_pool_stat *)msg.mtext;
 
-		printf("endpoint\tpid\t"
-			"total_size\ttotal_nodes\t"
-			"using_nodes\tfree_nodes\n");
+		printf("endpoint       pid"
+			"    total_size    total_nodes"
+			"    using_nodes    free_nodes\n");
 
-		printf("%s\t%d\t"
-			"%d\t%d\t"
-			"%d\t%d\n", msg.name, msg.pid,
+		printf("%8s%10d"
+			"%14d%15d"
+			"%15d%14d\n", msg.name, msg.pid,
 			stat->total_size, stat->total_nodes,
 			stat->using_nodes, stat->free_nodes);
 
