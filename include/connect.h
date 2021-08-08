@@ -42,6 +42,10 @@ struct client_sock_conn {
 	int port;
 };
 
+struct server_context {
+	int sock;
+};
+
 int make_connect(char *ip, int port);
 
 pthread_t start_server(int port, void *(*func)(void *arg));

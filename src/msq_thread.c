@@ -2,16 +2,21 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "connect.h"
 #include "msq_thread.h"
 #include "net_trans.h"
+#include "packet.h"
 
 void *msq_main_loop(void *arg)
 {
-	int sockfd = (int)arg;
-	int connect_fd = 0;
+	int sockfd;
+	int connect_fd;
 	int ret;
-
+	struct server_context *ctx;
 	struct sftt_packet *req;
+
+	ctx = (struct server_context *)arg;
+	sockfd = ctx->sock;
 
 	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
 	if (!req) {
@@ -37,7 +42,11 @@ void *msq_main_loop(void *arg)
 			continue;
 		}
 
-		//switch (req->type) {
-		//}
+		switch (req->type) {
+		case PACKET_TYPE_WRITE_MSG_REQ:
+			break;
+		case PACKET_TYPE_READ_MSG_REQ:
+			break;
+		}
 	}
 }

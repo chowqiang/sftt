@@ -23,6 +23,8 @@
 #define MSG_TYPE_LOG		1
 #define MSG_TYPE_MPSTAT		2
 
+#define MSG_QUEUE_FIFO_FILE	"/tmp/sftt.msq.fifo"
+
 enum msq_type {
 	MSQ_TYPE_IPC,
 	MSQ_TYPE_FILE,
@@ -44,6 +46,8 @@ struct msg_queue {
 	char name[MSQ_NAME_LEN];
 	enum msq_type type;
 	int msqid;
+	int fd;
+	int sock;
 	struct msq_ops *ops;
 	struct list_head list;
 };

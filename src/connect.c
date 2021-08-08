@@ -55,6 +55,7 @@ pthread_t start_server(int port, void *(*func)(void *arg))
 	struct sockaddr_in serveraddr;
 	pthread_t thread_id;
 	int ret;
+	struct server_context ctx;
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("create socket filed");
@@ -81,7 +82,8 @@ pthread_t start_server(int port, void *(*func)(void *arg))
 		return -1;
 	}
 
-	ret = pthread_create(&thread_id, NULL, func, (void *)sockfd);
+	ctx.sock = sockfd;
+	ret = pthread_create(&thread_id, NULL, func, (void *)&ctx);
 	if (ret) {
 		printf("create thread for start server failed\n");
 	}

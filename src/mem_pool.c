@@ -24,6 +24,7 @@
 #include "context.h"
 #include "mem_pool.h"
 #include "msg_queue.h"
+#include "utils.h"
 
 void *mp_update_stat_loop(void *arg);
 
@@ -145,6 +146,7 @@ void *mp_update_stat_loop(void *arg)
 	struct mem_pool *mp;
 	struct msgbuf msg;
 	int ret = 0;
+	int num;
 
 	mp = (struct mem_pool *)arg;
 	if (mp == NULL) {
@@ -156,9 +158,17 @@ void *mp_update_stat_loop(void *arg)
 
 	for (;;) {
 		if (mp->msg_queue == NULL)
-			mp->msg_queue = get_msg_queue(MEM_POOL_STAT_MSGKEY, MSQ_TYPE_IPC);
+			mp->msg_queue = get_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
 
-		if (mp->msg_queue == NULL || mp->msg_queue->msqid == -1) {
+		if (mp->msg_queue == NULL) {
+			num = gen_random(1, 1000);
+			usleep(num * 1000);
+		}
+
+		if (mp->msg_queue == NULL)
+			mp->msg_queue = create_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
+
+		if (mp->msg_queue == NULL) {
 			sleep(1);
 			continue;
 		}
@@ -179,9 +189,6 @@ void *mp_update_stat_loop(void *arg)
 			continue;
 
 		ret = send_msg(mp->msg_queue, &msg);
-		if (ret == -1) {
-			printf("%s:%d, send msg failed!\n", __func__, __LINE__);
-		}
 
 		mp->mutex->ops->lock(mp->mutex);
 		updated = false;

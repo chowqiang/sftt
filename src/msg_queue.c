@@ -16,6 +16,8 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,7 +25,6 @@
 #include <sys/msg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include "list.h"
 #include "msg_queue.h"
@@ -129,6 +130,7 @@ struct msg_queue *create_msg_queue_ipc(char *name)
 	assert(queue != NULL);
 
 	queue->msqid = msqid;
+	queue->ops = &msq_ipc;
 
 	return queue;
 }
@@ -168,50 +170,70 @@ void delete_msg_queue_ipc(char *name)
 
 	queue = get_msg_queue_ipc(name);
 	if (queue == NULL) {
-
 		return;
 	}
 
 	msgctl(queue->msqid, IPC_RMID, NULL);
+
+	free(queue);
 }
 
 int send_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 {
-	char path[FILE_NAME_MAX_LEN];
-	int fd;
+	int ret;
 
-	snprintf(path, FILE_NAME_MAX_LEN - 1, "/var/sftt/msq/%s_%d",
-			queue->name, getpid());
+	if (queue->fd == -1) {
+		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_WRONLY);
+		if (errno)
+			perror("open fifo for write failed");
+	}
 
-	fd = open(path, O_CREAT | O_WRONLY, 0600);
-	if (fd == -1)
+	if (queue->fd == -1) {
+		printf("%s:%d, cannot open %s\n", __func__, __LINE__, MSG_QUEUE_FIFO_FILE);
+		return -1;
+	}
+
+	ret = write(queue->fd, msg, sizeof(struct msgbuf));
+
+	if (ret < sizeof(struct msgbuf))
 		return -1;
 
-	write(fd, msg, sizeof(struct msgbuf));
-
-	close(fd);
+	return 0;
 }
 
 int recv_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 {
-	char path[FILE_NAME_MAX_LEN];
-	int fd;
+	int ret;
 
-	snprintf(path, FILE_NAME_MAX_LEN - 1, "/var/sftt/msq/%s_%d",
-			queue->name, getpid());
+	if (queue->fd == -1) {
+		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_RDONLY);
+		if (errno)
+			perror("open fifo for read failed");
+	}
 
-	fd = open(path, O_RDONLY, 0600);
-	if (fd == -1)
+	if (queue->fd == -1) {
+		printf("%s:%d, cannot open %s\n", __func__, __LINE__, MSG_QUEUE_FIFO_FILE);
+		return -1;
+	}
+
+	ret = read(queue->fd, msg, sizeof(struct msgbuf));
+
+	if (ret < sizeof(struct msgbuf))
 		return -1;
 
-	read(fd, msg, sizeof(struct msgbuf));
+	return 0;
+}
 
-	close(fd);
+void fifo_close_action(int sig)
+{
+	sleep(1);
 }
 
 struct msg_queue *create_msg_queue_file(char *name)
 {
 	struct msg_queue *queue;
+
+	signal(SIGPIPE, fifo_close_action);
 
 	queue = malloc(sizeof(struct msg_queue));
 	if (queue == NULL)
@@ -222,6 +244,8 @@ struct msg_queue *create_msg_queue_file(char *name)
 	strncpy(queue->name, name, MSQ_NAME_LEN - 1);
 	queue->type = MSQ_TYPE_FILE;
 	queue->msqid = -1;
+	queue->fd = -1;
+	queue->sock = -1;
 	queue->ops = &msq_file;
 	INIT_LIST_HEAD(&queue->list);
 
@@ -230,6 +254,7 @@ struct msg_queue *create_msg_queue_file(char *name)
 
 struct msg_queue *get_msg_queue_file(char *name)
 {
+
 
 }
 

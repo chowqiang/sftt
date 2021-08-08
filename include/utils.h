@@ -44,4 +44,6 @@ int get_first_word(char *buf, char *word, int len);
 
 char *__strdup(const char *buf);
 
+int gen_random(int min, int max);
+
 #endif

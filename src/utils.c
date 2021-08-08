@@ -268,3 +268,8 @@ char *__strdup(const char *buf)
 
 	return tmp;
 }
+
+int gen_random(int min, int max)
+{
+	return gen_int(min, max);
+}

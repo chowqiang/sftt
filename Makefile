@@ -73,3 +73,4 @@ clean:
 	make clean -C $(SERVER_DIR)
 	make clean -C $(CLIENT_DIR)
 	make clean -C $(TEST_DIR)
+	make clean -C $(TOOLS_DIR)

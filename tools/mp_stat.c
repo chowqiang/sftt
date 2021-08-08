@@ -30,14 +30,7 @@ int main(void)
 
 	set_current_context("mpstat");
 
-	delete_msg_queue(MEM_POOL_STAT_MSGKEY);
-
-	queue = create_msg_queue(MEM_POOL_STAT_MSGKEY);
-	printf("queue: 0x%0lx\n", queue);
-
-	if (queue == NULL)
-		get_msg_queue(MEM_POOL_STAT_MSGKEY);
-
+	queue = create_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
 	printf("queue: 0x%0lx\n", queue);
 
 	printf("press any key to continue ...\n");
