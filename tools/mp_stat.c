@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "context.h"
 #include "mem_pool.h"
@@ -41,16 +42,14 @@ int main(void)
 		return -1;
 	}
 
-	printf("%s:%d, msqid=%d\n", __func__, __LINE__, queue->msqid);
-
 	msg.mtype = MSG_TYPE_MPSTAT;
 	for (;;) {
 		//system("clear");
 		ret = recv_msg(queue, &msg);
-#if 0
-		if (ret < 0)
+
+		//printf("msg.name=%s\n", msg.name);
+		if (strcmp(msg.name, "server") && strcmp(msg.name, "client"))
 			continue;
-#endif
 
 		stat = (struct mem_pool_stat *)msg.mtext;
 
