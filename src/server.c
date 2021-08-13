@@ -69,6 +69,8 @@ extern struct mem_pool *g_mp;
 
 struct sftt_server *server;
 
+struct logger_init_ctx logger_ctx;
+
 int create_non_block_sock(int *pport);
 
 void put_sftt_server_stat(struct sftt_server_stat *sss);
@@ -279,18 +281,17 @@ void sighandler(int signum)
    add_log(LOG_INFO, "Caught signal %d, coming out ...", signum);
 }
 
-bool init_sftt_server_stat(pid_t log_pid)
+int init_sftt_server_stat(void)
 {
 	struct sftt_server_stat *sss = alloc_sftt_server_stat();
 	assert(sss != NULL);
 
 	sss->main_pid = getpid();
-	sss->log_pid = log_pid;
 	memcpy(&sss->conf, &server->conf, sizeof(struct sftt_server_config));
 
 	put_sftt_server_stat(sss);
 
-	return true;
+	return 0;
 }
 
 int get_sftt_server_shmid(int create_flag)
@@ -1266,23 +1267,25 @@ struct database *start_sftt_db_server(void)
 	return (void *)-1;
 }
 
-pid_t start_sftt_log_server(struct sftt_server *server)
+int start_sftt_log_server(struct sftt_server *server)
 {
-	pid_t pid = fork();
-	if (pid == 0) {
-		signal(SIGTERM, logger_exit);
-		logger_daemon(server->conf.log_dir, PROC_NAME);
-	} else {
-		set_log_type(SERVER_LOG);
-		sleep(1);
-		return pid;
-	}
+	int ret;
+
+	strncpy(logger_ctx.dir, server->conf.log_dir, DIR_PATH_MAX_LEN - 1);
+	strncpy(logger_ctx.prefix, PROC_NAME, LOGGER_PREFIX_LEN - 1);
+
+	ret = pthread_create(&server->log_tid, NULL, logger_daemon, &logger_ctx);
+	if (ret)
+		return -1;
+
+	return 0;
 }
 
 int init_sftt_server(char *store_path)
 {
 	int port = 0;
 	int sockfd;
+	int ret;
 
 #if 0
 	char tmp_file[32];
@@ -1317,14 +1320,14 @@ int init_sftt_server(char *store_path)
 	}
 #endif
 
-	pid_t log_pid = start_sftt_log_server(server);
-	if (log_pid < 0) {
+	ret = start_sftt_log_server(server);
+	if (ret == -1) {
 		printf("cannot start log server!\n");
 		return false;
 	}
 
-	bool ret = init_sftt_server_stat(log_pid);
-	if (!ret) {
+	ret = init_sftt_server_stat();
+	if (ret == -1) {
 		printf(PROC_NAME " start failed! Because cannot init "
 			PROC_NAME " server info.\n");
 		return false;
@@ -1400,9 +1403,7 @@ int sftt_server_stop(void)
 		return -1;
 	}
 
-	add_log(LOG_INFO, "log pid is: %d", sss->log_pid);
-	add_log(LOG_INFO, "log is going to stop ...");
-	kill(sss->log_pid, SIGTERM);
+	logger_exit(SIGTERM);
 
 	/**
 	*	All  of  these  system calls are used to wait for state changes
@@ -1423,7 +1424,6 @@ int sftt_server_stop(void)
 	*	is termed waitable.
 	*
 	**/
-	//waitpid(ssi->log_pid, NULL, 0);
 	printf(PROC_NAME " pid is: %d\n", sss->main_pid);
 	printf(PROC_NAME " is going to stop ...\n");
 	kill(sss->main_pid, SIGTERM);
@@ -1439,7 +1439,6 @@ void notify_all_child_to_exit(void)
 		if (server->sessions[i].status != ACTIVE) {
 			continue;
 		}
-		//kill(ssi->sessions[i].pid, SIGTERM);
 	}
 }
 
@@ -1509,7 +1508,6 @@ void sftt_server_status(void)
 		"\tmain pid: %d\n"
 		"\tmain port: %d\n"
 		"\tmain sock: %d\n"
-		"\tlog pid: %d\n"
 		"\tlog path: %s\n"
 		"\tlast update time: %s\n",
 		status_desc(sss->status),
@@ -1517,7 +1515,6 @@ void sftt_server_status(void)
 		sss->main_pid,
 		sss->main_port,
 		sss->main_sock,
-		sss->log_pid,
 		sss->conf.log_dir,
 		ts_buf);
 }

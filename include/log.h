@@ -32,6 +32,8 @@
 
 #define SFTT_LOG_MSQKEY_FILE	"/var/lib/sfttd/msgkey"
 
+#define LOGGER_PREFIX_LEN	32
+
 enum log_type {
 	CLIENT_LOG,
 	SERVER_LOG,
@@ -44,9 +46,14 @@ struct logger {
 	char store_dir[DIR_PATH_MAX_LEN];
 };
 
+struct logger_init_ctx {
+	char dir[DIR_PATH_MAX_LEN];
+	char prefix[LOGGER_PREFIX_LEN];
+};
+
 void logger_init(char *dir, char *prefix);
 
-void logger_daemon(char *dir, char *prefix);
+void *logger_daemon(void *args);
 
 void logger_exit(int sig);
 

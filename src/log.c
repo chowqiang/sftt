@@ -92,29 +92,34 @@ void logger_init(char *dir, char *prefix)
 	assert(client_limit != NULL);
 }
 
-void logger_daemon(char *dir, char *prefix)
+void *logger_daemon(void *args)
 {
+	char *dir, *prefix;
 	int msqid;
     	key_t key;
     	struct msgbuf msg;
 	char file1[FILE_NAME_MAX_LEN];
 	char file2[FILE_NAME_MAX_LEN];
 	int ret = 0;
+	struct logger_init_ctx *ctx = args;
 
 	server_limit = new(ratelimit_state, 10, 1000);
 	assert(server_limit != NULL);
 
+	dir = ctx->dir;
+	prefix = ctx->prefix;
+
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
 	    perror("get log msqid failed");
-		return ;
+		return NULL;
 	}
 
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
 	    printf("%d: open log file %s failed!\n", __LINE__, file1);
-		return ;
+		return NULL;
 	}
 
 	for (;;) {
@@ -135,6 +140,8 @@ void logger_daemon(char *dir, char *prefix)
 		fwrite(msg.mtext, ret, 1, server_log_fp);
 		fflush(server_log_fp);
 	}
+
+	return NULL;
 }
 
 int get_log_msqid(int create_flag)
@@ -193,10 +200,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 	int ret = sprintf(buf, "[%s] %s ", desc, now);
 
-	//va_list args;
-	//va_start(args, fmt);
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
-	//va_end(args);
 
 	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
@@ -239,10 +243,7 @@ int add_server_log(int level, const char *fmt, va_list args)
 
 	ret = sprintf(buf, "[%s] %s ", desc, now);
 
-	//va_list args;
-	//va_start(args, fmt);
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
-	//va_end(args);
 
 	strcat(buf + ret, "\n");
 	ret += 1;
@@ -320,10 +321,7 @@ int do_log(struct logger *log, struct trace_info *trace,
 
 	int ret = sprintf(buf, "[%s] %s ", desc, now);
 
-	//va_list args;
-	//va_start(args, fmt);
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
-	//va_end(args);
 
 	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);

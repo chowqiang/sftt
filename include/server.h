@@ -50,6 +50,7 @@ enum sftt_server_status {
 struct sftt_server {
 	int main_sock;
 	int main_port;
+	pthread_t log_tid;
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
 	struct sftt_server_config conf;
@@ -59,7 +60,6 @@ struct sftt_server {
 
 struct sftt_server_stat {
 	pid_t main_pid;
-	pid_t log_pid;
 	int main_sock;
 	int main_port;
 	uint64_t last_update_ts;
