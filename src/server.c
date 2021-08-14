@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <sys/socket.h>  
 #include <signal.h>
+#include <libgen.h>
 #include <netinet/in.h>  
 #include <stdlib.h>
 #include <string.h>
@@ -539,11 +540,9 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
 	assert(resp_info != NULL);
 
-#if CONFIG_DEBUG
 	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
 			client->pwd, req_info->path);
-#endif
-	strncpy(buf, req_info->path, DIR_PATH_MAX_LEN - 1);
+	//strncpy(buf, req_info->path, DIR_PATH_MAX_LEN - 1);
 
 	simplify_path(buf);
 	printf("cd to %s ...\n", buf);
@@ -591,7 +590,8 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 {
 	struct ll_req *req_info;
 	struct ll_resp *resp_info;
-	char buf[DIR_PATH_MAX_LEN];
+	char tmp[DIR_PATH_MAX_LEN];
+	char path[DIR_PATH_MAX_LEN];
 	int i = 0, j = 0, k = 0, ret = 0;
 	struct dlist *file_list;
 	struct dlist_node *node, *next;
@@ -603,16 +603,17 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	resp_info = mp_malloc(g_mp, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
 
-#if CONFIG_DEBUG
-	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
+	if (is_abs_path(req_info->path)) {
+		strncpy(path, req_info->path, DIR_PATH_MAX_LEN - 1);
+	} else {
+		snprintf(path, DIR_PATH_MAX_LEN - 1, "%s/%s",
 			client->pwd, req_info->path);
-#endif
-	strncpy(buf, req_info->path, DIR_PATH_MAX_LEN - 1);
+	}
 
-	simplify_path(buf);
-	printf("ll %s ...\n", buf);
+	simplify_path(path);
+	printf("ll %s ...\n", path);
 
-	if (!file_existed(req_info->path)) {
+	if (!file_existed(path)) {
 		resp_info->nr = -1;
 		resp_info->idx = -1;
 		send_ll_resp_once(client, resp_info, resp_packet);
@@ -620,18 +621,18 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 		return 0;
 	}
 
-	if (is_file(req_info->path)) {
+	if (is_file(path)) {
 		resp_info->nr = 1;
 		resp_info->idx = -1;
 
-		strncpy(resp_info->entries[0].name, req_info->path, FILE_NAME_MAX_LEN - 1);
+		strncpy(resp_info->entries[0].name, basename(path), FILE_NAME_MAX_LEN - 1);
 		resp_info->entries[0].type = FILE_TYPE_FILE;
 
 		send_ll_resp_once(client, resp_info, resp_packet);
 
 		return 0;
-	} else if (is_dir(req_info->path)) {
-		file_list = get_top_file_list(req_info->path);
+	} else if (is_dir(path)) {
+		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
 			resp_info->nr = -1;
 			resp_info->idx = -1;
@@ -647,12 +648,12 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 				if (i == FILE_ENTRY_MAX_CNT)
 					break;
 				strncpy(resp_info->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
-				printf("file name: %s\n", node->data);
-				snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s", client->pwd, node->data);
+				snprintf(tmp, DIR_PATH_MAX_LEN - 1, "%s/%s", path, node->data);
+				printf("file name: %s\n", tmp);
 
-				if (is_file(buf))
+				if (is_file(tmp))
 					resp_info->entries[i].type = FILE_TYPE_FILE;
-				else if (is_dir(buf))
+				else if (is_dir(tmp))
 					resp_info->entries[i].type = FILE_TYPE_DIR;
 				else
 					resp_info->entries[i].type = FILE_TYPE_UNKNOWN;

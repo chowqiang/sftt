@@ -534,3 +534,11 @@ int create_temp_file(char *buf, char *prefix)
 
 	return 0;
 }
+
+bool is_abs_path(char *buf)
+{
+	if (buf == NULL)
+		return false;
+
+	return buf[0] == '/';
+}

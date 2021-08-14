@@ -84,4 +84,6 @@ int set_file_mode(char *path, mode_t mode);
 
 int create_temp_file(char *buf, char *prefix);
 
+bool is_abs_path(char *buf);
+
 #endif
