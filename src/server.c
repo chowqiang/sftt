@@ -570,13 +570,29 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	return 0;
 }
 
+int send_ll_resp_once(struct client_session *client, struct ll_resp *resp_info,
+	struct sftt_packet *resp_packet)
+{
+	int ret;
+
+	resp_packet->type = PACKET_TYPE_LL_RSP;
+	resp_packet->obj = resp_info;
+
+	ret = send_sftt_packet(client->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("send cd response failed!\n");
+		return -1;
+	}
+
+}
+
 int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
 	struct ll_req *req_info;
 	struct ll_resp *resp_info;
 	char buf[DIR_PATH_MAX_LEN];
-	int i, j, k, ret;
+	int i = 0, j = 0, k = 0, ret = 0;
 	struct dlist *file_list;
 	struct dlist_node *node, *next;
 	bool has_more = false;
@@ -597,7 +613,11 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	printf("ll %s ...\n", buf);
 
 	if (!file_existed(req_info->path)) {
-		goto cannot_get_files;
+		resp_info->nr = -1;
+		resp_info->idx = -1;
+		send_ll_resp_once(client, resp_info, resp_packet);
+
+		return 0;
 	}
 
 	if (is_file(req_info->path)) {
@@ -607,58 +627,51 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 		strncpy(resp_info->entries[0].name, req_info->path, FILE_NAME_MAX_LEN - 1);
 		resp_info->entries[0].type = FILE_TYPE_FILE;
 
-		goto send_resp_once;
+		send_ll_resp_once(client, resp_info, resp_packet);
+
+		return 0;
 	} else if (is_dir(req_info->path)) {
 		file_list = get_top_file_list(req_info->path);
-		if (file_list == NULL)
-			goto cannot_get_files;
+		if (file_list == NULL) {
+			resp_info->nr = -1;
+			resp_info->idx = -1;
+			send_ll_resp_once(client, resp_info, resp_packet);
+
+			return -1;
+		}
 		printf("file count: %d\n", dlist_size(file_list));
-		k = 0;
 		node = dlist_head(file_list);
 		while (node) {
-send_continue:
 			i = 0;
 			dlist_for_each_pos(node) {
 				if (i == FILE_ENTRY_MAX_CNT)
 					break;
 				strncpy(resp_info->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
-				if (is_file(node->data))
+				printf("file name: %s\n", node->data);
+				snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s", client->pwd, node->data);
+
+				if (is_file(buf))
 					resp_info->entries[i].type = FILE_TYPE_FILE;
-				else if (is_dir(node->data))
+				else if (is_dir(buf))
 					resp_info->entries[i].type = FILE_TYPE_DIR;
 				else
 					resp_info->entries[i].type = FILE_TYPE_UNKNOWN;
 				++i;
 			}
 			resp_info->nr = i;
-			// next = dlist_next(node);
 			if (node) {
 				resp_info->idx = k++;
 				has_more = true;
-				// node = next;
 			} else {
 				resp_info->idx = -1;
 				has_more = false;
 			}
-			goto send_resp_once;
+			send_ll_resp_once(client, resp_info, resp_packet);
 		}
 	}
 
-cannot_get_files:
-	resp_info->nr = -1;
-	resp_info->idx = -1;
-
-send_resp_once:
-	resp_packet->type = PACKET_TYPE_LL_RSP;
-	resp_packet->obj = resp_info;
-
-	ret = send_sftt_packet(client->connect_fd, resp_packet);
-	if (ret == -1) {
-		printf("send cd response failed!\n");
-		return -1;
-	}
 	if (has_more)
-		goto send_continue;
+		send_ll_resp_once(client, resp_info, resp_packet);
 
 	printf("handle ll done!\n");
 

@@ -179,10 +179,7 @@ void logger_exit(int sig)
 		return ;
 	}
 
-	printf("log server is stop ...\n");
 	msgctl(msqid, IPC_RMID, NULL);
-
-	exit(0);
 }
 
 int add_client_log(int level, const char *fmt, va_list args)

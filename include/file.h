@@ -37,6 +37,26 @@ struct path_entry_list {
 	struct path_entry_list *next;
 };
 
+#define FILE_TYPE_NAME(type)          \
+       ({                             \
+	const char *__name;           \
+	switch (type) {               \
+	case FILE_TYPE_UNKNOWN:       \
+		__name = "unknown";   \
+		break;                \
+	case FILE_TYPE_FILE:          \
+		__name = "file";      \
+		break;                \
+	case FILE_TYPE_DIR:           \
+		__name = "dir";       \
+		break;                \
+	default:                      \
+		__name = "exception"; \
+		break;                \
+	 }                            \
+	__name;                       \
+	})
+
 size_t file_size(char *filename);
 
 unsigned char *file_get_contents(char *path, size_t *length);

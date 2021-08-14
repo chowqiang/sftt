@@ -1069,7 +1069,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	dlist_for_each(fe_list, node) {
 		entry = (struct file_entry *)node->data;
-		printf("%s\t%s\n", entry->type == 1 ? "file" : "dir", entry->name);
+		printf("%s\t%s\n", FILE_TYPE_NAME(entry->type), entry->name);
 	}
 
 	free_sftt_packet(&req_packet);
