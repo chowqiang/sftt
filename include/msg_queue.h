@@ -17,7 +17,7 @@
 #ifndef _MSG_QUEUE_H_
 #define _MSG_QUEUE_H_
 
-#define MSG_MAX_LEN	4096
+#define MSG_MAX_LEN	256
 #define MSQ_NAME_LEN	128
 
 #define MSG_TYPE_LOG		1
@@ -33,14 +33,17 @@ enum msq_type {
 };
 
 struct msgbuf {
-	int mtype;
-	char name[16];
-	int pid;
-	int length;
-	char mtext[MSG_MAX_LEN];
+	long mtype;
+	union {
+		char mtext[MSG_MAX_LEN];
+		struct {
+			char name[16];
+			int pid;
+			int length;
+			char buf[0];
+		};
+	};
 };
-
-#define MSG_BUF_SIZE	(sizeof(struct msgbuf))
 
 struct msg_queue {
 	char name[MSQ_NAME_LEN];

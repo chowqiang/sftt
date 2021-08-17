@@ -183,13 +183,13 @@ void *mp_update_stat_loop(void *arg)
 		if (ctx) {
 			strncpy(msg.name, ctx->name, 15);
 		} else {
-			strncpy(msg.name, "unknown", strlen("unknown"));
+			strncpy(msg.name, "unknown", 15);
 		}
 
 		msg.pid = getpid();
 		msg.mtype = MSG_TYPE_MPSTAT;
 		msg.length = sizeof(struct mem_pool_stat);
-		memcpy(msg.mtext, &mp->stat, sizeof(struct mem_pool_stat));
+		memcpy(msg.buf, &mp->stat, sizeof(struct mem_pool_stat));
 
 		if (ret == -1 && !updated)
 			continue;
@@ -242,6 +242,7 @@ void *mp_malloc(struct mem_pool *mp, size_t n)
 	if (m_node == NULL) {
 		m_node = mem_node_create(n);
 		if (m_node == NULL) {
+			mp->mutex->ops->unlock(mp->mutex);
 			return NULL;
 		}
 

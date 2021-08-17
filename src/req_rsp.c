@@ -370,7 +370,7 @@ xdr_write_msg_req (XDR *xdrs, write_msg_req *objp)
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->length))
 		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->mtext, MSG_MAX_LEN,
+	 if (!xdr_vector (xdrs, (char *)objp->mtext, NET_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	return TRUE;
@@ -401,7 +401,7 @@ xdr_read_msg_resp (XDR *xdrs, read_msg_resp *objp)
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->length))
 		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->mtext, MSG_MAX_LEN,
+	 if (!xdr_vector (xdrs, (char *)objp->mtext, NET_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	return TRUE;

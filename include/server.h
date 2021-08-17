@@ -37,8 +37,6 @@ do {	\
 
 #define SFTT_SERVER_SHM_SIZE	4096
 
-#define MAX_CHILD_NUM			128
-
 enum sftt_server_status {
 	READY,
 	SERVERING,

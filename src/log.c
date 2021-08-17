@@ -73,6 +73,9 @@ static inline char *get_log_level_desc(int level)
 void get_log_file_name(char *dir, char *prefix, char *file_name, int max_len)
 {
 	char suffix[16];
+
+	bzero(suffix, 0);
+
 	ymd_hm_str(suffix, 15);
 
 	int plen = strlen(prefix);
@@ -122,9 +125,22 @@ void *logger_daemon(void *args)
 		return NULL;
 	}
 
+	printf("logger thread begin to work ...\n");
 	for (;;) {
-		ret = msgrcv(msqid, &msg, sizeof(struct msgbuf), MSG_TYPE_LOG, 0);
+		memset(&msg, 0, sizeof(msg));
+		ret = msgrcv(msqid, &msg, MSG_MAX_LEN, MSG_TYPE_LOG, 0);
+		if (ret == -1) {
+			perror("msgrcv failed");
+			sleep(1);
+			continue;
+		}
+		//printf("received msg: length=%d\n", msg.length);
+		if (msg.length <= 0) {
+			printf("seems to be a wrong msg, length=%d\n", msg.length);
+			continue;
+		}
 		if (ratelimit_try_inc(server_limit) == false) {
+			printf("hit ratelimit ...\n");
 			continue;
 		}
 		get_log_file_name(dir, prefix, file2, FILE_NAME_MAX_LEN);
@@ -137,7 +153,7 @@ void *logger_daemon(void *args)
 			}
 			strcpy(file1, file2);
 		}
-		fwrite(msg.mtext, ret, 1, server_log_fp);
+		fwrite(msg.buf, msg.length, 1, server_log_fp);
 		fflush(server_log_fp);
 	}
 
@@ -218,7 +234,7 @@ int add_server_log(int level, const char *fmt, va_list args)
 {
 	struct msgbuf msg;
 	int msqid;
-	char *buf = msg.mtext;
+	char *buf = msg.buf;
 	char now[32];
 	char *desc;
 	int ret;
@@ -245,7 +261,9 @@ int add_server_log(int level, const char *fmt, va_list args)
 	strcat(buf + ret, "\n");
 	ret += 1;
 
-	if (msgsnd(msqid, &msg, sizeof(struct msgbuf), IPC_NOWAIT) < 0) {
+	msg.length = ret;
+
+	if (msgsnd(msqid, &msg, MSG_MAX_LEN, IPC_NOWAIT) < 0) {
 		perror("send log msg failed");
 		return -1;
 	}

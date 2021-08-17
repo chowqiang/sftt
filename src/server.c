@@ -467,7 +467,7 @@ static int validate_user_info(struct client_session *client,
 		strncpy(resp_info->session_id, client->session_id, SESSION_ID_LEN);
 
 		DEBUG((DEBUG_INFO, "validate user info successfully!\n"));
-		DEBUG((DEBUG_INFO, "user_name=%s|uid=%s|status=%d|home_dir=%s|"
+		DEBUG((DEBUG_INFO, "user_name=%s|uid=%d|status=%d|home_dir=%s|"
 			"session_id=%s\n", client->user.name, client->user.uid,
 			resp_info->status, client->pwd, client->session_id));
 	}
@@ -1102,12 +1102,14 @@ void *handle_client_session(void *args)
 	struct sftt_packet *req;
 	int ret;
 
+	DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
 	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
 		return NULL;
 	}
 
+	//DEBUG((DEBUG_INFO, "normal"));
 	signal(SIGTERM, child_process_exit);
 	signal(SIGSEGV, child_process_exception_handler);
 
@@ -1117,8 +1119,10 @@ void *handle_client_session(void *args)
 	//}
 
 	add_log(LOG_INFO, "begin to communicate with client ...");
+	//DEBUG((DEBUG_INFO, "normal"));
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
+		//DEBUG((DEBUG_INFO, "normal"));
 		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
 			printf("recv encountered unrecoverable error, child process is exiting ...\n");
@@ -1215,7 +1219,7 @@ struct client_session *find_get_new_session(void)
 {
 	int i;
 
-	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		if (server->sessions[i].status == EXITED) {
 			server->sessions[i].status = ACTIVE;
 			return &server->sessions[i];
@@ -1228,7 +1232,7 @@ struct client_session *find_get_new_session(void)
 void init_sessions(void)
 {
 	int i = 0;
-	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		server->sessions[i].status = EXITED;
 	}
 }
@@ -1244,6 +1248,8 @@ void main_loop(void)
 
 	server->status = RUNNING;
 	init_sessions();
+
+	//DEBUG((DEBUG_INFO, "normal"));
 
 	while (1) {
 		update_server(server);
@@ -1315,6 +1321,8 @@ struct database *start_sftt_db_server(void)
 int start_sftt_log_server(struct sftt_server *server)
 {
 	int ret;
+
+	set_log_type(SERVER_LOG);
 
 	strncpy(logger_ctx.dir, server->conf.log_dir, DIR_PATH_MAX_LEN - 1);
 	strncpy(logger_ctx.prefix, PROC_NAME, LOGGER_PREFIX_LEN - 1);
@@ -1480,7 +1488,7 @@ int sftt_server_stop(void)
 void notify_all_child_to_exit(void)
 {
 	int i = 0;
-	for (i = 0; i < MAX_CHILD_NUM; ++i) {
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		if (server->sessions[i].status != ACTIVE) {
 			continue;
 		}

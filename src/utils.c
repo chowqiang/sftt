@@ -260,7 +260,7 @@ char *__strdup(const char *buf)
 	if (buf == NULL || (len = strlen(buf)) == 0)
 		return NULL;
 
-	tmp = mp_malloc(g_mp, len);
+	tmp = mp_malloc(g_mp, len + 1);
 	if (tmp == NULL)
 		return tmp;
 

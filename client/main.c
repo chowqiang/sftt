@@ -44,6 +44,8 @@ int main(int argc, char **argv) {
 	memset(host, 0, sizeof(host));
 
 	if (argc == 3 && try_fetch_trans_info(argv[1], argv[2], user_name, host, &trans) == 0) {
+		printf("%s:%d, trans_type=%d|src=%s|dest=%s\n", __func__, __LINE__,
+			trans.type, trans.src, trans.dest);
 		has_passwd_opt = true;
 		run_once = true;
 		goto input_passwd;

@@ -5,7 +5,7 @@ const DIR_PATH_MAX_LEN = 256;
 const FILE_NAME_MAX_LEN = 256;
 const FILE_ENTRY_MAX_CNT = 16;
 const CONTENT_BLOCK_SIZE = 4096;
-const MSG_MAX_LEN = 4096;
+const NET_MSG_MAX_LEN = 1024;
 
 struct validate_req {
 	long name_len;
@@ -102,7 +102,7 @@ struct write_msg_req {
 	char name[16];
 	int pid;
 	int length;
-	char mtext[MSG_MAX_LEN];
+	char mtext[NET_MSG_MAX_LEN];
 };
 
 struct read_msg_req {
@@ -114,5 +114,5 @@ struct read_msg_resp {
 	char name[16];
 	int pid;
 	int length;
-	char mtext[MSG_MAX_LEN];
+	char mtext[NET_MSG_MAX_LEN];
 };

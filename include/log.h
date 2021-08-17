@@ -21,14 +21,10 @@
 #include "req_rsp.h"
 #include "trace.h"
 
-#define LOG_STR_MAX_LEN	4096
-
 #define LOG_DEBUG	1
 #define LOG_INFO	2
 #define LOG_WARN	3
 #define LOG_ERROR	4
-
-#define MSG_TYPE_LOG	1
 
 #define SFTT_LOG_MSQKEY_FILE	"/var/lib/sfttd/msgkey"
 

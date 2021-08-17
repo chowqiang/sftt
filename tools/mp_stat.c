@@ -51,7 +51,7 @@ int main(void)
 		if (strcmp(msg.name, "server") && strcmp(msg.name, "client"))
 			continue;
 
-		stat = (struct mem_pool_stat *)msg.mtext;
+		stat = (struct mem_pool_stat *)msg.buf;
 
 		printf("endpoint       pid"
 			"    total_size    total_nodes"

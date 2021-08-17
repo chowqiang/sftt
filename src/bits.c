@@ -106,11 +106,6 @@ void test_bit_layout(void)
 
 void test_set_bit(void)
 {
-	//unsigned char c = 0;
-	//set_bit(&c, 8, 1);
-	//set_bit(&c, 7, 1);
-	//printf("%x\n", c);
-	//return ;
 	unsigned char a[2];
 		
 	memset(a, 0, sizeof(a));
