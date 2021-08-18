@@ -71,4 +71,12 @@ bool read_msg_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool read_msg_resp_decode(unsigned char *buf, int len, void **req);
 
+bool mp_stat_req_encode(void *req, unsigned char **buf, int *len);
+
+bool mp_stat_req_decode(unsigned char *buf, int len, void **req);
+
+bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool mp_stat_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

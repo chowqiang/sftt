@@ -1670,6 +1670,69 @@ void sftt_client_put_usage(void)
 	printf("Usage: put file|dir\n");
 }
 
+int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
+{
+	struct sftt_packet *req_packet, *resp_packet;
+	struct mp_stat_req *req_info;
+	struct mp_stat_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
+	struct mem_pool_stat stat;
+
+	req_packet = malloc_sftt_packet(MP_STAT_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_MP_STAT_REQ;
+
+	req_info = mp_malloc(g_mp, sizeof(struct mp_stat_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+
+	req_packet->obj = req_info;
+	req_packet->block_size = MP_STAT_REQ_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(MP_STAT_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct mp_stat_resp *)resp_packet->obj;
+	get_mp_stat(g_mp, &stat);
+
+	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
+	printf("client\t%d\t\t%d\t\t%d\t\t%d\n", stat.total_size,
+		stat.total_nodes, stat.using_nodes, stat.free_nodes);
+	printf("server\t%d\t\t%d\t\t%d\t\t%d\n", resp_info->total_size,
+		resp_info->total_nodes, resp_info->using_nodes,
+		resp_info->free_nodes);
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
+	return 0;
+
+}
+
+void sftt_client_mps_usage(void)
+{
+	printf("Usage: mps\n");
+}
+
 /* Read and execute commands until user inputs 'quit' command */
 int reader_loop(struct sftt_client_v2 *client)
 {

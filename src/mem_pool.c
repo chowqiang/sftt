@@ -449,6 +449,17 @@ void mp_stat(struct mem_pool *mp)
 
 }
 
+void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat)
+{
+	if (mp == NULL || stat == NULL)
+		return;
+
+	stat->total_size = mp->stat.total_size;
+	stat->total_nodes = mp->stat.total_nodes;
+	stat->using_nodes = mp->stat.using_nodes;
+	stat->free_nodes = mp->stat.free_nodes;
+}
+
 int mem_pool_test(void)
 {
 	struct mem_pool *mp = mp_create();

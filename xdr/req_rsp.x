@@ -116,3 +116,14 @@ struct read_msg_resp {
 	int length;
 	char mtext[NET_MSG_MAX_LEN];
 };
+
+struct mp_stat_req {
+	char session_id[SESSION_ID_LEN];
+};
+
+struct mp_stat_resp {
+	int total_size;
+	int total_nodes;
+	int using_nodes;
+	int free_nodes;
+};

@@ -150,6 +150,19 @@ struct read_msg_resp {
 };
 typedef struct read_msg_resp read_msg_resp;
 
+struct mp_stat_req {
+	char session_id[SESSION_ID_LEN];
+};
+typedef struct mp_stat_req mp_stat_req;
+
+struct mp_stat_resp {
+	int total_size;
+	int total_nodes;
+	int using_nodes;
+	int free_nodes;
+};
+typedef struct mp_stat_resp mp_stat_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -171,6 +184,8 @@ extern  bool_t xdr_common_resp (XDR *, common_resp*);
 extern  bool_t xdr_write_msg_req (XDR *, write_msg_req*);
 extern  bool_t xdr_read_msg_req (XDR *, read_msg_req*);
 extern  bool_t xdr_read_msg_resp (XDR *, read_msg_resp*);
+extern  bool_t xdr_mp_stat_req (XDR *, mp_stat_req*);
+extern  bool_t xdr_mp_stat_resp (XDR *, mp_stat_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -191,6 +206,8 @@ extern bool_t xdr_common_resp ();
 extern bool_t xdr_write_msg_req ();
 extern bool_t xdr_read_msg_req ();
 extern bool_t xdr_read_msg_resp ();
+extern bool_t xdr_mp_stat_req ();
+extern bool_t xdr_mp_stat_resp ();
 
 #endif /* K&R C */
 

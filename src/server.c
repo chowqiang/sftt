@@ -1094,6 +1094,36 @@ int handle_put_req(struct client_session *client,
 	return ret;
 }
 
+int handle_mp_stat_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct mp_stat_resp *resp;
+	struct mem_pool_stat stat;
+	int ret, i = 0;
+
+	DEBUG((DEBUG_INFO, "handle mempool stat req in ...\n"));
+	resp = (struct mp_stat_resp *)mp_malloc(g_mp, sizeof(struct mp_stat_resp));
+	assert(resp != NULL);
+
+	get_mp_stat(g_mp, &stat);
+	resp->total_size = stat.total_size;
+	resp->total_nodes = stat.total_nodes;
+	resp->using_nodes = stat.using_nodes;
+	resp->free_nodes = stat.free_nodes;
+
+	resp_packet->obj = resp;
+	resp_packet->type = PACKET_TYPE_MP_STAT_RSP;
+
+	ret = send_sftt_packet(client->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("send mp stat response failed!\n");
+	}
+
+	DEBUG((DEBUG_INFO, "handle mempool stat req out\n"));
+
+	return ret;
+}
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
@@ -1187,6 +1217,13 @@ void *handle_client_session(void *args)
 				goto exit;
 			}
 			handle_get_req(client, req, resp);
+			break;
+		case PACKET_TYPE_MP_STAT_REQ:
+			resp = malloc_sftt_packet(MP_STAT_REQ_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_mp_stat_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);

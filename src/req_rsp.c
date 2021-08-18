@@ -406,3 +406,70 @@ xdr_read_msg_resp (XDR *xdrs, read_msg_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_mp_stat_req (XDR *xdrs, mp_stat_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_mp_stat_resp (XDR *xdrs, mp_stat_resp *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->total_size))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->total_nodes))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->using_nodes))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->free_nodes))
+				 return FALSE;
+		} else {
+			IXDR_PUT_LONG(buf, objp->total_size);
+			IXDR_PUT_LONG(buf, objp->total_nodes);
+			IXDR_PUT_LONG(buf, objp->using_nodes);
+			IXDR_PUT_LONG(buf, objp->free_nodes);
+		}
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->total_size))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->total_nodes))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->using_nodes))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->free_nodes))
+				 return FALSE;
+		} else {
+			objp->total_size = IXDR_GET_LONG(buf);
+			objp->total_nodes = IXDR_GET_LONG(buf);
+			objp->using_nodes = IXDR_GET_LONG(buf);
+			objp->free_nodes = IXDR_GET_LONG(buf);
+		}
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->total_size))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->total_nodes))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->using_nodes))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->free_nodes))
+		 return FALSE;
+	return TRUE;
+}

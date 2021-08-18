@@ -64,5 +64,5 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n);
 void mp_stat(struct mem_pool *mp);
 void mp_free(struct mem_pool *mp, void *p);
 void mp_destroy(struct mem_pool *mp);
-
+void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat);
 #endif 

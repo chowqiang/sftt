@@ -96,18 +96,25 @@ struct thread_input_params {
 	int pe_count;
 };
 
-struct file_trans_session{
+struct file_trans_session {
         char ip[IPV4_MAX_LEN];
         int index;
         char md5;
 	struct path_entry pe;
 };
 
-struct dir_trans_session{
+struct dir_trans_session {
         char ip[IPV4_MAX_LEN];
         struct file_trans_session *fts;
         int fts_count;
 	struct path_entry pe;
+};
+
+/* Builtin test scripts */
+struct builtin_script {
+        const char *name;                       /* very short name for -b ... */
+        const char *desc;                       /* short description */
+        const char *script;                     /* actual pgbench script */
 };
 
 int find_unfinished_session(struct path_entry *pe, char *ip);
@@ -161,6 +168,10 @@ void sftt_client_pwd_usage(void);
 int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
 void sftt_client_his_usage(void);
+
+int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check);
+
+void sftt_client_mps_usage(void);
 
 void client_usage_help(int exitcode);
 
@@ -229,10 +240,35 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.usage = sftt_client_his_usage,
 	},
 	{
+		.name = "mps",
+		.fn = sftt_client_mps_handler,
+		.help = "show the mempool stat both client and server",
+		.usage = sftt_client_mps_usage,
+	},
+	{
 		.name = NULL,
 		.fn = NULL,
 		.help = "",
 		.usage = NULL,
 	},
 };
+
+static const struct builtin_script builtin_scripts[] = {
+        {
+                "",
+                "",
+                ""
+        },
+        {
+                "",
+                "",
+                ""
+        },
+        {
+                "",
+                "",
+                ""
+        }
+};
+
 #endif
