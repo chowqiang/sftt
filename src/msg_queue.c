@@ -183,7 +183,7 @@ int send_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 	int ret;
 
 	if (queue->fd == -1)
-		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_WRONLY);
+		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_CREAT | O_WRONLY);
 
 	if (queue->fd == -1) {
 		perror("open fifo for write failed");
@@ -204,7 +204,7 @@ int recv_msg_file(struct msg_queue *queue, struct msgbuf *msg)
 	int ret;
 
 	if (queue->fd == -1)
-		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_RDONLY);
+		queue->fd = open(MSG_QUEUE_FIFO_FILE, O_CREAT | O_RDONLY);
 
 	if (queue->fd == -1) {
 		perror("open fifo for read failed");

@@ -320,6 +320,8 @@ void free_sftt_packet(struct sftt_packet **sp)
 	if (sp && *sp) {
 		mp_free(g_mp, (*sp)->content);
 		mp_free(g_mp, *sp);
+		if ((*sp)->obj)
+			mp_free(g_mp, (*sp)->obj);
 		*sp = NULL;
 	} 
 }

@@ -1175,14 +1175,6 @@ void *handle_client_session(void *args)
 				goto exit;
 			}
 			break;
-		case PACKET_TYPE_FILE_NAME_REQ:
-			break;
-		case PACKET_TYPE_DATA_REQ:
-			break;
-		case PACKET_TYPE_FILE_END_REQ:
-			break;
-		case PACKET_TYPE_SEND_COMPLETE_REQ:
-			break;
 		case PACKET_TYPE_PWD_REQ:
 			resp = malloc_sftt_packet(PWD_RESP_PACKET_MIN_LEN);
 			if (resp == NULL) {
@@ -1229,6 +1221,7 @@ void *handle_client_session(void *args)
 			printf("%s: cannot recognize packet type!\n", __func__);
 			break;
 		}
+		free_sftt_packet(&resp);
 	}
 
 exit:

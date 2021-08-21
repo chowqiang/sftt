@@ -299,11 +299,6 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe)
 			break;
 		}
 
-		/*
-		for (i = 0; i < read_count; ++i) {
-			printf("%c", buffer[i]);
-		}
-		*/
 		sp->data_len = read_count;
 		ret = send_sftt_packet(sock, sp);
 		if (ret == -1) {
@@ -577,11 +572,15 @@ char **parse_args(char *buf, int *argc)
 {
 	int i = 0;
 	struct dlist_node *node = NULL;
-	struct dlist *args_list = dlist_create(free);
+	struct dlist *args_list = NULL;
 	char arg[CMD_ARG_MAX_LEN];
 	int arg_len = 0;
 	char **argv = NULL;
 	enum cmd_args_state state = INIT;
+
+	args_list = dlist_create(NULL);
+	if (args_list == NULL)
+		return NULL;
 
 	for (i = 0; buf[i]; ++i) {
 		if (arg_len >= CMD_ARG_MAX_LEN) {
@@ -737,10 +736,11 @@ void add_cmd_log(struct user_cmd *cmd)
 
 void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 {
-	add_log(LOG_INFO, "input command: %s", buf);
 	int i = 0;
 	bool found = false;
 	struct user_cmd *cmd = NULL;
+
+	add_log(LOG_INFO, "input command: %s", buf);
 
 	cmd = parse_command(buf);
 	if (!cmd) {
@@ -761,6 +761,16 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 	if (!found)
 		printf("sftt client: cannot find command: %s\n"
 			"please input 'help' to get the usage.\n", cmd->name);
+
+	if (cmd->name)
+		mp_free(g_mp, cmd->name);
+
+	for (i = 0; i < cmd->argc; ++i) {
+		mp_free(g_mp, cmd->argv[i]);
+	}
+
+	if (cmd->argv)
+		mp_free(g_mp, cmd->argv);
 }
 
 bool parse_user_name(char *optarg, char *user_name, int max_len)
@@ -843,12 +853,6 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 
 	if (strlen(passwd)) {
 		md5_str(passwd, strlen(passwd), req_info->passwd_md5);
-		//printf("passwd_md5: %s\n", client->uinfo->passwd_md5);
-		//char *md5_str = md5_printable_str(req_info->passwd_md5);
-		//if (md5_str) {
-		//	add_log(LOG_INFO, "%s", md5_str);
-		//	mp_free(g_mp, md5_str);
-		//}
 	} else {
 		req_info->passwd_md5[0] = 0;
 	}
@@ -897,9 +901,6 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 			printf("validate exception!\n");
 			break;
 		}
-		//printf("%s: uid: 0x%0x, name: %s, session_id: %s\n",
-		//	__func__, resp_info->uid, resp_info->name,
-		//	resp_info->session_id);
 		return -1;
 	}
 
@@ -926,25 +927,24 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	char *user, char *passwd)
 {
-#if 0
-	char tmp_file[32];
-
-	if (create_temp_file(tmp_file, "sftt_") == -1)
-		return -1;
-#endif
+	/*
+	 * set client context globally
+	 */
 	set_current_context("client");
+	set_log_type(CLIENT_LOG);
 
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
 	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
+
 	if (get_sftt_client_config(&client->config) == -1) {
 		printf("get sftt client config failed!\n");
 		return -1;
 	}
+
 	logger_init(client->config.log_dir, PROC_NAME);
-	set_log_type(CLIENT_LOG);
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
 		printf("init sftt client control connection failed!\n");
@@ -958,7 +958,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 
 	if (validate_user_base_info(client, passwd) == -1) {
 		printf("cannot validate user and password!\n");
-		exit(-1);
+		return -1;
 	}
 
 	return 0;
@@ -986,12 +986,13 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct file_entry *entry;
 	struct dlist_node *node;
 	char *path = NULL;
-	int i = 0;
+	int ret, i = 0;
 
 	if (argc > 1 || argc < 0) {
 		sftt_client_ll_usage();
 		return -1;
 	}
+
 	if (argc == 0)
 		path = client->pwd;
 	else
@@ -1013,7 +1014,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req_info;
 	req_packet->block_size = LL_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1031,7 +1032,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	fe_list = dlist_create(free);
+	fe_list = dlist_create(NULL);
 	assert(fe_list != NULL);
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
@@ -1058,19 +1059,17 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		assert(resp_info != NULL);
 	}
 
-#if 0
-	for (i = 0; i < resp_info->nr; ++i) {
-		entry = mp_malloc(g_mp, sizeof(struct file_entry));
-		assert(entry != NULL);
-		*entry = resp_info->entries[i];
-		dlist_append(fe_list, entry);
-	}
-#endif
-
 	dlist_for_each(fe_list, node) {
 		entry = (struct file_entry *)node->data;
 		printf("%s\t%s\n", FILE_TYPE_NAME(entry->type), entry->name);
 	}
+
+	dlist_for_each(fe_list, node) {
+		entry = node->data;
+		mp_free(g_mp, entry);
+	}
+
+	dlist_destroy(fe_list);
 
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
