@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dlist.h"
-#include "destroy.h"
 #include "mem_pool.h"
 #include "show.h"
 
@@ -44,23 +43,23 @@ struct dlist_node *dlist_node_create(void *data)
 	return node;
 }
 
-struct dlist *dlist_create(void (*destroy)(void *data))
+struct dlist *dlist_create(enum free_mode mode)
 {
 	struct dlist *list = (struct dlist *)mp_malloc(g_mp,
 			sizeof(struct dlist));
-	dlist_init(list, destroy);
+	dlist_init(list, mode);
 
 	return list;
 }
 
-void dlist_init(struct dlist *list, void (*destroy) (void *data))
+void dlist_init(struct dlist *list, enum free_mode mode)
 {
 	if (list == NULL) {
 		return ;
 	}
 
 	list->size = 0;
-	list->destroy = destroy;
+	list->free_mode = mode;
 	list->show = NULL;
 	list->head = NULL;
 	list->tail = NULL;
@@ -75,9 +74,17 @@ void dlist_destroy(struct dlist *list)
 	struct dlist_node *p = list->head;
 	struct dlist_node *q = NULL;
 	while (p) {
-		if (list->destroy) {
-			list->destroy(p->data);	
+		switch (list->free_mode) {
+		case FREE_MODE_NOTHING:
+			break;
+		case FREE_MODE_MP_FREE:
+			mp_free(g_mp, p->data);
+			break;
+		case FREE_MODE_FREE:
+			free(p->data);
+			break;
 		}
+
 		q = p->next;
 		mp_free(g_mp, p);
 		p = q;

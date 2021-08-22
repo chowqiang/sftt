@@ -23,13 +23,13 @@
 
 extern struct mem_pool *g_mp;
 
-struct queue *queue_create(void (*destroy)(void *data))
+struct queue *queue_create(enum free_mode mode)
 {
 	struct queue *q = (struct queue *)mp_malloc(g_mp, sizeof(struct queue));
 	if (q == NULL) {
 		return NULL;
 	}
-	q->list = dlist_create(destroy);
+	q->list = dlist_create(mode);
 	if (q->list == NULL) {
 		mp_free(g_mp, q);
 		return NULL;
@@ -38,10 +38,10 @@ struct queue *queue_create(void (*destroy)(void *data))
 	return q;
 }
 
-void queue_init(struct queue *q, void (*destroy)(void *data))
+void queue_init(struct queue *q, enum free_mode mode)
 {
 	assert(q != NULL);
-	q->list = dlist_create(destroy);
+	q->list = dlist_create(mode);
 }
 
 void queue_destroy(struct queue *q)
@@ -49,6 +49,7 @@ void queue_destroy(struct queue *q)
 	assert(q != NULL);
 	dlist_destroy(q->list);	
 	q->list = NULL;
+	mp_free(g_mp, q);
 }
 
 int queue_enqueue(struct queue *q, void *data)
@@ -95,7 +96,7 @@ int queue_is_empty(struct queue *q)
 
 int queue_test(void)
 {
-	struct queue *q = queue_create(NULL);
+	struct queue *q = queue_create(FREE_MODE_NOTHING);
 
 	queue_enqueue(q, (void *)1);
 	queue_enqueue(q, (void *)2);

@@ -38,25 +38,25 @@ struct btree_node *btree_node_create(void *data)
 	return node;
 }
 
-struct btree *btree_create(void (*destroy)(void *data))
+struct btree *btree_create(enum free_mode mode)
 {
 	struct btree *tree = (struct btree *)mp_malloc(g_mp,
 		sizeof(struct btree));
 	if (tree == NULL) {
 		return NULL;
 	}
-	btree_init(tree, destroy);
+	btree_init(tree, mode);
 		
 	return tree;	
 }
 
-void btree_init(struct btree *tree, void (*destroy) (void *data))
+void btree_init(struct btree *tree, enum free_mode mode)
 {
 	if (tree == NULL) {
 		return ;
 	}
 	tree->size = 0;
-	tree->destroy = destroy;
+	tree->free_mode = mode;
 	tree->root = NULL;
 }
 
@@ -70,15 +70,24 @@ void btree_set_root(struct btree *tree, struct btree_node *root)
 }
 
 int btree_node_destroy(struct btree_node *node,
-	void (*destroy)(void *data))
+	enum free_mode mode)
 {
 	if (node == NULL) {
 		return 0;
 	}
-	int left_cnt = btree_node_destroy(node->left, destroy);
-	int right_cnt = btree_node_destroy(node->right, destroy);
-	if (destroy) {
-		destroy(node->data);
+	int left_cnt = btree_node_destroy(node->left, mode);
+	int right_cnt = btree_node_destroy(node->right, mode);
+
+	switch (mode)
+	{
+	case FREE_MODE_NOTHING:
+		break;
+	case FREE_MODE_MP_FREE:
+		mp_free(g_mp, node->data);
+		break;
+	case FREE_MODE_FREE:
+		free(node->data);
+		break;
 	}
 	mp_free(g_mp, node);
 
@@ -90,7 +99,7 @@ void btree_destroy(struct btree *tree)
 	if (tree == NULL) {
 		return ;
 	}
-	btree_node_destroy(tree->root, tree->destroy);
+	btree_node_destroy(tree->root, tree->free_mode);
 	tree->size = 0;
 	tree->root = NULL;
 }
@@ -149,7 +158,7 @@ int btree_rm_left(struct btree *tree, struct btree_node *node)
 	if (tree == NULL || node == NULL) {
 		return -1;	
 	} 
-	int del_cnt = btree_node_destroy(node->left, tree->destroy);
+	int del_cnt = btree_node_destroy(node->left, tree->free_mode);
 	assert(del_cnt < tree->size);
 	tree->size -= del_cnt;
 	
@@ -161,7 +170,7 @@ int btree_rm_right(struct btree *tree, struct btree_node *node)
 	if (tree == NULL || node == NULL) {
 		return -1;
 	}
-	int del_cnt = btree_node_destroy(node->right, tree->destroy);
+	int del_cnt = btree_node_destroy(node->right, tree->free_mode);
 	assert(del_cnt < tree->size);
 	tree->size -= del_cnt;
 	
@@ -207,13 +216,14 @@ struct dlist *btree_bfs(struct btree *tree)
 		return NULL;
 	}
 
-	struct dlist *list = dlist_create(NULL);
+	struct dlist *list = dlist_create(FREE_MODE_NOTHING);
 	if (list == NULL) {
 		return NULL;
 	}
 
 	struct btree_node *node = NULL;
-	struct queue *q = queue_create(NULL);
+	struct queue *q = queue_create(FREE_MODE_NOTHING);
+
 	queue_enqueue(q, tree->root);
 	while (!queue_is_empty(q)) {
 		queue_dequeue(q, (void **)&node);
@@ -225,6 +235,8 @@ struct dlist *btree_bfs(struct btree *tree)
 			queue_enqueue(q, node->right);
 		}
 	}
+
+	queue_destroy(q);
 
 	return list;
 }
@@ -241,7 +253,7 @@ int btree_node_count(struct btree_node *node)
 int btree_test(void)
 {
 	struct btree tree;
-	btree_init(&tree, destroy_int);
+	btree_init(&tree, FREE_MODE_NOTHING);
 
 	btree_ins_left(&tree, NULL, (void *) 1);
 	struct btree_node *root = btree_root(&tree);

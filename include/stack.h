@@ -23,8 +23,8 @@ struct stack {
 	struct dlist *list;
 };
 
-struct stack *stack_create(void (*destroy)(void *data));
-void stack_init(struct stack *s, void (*destroy) (void *data));
+struct stack *stack_create(enum free_mode mode);
+void stack_init(struct stack *s, enum free_mode mode);
 void stack_destroy(struct stack *s);
 int stack_push(struct stack *s, void *data);
 int stack_pop(struct stack *s, void **data);

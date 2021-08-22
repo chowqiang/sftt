@@ -146,7 +146,7 @@ struct btree *generate_huffman_tree(int *char_freq) {
 		return NULL;
 	}
 
-	struct dlist *list = dlist_create(NULL);
+	struct dlist *list = dlist_create(FREE_MODE_NOTHING);
 	assert(list != NULL);
 
 	struct btree_node *t_node = NULL, *t_node1 = NULL, *t_node2 = NULL;
@@ -211,10 +211,12 @@ struct btree *generate_huffman_tree(int *char_freq) {
 	}
 	//printf("\n");
 
-	struct btree *tree = btree_create(NULL);
+	struct btree *tree = btree_create(FREE_MODE_MP_FREE);
 	btree_set_root(tree, t_node1);
 
-	return tree;	
+	dlist_destroy(list);
+
+	return tree;
 }
 
 char *get_char_code(struct stack *s) {
@@ -253,8 +255,8 @@ int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE])
 	struct btree_node *tn = NULL;
 	struct char_stat_node *csn = NULL;
 
-	struct stack *sc = stack_create(NULL);
-	struct stack *stn = stack_create(NULL);
+	struct stack *sc = stack_create(FREE_MODE_NOTHING);
+	struct stack *stn = stack_create(FREE_MODE_NOTHING);
 
 	int ret = 0;
 
@@ -370,18 +372,29 @@ int huffman_encode(unsigned char *input, int input_len,
 }
 
 void show_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
+	int i = 0;
 	struct dlist *bfs_list = btree_bfs(tree);
+
 	dlist_set_show(bfs_list, show_char_stat_by_btree_node);
 	dlist_show(bfs_list);
-	int i = 0;
+
 	for (i = 0; i < CHARSET_SIZE; ++i) {
 		if (char_codes[i] == NULL) {
 			continue;
 		}
 		printf("%c: %s\n", i, char_codes[i]);
 	}
+
+	dlist_destroy(bfs_list);
 }
 
+/*
+ * The process of huffman compress contains:
+ * 1) Calculate the frequency of chars.
+ * 2) Generate huffman tree by the frequency of chars.
+ * 3) Generate the codes of chars by huffman tree.
+ * 4) Replace the chars by their codes.
+ */
 int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 {
 	int char_freq[CHARSET_SIZE];
@@ -426,6 +439,7 @@ int huffman_compress(unsigned char *input, int input_len, unsigned char *output)
 		printf("get char codes failed!\n");
 		return -1;
 	}
+	btree_destroy(tree);
 
 	pos = output;
 	/*
@@ -533,6 +547,8 @@ int huffman_decompress(unsigned char *input, unsigned char *output)
 	pos += sizeof(int);
 
 	out_len = huffman_decode(tree, pos, input_len, output);
+
+	btree_destroy(tree);
 	
 	return out_len;
 }

@@ -24,14 +24,14 @@
 
 extern struct mem_pool *g_mp;
 
-struct stack *stack_create(void (*destroy)(void *data))
+struct stack *stack_create(enum free_mode mode)
 {
 	struct stack *s = (struct stack *)mp_malloc(g_mp, sizeof(struct stack));
 	if (s == NULL) {
 		return NULL;
 	}
 
-	s->list = dlist_create(destroy);
+	s->list = dlist_create(mode);
 	if (s->list == NULL) {
 		mp_free(g_mp, s);
 		return NULL;
@@ -40,10 +40,10 @@ struct stack *stack_create(void (*destroy)(void *data))
 	return s;
 }
 
-void stack_init(struct stack *s, void (*destroy) (void *data))
+void stack_init(struct stack *s, enum free_mode mode)
 {
 	assert(s != NULL);
-	s->list = dlist_create(destroy); 
+	s->list = dlist_create(mode);
 }
 
 void stack_destroy(struct stack *s)
@@ -51,6 +51,7 @@ void stack_destroy(struct stack *s)
 	assert(s != NULL);
 	dlist_destroy(s->list);
 	s->list = NULL;
+	mp_free(g_mp, s);
 }
 
 int stack_push(struct stack *s, void *data)
@@ -108,7 +109,7 @@ void stack_peek_all(const struct stack *s, void **array)
 
 int stack_test(void)
 {
-	struct stack *s = stack_create(NULL);
+	struct stack *s = stack_create(FREE_MODE_NOTHING);
 	stack_push(s, (void *)1);
 	stack_push(s, (void *)2);
 	stack_push(s, (void *)3);

@@ -33,7 +33,7 @@ int map_init(struct map *m)
 		return -1;
 	}
 
-	m->list = dlist_create(free);
+	m->list = dlist_create(FREE_MODE_MP_FREE);
 	if (m->list == NULL) {
 		mp_free(g_mp, m);
 		return -1;
@@ -48,7 +48,7 @@ struct map *map_create(void)
 	if (m == NULL) {
 		return NULL;
 	}
-	m->list = dlist_create(free);
+	m->list = dlist_create(FREE_MODE_MP_FREE);
 	if (m->list == NULL) {
 		mp_free(g_mp, m);
 		return NULL;
@@ -136,6 +136,7 @@ void map_destroy(struct map *m)
 	} 	
 
 	dlist_destroy(m->list);
+	mp_free(g_mp, m);
 }
 
 void show_keys(struct map *m)

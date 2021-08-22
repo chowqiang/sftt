@@ -34,7 +34,7 @@ int cmp_int(void *a, void *b) {
 
 int dlist_test(void) {
 	struct dlist list;
-	dlist_init(&list, destroy_int);
+	dlist_init(&list, FREE_MODE_NOTHING);
 	dlist_set_show(&list, show_int);
 	dlist_show(&list);
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
 	//printf("test file: %s\n", __FILE__);
 	//show_argv(argc, argv);
-	struct dlist *list = dlist_create(NULL);
+	struct dlist *list = dlist_create(FREE_MODE_NOTHING);
 
 	return -1;
 }

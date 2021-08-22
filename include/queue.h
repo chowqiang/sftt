@@ -23,8 +23,8 @@ struct queue {
 	struct dlist *list;
 };
 
-struct queue *queue_create(void (*destroy)(void *data));
-void queue_init(struct queue *q, void (*destroy)(void *data));
+struct queue *queue_create(enum free_mode mode);
+void queue_init(struct queue *q, enum free_mode mode);
 void queue_destroy(struct queue *q);
 int queue_enqueue(struct queue *q, void *data);
 int queue_dequeue(struct queue *q, void **data);

@@ -17,6 +17,12 @@
 #ifndef _DLIST_H_
 #define _DLIST_H_
 
+enum free_mode {
+	FREE_MODE_NOTHING,
+	FREE_MODE_MP_FREE,
+	FREE_MODE_FREE
+};
+
 /*
  * The node of double list
  */
@@ -32,9 +38,7 @@ struct dlist_node {
  */
 struct dlist {
 	int size;
-
-	/* destroy the data of node */
-	void (*destroy) (void *data);
+	enum free_mode free_mode;
 
 	/* print the data of node */
 	void (*show) (void *data);
@@ -44,10 +48,8 @@ struct dlist {
 };
 
 struct dlist_node *dlist_node_create(void *data); 
-struct dlist *dlist_create(void (*destroy)(void *data)); 
-void dlist_init(struct dlist *list, void (*destroy) (void *data));
-
-void dlist_set_destroy(struct dlist *list, void (*destroy)(void *data));
+struct dlist *dlist_create(enum free_mode mode);
+void dlist_init(struct dlist *list, enum free_mode mode);
 void dlist_destroy(struct dlist *list);
 
 int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data);

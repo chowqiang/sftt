@@ -158,7 +158,7 @@ struct dlist *get_all_file_list(char *dir)
 	if (!file_existed(dir) || !is_dir(dir))
 		return NULL;
 
-	list = dlist_create(NULL);
+	list = dlist_create(FREE_MODE_MP_FREE);
 
 	if ((dp = opendir(dir)) == NULL) {
 		return NULL;
@@ -198,7 +198,7 @@ struct dlist *get_top_file_list(char *dir)
 	if (!file_existed(dir) || !is_dir(dir))
 		return NULL;
 
-	list = dlist_create(NULL);
+	list = dlist_create(FREE_MODE_MP_FREE);
 
 	if ((dp = opendir(dir)) == NULL) {
 		return NULL;
@@ -416,7 +416,7 @@ struct dlist *__get_path_entry_list(struct path_entry *root)
 		return NULL;
 	}
 
-	list = dlist_create(NULL);
+	list = dlist_create(FREE_MODE_MP_FREE);
 
 	dlist_append(list, root);
 

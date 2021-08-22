@@ -578,7 +578,7 @@ char **parse_args(char *buf, int *argc)
 	char **argv = NULL;
 	enum cmd_args_state state = INIT;
 
-	args_list = dlist_create(NULL);
+	args_list = dlist_create(FREE_MODE_NOTHING);
 	if (args_list == NULL)
 		return NULL;
 
@@ -1030,7 +1030,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	fe_list = dlist_create(NULL);
+	fe_list = dlist_create(FREE_MODE_MP_FREE);
 	assert(fe_list != NULL);
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
@@ -1060,11 +1060,6 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	dlist_for_each(fe_list, node) {
 		entry = (struct file_entry *)node->data;
 		printf("%s\t%s\n", FILE_TYPE_NAME(entry->type), entry->name);
-	}
-
-	dlist_for_each(fe_list, node) {
-		entry = node->data;
-		mp_free(g_mp, entry);
 	}
 
 	dlist_destroy(fe_list);
@@ -1736,7 +1731,7 @@ int reader_loop(struct sftt_client_v2 *client)
 	int start;
 	struct cmd_line cmd;
 	struct dlist_node *last = NULL, *next = NULL;
-	his_cmds = dlist_create(free);
+	his_cmds = dlist_create(FREE_MODE_FREE);
 
 	start = 0;
 	cmd.buf[0] = 0;
@@ -1795,7 +1790,7 @@ int reader_loop2(struct sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
 	char prompt[PROMPT_MAX_LEN];
-	his_cmds = dlist_create(free);
+	his_cmds = dlist_create(FREE_MODE_MP_FREE);
 
 	for (;;) {
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
