@@ -658,11 +658,9 @@ char **parse_args(char *buf, int *argc)
 	*argc = dlist_size(args_list);
 	if (*argc) {
 		argv = (char **)mp_malloc(g_mp, sizeof(char *) * (*argc));
-		node = dlist_head(args_list);
-		for (i = 0; i < *argc; ++i) {
+		dlist_for_each(args_list, node) {
 			argv[i] = node->data;
 			node->data = NULL;
-			node = dlist_next(node);
 		}
 	}
 
@@ -1934,4 +1932,39 @@ int do_trans(struct sftt_client_v2 *client, struct trans_info *trans)
 
 		return sftt_client_put_handler(client, 1, args, &argv_check);
 	}
+}
+
+int execute_multi_cmds(struct sftt_client_v2 *client, char *buf)
+{
+	char cmd[CMD_MAX_LEN];
+	char *p;
+
+	memset(cmd, 0, sizeof(cmd));
+
+	p = strtok(buf, "\n");
+	while (p) {
+		strncpy(cmd, p, sizeof(cmd) - 1);
+		execute_cmd(client, cmd, -1);
+		p = strtok(NULL, "\n");
+	}
+
+	return 0;
+}
+
+int do_builtin(struct sftt_client_v2 *client, char *builtin)
+{
+	int i = 0;
+	char buf[10 * CMD_MAX_LEN];
+
+	memset(buf, 0, sizeof(buf));
+	for (i = 0; builtin_scripts[i].name; ++i) {
+		if (strcmp(builtin, builtin_scripts[i].name) == 0) {
+			strncpy(buf, builtin_scripts[i].script, sizeof(buf) - 1);
+			return execute_multi_cmds(client, buf);
+		}
+	}
+
+	printf("unknown builtin script name: %s\n", builtin);
+
+	return -1;
 }

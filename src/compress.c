@@ -36,8 +36,8 @@ extern struct mem_pool *g_mp;
 
 struct char_stat_node *create_char_stat_node(int ch, int freq) {
 
-	struct char_stat_node *node = (struct char_stat_node *)mp_malloc(g_mp, sizeof(struct char_stat_node));
-	//assert(node != NULL);
+	struct char_stat_node *node = (struct char_stat_node *)mp_malloc(
+			g_mp, sizeof(struct char_stat_node));
 	if (node == NULL) {
 		return NULL;
 	}

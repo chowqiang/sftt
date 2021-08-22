@@ -1,0 +1,10 @@
+#!/bin/bash
+
+home=../../
+server_bin=$home/server/sfttd
+client_bin=$home/client/sftt
+
+$server_bin stop
+nohup $server_bin start > /tmp/nohup.txt 2>&1 &
+
+$client_bin -b mps -u root -h 127.0.0.1

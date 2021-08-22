@@ -52,7 +52,9 @@ struct mem_pool {
 	struct pthread_mutex *mutex;
 	struct mem_pool_stat stat;
 	struct msg_queue *msg_queue;
+#ifdef CONFIG_MP_STAT_DEBUG
 	pthread_t thread_mps;
+#endif
 };
 
 struct mem_pool *mem_pool_construct(void);

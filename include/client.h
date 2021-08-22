@@ -53,6 +53,13 @@ enum trans_type {
 	TRANS_PUT,
 };
 
+enum run_mode {
+	RUN_MODE_LOGIN,
+	RUN_MODE_TRANS,
+	RUN_MODE_BUILTIN,
+	RUN_MODE_UNKNOWN,
+};
+
 struct trans_info {
 	enum trans_type type;
 	char src[FILE_NAME_MAX_LEN];
@@ -193,6 +200,8 @@ int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host, st
 
 int do_trans(struct sftt_client_v2 *client, struct trans_info *trans);
 
+int do_builtin(struct sftt_client_v2 *client, char *builtin);
+
 int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
 		struct common_resp *com_resp, char *target, bool *has_more);
 
@@ -255,20 +264,15 @@ static struct cmd_handler sftt_client_cmds[] = {
 
 static const struct builtin_script builtin_scripts[] = {
         {
-                "",
-                "",
-                ""
+                "mps",
+                "show memory pool stat",
+                "mps"
         },
-        {
-                "",
-                "",
-                ""
-        },
-        {
-                "",
-                "",
-                ""
-        }
+	{
+		NULL,
+		NULL,
+		NULL
+	},
 };
 
 #endif

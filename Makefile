@@ -60,6 +60,9 @@ gettest: $(TEST)
 puttest: $(TEST)
 	cd test/scripts && ./puttest file
 
+mps: $(TEST)
+	cd test/scripts && ./mps
+
 basictest: $(TEST)
 	cd test && ./Run testcases
 

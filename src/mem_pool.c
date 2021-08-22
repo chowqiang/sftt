@@ -138,14 +138,17 @@ struct mem_pool *mp_create(void)
 
 	mp->msg_queue = NULL;
 
+#ifdef CONFIG_MP_STAT_DEBUG
 	ret = pthread_create(&mp->thread_mps, NULL, mp_update_stat_loop, mp);
 	if (ret) {
 		printf("create thread for mem_pool failed\n");
 	}
+#endif
 
 	return mp;
 }
 
+#ifdef CONFIG_MP_STAT_DEBUG
 void *mp_update_stat_loop(void *arg)
 {
 	struct context *ctx;
@@ -205,6 +208,7 @@ void *mp_update_stat_loop(void *arg)
 
 	return NULL;
 }
+#endif
 
 /*
  * Alloc memory from mem pool
@@ -324,6 +328,9 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 void mp_free(struct mem_pool *mp, void *p)
 {
 	struct mem_node *m_node = NULL;
+#ifdef CONFIG_MP_FREE_DEBUG
+	bool found = false;
+#endif
 
 	if (mp == NULL || p == NULL) {
 		return ;
@@ -340,9 +347,18 @@ void mp_free(struct mem_pool *mp, void *p)
 			m_node->used_cnt += 1;
 			mp->stat.free_nodes += 1;
 			mp->stat.using_nodes -= 1;
+#ifdef CONFIG_MP_FREE_DEBUG
+			found = true;
+#endif
 			break;
 		}
 	}
+
+#ifdef CONFIG_MP_FREE_DEBUG
+	if (!found) {
+		printf("mp_free failed, illegal address!\n");
+	}
+#endif
 
 	mp->mutex->ops->unlock(mp->mutex);
 }

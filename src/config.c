@@ -44,67 +44,6 @@ char *search_config(char *fname)
 	return NULL;
 }
 
-#if 0
-struct strings *split(char *line, char delimiter) {
-	if (line == NULL) {
-		return NULL;
-	}
-	int len = strlen(line);
-	//printf("%d\n", len);
-	
-	struct strings *ss = create_strings();
-	if (ss == NULL) {
-		return NULL;
-	}
-
-	int i = 0, j = 0, ret = 0;;
-	while (i < len) {
-		//skip to blank char.
-		while (i < len && isspace(line[i])) {
-			++i;
-		}	
-
-		//add a string to store chars.
-		ret = add_string(ss);
-		//printf("line: %d, ret: %d\n", __LINE__, ret);
-		if (ret == -1) {
-			goto ERROR_RET;
-		}
-		
-		//copy chars until encounter a delimiter or consume all chars. 
-		while (i < len && line[i] != delimiter) {
-			ret = append_char(ss, j, line[i]);
-			//printf("line: %d, ret: %d\n", __LINE__, ret);
-			if (ret == -1) {
-				goto ERROR_RET;
-			}
-			++i;
-		}
-		//move string cursor to next.
-		++j;
-
-		//check whether the line ends with ",\0".
-		//append an empty string in this situation.
-		if (line[i] == delimiter && i + 1 == len) {
-			ret = add_string(ss);
-			//printf("line: %d, ret: %d\n", __LINE__, ret);
-			if (ret == -1) {
-				goto ERROR_RET;
-			}
-
-		}
-		//skip to delimiter or move to next.
-		++i;
-	}
-
-	return ss;
-
-ERROR_RET:
-	free_strings(&ss);
-	return NULL;
-}
-#endif
-
 int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 {
 	strip(line);
@@ -349,19 +288,3 @@ ERR_RET:
 
 	return -1;
 }
-
-#if 0
-int config_test(void) {
-	char *line = "a,0,0,,";
-	int i = 0;
-	
-	struct strings *ss = split(line, ',');
-	int num = get_string_num(ss);
-	printf("num: %d\n", num);
-	for (i = 0; i < num; ++i) {
-		printf("%s\n", get_string(ss, i));
-	}
-	
-	return 0;
-}
-#endif

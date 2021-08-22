@@ -20,7 +20,7 @@
 #include <stdbool.h>
 
 struct user_cmd {
-	const char *name;
+	char *name;
 	int argc;
 	char **argv;
 };
