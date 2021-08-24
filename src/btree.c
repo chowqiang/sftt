@@ -27,7 +27,7 @@ extern struct mem_pool *g_mp;
 struct btree_node *btree_node_create(void *data)
 {
 	struct btree_node *node = (struct btree_node *)mp_malloc(g_mp,
-		sizeof(struct btree_node));
+		__func__, sizeof(struct btree_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -41,7 +41,7 @@ struct btree_node *btree_node_create(void *data)
 struct btree *btree_create(enum free_mode mode)
 {
 	struct btree *tree = (struct btree *)mp_malloc(g_mp,
-		sizeof(struct btree));
+		__func__, sizeof(struct btree));
 	if (tree == NULL) {
 		return NULL;
 	}

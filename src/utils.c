@@ -174,7 +174,7 @@ void simplify_path(char *path)
 	if (len == 0)
 		return ;
 
-	tmp = (char *)mp_malloc(g_mp, sizeof(char) * (len + 1));
+	tmp = (char *)mp_malloc(g_mp, __func__, sizeof(char) * (len + 1));
 	assert(tmp);
 
 	i = len - 1;
@@ -260,7 +260,7 @@ char *__strdup(const char *buf)
 	if (buf == NULL || (len = strlen(buf)) == 0)
 		return NULL;
 
-	tmp = mp_malloc(g_mp, len + 1);
+	tmp = mp_malloc(g_mp, __func__, len + 1);
 	if (tmp == NULL)
 		return tmp;
 

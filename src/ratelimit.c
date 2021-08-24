@@ -29,7 +29,7 @@ struct ratelimit_state *ratelimit_state_construct(int interval,
 {
 	struct ratelimit_state *rs;
 
-	rs = mp_malloc(g_mp, sizeof(struct ratelimit_state));
+	rs = mp_malloc(g_mp, __func__, sizeof(struct ratelimit_state));
 	assert(rs != NULL);
 	
 	rs->interval = interval;

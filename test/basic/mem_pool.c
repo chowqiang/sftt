@@ -29,7 +29,7 @@ void *test_mp_thread(void *info)
 	char *buf;
 	printf("I'm thread %d\n", ti->idx);
 	if (ti->idx % 3) {
-		buf = mp_malloc(ti->mp, 32);
+		buf = mp_malloc(ti->mp, __func__, 32);
 	}
 	mp_stat(ti->mp);
 	if (ti->idx % 3 == 1) {

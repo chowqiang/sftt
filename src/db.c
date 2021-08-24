@@ -34,7 +34,7 @@ struct db_connect *create_db_connect(char *db_file)
 	int rc;
 	struct db_connect *db_con;
 
-	db_con = mp_malloc(g_mp, sizeof(struct db_connect));
+	db_con = mp_malloc(g_mp, __func__, sizeof(struct db_connect));
 	assert(db_con != NULL);
 
 	rc = sqlite3_open(db_file, &db);
@@ -141,7 +141,7 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data,
 
 	printf("select result: rows = %d, cols = %d\n", rows, cols);
 
-	tmp = mp_malloc(g_mp, rows * sizeof(struct map));
+	tmp = mp_malloc(g_mp, __func__, rows * sizeof(struct map));
 	assert(tmp != NULL);
 
 	for (i = 1; i <= rows; ++i) {

@@ -86,7 +86,7 @@ struct user_base_info *find_user_base_by_name(char *name)
 
 	assert(count == 1);
 	printf("user count: %d\n", count);
-	user_base = mp_malloc(g_mp, sizeof(struct user_base_info));
+	user_base = mp_malloc(g_mp, __func__, sizeof(struct user_base_info));
 	assert(user_base != NULL);
 
 	//show_keys(&data[0]);
@@ -150,7 +150,7 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 	assert(count == 1);
 	printf("user count: %d\n", count);
 
-	user_auth = mp_malloc(g_mp, sizeof(struct user_auth_info));
+	user_auth = mp_malloc(g_mp, __func__, sizeof(struct user_auth_info));
 	assert(user_auth != NULL);
 
 	if (map_find(&data[0], str_equal, "name", (void **)&value) == -1 || value == NULL) {

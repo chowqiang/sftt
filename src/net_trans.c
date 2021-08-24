@@ -36,14 +36,15 @@ extern struct serialize_handler serializables[];
 struct sftt_packet *malloc_sftt_packet(int block_size)
 {
 	struct sftt_packet *sp = (struct sftt_packet *)mp_malloc(g_mp,
-		sizeof(struct sftt_packet));
+		"sftt_packet_struct", sizeof(struct sftt_packet));
 	if (sp == NULL) {
 		return NULL;
 	}	
 	memset(sp, 0, sizeof(*sp));
 
 	sp->content = (unsigned char *)mp_malloc(g_mp,
-		sizeof(unsigned char) * block_size);
+		"sftt_packet_content", sizeof(unsigned char) * block_size);
+
 	if (sp->content == NULL) {
 		mp_free(g_mp, sp);
 		return NULL;
@@ -80,7 +81,7 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
 	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
-	buffer = mp_malloc(g_mp, header_len);
+	buffer = mp_malloc(g_mp, __func__, header_len);
 	assert(buffer != NULL);
 
 	encoded_len = sftt_buffer_encode(header, header_len, buffer, false, false);
@@ -231,7 +232,7 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 		return -1;
 	}
 
-	buffer = mp_malloc(g_mp, header_len);
+	buffer = mp_malloc(g_mp, __func__, header_len);
 	assert(buffer != NULL);
 
 	add_log(LOG_INFO, "%s: before decode header", __func__);

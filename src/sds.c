@@ -27,11 +27,13 @@ extern struct mem_pool *g_mp;
 
 int sds_init(struct sds *str, int size)
 {
+	char *tmp;
+
 	if (str == NULL) {
 		return -1;
 	}	
 	
-	char *tmp = (char *)mp_malloc(g_mp, sizeof(char) * size);
+	tmp = (char *)mp_malloc(g_mp, __func__, sizeof(char) * size);
 	if (tmp == NULL) {
 		str->buf = NULL;
 		str->size = 0;
@@ -49,7 +51,7 @@ int sds_init(struct sds *str, int size)
 
 struct sds *sds_construct(void)
 {
-	struct sds *str = (struct sds *)mp_malloc(g_mp, sizeof(struct sds));
+	struct sds *str = (struct sds *)mp_malloc(g_mp, __func__, sizeof(struct sds));
 	assert(str != NULL);
 
 	str->mutex = new(pthread_mutex);

@@ -29,7 +29,7 @@ void test_validate_req(void)
 {
 	struct validate_req *req_info, *req_info2;
 
-	req_info = mp_malloc(g_mp, sizeof(struct validate_req));
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 	assert(req_info != NULL);
 
 	strcpy(req_info->name, "root");
@@ -55,7 +55,7 @@ void test_validate_resp(void)
 {
 	struct validate_resp *resp_info, *resp_info2;
 
-	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
 
 	resp_info->status = 1;

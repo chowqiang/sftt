@@ -300,7 +300,7 @@ struct logger *logger_construct(char *store_dir, int interval, int burst)
 
 	assert(strlen(store_dir) < DIR_PATH_MAX_LEN);
 
-	log = (struct logger *)mp_malloc(g_mp, sizeof(struct logger));
+	log = (struct logger *)mp_malloc(g_mp, __func__, sizeof(struct logger));
 	assert(log != NULL);
 
 	log->mutex = new(pthread_mutex);

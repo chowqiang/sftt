@@ -116,7 +116,7 @@ struct sftt_client *create_client(char *ip, struct sftt_client_config *config,
 	int connects_num)
 {
 	struct sftt_client *client = (struct sftt_client *)mp_malloc(g_mp,
-			sizeof(struct sftt_client));
+			__func__, sizeof(struct sftt_client));
 	if (client == NULL) {
 		return NULL;
 	}
@@ -215,7 +215,7 @@ struct file_input_stream *create_file_input_stream(char *file_name)
 	}
 
 	struct file_input_stream *fis = (struct file_input_stream *)mp_malloc(
-		g_mp, sizeof(struct file_input_stream));
+		g_mp, __func__, sizeof(struct file_input_stream));
 	if (fis == NULL) {
 		return NULL;
 	}
@@ -657,7 +657,7 @@ char **parse_args(char *buf, int *argc)
 
 	*argc = dlist_size(args_list);
 	if (*argc) {
-		argv = (char **)mp_malloc(g_mp, sizeof(char *) * (*argc));
+		argv = (char **)mp_malloc(g_mp, __func__, sizeof(char *) * (*argc));
 		dlist_for_each(args_list, node) {
 			argv[i] = node->data;
 			node->data = NULL;
@@ -682,7 +682,7 @@ struct user_cmd *parse_command(char *buf)
 		return NULL;
 	}
 
-	cmd = (struct user_cmd *)mp_malloc(g_mp, sizeof(struct user_cmd));
+	cmd = (struct user_cmd *)mp_malloc(g_mp, __func__, sizeof(struct user_cmd));
 	if (!cmd) {
 		return NULL;
 	}
@@ -715,7 +715,7 @@ static int run_command(struct sftt_client_v2 *client,
 void add_cmd_log(struct user_cmd *cmd)
 {
 	int i = 0, ret = 0;
-	char *buf = mp_malloc(g_mp, sizeof(char) * 1024);
+	char *buf = mp_malloc(g_mp, __func__, sizeof(char) * 1024);
 
 	if (cmd->argc == 0) {
 		ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
@@ -843,7 +843,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	}
 	req_packet->type = PACKET_TYPE_VALIDATE_REQ;
 
-	req_info = mp_malloc(g_mp, sizeof(struct validate_req));
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
@@ -934,7 +934,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
-	client->uinfo = mp_malloc(client->mp, sizeof(struct user_base_info));
+	client->uinfo = mp_malloc(client->mp, __func__, sizeof(struct user_base_info));
 	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
 
 	if (get_sftt_client_config(&client->config) == -1) {
@@ -1003,7 +1003,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 	req_packet->type = PACKET_TYPE_LL_REQ;
 
-	req_info = mp_malloc(g_mp, sizeof(struct ll_req));
+	req_info = mp_malloc(g_mp, "ll_handler_req", sizeof(struct ll_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
@@ -1038,7 +1038,8 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	while (resp_info->nr > 0) {
 		for (i = 0; i < resp_info->nr; ++i) {
-			entry = mp_malloc(g_mp, sizeof(struct file_entry));
+			entry = mp_malloc(g_mp, "ll_handler_resp_file_entry",
+					sizeof(struct file_entry));
 			assert(entry != NULL);
 			*entry = resp_info->entries[i];
 			dlist_append(fe_list, entry);
@@ -1125,7 +1126,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	req_info = mp_malloc(g_mp, sizeof(struct cd_req));
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct cd_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
@@ -1194,7 +1195,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 	req_packet->type = PACKET_TYPE_PWD_REQ;
 
-	req_info = mp_malloc(g_mp, sizeof(struct pwd_req));
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct pwd_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
@@ -1404,13 +1405,13 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	req = mp_malloc(g_mp, sizeof(struct get_req));
+	req = mp_malloc(g_mp, "get_handler_req", sizeof(struct get_req));
 	if (req == NULL) {
 		printf("%s: malloc get req failed!\n");
 		return -1;
 	}
 
-	com_resp = mp_malloc(g_mp, sizeof(struct common_resp));
+	com_resp = mp_malloc(g_mp, "get_handler_com_resp", sizeof(struct common_resp));
 	if (com_resp == NULL) {
 		printf("%s: malloc common resp failed!\n");
 		return -1;
@@ -1518,7 +1519,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	int i = 0;
 	FILE *fp;
 
-	req = (struct put_req *)mp_malloc(g_mp, sizeof(struct put_req));
+	req = (struct put_req *)mp_malloc(g_mp, "send_one_file_req", sizeof(struct put_req));
 	if (req == NULL)
 		return -1;
 
@@ -1527,7 +1528,8 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	req->idx = idx;
 	req->entry.idx = 0;
 
-	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
+	com_resp = (struct common_resp *)mp_malloc(g_mp, "send_one_file_com_resp",
+			sizeof(struct common_resp));
 	assert(com_resp != NULL);
 
 	if (is_dir(path))
@@ -1677,7 +1679,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 	req_packet->type = PACKET_TYPE_MP_STAT_REQ;
 
-	req_info = mp_malloc(g_mp, sizeof(struct mp_stat_req));
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct mp_stat_req));
 	assert(req_info != NULL);
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);

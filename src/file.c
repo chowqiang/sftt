@@ -61,7 +61,7 @@ unsigned char *file_get_contents(char *path, size_t *length)
 	struct mem_pool *mp = get_singleton_mp();
  
 	*length = file_size(path);
-	data = (unsigned char *)mp_malloc(mp, (*length + 1) * sizeof(unsigned char));
+	data = (unsigned char *)mp_malloc(mp, __func__, (*length + 1) * sizeof(unsigned char));
 	if (data == NULL) {
 		return NULL;
 	}
@@ -131,7 +131,7 @@ char *path_join(char *dir, char *fname)
 	if (dir == NULL || fname == NULL)
 		return NULL;
 
-	path = mp_malloc(g_mp, strlen(dir) + strlen(fname) + 2);
+	path = mp_malloc(g_mp, __func__, strlen(dir) + strlen(fname) + 2);
 	if (path == NULL)
 		return NULL;
 
@@ -230,7 +230,7 @@ struct path_entry *get_file_path_entry(char *file_name)
 {
 	struct path_entry *pe;
 
-        pe = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry));
+        pe = (struct path_entry *)mp_malloc(g_mp, __func__, sizeof(struct path_entry));
 	if (pe == NULL) {
 		return NULL;
 	}
@@ -267,7 +267,8 @@ struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *
 		p = p->next;
 	}
 
-	struct path_entry *array = (struct path_entry *)mp_malloc(g_mp, sizeof(struct path_entry) * count);
+	struct path_entry *array = (struct path_entry *)mp_malloc(g_mp, __func__,
+			sizeof(struct path_entry) * count);
 	if (array == NULL) {
 		free_path_entry_list(head);
 		return NULL;
@@ -341,7 +342,7 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 		} else {
 			struct path_entry_list *node =
 				(struct path_entry_list *)mp_malloc(g_mp,
-					sizeof(struct path_entry_list));
+					__func__, sizeof(struct path_entry_list));
 			if (node == NULL) {
 				continue;
 			}
@@ -395,7 +396,7 @@ struct path_entry *dup_path_entry(struct path_entry *src)
 {
 	struct path_entry *entry;
 
-	entry = mp_malloc(g_mp, sizeof(struct path_entry));
+	entry = mp_malloc(g_mp, __func__, sizeof(struct path_entry));
 	set_path_entry(entry, src->abs_path, src->rel_path);
 
 	return entry;
@@ -452,7 +453,7 @@ struct dlist *get_path_entry_list(char *path, char *pwd)
 	if (!is_dir(path))
 		return NULL;
 
-	root = mp_malloc(g_mp, sizeof(struct path_entry));
+	root = mp_malloc(g_mp, __func__, sizeof(struct path_entry));
 	if (root == NULL)
 		return NULL;
 
@@ -491,7 +492,7 @@ struct path_entry *get_path_entry(char *path, char *pwd)
 		rp = path;
 	}
 
-	entry = mp_malloc(g_mp, sizeof(struct path_entry));
+	entry = mp_malloc(g_mp, __func__, sizeof(struct path_entry));
 	if (entry == NULL)
 		return NULL;
 

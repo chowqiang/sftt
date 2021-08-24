@@ -267,7 +267,8 @@ void output_encode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tint ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
 	fprintf(fp, "\tfclose(fp);\n");
 	fprintf(fp, "\t*len = size;\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encode ret=%%d, encode_len=%%d\", __func__, ret, *len);\n");
+	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encode ret=%%d, encode_len=%%d\",\n"
+			"\t\t__func__, ret, *len);\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
 	fprintf(fp, "\treturn ret;\n");
 
@@ -279,7 +280,9 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req)\n", struct_name);
 	fprintf(fp, "{\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: in\", __func__);\n");
-	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp, sizeof(struct %s));\n\n", struct_name, struct_name, struct_name);
+	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp,\n"
+			"\t\t__func__, sizeof(struct %s));\n\n",
+			struct_name, struct_name, struct_name);
 	fprintf(fp, "\tFILE *fp = fmemopen(buf, len, \"r\");\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_DECODE);\n\n");

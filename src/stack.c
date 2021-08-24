@@ -26,7 +26,8 @@ extern struct mem_pool *g_mp;
 
 struct stack *stack_create(enum free_mode mode)
 {
-	struct stack *s = (struct stack *)mp_malloc(g_mp, sizeof(struct stack));
+	struct stack *s = (struct stack *)mp_malloc(g_mp,
+			__func__, sizeof(struct stack));
 	if (s == NULL) {
 		return NULL;
 	}

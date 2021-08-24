@@ -25,7 +25,8 @@ extern struct mem_pool *g_mp;
 
 struct queue *queue_create(enum free_mode mode)
 {
-	struct queue *q = (struct queue *)mp_malloc(g_mp, sizeof(struct queue));
+	struct queue *q = (struct queue *)mp_malloc(g_mp, __func__,
+			sizeof(struct queue));
 	if (q == NULL) {
 		return NULL;
 	}

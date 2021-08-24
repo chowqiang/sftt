@@ -134,7 +134,7 @@ void server_file_resv(int connect_fd, int consulted_block_size,
 		int i = 0 ;
 		int j = 0 ; 
 		char *data_buff = (char *)mp_malloc(g_mp,
-			consulted_block_size * sizeof(char));
+			__func__, consulted_block_size * sizeof(char));
 
 		memset(data_buff, '\0', consulted_block_size);
 		while(1) {
@@ -433,7 +433,7 @@ static int validate_user_info(struct client_session *client,
 
 	add_log(LOG_INFO, "receive validate request|name: %s", req_info->name);
 
-	resp_info = mp_malloc(g_mp, sizeof(struct validate_resp));
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
 
 	user_base = find_user_base_by_name(req_info->name);
@@ -511,7 +511,7 @@ void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packe
 	req_info = req_packet->obj;
 	assert(req_info != NULL);
 
-	resp_info = mp_malloc(g_mp, sizeof(struct pwd_resp));
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct pwd_resp));
 	assert(resp_info != NULL);
 
 	DEBUG((DEBUG_INFO, "pwd_req: session_id=%s\n", req_info->session_id));
@@ -550,7 +550,7 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	assert(req_info != NULL);
 	DEBUG((DEBUG_INFO, "req_info: path=%s\n", req_info->path));
 
-	resp_info = mp_malloc(g_mp, sizeof(struct cd_resp));
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct cd_resp));
 	assert(resp_info != NULL);
 
 	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
@@ -618,7 +618,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	assert(req_info != NULL);
 	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req_info->path));
 
-	resp_info = mp_malloc(g_mp, sizeof(struct ll_resp));
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
 
 	if (is_abs_path(req_info->path)) {
@@ -774,7 +774,7 @@ int send_one_file_by_get_resp(struct client_session *client,
 	int i = 0;
 	FILE *fp;
 
-	resp = mp_malloc(g_mp, sizeof(struct get_resp));
+	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
 
 	resp->nr = nr;
@@ -864,7 +864,7 @@ int handle_get_req(struct client_session *client,
 	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
 		req->session_id, req->path));
 
-	resp = mp_malloc(g_mp, sizeof(struct get_resp));
+	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
 
 	entry = get_path_entry(file, client->pwd);
@@ -941,7 +941,8 @@ int recv_one_file_by_put_req(struct client_session *client,
 		req_info->nr, req_info->idx));
 	assert(req_info->entry.idx == 0);
 
-	resp_info = (struct put_resp *)mp_malloc(g_mp, sizeof(struct put_resp));
+	resp_info = (struct put_resp *)mp_malloc(g_mp,
+			__func__, sizeof(struct put_resp));
 	assert(resp_info != NULL);
 
 	rp = path_join(client->pwd, req_info->entry.content);
@@ -1071,7 +1072,8 @@ int handle_put_req(struct client_session *client,
 	bool has_more = true;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
-	com_resp = (struct common_resp *)mp_malloc(g_mp, sizeof(struct common_resp));
+	com_resp = (struct common_resp *)mp_malloc(g_mp, __func__,
+			sizeof(struct common_resp));
 	assert(com_resp != NULL);
 
 	do {
@@ -1102,7 +1104,8 @@ int handle_mp_stat_req(struct client_session *client,
 	int ret, i = 0;
 
 	DEBUG((DEBUG_INFO, "handle mempool stat req in ...\n"));
-	resp = (struct mp_stat_resp *)mp_malloc(g_mp, sizeof(struct mp_stat_resp));
+	resp = (struct mp_stat_resp *)mp_malloc(g_mp, __func__,
+			sizeof(struct mp_stat_resp));
 	assert(resp != NULL);
 
 	get_mp_stat(g_mp, &stat);
@@ -1382,7 +1385,7 @@ int init_sftt_server(char *store_path)
 		return false;
 	}
 
-	server = (struct sftt_server *)mp_malloc(g_mp, sizeof(struct sftt_server));
+	server = (struct sftt_server *)mp_malloc(g_mp, __func__, sizeof(struct sftt_server));
 	assert(server != NULL);
 	server->status = READY;
 	server->main_sock = sockfd;

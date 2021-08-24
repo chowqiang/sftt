@@ -34,7 +34,7 @@ struct trace_info *trace_info_construct(void)
 {
 	struct trace_info *trace;
 
-	trace = mp_malloc(g_mp, sizeof(struct trace_info));
+	trace = mp_malloc(g_mp, __func__, sizeof(struct trace_info));
 	assert(trace != NULL);
 
 	trace->ops = &ti_ops;
@@ -51,7 +51,7 @@ void trace_info_destruct(struct trace_info *ptr)
 int trace_info_set_user(struct trace_info *trace, struct user_base_info *user)
 {
 	if (trace->user == NULL);
-		trace->user = mp_malloc(g_mp, sizeof(struct user_base_info));
+		trace->user = mp_malloc(g_mp, __func__, sizeof(struct user_base_info));
 	assert(trace->user != NULL);
 
 	trace->user->uid = user->uid;

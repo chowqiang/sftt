@@ -217,7 +217,7 @@ void *mp_update_stat_loop(void *arg)
  *
  * Return: The address of memory allocated
  */
-void *mp_malloc(struct mem_pool *mp, size_t n)
+void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 {
 	struct mem_node *m_node = NULL, *p = NULL;
 
@@ -305,7 +305,7 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
 	if (!found)
 		return NULL;
 
-	tmp = mp_malloc(mp, n);
+	tmp = mp_malloc(mp, __func__, n);
 	if (tmp == NULL)
 		return NULL;
 
@@ -481,15 +481,15 @@ int mem_pool_test(void)
 	struct mem_pool *mp = mp_create();
 	printf("node count: %d\n", mp_node_cnt(mp));
 
-	char *str1 = (char *)mp_malloc(mp, 16);
+	char *str1 = (char *)mp_malloc(mp, "mem_pool_test1", 16);
 	printf("node count: %d\n", mp_node_cnt(mp));
 	strcpy(str1, "hello");
 
-	char *str2 = (char *)mp_malloc(mp, 16);
+	char *str2 = (char *)mp_malloc(mp, "mem_pool_test2", 16);
 	printf("node count: %d\n", mp_node_cnt(mp));
 	strcpy(str2, ", ");
 
-	char *str3 = (char *)mp_malloc(mp, 16);
+	char *str3 = (char *)mp_malloc(mp, "mem_pool_test3", 16);
 	printf("node count: %d\n", mp_node_cnt(mp));
 	strcpy(str3, "world");
 
@@ -504,7 +504,7 @@ int mem_pool_test(void)
 	mp_free(mp, str3);
 	printf("node count: %d\n", mp_node_cnt(mp));
 
-	char *str5 = (char *)mp_malloc(mp, 16);
+	char *str5 = (char *)mp_malloc(mp, "mem_pool_test4", 16);
 	printf("node count: %d\n", mp_node_cnt(mp));
 	strcpy(str5, "hello, world");
 	printf("str5: %s\n", str5);

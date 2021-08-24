@@ -197,7 +197,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 		perror("fopen failed");
 		return -1;
 	}
-	data = (char *)mp_malloc(g_mp, BLOCK_SIZE);
+	data = (char *)mp_malloc(g_mp, __func__, BLOCK_SIZE);
 	int i = 0;
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
@@ -263,7 +263,7 @@ char dec_to_hex_char(int dec)
 
 char *md5_printable_str(unsigned char *digest) {
 	int i = 0;
-	char *str = mp_malloc(g_mp, sizeof(char) * MD5_STR_LEN);
+	char *str = mp_malloc(g_mp, __func__, sizeof(char) * MD5_STR_LEN);
 	if (!str) {
 		return str;
 	}

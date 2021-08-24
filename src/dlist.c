@@ -32,7 +32,7 @@ extern struct mem_pool *g_mp;
 struct dlist_node *dlist_node_create(void *data)
 {
 	struct dlist_node *node = (struct dlist_node *)mp_malloc(g_mp,
-			sizeof(struct dlist_node));
+			__func__, sizeof(struct dlist_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -46,7 +46,7 @@ struct dlist_node *dlist_node_create(void *data)
 struct dlist *dlist_create(enum free_mode mode)
 {
 	struct dlist *list = (struct dlist *)mp_malloc(g_mp,
-			sizeof(struct dlist));
+			__func__, sizeof(struct dlist));
 	dlist_init(list, mode);
 
 	return list;

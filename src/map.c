@@ -44,7 +44,8 @@ int map_init(struct map *m)
 
 struct map *map_create(void)
 {
-	struct map *m = (struct map *)mp_malloc(g_mp, sizeof(struct map));
+	struct map *m = (struct map *)mp_malloc(g_mp, __func__,
+			sizeof(struct map));
 	if (m == NULL) {
 		return NULL;
 	}
@@ -65,7 +66,7 @@ int map_add(struct map *m, void *key, void *value)
 	}
 
 	struct kv_node *data = (struct kv_node *)mp_malloc(g_mp,
-			sizeof(struct kv_node));
+			__func__, sizeof(struct kv_node));
 	if (data == NULL) {
 		printf("cannot alloc kv_node object\n");
 		return -1;
