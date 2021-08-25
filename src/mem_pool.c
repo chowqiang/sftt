@@ -26,7 +26,9 @@
 #include "msg_queue.h"
 #include "utils.h"
 
+#ifdef CONFIG_MP_STAT_DEBUG
 void *mp_update_stat_loop(void *arg);
+#endif
 
 /*
  * The global mem pool pointer
@@ -36,6 +38,8 @@ struct mem_pool *g_mp = NULL;
 static bool updated = false;
 
 static LIST_HEAD(mem_nodes);
+
+static LIST_HEAD(purposes);
 
 /*
  * Make the g_mp available
@@ -65,6 +69,22 @@ struct mem_pool *get_singleton_mp()
 	g_mp = mp_create();
 
 	return g_mp;
+}
+
+struct purpose_node *purpose_node_create(const char *purpose)
+{
+	struct purpose_node *p = (struct purpose_node *)malloc(
+			sizeof(struct purpose_node));
+
+	if (p == NULL)
+		return NULL;
+
+	p->purpose = purpose;
+	p->count = 0;
+
+	INIT_LIST_HEAD(&p->list);
+
+	return p;
 }
 
 /*
@@ -210,6 +230,53 @@ void *mp_update_stat_loop(void *arg)
 }
 #endif
 
+struct purpose_node *find_purpose(struct mem_pool *mp, const char *purpose)
+{
+	struct purpose_node *p = NULL;
+
+	if (purpose == NULL)
+		return NULL;
+
+	list_for_each_entry(p, &purposes, list) {
+		if (strcmp(p->purpose, purpose) == 0) {
+			return p;
+		}
+	}
+
+	return NULL;
+}
+
+void add_purpose(struct mem_pool *mp, const char *purpose)
+{
+	struct purpose_node *p;
+
+	p = find_purpose(mp, purpose);
+	if (p == NULL) {
+		p = purpose_node_create(purpose);
+		p->count = 1;
+		list_add(&purposes, &p->list);
+		return;
+	} else {
+		p->count += 1;
+	}
+}
+
+void sub_purpose(struct mem_pool *mp, const char *purpose)
+{
+	struct purpose_node *p;
+
+	p = find_purpose(mp, purpose);
+	if (p == NULL)
+		return;
+
+	assert(p->count > 0);
+	p->count -= 1;
+	if (p->count == 0) {
+		list_del(&p->list);
+		mp_free(mp, p);
+	}
+}
+
 /*
  * Alloc memory from mem pool
  * @mp: The mem pool pointer
@@ -263,10 +330,14 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 
 	m_node->is_using = 1;
 	m_node->used_cnt += 1;
+	m_node->purpose = purpose;
 
 	updated = true;
 
 	mp->stat.using_nodes += 1;
+
+	add_purpose(mp, purpose);
+
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);
@@ -350,6 +421,7 @@ void mp_free(struct mem_pool *mp, void *p)
 #ifdef CONFIG_MP_FREE_DEBUG
 			found = true;
 #endif
+			sub_purpose(mp, m_node->purpose);
 			break;
 		}
 	}
@@ -474,6 +546,46 @@ void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat)
 	stat->total_nodes = mp->stat.total_nodes;
 	stat->using_nodes = mp->stat.using_nodes;
 	stat->free_nodes = mp->stat.free_nodes;
+}
+
+struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
+{
+	int count = 0, i = 0;
+	struct purpose_node *p;
+	struct mem_pool_using_detail *detail = NULL;
+
+	if (mp == NULL)
+		return NULL;
+
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
+		perror("mp_free failed: cannot lock mem pool. ");
+		return NULL;
+	}
+
+	list_for_each_entry(p, &purposes, list)
+	       ++count;
+
+	detail = mp_malloc(mp, "get_mp_stat_detail_struct", sizeof(struct mem_pool_using_detail));
+	if (detail == NULL)
+		goto done;
+
+	detail->nodes = mp_malloc(mp, "get_mp_stat_detail_nodes", sizeof(struct using_node) * count);
+	if (detail->nodes == NULL) {
+		mp_free(mp, detail);
+		goto done;
+	}
+
+	list_for_each_entry(p, &purposes, list) {
+		detail->nodes[i].purpose = p->purpose;
+		detail->nodes[i].count = p->count;
+		++i;
+	}
+
+	detail->node_count = count;
+done:
+	mp->mutex->ops->unlock(mp->mutex);
+
+	return detail;
 }
 
 int mem_pool_test(void)

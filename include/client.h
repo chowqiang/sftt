@@ -266,7 +266,7 @@ static const struct builtin_script builtin_scripts[] = {
         {
                 "mps",
                 "show memory pool stat",
-                "mps"
+                "mps\nmps -d\n"
         },
 	{
 		NULL,

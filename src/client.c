@@ -1664,6 +1664,36 @@ void sftt_client_put_usage(void)
 	printf("Usage: put file|dir\n");
 }
 
+int sftt_client_mps_detail(void *obj)
+{
+	int i = 0;
+	struct mem_pool_using_detail *detail;
+	struct mem_pool_stat stat;
+	struct using_node *node;
+
+	get_mp_stat(g_mp, &stat);
+
+	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
+	printf("client\t%d\t\t%d\t\t%d\t\t%d\n", stat.total_size,
+		stat.total_nodes, stat.using_nodes, stat.free_nodes);
+
+	detail = get_mp_stat_detail(g_mp);
+	if (detail == NULL) {
+		printf("internal error!\n");
+		return -1;
+	}
+
+	printf("\tpurpose\tusing_nodes\n");
+	for (i = 0; i < detail->node_count; ++i) {
+		node = &detail->nodes[i];
+		printf("%s\t%d\n", node->purpose, node->count);
+	}
+
+	printf("\n");
+
+	return 0;
+}
+
 int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	struct sftt_packet *req_packet, *resp_packet;
@@ -1671,6 +1701,19 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct mp_stat_resp *resp_info;
 	struct sftt_client_v2 *client = obj;
 	struct mem_pool_stat stat;
+
+	if (argc > 1) {
+		sftt_client_mps_usage();
+		return -1;
+	}
+
+	if (argc == 1) {
+		if (strcmp(argv[0], "-d")) {
+			sftt_client_mps_usage();
+			return -1;
+		}
+		return sftt_client_mps_detail(obj);
+	}
 
 	req_packet = malloc_sftt_packet(MP_STAT_REQ_PACKET_MIN_LEN);
 	if (!req_packet) {
@@ -1724,7 +1767,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_mps_usage(void)
 {
-	printf("Usage: mps\n");
+	printf("Usage: mps [-d]\n");
 }
 
 /* Read and execute commands until user inputs 'quit' command */

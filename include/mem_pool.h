@@ -32,6 +32,7 @@ struct mem_node {
 	size_t size;
 	int is_using;
 	void *address;
+	const char *purpose;
 	unsigned long long used_cnt;
 	struct list_head list;
 };
@@ -43,12 +44,29 @@ struct mem_pool_stat {
 	int free_nodes;
 };
 
+struct purpose_node {
+	const char *purpose;
+	int count;
+	struct list_head list;
+};
+
+struct using_node {
+	const char *purpose;
+	int count;
+};
+
+struct mem_pool_using_detail {
+	int node_count;
+	struct using_node *nodes;
+};
+
 struct mem_pool {
 	/*
 	 * Memory pool contains a list of mem_node
 	 * The mutex prevent race.
 	 */
 	struct mem_node *nodes;
+	struct purpose_node *purposes;
 	struct pthread_mutex *mutex;
 	struct mem_pool_stat stat;
 	struct msg_queue *msg_queue;
@@ -67,4 +85,5 @@ void mp_stat(struct mem_pool *mp);
 void mp_free(struct mem_pool *mp, void *p);
 void mp_destroy(struct mem_pool *mp);
 void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat);
+struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp);
 #endif 
