@@ -657,9 +657,10 @@ char **parse_args(char *buf, int *argc)
 
 	*argc = dlist_size(args_list);
 	if (*argc) {
+		i = 0;
 		argv = (char **)mp_malloc(g_mp, __func__, sizeof(char *) * (*argc));
 		dlist_for_each(args_list, node) {
-			argv[i] = node->data;
+			argv[i++] = node->data;
 			node->data = NULL;
 		}
 	}
@@ -1683,10 +1684,10 @@ int sftt_client_mps_detail(void *obj)
 		return -1;
 	}
 
-	printf("\tpurpose\tusing_nodes\n");
+	printf("\tpurpose\t\tusing_nodes\n");
 	for (i = 0; i < detail->node_count; ++i) {
 		node = &detail->nodes[i];
-		printf("%s\t%d\n", node->purpose, node->count);
+		printf("\t%s\t\t%d\n", node->purpose, node->count);
 	}
 
 	printf("\n");
@@ -1981,12 +1982,15 @@ int execute_multi_cmds(struct sftt_client_v2 *client, char *buf)
 
 	memset(cmd, 0, sizeof(cmd));
 
+	printf("begin to execute multi commands ...\n");
 	p = strtok(buf, "\n");
 	while (p) {
 		strncpy(cmd, p, sizeof(cmd) - 1);
+		printf("execute command: %s\n", cmd);
 		execute_cmd(client, cmd, -1);
 		p = strtok(NULL, "\n");
 	}
+	printf("execute multi commands done!\n");
 
 	return 0;
 }

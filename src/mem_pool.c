@@ -273,7 +273,7 @@ void sub_purpose(struct mem_pool *mp, const char *purpose)
 	p->count -= 1;
 	if (p->count == 0) {
 		list_del(&p->list);
-		mp_free(mp, p);
+		free(p);
 	}
 }
 
@@ -548,6 +548,27 @@ void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat)
 	stat->free_nodes = mp->stat.free_nodes;
 }
 
+int get_purpose_count(struct mem_pool *mp)
+{
+	int count = 0;
+	struct purpose_node *p;
+
+	if (mp == NULL)
+		return 0;
+
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
+		perror("mp_free failed: cannot lock mem pool. ");
+		return 0;
+	}
+
+	list_for_each_entry(p, &purposes, list)
+		++count;
+
+	mp->mutex->ops->unlock(mp->mutex);
+
+	return count;
+}
+
 struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
 {
 	int count = 0, i = 0;
@@ -557,33 +578,35 @@ struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
 	if (mp == NULL)
 		return NULL;
 
-	if (mp->mutex->ops->lock(mp->mutex) != 0) {
-		perror("mp_free failed: cannot lock mem pool. ");
-		return NULL;
-	}
-
-	list_for_each_entry(p, &purposes, list)
-	       ++count;
+	count = get_purpose_count(mp);
 
 	detail = mp_malloc(mp, "get_mp_stat_detail_struct", sizeof(struct mem_pool_using_detail));
 	if (detail == NULL)
 		goto done;
 
+	if (count <= 0)
+		goto done;
+
 	detail->nodes = mp_malloc(mp, "get_mp_stat_detail_nodes", sizeof(struct using_node) * count);
 	if (detail->nodes == NULL) {
 		mp_free(mp, detail);
+		detail = NULL;
 		goto done;
 	}
 
+	if (mp->mutex->ops->lock(mp->mutex) != 0) {
+		perror("mp_free failed: cannot lock mem pool. ");
+		return 0;
+	}
 	list_for_each_entry(p, &purposes, list) {
 		detail->nodes[i].purpose = p->purpose;
 		detail->nodes[i].count = p->count;
 		++i;
 	}
-
-	detail->node_count = count;
-done:
 	mp->mutex->ops->unlock(mp->mutex);
+
+done:
+	detail->node_count = count;
 
 	return detail;
 }
