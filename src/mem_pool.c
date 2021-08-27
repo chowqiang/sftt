@@ -266,8 +266,11 @@ void sub_purpose(struct mem_pool *mp, const char *purpose)
 	struct purpose_node *p;
 
 	p = find_purpose(mp, purpose);
-	if (p == NULL)
+	if (p == NULL) {
+		printf("sub purpose failed because cannot found "
+			"purpose node\n");
 		return;
+	}
 
 	assert(p->count > 0);
 	p->count -= 1;
@@ -415,7 +418,7 @@ void mp_free(struct mem_pool *mp, void *p)
 	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->address == p) {
 			m_node->is_using = 0;
-			m_node->used_cnt += 1;
+			//m_node->used_cnt += 1;
 			mp->stat.free_nodes += 1;
 			mp->stat.using_nodes -= 1;
 #ifdef CONFIG_MP_FREE_DEBUG
@@ -578,14 +581,15 @@ struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
 	if (mp == NULL)
 		return NULL;
 
-	count = get_purpose_count(mp);
-
 	detail = mp_malloc(mp, "get_mp_stat_detail_struct", sizeof(struct mem_pool_using_detail));
 	if (detail == NULL)
 		goto done;
 
-	if (count <= 0)
+	count = get_purpose_count(mp);
+	if (count <= 0) {
+		printf("get purpose count not greater than zero!\n");
 		goto done;
+	}
 
 	detail->nodes = mp_malloc(mp, "get_mp_stat_detail_nodes", sizeof(struct using_node) * count);
 	if (detail->nodes == NULL) {
@@ -606,7 +610,8 @@ struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
 	mp->mutex->ops->unlock(mp->mutex);
 
 done:
-	detail->node_count = count;
+	if (detail)
+		detail->node_count = count;
 
 	return detail;
 }
