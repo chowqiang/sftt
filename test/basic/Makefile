@@ -1,5 +1,5 @@
 
-all: dlist mem_pool net_trans serialize utils db md5 file strops
+all: dlist mem_pool net_trans serialize utils db md5 file strops list
 
 dlist: dlist.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
@@ -26,4 +26,7 @@ file: file.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 strops: strops.c
+	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
+
+list: list.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)

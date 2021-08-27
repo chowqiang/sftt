@@ -41,6 +41,11 @@ static LIST_HEAD(mem_nodes);
 
 static LIST_HEAD(purposes);
 
+int get_purpose_count(struct mem_pool *mp);
+struct purpose_node *find_purpose(struct mem_pool *mp, const char *purpose);
+void add_purpose(struct mem_pool *mp, const char *purpose);
+void sub_purpose(struct mem_pool *mp, const char *purpose);
+
 /*
  * Make the g_mp available
  */
@@ -254,7 +259,8 @@ void add_purpose(struct mem_pool *mp, const char *purpose)
 	if (p == NULL) {
 		p = purpose_node_create(purpose);
 		p->count = 1;
-		list_add(&purposes, &p->list);
+		//list_add(&purposes, &p->list); // error!
+		list_add(&p->list, &purposes);
 		return;
 	} else {
 		p->count += 1;
@@ -323,7 +329,8 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 		if (list_empty(&mem_nodes))
 			mp->nodes = m_node;
 
-		list_add(&mem_nodes, &m_node->list);
+		//list_add(&mem_nodes, &m_node->list); // error!
+		list_add(&m_node->list, &mem_nodes);
 
 		mp->stat.total_nodes += 1;
 		mp->stat.total_size += n;
@@ -344,6 +351,8 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);
+
+	printf("purpose node count: %d\n", get_purpose_count(mp));
 
 	return m_node->address;
 }
