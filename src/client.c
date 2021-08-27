@@ -692,6 +692,11 @@ struct user_cmd *parse_command(char *buf)
 	cmd->argv = parse_args(buf + offset, &cmd->argc);
 
 	if (cmd->argc == -1) {
+		if (cmd->name)
+			mp_free(g_mp, cmd->name);
+		if (cmd->argv)
+			mp_free(g_mp, cmd->argv);
+		mp_free(g_mp, cmd);
 		return NULL;
 	}
 
@@ -770,6 +775,8 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 
 	if (cmd->argv)
 		mp_free(g_mp, cmd->argv);
+
+	mp_free(g_mp, cmd);
 }
 
 bool parse_user_name(char *optarg, char *user_name, int max_len)
@@ -909,7 +916,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	strncpy(client->session_id, resp_info->session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
 
-	mp_free(g_mp, req_info);
+	//mp_free(g_mp, req_info);
 
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
@@ -1672,25 +1679,25 @@ int sftt_client_mps_detail(void *obj)
 	struct mem_pool_stat stat;
 	struct using_node *node;
 
-	get_mp_stat(g_mp, &stat);
-
-	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
-	printf("client\t%d\t\t%d\t\t%d\t\t%d\n", stat.total_size,
-		stat.total_nodes, stat.using_nodes, stat.free_nodes);
-
 	detail = get_mp_stat_detail(g_mp);
 	if (detail == NULL) {
 		printf("internal error!\n");
 		return -1;
 	}
 
-	printf("\tpurpose\t\tusing_nodes\n");
+	printf("<%s, %s>\n", "purpose", "using_nodes");
 	for (i = 0; i < detail->node_count; ++i) {
 		node = &detail->nodes[i];
-		printf("\t%s\t\t%d\n", node->purpose, node->count);
+		printf("<%s, %d>\n", node->purpose, node->count);
 	}
-
 	printf("\n");
+
+	get_mp_stat(g_mp, &stat);
+
+	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
+	printf("client\t%d\t\t%d\t\t%d\t\t%d\n\n", stat.total_size,
+		stat.total_nodes, stat.using_nodes, stat.free_nodes);
+
 
 	return 0;
 }

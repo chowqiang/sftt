@@ -274,7 +274,7 @@ void sub_purpose(struct mem_pool *mp, const char *purpose)
 	p = find_purpose(mp, purpose);
 	if (p == NULL) {
 		printf("sub purpose failed because cannot found "
-			"purpose node\n");
+			"purpose node: %s\n", purpose);
 		return;
 	}
 
@@ -352,7 +352,7 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 
 	bzero(m_node->address, n);
 
-	printf("purpose node count: %d\n", get_purpose_count(mp));
+	//printf("purpose node count: %d\n", get_purpose_count(mp));
 
 	return m_node->address;
 }
@@ -600,6 +600,10 @@ struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp)
 		goto done;
 	}
 
+	/*
+	 * Number of pointer should be count + 1
+	 */
+	count += 1;
 	detail->nodes = mp_malloc(mp, "get_mp_stat_detail_nodes", sizeof(struct using_node) * count);
 	if (detail->nodes == NULL) {
 		mp_free(mp, detail);
