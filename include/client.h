@@ -205,6 +205,10 @@ int do_builtin(struct sftt_client_v2 *client, char *builtin);
 int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
 		struct common_resp *com_resp, char *target, bool *has_more);
 
+int sftt_client_directcmd_handler(void *obj, int argc, char *argv[], bool *argv_check);
+
+void sftt_client_directcmd_usage(void);
+
 static struct cmd_handler sftt_client_cmds[] = {
 	{
 		.name = "help",
@@ -253,6 +257,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.fn = sftt_client_mps_handler,
 		.help = "show the mempool stat both client and server",
 		.usage = sftt_client_mps_usage,
+	},
+	{
+		.name = "directcmd",
+		.fn = sftt_client_directcmd_handler,
+		.help = "enter direct command mode",
+		.usage = sftt_client_directcmd_usage,
 	},
 	{
 		.name = NULL,

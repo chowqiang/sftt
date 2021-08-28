@@ -6,6 +6,8 @@ const FILE_NAME_MAX_LEN = 256;
 const FILE_ENTRY_MAX_CNT = 16;
 const CONTENT_BLOCK_SIZE = 4096;
 const NET_MSG_MAX_LEN = 1024;
+const CMD_MAX_LEN = 1024;
+const CMD_RET_BATCH_LEN = 4096;
 
 struct validate_req {
 	long name_len;
@@ -126,4 +128,15 @@ struct mp_stat_resp {
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;
+};
+
+struct directcmd_req {
+	char session_id[SESSION_ID_LEN];
+	char cmd[CMD_MAX_LEN];
+};
+
+struct directcmd_resp {
+	long total_len;
+	long this_len;
+	char data[CMD_RET_BATCH_LEN];
 };

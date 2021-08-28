@@ -473,3 +473,34 @@ xdr_mp_stat_resp (XDR *xdrs, mp_stat_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_directcmd_req (XDR *xdrs, directcmd_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->cmd, CMD_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_directcmd_resp (XDR *xdrs, directcmd_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_long (xdrs, &objp->total_len))
+		 return FALSE;
+	 if (!xdr_long (xdrs, &objp->this_len))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->data, CMD_RET_BATCH_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}

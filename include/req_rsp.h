@@ -21,6 +21,8 @@ extern "C" {
 #define FILE_ENTRY_MAX_CNT 16
 #define CONTENT_BLOCK_SIZE 4096
 #define NET_MSG_MAX_LEN 1024
+#define CMD_MAX_LEN 1024
+#define CMD_RET_BATCH_LEN 4096
 
 struct validate_req {
 	long name_len;
@@ -163,6 +165,19 @@ struct mp_stat_resp {
 };
 typedef struct mp_stat_resp mp_stat_resp;
 
+struct directcmd_req {
+	char session_id[SESSION_ID_LEN];
+	char cmd[CMD_MAX_LEN];
+};
+typedef struct directcmd_req directcmd_req;
+
+struct directcmd_resp {
+	long total_len;
+	long this_len;
+	char data[CMD_RET_BATCH_LEN];
+};
+typedef struct directcmd_resp directcmd_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -186,6 +201,8 @@ extern  bool_t xdr_read_msg_req (XDR *, read_msg_req*);
 extern  bool_t xdr_read_msg_resp (XDR *, read_msg_resp*);
 extern  bool_t xdr_mp_stat_req (XDR *, mp_stat_req*);
 extern  bool_t xdr_mp_stat_resp (XDR *, mp_stat_resp*);
+extern  bool_t xdr_directcmd_req (XDR *, directcmd_req*);
+extern  bool_t xdr_directcmd_resp (XDR *, directcmd_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -208,6 +225,8 @@ extern bool_t xdr_read_msg_req ();
 extern bool_t xdr_read_msg_resp ();
 extern bool_t xdr_mp_stat_req ();
 extern bool_t xdr_mp_stat_resp ();
+extern bool_t xdr_directcmd_req ();
+extern bool_t xdr_directcmd_resp ();
 
 #endif /* K&R C */
 

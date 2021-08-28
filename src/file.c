@@ -518,9 +518,9 @@ int set_file_mode(char *path, mode_t mode)
 int create_temp_file(char *buf, char *prefix)
 {
 	int fd;
-	char template[32];
+	char template[64];
 
-	if (strlen(prefix) >= 10)
+	if (strlen(prefix) >= 32)
 		return -1;
 
 	sprintf(template, "/tmp/%sXXXXXX", prefix);

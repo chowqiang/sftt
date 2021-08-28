@@ -79,4 +79,12 @@ bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool mp_stat_resp_decode(unsigned char *buf, int len, void **req);
 
+bool directcmd_req_encode(void *req, unsigned char **buf, int *len);
+
+bool directcmd_req_decode(unsigned char *buf, int len, void **req);
+
+bool directcmd_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool directcmd_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

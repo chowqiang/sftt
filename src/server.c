@@ -1096,6 +1096,79 @@ int handle_put_req(struct client_session *client,
 	return ret;
 }
 
+int handle_directcmd_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct directcmd_req *req;
+	struct directcmd_resp *resp;
+	char cmd[CMD_MAX_LEN + FILE_NAME_MAX_LEN];
+	char temp_file[FILE_NAME_MAX_LEN];
+	int ret;
+	long total_len;
+	FILE *fp;
+
+	DEBUG((DEBUG_INFO, "handle directcmd req in ...\n"));
+	resp = (struct directcmd_resp *)mp_malloc(g_mp, __func__,
+			sizeof(struct directcmd_resp));
+	assert(resp != NULL);
+
+	req = req_packet->obj;
+	assert(req != NULL);
+
+	ret = create_temp_file(temp_file, "sfttd_directcmd_");
+	if (ret == -1) {
+		DEBUG((DEBUG_INFO, "cannot create temp file!\n"));
+		resp->total_len = -1;
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("send mp stat response failed!\n");
+		}
+		return -1;
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s > %s", req->cmd, temp_file);
+	DEBUG((DEBUG_INFO, "%s\n", cmd));
+	system(cmd);
+	resp->total_len = file_size(temp_file);
+
+	fp = fopen(temp_file, "rb");
+	if (fp == NULL) {
+		DEBUG((DEBUG_INFO, "open command result file failed!\n"));
+		resp->total_len = -1;
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("send mp stat response failed!\n");
+		}
+
+		return -1;
+	}
+
+	total_len = 0;
+	do {
+		ret = fread(resp->data, 1, CMD_RET_BATCH_LEN - 1, fp);
+		resp->this_len = ret;
+		total_len += resp->this_len;
+
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
+
+		ret = send_sftt_packet(client->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("send mp stat response failed!\n");
+		}
+	} while (total_len < resp->total_len);
+
+	unlink(temp_file);
+
+	return 0;
+}
+
 int handle_mp_stat_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
@@ -1214,11 +1287,18 @@ void *handle_client_session(void *args)
 			handle_get_req(client, req, resp);
 			break;
 		case PACKET_TYPE_MP_STAT_REQ:
-			resp = malloc_sftt_packet(MP_STAT_REQ_PACKET_MIN_LEN);
+			resp = malloc_sftt_packet(MP_STAT_RESP_PACKET_MIN_LEN);
 			if (resp == NULL) {
 				goto exit;
 			}
 			handle_mp_stat_req(client, req, resp);
+			break;
+		case PACKET_TYPE_DIRECTCMD_REQ:
+			resp = malloc_sftt_packet(DIRECTCMD_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_directcmd_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);
@@ -1382,7 +1462,7 @@ int init_sftt_server(char *store_path)
 
 	sockfd = create_non_block_sock(&port);
 	if (sockfd == -1) {
-		return false;
+		return -1;
 	}
 
 	server = (struct sftt_server *)mp_malloc(g_mp, __func__, sizeof(struct sftt_server));
@@ -1392,7 +1472,7 @@ int init_sftt_server(char *store_path)
 	server->main_port = port;
 	server->last_update_ts = (uint64_t)time(NULL);
 	if (get_sftt_server_config(&(server->conf)) == -1) {
-		return false;
+		return -1;
 	}
 
 	if (strlen(store_path)) {
@@ -1409,18 +1489,18 @@ int init_sftt_server(char *store_path)
 	ret = start_sftt_log_server(server);
 	if (ret == -1) {
 		printf("cannot start log server!\n");
-		return false;
+		return -1;
 	}
 
 	ret = init_sftt_server_stat();
 	if (ret == -1) {
 		printf(PROC_NAME " start failed! Because cannot init "
 			PROC_NAME " server info.\n");
-		return false;
+		return -1;
 	}
 	server->pm = new(pthread_mutex);
 
-	return true;
+	return 0;
 }
 
 int sftt_server_start(char *store_path, bool background)

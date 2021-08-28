@@ -37,5 +37,7 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_READ_MSG_RSP, read_msg_resp_encode, read_msg_resp_decode},
 	{PACKET_TYPE_MP_STAT_REQ, mp_stat_req_encode, mp_stat_req_decode},
 	{PACKET_TYPE_MP_STAT_RSP, mp_stat_resp_encode, mp_stat_resp_decode},
+	{PACKET_TYPE_DIRECTCMD_REQ, directcmd_req_encode, directcmd_req_decode},
+	{PACKET_TYPE_DIRECTCMD_RSP, directcmd_resp_encode, directcmd_resp_decode},
 	{-1, NULL, NULL},
 };

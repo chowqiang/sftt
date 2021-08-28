@@ -750,3 +750,85 @@ bool mp_stat_resp_decode(unsigned char *buf, int len, void **req)
 
 	return ret;
 }
+
+bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_directcmd_req(&xdr, (struct directcmd_req *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool directcmd_req_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct directcmd_req *_req = (struct directcmd_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct directcmd_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_directcmd_req(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_directcmd_resp(&xdr, (struct directcmd_resp *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool directcmd_resp_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct directcmd_resp *_req = (struct directcmd_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct directcmd_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_directcmd_resp(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}

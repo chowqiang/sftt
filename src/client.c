@@ -52,12 +52,23 @@
 extern int errno;
 extern struct mem_pool *g_mp;
 
+bool directcmd = false;
+
 struct sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
 	{"-P", PORT, HAS_ARG},
 	{"-p", PASSWORD, NO_ARG},
 	{NULL, -1, NO_ARG}
+};
+
+const char *directcmds[] = {
+	"ls",
+	"date",
+	"cat",
+	"mkdir",
+	"touch",
+	NULL
 };
 
 struct dlist *his_cmds;
@@ -738,6 +749,92 @@ void add_cmd_log(struct user_cmd *cmd)
 	mp_free(g_mp, buf);
 }
 
+void execute_directcmd(struct sftt_client_v2 *client, char *buf)
+{
+	struct sftt_packet *req_packet, *resp_packet;
+	struct directcmd_req *req_info;
+	struct directcmd_resp *resp_info;
+	int ret = 0;
+	long total_len = 0;
+
+	if (strlen(buf) == 0)
+		return;
+
+	req_packet = malloc_sftt_packet(DIRECTCMD_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return;
+	}
+	req_packet->type = PACKET_TYPE_DIRECTCMD_REQ;
+
+	req_info = mp_malloc(g_mp, "directcmd_handler_req", sizeof(struct directcmd_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+	strncpy(req_info->cmd, buf, CMD_MAX_LEN - 1);
+
+	req_packet->obj = req_info;
+	req_packet->block_size = DIRECTCMD_REQ_PACKET_MIN_LEN;
+
+	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return;
+	}
+
+	resp_packet = malloc_sftt_packet(DIRECTCMD_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return;
+	}
+
+	resp_info = (struct directcmd_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	if (resp_info->total_len < 0 || resp_info->this_len < 0) {
+		printf("command execute failed!\n");
+		return;
+	}
+
+	while (total_len < resp_info->total_len) {
+		printf("%s", resp_info->data);
+
+		total_len += resp_info->this_len;
+		if (total_len == resp_info->total_len)
+			break;
+
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return;
+		}
+
+		resp_info = (struct directcmd_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+	}
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+}
+
+bool among_directcmds(char *name)
+{
+	int i = 0;
+
+	for (i = 0; directcmds[i]; ++i) {
+		if (strcmp(name, directcmds[i]) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 {
 	int i = 0;
@@ -752,6 +849,9 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 			"please input 'help' to get the usage.\n", buf);
 		return ;
 	}
+
+	if (directcmd && among_directcmds(cmd->name))
+		return execute_directcmd(client, buf);
 
 	add_cmd_log(cmd);
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
@@ -1702,6 +1802,37 @@ int sftt_client_mps_detail(void *obj)
 	return 0;
 }
 
+void sftt_client_directcmd_usage(void)
+{
+	printf("Usage: directcmd in|out\n");
+}
+
+int sftt_client_directcmd_handler(void *obj, int argc, char *argv[], bool *argv_check)
+{
+	int i = 0;
+	struct sftt_client_v2 *client = obj;
+
+	if (argc != 1) {
+		sftt_client_directcmd_usage();
+		return -1;
+	}
+
+	if (strcmp(argv[0], "in") && strcmp(argv[0], "out")) {
+		sftt_client_directcmd_usage();
+		return -1;
+	}
+
+	if (strcmp(argv[0], "in") == 0) {
+		directcmd = true;
+		printf("enter direct command mode ...\n");
+	} else {
+		directcmd = false;
+		printf("exit direct command mode ...\n");
+	}
+
+	return 0;
+}
+
 int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	struct sftt_packet *req_packet, *resp_packet;
@@ -1816,11 +1947,6 @@ int reader_loop(struct sftt_client_v2 *client)
 			cmd.buf[0] = 0;
 		}
 	}
-}
-
-struct user_cmd *user_cmd_construct(void)
-{
-		
 }
 
 void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
