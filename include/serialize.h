@@ -87,4 +87,12 @@ bool directcmd_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool directcmd_resp_decode(unsigned char *buf, int len, void **req);
 
+bool who_req_encode(void *req, unsigned char **buf, int *len);
+
+bool who_req_decode(unsigned char *buf, int len, void **req);
+
+bool who_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool who_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

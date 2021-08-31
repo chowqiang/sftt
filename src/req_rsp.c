@@ -504,3 +504,48 @@ xdr_directcmd_resp (XDR *xdrs, directcmd_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->ip, IPV4_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->port))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_who_req (XDR *xdrs, who_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_who_resp (XDR *xdrs, who_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_long (xdrs, &objp->total))
+		 return FALSE;
+	 if (!xdr_long (xdrs, &objp->num))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->users, LOGGED_IN_USER_MAX_CNT,
+		sizeof (logged_in_user), (xdrproc_t) xdr_logged_in_user))
+		 return FALSE;
+	return TRUE;
+}

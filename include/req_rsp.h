@@ -23,6 +23,8 @@ extern "C" {
 #define NET_MSG_MAX_LEN 1024
 #define CMD_MAX_LEN 1024
 #define CMD_RET_BATCH_LEN 4096
+#define IPV4_MAX_LEN 16
+#define LOGGED_IN_USER_MAX_CNT 32
 
 struct validate_req {
 	long name_len;
@@ -178,6 +180,25 @@ struct directcmd_resp {
 };
 typedef struct directcmd_resp directcmd_resp;
 
+struct logged_in_user {
+	char ip[IPV4_MAX_LEN];
+	int port;
+	char name[USER_NAME_MAX_LEN];
+};
+typedef struct logged_in_user logged_in_user;
+
+struct who_req {
+	char session_id[SESSION_ID_LEN];
+};
+typedef struct who_req who_req;
+
+struct who_resp {
+	long total;
+	long num;
+	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
+};
+typedef struct who_resp who_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -203,6 +224,9 @@ extern  bool_t xdr_mp_stat_req (XDR *, mp_stat_req*);
 extern  bool_t xdr_mp_stat_resp (XDR *, mp_stat_resp*);
 extern  bool_t xdr_directcmd_req (XDR *, directcmd_req*);
 extern  bool_t xdr_directcmd_resp (XDR *, directcmd_resp*);
+extern  bool_t xdr_logged_in_user (XDR *, logged_in_user*);
+extern  bool_t xdr_who_req (XDR *, who_req*);
+extern  bool_t xdr_who_resp (XDR *, who_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -227,6 +251,9 @@ extern bool_t xdr_mp_stat_req ();
 extern bool_t xdr_mp_stat_resp ();
 extern bool_t xdr_directcmd_req ();
 extern bool_t xdr_directcmd_resp ();
+extern bool_t xdr_logged_in_user ();
+extern bool_t xdr_who_req ();
+extern bool_t xdr_who_resp ();
 
 #endif /* K&R C */
 

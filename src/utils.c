@@ -61,11 +61,14 @@ void gen_session_id(char *buf, int len)
 {
 	int i;
 
+	//t = time(NULL);
 	for (i = 0; i < len - 1; ++i) {
 		if (i % 2) {
-			buf[i] = gen_char('a', 'z');
+			//buf[i] = gen_char('a', 'z');
+			buf[i] = rand() % ('z' - 'a') + 'a';
 		} else {
-			buf[i] = gen_char('0', '9');
+			//buf[i] = gen_char('0', '9');
+			buf[i] = rand() % ('9' - '0') + '0';
 		}
 	}
 

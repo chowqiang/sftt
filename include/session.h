@@ -40,7 +40,8 @@ struct thread_info {
 
 enum client_status {
 	ACTIVE,
-	INACTIVE
+	INACTIVE,
+	DISCONNECTED,
 };
 
 enum session_status {
@@ -58,6 +59,8 @@ enum resp_status {
 
 struct client_session {
 	int connect_fd;
+	char ip[IPV4_MAX_LEN];
+	int port;
 	struct thread_info tinfo;
 	enum client_status status;
 	char pwd[DIR_PATH_MAX_LEN];
@@ -78,5 +81,12 @@ void client_session_deconstruct(struct client_session *ptr);
 
 struct server_session *server_session_construct(void);
 void server_session_deconstruct(struct server_session *ptr);
+
+#define client_connected(session) \
+	((session)->status == ACTIVE || (session)->status == INACTIVE)
+
+#define set_client_active(session) ((session)->status = ACTIVE)
+#define set_client_inactive(session) ((session)->status = INACTIVE)
+#define set_client_disconnected(session) ((session)->status = DISCONNECTED)
 
 #endif

@@ -246,7 +246,7 @@ struct file_input_stream *create_file_input_stream(char *file_name)
 	return fis;
 }
 
-void destory_file_input_stream(struct file_input_stream *fis)
+void destroy_file_input_stream(struct file_input_stream *fis)
 {
 	if (fis) {
 		mp_free(g_mp, fis);
@@ -333,7 +333,7 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe)
 	return 0;
 }
 
-void destory_sftt_client(struct sftt_client *client)
+void destroy_sftt_client(struct sftt_client *client)
 {
 	if (client == NULL) {
 		return ;
@@ -546,7 +546,7 @@ int client_main_old(int argc, char **argv)
 		mp_free(g_mp, pes);
 	}
 
-	destory_sftt_client(client);
+	destroy_sftt_client(client);
 
 	return 0;
 
@@ -2144,4 +2144,96 @@ int do_builtin(struct sftt_client_v2 *client, char *builtin)
 	printf("unknown builtin script name: %s\n", builtin);
 
 	return -1;
+}
+
+int sftt_client_who_handler(void *obj, int argc, char *argv[],
+		bool *argv_check)
+{
+	struct sftt_packet *req_packet, *resp_packet;
+	struct who_req *req_info;
+	struct who_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
+	struct dlist *user_list;
+	struct dlist_node *node;
+	struct logged_in_user *user;
+	int ret, i = 0, total = 0;
+
+	req_packet = malloc_sftt_packet(WHO_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_WHO_REQ;
+
+	req_info = mp_malloc(g_mp, "who_handler_req", sizeof(struct who_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+
+	req_packet->obj = req_info;
+	req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
+
+	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(WHO_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	user_list = dlist_create(FREE_MODE_MP_FREE);
+	assert(user_list != NULL);
+
+	resp_info = (struct who_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	while (resp_info->total > 0 && resp_info->num > 0) {
+		for (i = 0; i < resp_info->num; ++i) {
+			user = mp_malloc(g_mp, "who_handler_resp_logged_in_user",
+					sizeof(struct logged_in_user));
+			assert(user != NULL);
+			*user = resp_info->users[i];
+			dlist_append(user_list, user);
+		}
+
+		total += resp_info->num;
+		if (total == resp_info->total)
+			break;
+
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
+		}
+
+		resp_info = (struct who_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+	}
+
+	dlist_for_each(user_list, node) {
+		user = (struct logged_in_user *)node->data;
+		printf("%s\t%s\t%d\n", user->name, user->ip, user->port);
+	}
+
+	dlist_destroy(user_list);
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
+	return 0;
+}
+
+void sftt_client_who_usage(void)
+{
+	printf("Usage: w\n");
 }

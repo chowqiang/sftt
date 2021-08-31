@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>  
@@ -1200,6 +1201,103 @@ int handle_mp_stat_req(struct client_session *client,
 	return ret;
 }
 
+struct logged_in_user *get_logged_in_users(int *count)
+{
+	int i, j;
+	struct logged_in_user *users;
+	struct client_session *session;
+
+	server->pm->ops->lock(server->pm);
+
+	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
+		session = &server->sessions[i];
+		if (client_connected(session)) {
+			++j;
+		}
+	}
+
+	*count = j;
+	users = mp_malloc(g_mp, __func__, sizeof(struct logged_in_user) * (*count));
+	if (users == NULL) {
+		*count = -1;
+		users = NULL;
+		goto done;
+	}
+
+	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
+		session = &server->sessions[i];
+		if (client_connected(session)) {
+			strncpy(users[j].ip, session->ip, IPV4_MAX_LEN - 1);
+			users[j].port = session->port;
+			strncpy(users[j].name, session->user.name, USER_NAME_MAX_LEN - 1);
+			++j;
+		}
+	}
+
+done:
+	server->pm->ops->unlock(server->pm);
+
+	return users;
+}
+
+int handle_who_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct who_resp *resp;
+	struct logged_in_user *users;
+	int total, num, count;
+	int ret, i = 0;
+
+	DEBUG((DEBUG_INFO, "handle who req in ...\n"));
+	resp = (struct who_resp *)mp_malloc(g_mp, __func__,
+			sizeof(struct who_resp));
+
+	if (resp == NULL) {
+		DEBUG((DEBUG_INFO, "cannot alloc memory for resp!\n"));
+		return -1;
+	}
+
+	users = get_logged_in_users(&total);
+	if (users == NULL || total <= 0) {
+		resp->total = -1;
+		resp->num = 0;
+
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_WHO_RSP;
+
+		send_sftt_packet(client->connect_fd, resp_packet);
+
+		return 0;
+	}
+
+	count = 0;
+	do {
+		num = (total - count) >= LOGGED_IN_USER_MAX_CNT ?
+			LOGGED_IN_USER_MAX_CNT : (total - count);
+		resp->total = total;
+		resp->num = num;
+		for (i = 0; i < num; ++i) {
+			bzero(&resp->users[i], sizeof(struct logged_in_user));
+			strncpy(resp->users[i].ip, users[i + count].ip,
+					IPV4_MAX_LEN - 1);
+			strncpy(resp->users[i].name, users[i + count].name,
+					USER_NAME_MAX_LEN - 1);
+			resp->users[i].port = users[i + count].port;
+		}
+
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_WHO_RSP;
+
+		send_sftt_packet(client->connect_fd, resp_packet);
+
+		count += num;
+	} while (count < total);
+
+	DEBUG((DEBUG_INFO, "handle who req out ...\n"));
+
+	return ret;
+}
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
@@ -1300,6 +1398,13 @@ void *handle_client_session(void *args)
 			}
 			handle_directcmd_req(client, req, resp);
 			break;
+		case PACKET_TYPE_WHO_REQ:
+			resp = malloc_sftt_packet(WHO_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_who_req(client, req, resp);
+			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);
 			break;
@@ -1333,8 +1438,8 @@ struct client_session *find_get_new_session(void)
 	int i;
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
-		if (server->sessions[i].status == EXITED) {
-			server->sessions[i].status = ACTIVE;
+		if (!client_connected(&server->sessions[i])) {
+			set_client_active(&server->sessions[i]);
 			return &server->sessions[i];
 		}
 	}
@@ -1346,7 +1451,7 @@ void init_sessions(void)
 {
 	int i = 0;
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
-		server->sessions[i].status = EXITED;
+		set_client_disconnected(&server->sessions[i]);
 	}
 }
 
@@ -1358,6 +1463,8 @@ void main_loop(void)
 	int ret;
 	pthread_t child;
 	struct client_session *session;
+	struct sockaddr_in addr_client;
+	int len;
 
 	server->status = RUNNING;
 	init_sessions();
@@ -1366,7 +1473,7 @@ void main_loop(void)
 
 	while (1) {
 		update_server(server);
-		connect_fd = accept(server->main_sock, (struct sockaddr *)NULL, NULL);
+		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, &len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
 			continue;
@@ -1379,6 +1486,9 @@ void main_loop(void)
 		add_log(LOG_INFO, "a client connected ...");
 		session->connect_fd = connect_fd;
 
+		bzero(session->ip, IPV4_MAX_LEN - 1);
+		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
+		session->port = ntohs(addr_client.sin_port);
 		ret = pthread_create(&child, NULL, handle_client_session, session);
 		if (ret) {
 			add_log(LOG_INFO, "create thread failed!");

@@ -86,7 +86,7 @@ struct table_info {
 
 struct database *create_db(char *db_name);
 struct db_connect *create_db_connect(char *db_file);
-void destory_db_connect(struct db_connect *db_con);
+void destroy_db_connect(struct db_connect *db_con);
 int create_table(struct db_connect *db_con, char *table_name);
 int db_insert(struct db_connect *db_con, char *sql, char **err_msg);
 int db_update(struct db_connect *db_con, char *sql, char **err_msg);

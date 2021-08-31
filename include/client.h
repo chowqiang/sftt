@@ -70,7 +70,8 @@ struct file_input_stream {
 	char target[FILE_NAME_MAX_LEN + 1];
 	int cursor;
 	FILE *fp;
-	int (*get_next_buffer)(struct file_input_stream *fis, char *buffer, size_t size);
+	int (*get_next_buffer)(struct file_input_stream *fis, char *buffer,
+			size_t size);
 };
 
 struct sftt_client {
@@ -117,98 +118,141 @@ struct dir_trans_session {
 	struct path_entry pe;
 };
 
-/* Builtin test scripts */
+/*
+ * Builtin test scripts struct.
+ */
 struct builtin_script {
-        const char *name;                       /* very short name for -b ... */
-        const char *desc;                       /* short description */
-        const char *script;                     /* actual pgbench script */
+        const char *name;	/* very short name for -b ... */
+        const char *desc;	/* short description */
+        const char *script;	/* actual pgbench script */
 };
 
+/*
+ * Todo: need delete?
+ */
 int find_unfinished_session(struct path_entry *pe, char *ip);
-
-int file_trans_session_diff(struct file_trans_session *old_session, struct file_trans_session *new_seesion);
-
-int dir_trans_session_diff(struct dir_trans_session *old_session, struct dir_trans_session *new_session);
-
+int file_trans_session_diff(struct file_trans_session *old_session,
+		struct file_trans_session *new_seesion);
+int dir_trans_session_diff(struct dir_trans_session *old_session,
+		struct dir_trans_session *new_session);
 int save_trans_session(struct sftt_client *client);
 
-int file_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
+/*
+ * Todo: need delete?
+ */
+int file_get_next_buffer(struct file_input_stream *fis, char *buffer,
+		size_t size);
+int dir_get_next_buffer(struct file_input_stream *fis, char *buffer,
+		size_t size);
 
-int dir_get_next_buffer(struct file_input_stream *fis, char *buffer, size_t size);
-
+/*
+ * Todo: need delete?
+ */
 struct file_input_stream *create_file_input_stream(char *file_name);
+void destroy_file_input_stream(struct file_input_stream *fis);
 
-void destory_file_input_stream(struct file_input_stream *fis);
-
-int get_cache_port();
-
+/*
+ * Todo: need delete?
+ */
+int get_cache_port(void);
 void set_cache_port(int port);
 
-struct sftt_client *create_client(char *ip, struct sftt_client_config *config, int connects_num); 
+/*
+ * Create and destroy sftt client.
+ */
+struct sftt_client *create_client(char *ip, struct sftt_client_config *config,
+		int connects_num);
+void destroy_sftt_client(struct sftt_client *client);
 
-void destory_sftt_client(struct sftt_client *client);
-
+/*
+ * List directory contents in long format.
+ */
 int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check);
-
 void sftt_client_ll_usage(void);
 
+/*
+ * Change directory.
+ */
 void sftt_client_cd_usage(void);
-
 int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
+/*
+ * Show help info.
+ */
 void sftt_client_help_usage(void);
-
 int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
+/*
+ * Get files from server to client.
+ */
 void sftt_client_get_usage(void);
-
 int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
+/*
+ * Put file from client to server.
+ */
 void sftt_client_put_usage(void);
-
 int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check);
 
+/*
+ * Return working directory name.
+ */
 int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check);
-
 void sftt_client_pwd_usage(void);
 
+/*
+ * Show history command.
+ */
 int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check);
-
 void sftt_client_his_usage(void);
 
+/*
+ * Show memory pool stat info.
+ */
 int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check);
-
 void sftt_client_mps_usage(void);
 
 void client_usage_help(int exitcode);
-
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port, char *user, char *passwd);
-
+int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
+		char *user, char *passwd);
 int show_options(char *host, char *user_name, char *password); 
 
+/*
+ * Parse user's input.
+ */
 bool parse_user_name(char *arg, char *user_name, int maxlen);
-
 bool parse_host(char *arg, char *host, int maxlen);
-
 bool parse_port(char *arg, int *port);
 
 int reader_loop2(struct sftt_client_v2 *client);
 
 int try_fetch_login_info(char *input, char *user_name, char *host);
-
-int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host, struct trans_info *trans);
-
+int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host,
+		struct trans_info *trans);
 int do_trans(struct sftt_client_v2 *client, struct trans_info *trans);
-
 int do_builtin(struct sftt_client_v2 *client, char *builtin);
 
-int recv_one_file_by_get_resp(struct sftt_client_v2 *client, struct sftt_packet *resp_packet,
-		struct common_resp *com_resp, char *target, bool *has_more);
+int recv_one_file_by_get_resp(struct sftt_client_v2 *client,
+		struct sftt_packet *resp_packet, struct common_resp *com_resp,
+		char *target, bool *has_more);
 
-int sftt_client_directcmd_handler(void *obj, int argc, char *argv[], bool *argv_check);
-
+/*
+ * Enter or exit direct command mode.
+ */
+int sftt_client_directcmd_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
 void sftt_client_directcmd_usage(void);
 
+/*
+ * Show logged in users' info.
+ */
+int sftt_client_who_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
+void sftt_client_who_usage(void);
+
+/*
+ * Sftt client commands supported.
+ */
 static struct cmd_handler sftt_client_cmds[] = {
 	{
 		.name = "help",
@@ -265,6 +309,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.usage = sftt_client_directcmd_usage,
 	},
 	{
+		.name = "w",
+		.fn = sftt_client_who_handler,
+		.help = "show logged in users",
+		.usage = sftt_client_who_usage,
+	},
+	{
 		.name = NULL,
 		.fn = NULL,
 		.help = "",
@@ -272,6 +322,9 @@ static struct cmd_handler sftt_client_cmds[] = {
 	},
 };
 
+/*
+ * Builtin scripts for testing.
+ */
 static const struct builtin_script builtin_scripts[] = {
         {
                 "mps",

@@ -8,6 +8,8 @@ const CONTENT_BLOCK_SIZE = 4096;
 const NET_MSG_MAX_LEN = 1024;
 const CMD_MAX_LEN = 1024;
 const CMD_RET_BATCH_LEN = 4096;
+const IPV4_MAX_LEN = 16;
+const LOGGED_IN_USER_MAX_CNT = 32;
 
 struct validate_req {
 	long name_len;
@@ -139,4 +141,20 @@ struct directcmd_resp {
 	long total_len;
 	long this_len;
 	char data[CMD_RET_BATCH_LEN];
+};
+
+struct logged_in_user {
+	char ip[IPV4_MAX_LEN];
+	int port;
+	char name[USER_NAME_MAX_LEN];
+};
+
+struct who_req {
+	char session_id[SESSION_ID_LEN];
+};
+
+struct who_resp {
+	long total;
+	long num;
+	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
 };
