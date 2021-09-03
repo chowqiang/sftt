@@ -1258,7 +1258,9 @@ int handle_who_req(struct client_session *client,
 	}
 
 	users = get_logged_in_users(&total);
+	DEBUG((DEBUG_INFO, "There has %d user(s) logged in\n", total));
 	if (users == NULL || total <= 0) {
+		DEBUG((DEBUG_INFO, "get logged in user failed\n"));
 		resp->total = -1;
 		resp->num = 0;
 
@@ -1269,6 +1271,7 @@ int handle_who_req(struct client_session *client,
 
 		return 0;
 	}
+
 
 	count = 0;
 	do {
@@ -1413,7 +1416,8 @@ void *handle_client_session(void *args)
 	}
 
 exit:
-	client->status = INACTIVE;
+	client->status = DISCONNECTED;
+	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 	return NULL;
 }
 
@@ -1489,6 +1493,8 @@ void main_loop(void)
 		bzero(session->ip, IPV4_MAX_LEN - 1);
 		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
 		session->port = ntohs(addr_client.sin_port);
+		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
+		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->port));
 		ret = pthread_create(&child, NULL, handle_client_session, session);
 		if (ret) {
 			add_log(LOG_INFO, "create thread failed!");
@@ -1646,10 +1652,12 @@ int sftt_server_start(char *store_path, bool background)
 
 int sftt_server_restart(char *store_path, bool background)
 {
+#if 0
 	if (!sftt_server_is_running()) {
 		printf("cannot restart " PROC_NAME ", because it is not running.\n");
 		exit(-1);
 	}
+#endif
 
 	if (strlen(store_path)) {
 		if (access(store_path, W_OK)) {
@@ -1658,7 +1666,11 @@ int sftt_server_restart(char *store_path, bool background)
 		}
 	}
 
+	sftt_server_stop();
+	sftt_server_start(store_path, background);
+
 	add_log(LOG_INFO, PROC_NAME " is going to restart ...");
+
 	return 0;
 }
 

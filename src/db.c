@@ -139,7 +139,7 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data,
 		return -1;
 	}
 
-	printf("select result: rows = %d, cols = %d\n", rows, cols);
+	//printf("select result: rows = %d, cols = %d\n", rows, cols);
 
 	tmp = mp_malloc(g_mp, __func__, rows * sizeof(struct map));
 	assert(tmp != NULL);
