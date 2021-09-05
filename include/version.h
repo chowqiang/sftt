@@ -17,7 +17,7 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define VERSION	"0.0.72"
+#define VERSION	"0.0.74"
 
 void version(void);
 

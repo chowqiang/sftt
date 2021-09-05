@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -29,6 +29,7 @@
 #include <pthread.h>
 #include <curses.h>
 #include <ctype.h>
+#include <unistd.h>
 #include "endpoint.h"
 #include "command.h"
 #include "config.h"
@@ -963,6 +964,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 		req_info->passwd_md5[0] = 0;
 	}
 	req_info->passwd_len = strlen(req_info->passwd_md5);
+	req_info->task_port = client->task.port;
 
 	req_packet->obj = req_info;
 	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
@@ -1026,8 +1028,82 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 
 static int init_sftt_client_session(struct sftt_client_v2 *client)
 {
+	return 0;
+}
+
+void *sftt_client_task_handler(void *arg)
+{
+	struct sftt_client_v2 *client = (struct sftt_client_v2 *)arg;
+	struct sockaddr_in addr_server;
+	int conn_fd;
+	int len;
+
+	len = sizeof(struct sockaddr_in);
+	while (1) {
+		conn_fd = accept(client->task.sock, (struct sockaddr *)&addr_server,
+			&len);
+		if (conn_fd == -1) {
+			usleep(100 * 1000);
+			continue;
+		}
+		printf("server is connected!\n");
+		printf("ip: %s, port=%d\n", inet_ntoa(addr_server.sin_addr),
+				ntohs(addr_server.sin_port));
+		close(conn_fd);
+	}
+}
+
+int init_sftt_client_task_handler(struct sftt_client_v2 *client)
+{
+	struct sockaddr_in taskaddr;
+	int len;
+
+	client->task.sock = -1;
+	client->task.port = -1;
+
+	if ((client->task.sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("create socket failed");
+		goto failed;
+	}
+
+	if (fcntl(client->task.sock, F_SETFL, O_NONBLOCK) == -1) {
+		perror("set sockfd to non-block failed");
+		goto failed;
+	}
+
+	memset(&taskaddr, 0, sizeof(taskaddr));
+	taskaddr.sin_family = AF_INET;
+	taskaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	taskaddr.sin_port = 0;
+
+	if (bind(client->task.sock, (struct sockaddr *)&taskaddr, sizeof(taskaddr)) == -1) {
+		perror("bind socket error");
+		goto failed;
+	}
+
+	if (listen(client->task.sock, 10) == -1) {
+		perror("listen socket error");
+		goto failed;
+	}
+
+	len = sizeof(struct sockaddr_in);
+	if (getsockname(client->task.sock, (struct sockaddr *)&taskaddr, &len) == -1) {
+		perror("getsockname error");
+		goto failed;
+	}
+
+	client->task.port = ntohs(taskaddr.sin_port);
+
+	if (pthread_create(&client->task.tid, NULL, sftt_client_task_handler, client) == -1) {
+		perror("pthread create error");
+		goto failed;
+	}
 
 	return 0;
+failed:
+	close(client->task.sock);
+
+	return -1;
 }
 
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
@@ -1051,6 +1127,11 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	}
 
 	logger_init(client->config.log_dir, PROC_NAME);
+
+	if (init_sftt_client_task_handler(client) == -1) {
+		printf("init sftt client task handler failed!\n");
+		return -1;
+	}
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
 		printf("init sftt client control connection failed!\n");

@@ -12,6 +12,7 @@ const IPV4_MAX_LEN = 16;
 const LOGGED_IN_USER_MAX_CNT = 32;
 
 struct validate_req {
+	int task_port;
 	long name_len;
 	long passwd_len;
 	char name[USER_NAME_MAX_LEN];

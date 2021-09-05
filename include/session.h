@@ -61,6 +61,7 @@ struct client_session {
 	int connect_fd;
 	char ip[IPV4_MAX_LEN];
 	int port;
+	int task_port;
 	struct thread_info tinfo;
 	enum client_status status;
 	char pwd[DIR_PATH_MAX_LEN];

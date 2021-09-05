@@ -244,7 +244,6 @@ void is_exit(char *filepath)
 
 int server_main_old(void)
 {
-//	int	socket_fd = sftt_server();
 	int socket_fd = 0;
 	int	connect_fd;
 	int	trans_len;
@@ -428,9 +427,9 @@ static int validate_user_info(struct client_session *client,
 
 	req_info = (struct validate_req *)req_packet->obj;
 	DEBUG((DEBUG_INFO, "req_info: name=%s|name_len=%d|"
-		"passwd_md5=%s|passwd_len=%d\n", req_info->name,
+		"passwd_md5=%s|passwd_len=%d|task_port=%d\n", req_info->name,
 		req_info->name_len, req_info->passwd_md5,
-		req_info->passwd_len));
+		req_info->passwd_len, req_info->task_port));
 
 	add_log(LOG_INFO, "receive validate request|name: %s", req_info->name);
 
@@ -458,6 +457,7 @@ static int validate_user_info(struct client_session *client,
 		resp_info->status = UVS_PASS;
 		resp_info->uid = user_base->uid;
 		client->status = ACTIVE;
+		client->task_port = req_info->task_port;
 
 		strncpy(resp_info->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
 		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
@@ -1475,6 +1475,7 @@ void main_loop(void)
 
 	//DEBUG((DEBUG_INFO, "normal"));
 
+	len = sizeof(struct sockaddr_in);
 	while (1) {
 		update_server(server);
 		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, &len);
@@ -1493,8 +1494,10 @@ void main_loop(void)
 		bzero(session->ip, IPV4_MAX_LEN - 1);
 		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
 		session->port = ntohs(addr_client.sin_port);
+
 		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
 		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->port));
+
 		ret = pthread_create(&child, NULL, handle_client_session, session);
 		if (ret) {
 			add_log(LOG_INFO, "create thread failed!");

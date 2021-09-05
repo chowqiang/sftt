@@ -85,6 +85,12 @@ struct sftt_client {
 	void *trans_session;
 };
 
+struct sftt_client_task {
+	pthread_t tid;
+	int port;
+	int sock;
+};
+
 struct sftt_client_v2 {
 	struct client_sock_conn conn_ctrl;
 	struct dlist *conn_data;
@@ -94,6 +100,7 @@ struct sftt_client_v2 {
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
 	char pwd[DIR_PATH_MAX_LEN];
+	struct sftt_client_task task;
 };
 
 struct thread_input_params {

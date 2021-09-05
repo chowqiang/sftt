@@ -11,6 +11,55 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	register int32_t *buf;
 
 	int i;
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->task_port))
+				 return FALSE;
+			 if (!xdr_long (xdrs, &objp->name_len))
+				 return FALSE;
+			 if (!xdr_long (xdrs, &objp->passwd_len))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->task_port);
+		IXDR_PUT_LONG(buf, objp->name_len);
+		IXDR_PUT_LONG(buf, objp->passwd_len);
+		}
+		 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
+			sizeof (char), (xdrproc_t) xdr_char))
+			 return FALSE;
+		 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MD5_LEN,
+			sizeof (char), (xdrproc_t) xdr_char))
+			 return FALSE;
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->task_port))
+				 return FALSE;
+			 if (!xdr_long (xdrs, &objp->name_len))
+				 return FALSE;
+			 if (!xdr_long (xdrs, &objp->passwd_len))
+				 return FALSE;
+
+		} else {
+		objp->task_port = IXDR_GET_LONG(buf);
+		objp->name_len = IXDR_GET_LONG(buf);
+		objp->passwd_len = IXDR_GET_LONG(buf);
+		}
+		 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
+			sizeof (char), (xdrproc_t) xdr_char))
+			 return FALSE;
+		 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MD5_LEN,
+			sizeof (char), (xdrproc_t) xdr_char))
+			 return FALSE;
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->task_port))
+		 return FALSE;
 	 if (!xdr_long (xdrs, &objp->name_len))
 		 return FALSE;
 	 if (!xdr_long (xdrs, &objp->passwd_len))
