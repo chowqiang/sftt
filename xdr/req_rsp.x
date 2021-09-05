@@ -10,6 +10,7 @@ const CMD_MAX_LEN = 1024;
 const CMD_RET_BATCH_LEN = 4096;
 const IPV4_MAX_LEN = 16;
 const LOGGED_IN_USER_MAX_CNT = 32;
+const WRITE_MSG_MAX_LEN = 4096;
 
 struct validate_req {
 	int task_port;
@@ -158,4 +159,15 @@ struct who_resp {
 	long total;
 	long num;
 	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
+};
+
+struct write_req {
+	int user_no;
+	int len;
+	char message[WRITE_MSG_MAX_LEN];
+};
+
+struct write_resp {
+	int len;
+	char message[WRITE_MSG_MAX_LEN];
 };

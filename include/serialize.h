@@ -95,4 +95,12 @@ bool who_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool who_resp_decode(unsigned char *buf, int len, void **req);
 
+bool write_req_encode(void *req, unsigned char **buf, int *len);
+
+bool write_req_decode(unsigned char *buf, int len, void **req);
+
+bool write_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool write_resp_decode(unsigned char *buf, int len, void **req);
+
 #endif

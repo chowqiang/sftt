@@ -25,6 +25,7 @@ extern "C" {
 #define CMD_RET_BATCH_LEN 4096
 #define IPV4_MAX_LEN 16
 #define LOGGED_IN_USER_MAX_CNT 32
+#define WRITE_MSG_MAX_LEN 4096
 
 struct validate_req {
 	int task_port;
@@ -200,6 +201,19 @@ struct who_resp {
 };
 typedef struct who_resp who_resp;
 
+struct write_req {
+	int user_no;
+	int len;
+	char message[WRITE_MSG_MAX_LEN];
+};
+typedef struct write_req write_req;
+
+struct write_resp {
+	int len;
+	char message[WRITE_MSG_MAX_LEN];
+};
+typedef struct write_resp write_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -228,6 +242,8 @@ extern  bool_t xdr_directcmd_resp (XDR *, directcmd_resp*);
 extern  bool_t xdr_logged_in_user (XDR *, logged_in_user*);
 extern  bool_t xdr_who_req (XDR *, who_req*);
 extern  bool_t xdr_who_resp (XDR *, who_resp*);
+extern  bool_t xdr_write_req (XDR *, write_req*);
+extern  bool_t xdr_write_resp (XDR *, write_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
@@ -255,6 +271,8 @@ extern bool_t xdr_directcmd_resp ();
 extern bool_t xdr_logged_in_user ();
 extern bool_t xdr_who_req ();
 extern bool_t xdr_who_resp ();
+extern bool_t xdr_write_req ();
+extern bool_t xdr_write_resp ();
 
 #endif /* K&R C */
 

@@ -30,6 +30,7 @@
 #include <curses.h>
 #include <ctype.h>
 #include <unistd.h>
+#include "base.h"
 #include "endpoint.h"
 #include "command.h"
 #include "config.h"
@@ -964,7 +965,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 		req_info->passwd_md5[0] = 0;
 	}
 	req_info->passwd_len = strlen(req_info->passwd_md5);
-	req_info->task_port = client->task.port;
+	req_info->task_port = client->task_handler.port;
 
 	req_packet->obj = req_info;
 	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
@@ -1031,25 +1032,82 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
+struct client_task *create_client_task(struct client_task_handler *handler)
+{
+	struct client_task *task;
+
+	task = mp_malloc(g_mp, "client_task", sizeof(struct client_task));
+	if (task == NULL)
+		return NULL;
+
+	INIT_LIST_HEAD(&task->list);
+
+	handler->pm->ops->lock(handler->pm);
+	if (handler->tasks == NULL) {
+		handler->tasks = task;
+	} else {
+		list_add(&task->list, &handler->tasks->list);
+	}
+
+	handler->pm->ops->unlock(handler->pm);
+
+	return task;
+}
+
+void *do_task(void *arg)
+{
+	struct client_task *task;
+
+	task = (struct client_task *)arg;
+
+	while (1) {
+	}
+
+	return NULL;
+}
+
+void clean_task(struct client_task_handler *handler)
+{
+
+}
+
+
+
 void *sftt_client_task_handler(void *arg)
 {
-	struct sftt_client_v2 *client = (struct sftt_client_v2 *)arg;
+	struct sftt_client_v2 *client;
 	struct sockaddr_in addr_server;
 	int conn_fd;
 	int len;
+	int ret;
+	struct client_task *task;
 
+	client = (struct sftt_client_v2 *)arg;
 	len = sizeof(struct sockaddr_in);
 	while (1) {
-		conn_fd = accept(client->task.sock, (struct sockaddr *)&addr_server,
+		conn_fd = accept(client->task_handler.sock, (struct sockaddr *)&addr_server,
 			&len);
 		if (conn_fd == -1) {
 			usleep(100 * 1000);
 			continue;
 		}
-		printf("server is connected!\n");
-		printf("ip: %s, port=%d\n", inet_ntoa(addr_server.sin_addr),
+		printf("server is connected, ip=%s, port=%d\n", inet_ntoa(addr_server.sin_addr),
 				ntohs(addr_server.sin_port));
-		close(conn_fd);
+		task = create_client_task(&client->task_handler);
+		if (task == NULL) {
+			printf("cannot create client task!\n");
+			close(conn_fd);
+		}
+		task->sock = conn_fd;
+
+		ret = pthread_create(&task->tid, NULL, do_task, task);
+		if (ret == -1) {
+			perror("create task thread failed");
+			task->status = TASK_STATUS_ABORT;
+			close(task->sock);
+		}
+
+		clean_task(&client->task_handler);
 	}
 }
 
@@ -1058,15 +1116,15 @@ int init_sftt_client_task_handler(struct sftt_client_v2 *client)
 	struct sockaddr_in taskaddr;
 	int len;
 
-	client->task.sock = -1;
-	client->task.port = -1;
+	client->task_handler.sock = -1;
+	client->task_handler.port = -1;
 
-	if ((client->task.sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+	if ((client->task_handler.sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("create socket failed");
 		goto failed;
 	}
 
-	if (fcntl(client->task.sock, F_SETFL, O_NONBLOCK) == -1) {
+	if (fcntl(client->task_handler.sock, F_SETFL, O_NONBLOCK) == -1) {
 		perror("set sockfd to non-block failed");
 		goto failed;
 	}
@@ -1076,32 +1134,39 @@ int init_sftt_client_task_handler(struct sftt_client_v2 *client)
 	taskaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	taskaddr.sin_port = 0;
 
-	if (bind(client->task.sock, (struct sockaddr *)&taskaddr, sizeof(taskaddr)) == -1) {
+	if (bind(client->task_handler.sock, (struct sockaddr *)&taskaddr, sizeof(taskaddr)) == -1) {
 		perror("bind socket error");
 		goto failed;
 	}
 
-	if (listen(client->task.sock, 10) == -1) {
+	if (listen(client->task_handler.sock, 10) == -1) {
 		perror("listen socket error");
 		goto failed;
 	}
 
 	len = sizeof(struct sockaddr_in);
-	if (getsockname(client->task.sock, (struct sockaddr *)&taskaddr, &len) == -1) {
+	if (getsockname(client->task_handler.sock, (struct sockaddr *)&taskaddr, &len) == -1) {
 		perror("getsockname error");
 		goto failed;
 	}
 
-	client->task.port = ntohs(taskaddr.sin_port);
+	client->task_handler.port = ntohs(taskaddr.sin_port);
+	client->task_handler.pm = new(pthread_mutex);
+	if (client->task_handler.pm == NULL) {
+		printf("create pthread_mutex for task_handler\n");
+		goto failed;
+	}
 
-	if (pthread_create(&client->task.tid, NULL, sftt_client_task_handler, client) == -1) {
+	client->task_handler.tasks = NULL;
+
+	if (pthread_create(&client->task_handler.tid, NULL, sftt_client_task_handler, client) == -1) {
 		perror("pthread create error");
 		goto failed;
 	}
 
 	return 0;
 failed:
-	close(client->task.sock);
+	close(client->task_handler.sock);
 
 	return -1;
 }
@@ -1988,6 +2053,17 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 void sftt_client_mps_usage(void)
 {
 	printf("Usage: mps [-d]\n");
+}
+
+int sftt_client_write_handler(void *obj, int argc, char *argv[],
+		bool *argv_check)
+{
+
+}
+
+void sftt_client_write_usage(void)
+{
+
 }
 
 /* Read and execute commands until user inputs 'quit' command */

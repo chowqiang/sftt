@@ -598,3 +598,33 @@ xdr_who_resp (XDR *xdrs, who_resp *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_write_req (XDR *xdrs, write_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->user_no))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->len))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->message, WRITE_MSG_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_write_resp (XDR *xdrs, write_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->len))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->message, WRITE_MSG_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}

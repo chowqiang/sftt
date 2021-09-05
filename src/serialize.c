@@ -914,3 +914,85 @@ bool who_resp_decode(unsigned char *buf, int len, void **req)
 
 	return ret;
 }
+
+bool write_req_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_write_req(&xdr, (struct write_req *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool write_req_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct write_req *_req = (struct write_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct write_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_write_req(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool write_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_write_resp(&xdr, (struct write_resp *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool write_resp_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct write_resp *_req = (struct write_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct write_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_write_resp(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}

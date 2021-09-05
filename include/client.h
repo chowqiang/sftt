@@ -60,6 +60,12 @@ enum run_mode {
 	RUN_MODE_UNKNOWN,
 };
 
+enum task_status {
+	TASK_STATUS_RUNNING,
+	TASK_STATUS_COMPLETE,
+	TASK_STATUS_ABORT,
+};
+
 struct trans_info {
 	enum trans_type type;
 	char src[FILE_NAME_MAX_LEN];
@@ -85,10 +91,20 @@ struct sftt_client {
 	void *trans_session;
 };
 
-struct sftt_client_task {
+struct client_task {
+	pthread_t tid;
+	char session_id[SESSION_ID_LEN];
+	int sock;
+	enum task_status status;
+	struct list_head list;
+};
+
+struct client_task_handler {
 	pthread_t tid;
 	int port;
 	int sock;
+	struct pthread_mutex *pm;
+	struct client_task *tasks;
 };
 
 struct sftt_client_v2 {
@@ -100,7 +116,7 @@ struct sftt_client_v2 {
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
 	char pwd[DIR_PATH_MAX_LEN];
-	struct sftt_client_task task;
+	struct client_task_handler task_handler;
 };
 
 struct thread_input_params {
@@ -258,6 +274,13 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 void sftt_client_who_usage(void);
 
 /*
+ * send a message to another user.
+ */
+int sftt_client_write_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
+void sftt_client_write_usage(void);
+
+/*
  * Sftt client commands supported.
  */
 static struct cmd_handler sftt_client_cmds[] = {
@@ -320,6 +343,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.fn = sftt_client_who_handler,
 		.help = "show logged in users",
 		.usage = sftt_client_who_usage,
+	},
+	{
+		.name = "write",
+		.fn = sftt_client_write_handler,
+		.help = "send a message to another user",
+		.usage = sftt_client_write_usage,
 	},
 	{
 		.name = NULL,
