@@ -1301,6 +1301,13 @@ int handle_who_req(struct client_session *client,
 	return ret;
 }
 
+int handle_write_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+
+	return 0;
+}
+
 void *handle_client_session(void *args)
 {
 	struct client_session *client = (struct client_session *)args;
@@ -1407,6 +1414,13 @@ void *handle_client_session(void *args)
 				goto exit;
 			}
 			handle_who_req(client, req, resp);
+			break;
+		case PACKET_TYPE_WRITE_REQ:
+			resp = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_write_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);

@@ -2055,16 +2055,67 @@ void sftt_client_mps_usage(void)
 	printf("Usage: mps [-d]\n");
 }
 
+void sftt_client_write_usage(void)
+{
+	printf("Usage: write user_no \"message\"\n");
+}
+
 int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		bool *argv_check)
 {
+	struct sftt_packet *req_packet, *resp_packet;
+	struct write_req *req_info;
+	struct write_resp *resp_info;
+	struct sftt_client_v2 *client = obj;
 
+	if (argc != 2) {
+		sftt_client_write_usage();
+		return -1;
+	}
+
+	req_packet = malloc_sftt_packet(WRITE_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_WRITE_REQ;
+
+	req_info = mp_malloc(g_mp, __func__, sizeof(struct write_req));
+	assert(req_info != NULL);
+
+	req_info->user_no = atoi(argv[0]);
+	strncpy(req_info->message, argv[1], WRITE_MSG_MAX_LEN - 1);
+	req_info->len = strlen(req_info->message);
+
+	req_packet->obj = req_info;
+	req_packet->block_size = WRITE_REQ_PACKET_MIN_LEN;
+
+	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct write_resp *)resp_packet->obj;
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+
+	return 0;
 }
 
-void sftt_client_write_usage(void)
-{
-
-}
 
 /* Read and execute commands until user inputs 'quit' command */
 int reader_loop(struct sftt_client_v2 *client)
