@@ -14,11 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef _FRIEND_H_
+#define _FRIEND_H_
 
-#define VERSION	"0.0.80"
+#include "list.h"
+#include "req_rsp.h"
 
-void version(void);
+struct friend_user {
+	struct logged_in_user info;
+	struct list_head list;	
+};
 
 #endif

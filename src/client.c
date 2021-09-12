@@ -956,7 +956,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 	assert(req_info != NULL);
 
-	strncpy(req_info->name, client->uinfo->name, USER_NAME_MAX_LEN - 1);
+	strncpy(req_info->name, client->uinfo.name, USER_NAME_MAX_LEN - 1);
 	req_info->name_len = strlen(req_info->name);
 
 	if (strlen(passwd)) {
@@ -1013,13 +1013,11 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 		return -1;
 	}
 
-	client->uinfo->uid = resp_info->uid;
-	add_log(LOG_INFO, "uid: %d", client->uinfo->uid);
+	client->uinfo.uid = resp_info->uid;
+	add_log(LOG_INFO, "uid: %d", client->uinfo.uid);
 
 	strncpy(client->session_id, resp_info->session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, resp_info->pwd, DIR_PATH_MAX_LEN - 1);
-
-	//mp_free(g_mp, req_info);
 
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
@@ -1046,7 +1044,7 @@ struct client_task *create_client_task(struct client_task_handler *handler)
 	if (handler->tasks == NULL) {
 		handler->tasks = task;
 	} else {
-		list_add(&task->list, &handler->tasks->list);
+		list_add_tail(&task->list, &handler->tasks->list);
 	}
 
 	handler->pm->ops->unlock(handler->pm);
@@ -1171,6 +1169,92 @@ failed:
 	return -1;
 }
 
+int get_friend_list(struct sftt_client_v2 *client) {
+	struct sftt_packet *req_packet, *resp_packet;
+	struct who_req *req_info;
+	struct who_resp *resp_info;
+	struct friend_user *friend;
+	int ret, i = 0, total = 0;
+
+	req_packet = malloc_sftt_packet(WHO_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_WHO_REQ;
+
+	req_info = mp_malloc(g_mp, "get_friend_list_req", sizeof(struct who_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+
+	req_packet->obj = req_info;
+	req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
+
+	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(WHO_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct who_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	while (resp_info->total > 0 && resp_info->num > 0) {
+		for (i = 0; i < resp_info->num; ++i) {
+			friend = mp_malloc(g_mp, "get_friend_list_resp_friend",
+					sizeof(struct friend_user));
+			assert(friend != NULL);
+			friend->info = resp_info->users[i];
+
+			list_add_tail(&friend->list, &client->friends);
+		}
+
+		total += resp_info->num;
+		if (total == resp_info->total)
+			break;
+
+		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
+		}
+
+		resp_info = (struct who_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+	}
+
+	free_sftt_packet(&req_packet);
+	free_sftt_packet(&resp_packet);
+}
+
+void clear_friend_list(struct sftt_client_v2 *client)
+{
+	struct friend_user *p, *q;
+
+	list_for_each_entry_safe(p, q, &client->friends, list) {
+		list_del(&p->list);
+		mp_free(g_mp, p);
+	}
+}
+
+void init_friend_list(struct sftt_client_v2 *client)
+{
+	INIT_LIST_HEAD(&client->friends);
+}
+
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	char *user, char *passwd)
 {
@@ -1183,8 +1267,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
 	client->mp = get_singleton_mp();
-	client->uinfo = mp_malloc(client->mp, __func__, sizeof(struct user_base_info));
-	strncpy(client->uinfo->name, user, USER_NAME_MAX_LEN - 1);
+	strncpy(client->uinfo.name, user, USER_NAME_MAX_LEN - 1);
 
 	if (get_sftt_client_config(&client->config) == -1) {
 		printf("get sftt client config failed!\n");
@@ -1210,6 +1293,13 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 
 	if (validate_user_base_info(client, passwd) == -1) {
 		printf("cannot validate user and password!\n");
+		return -1;
+	}
+
+	init_friend_list(client);
+
+	if (get_friend_list(client) == -1) {
+		printf("cannot get friend list!\n");
 		return -1;
 	}
 
@@ -2060,6 +2150,19 @@ void sftt_client_write_usage(void)
 	printf("Usage: write user_no \"message\"\n");
 }
 
+struct logged_in_user *find_logged_in_user(struct sftt_client_v2 *client,
+		int user_no)
+{
+	struct friend_user *p;
+	int i = 0;
+
+	list_for_each_entry(p, &client->friends, list)
+		if (i++ == user_no)
+			return &p->info;
+
+	return NULL;
+}
+
 int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		bool *argv_check)
 {
@@ -2067,6 +2170,8 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	struct write_req *req_info;
 	struct write_resp *resp_info;
 	struct sftt_client_v2 *client = obj;
+	struct logged_in_user *user;
+	int user_no;
 
 	if (argc != 2) {
 		sftt_client_write_usage();
@@ -2083,7 +2188,15 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct write_req));
 	assert(req_info != NULL);
 
-	req_info->user_no = atoi(argv[0]);
+	user_no = atoi(argv[0]);
+	user = find_logged_in_user(client, user_no);
+	if (user == NULL) {
+		printf("cannot find user %d, please check the user by using"
+				" command \"w\"\n", user_no);
+		return -1;
+	}
+
+	req_info->user = *user;
 	strncpy(req_info->message, argv[1], WRITE_MSG_MAX_LEN - 1);
 	req_info->len = strlen(req_info->message);
 
@@ -2096,6 +2209,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		return -1;
 	}
 
+#if 0
 	resp_packet = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
@@ -2112,6 +2226,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
+#endif
 
 	return 0;
 }
@@ -2169,7 +2284,7 @@ void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
 		strncpy(sub_path, pos, DIR_PATH_MAX_LEN);
 	}
 
-	snprintf(prompt, len, "[%s@%s %s]$ ", client->uinfo->name,
+	snprintf(prompt, len, "[%s@%s %s]$ ", client->uinfo.name,
 			client->host, sub_path);
 }
 
@@ -2357,86 +2472,20 @@ int do_builtin(struct sftt_client_v2 *client, char *builtin)
 int sftt_client_who_handler(void *obj, int argc, char *argv[],
 		bool *argv_check)
 {
-	struct sftt_packet *req_packet, *resp_packet;
-	struct who_req *req_info;
-	struct who_resp *resp_info;
 	struct sftt_client_v2 *client = obj;
-	struct dlist *user_list;
-	struct dlist_node *node;
-	struct logged_in_user *user;
-	int ret, i = 0, total = 0;
+	struct friend_user *p;
+	int i = 0;
 
-	req_packet = malloc_sftt_packet(WHO_REQ_PACKET_MIN_LEN);
-	if (!req_packet) {
-		printf("allocate request packet failed!\n");
-		return -1;
-	}
-	req_packet->type = PACKET_TYPE_WHO_REQ;
-
-	req_info = mp_malloc(g_mp, "who_handler_req", sizeof(struct who_req));
-	assert(req_info != NULL);
-
-	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
-
-	req_packet->obj = req_info;
-	req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
-
-	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
-	if (ret == -1) {
-		printf("%s: send sftt packet failed!\n", __func__);
+	clear_friend_list(client);
+	if (get_friend_list(client) == -1) {
+		printf("get user list failed!\n");
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(WHO_RESP_PACKET_MIN_LEN);
-	if (!resp_packet) {
-		printf("allocate response packet failed!\n");
-		return -1;
+	list_for_each_entry(p, &client->friends, list) {
+		printf("%d\t%s\t%s\t%d\n", i++, p->info.name,
+				p->info.ip, p->info.port);
 	}
-
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
-	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	user_list = dlist_create(FREE_MODE_MP_FREE);
-	assert(user_list != NULL);
-
-	resp_info = (struct who_resp *)resp_packet->obj;
-	assert(resp_info != NULL);
-
-	while (resp_info->total > 0 && resp_info->num > 0) {
-		for (i = 0; i < resp_info->num; ++i) {
-			user = mp_malloc(g_mp, "who_handler_resp_logged_in_user",
-					sizeof(struct logged_in_user));
-			assert(user != NULL);
-			*user = resp_info->users[i];
-			dlist_append(user_list, user);
-		}
-
-		total += resp_info->num;
-		if (total == resp_info->total)
-			break;
-
-		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
-		if (ret == -1) {
-			printf("%s: recv sftt packet failed!\n", __func__);
-			return -1;
-		}
-
-		resp_info = (struct who_resp *)resp_packet->obj;
-		assert(resp_info != NULL);
-	}
-
-	dlist_for_each(user_list, node) {
-		user = (struct logged_in_user *)node->data;
-		printf("%s\t%s\t%d\n", user->name, user->ip, user->port);
-	}
-
-	dlist_destroy(user_list);
-
-	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
 
 	return 0;
 }

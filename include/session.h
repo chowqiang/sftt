@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include "config.h"
+#include "list.h"
 #include "md5.h"
 #include "user.h"
 #include "req_rsp.h"
@@ -57,6 +58,12 @@ enum resp_status {
 	CONTINUE,
 };
 
+struct peer_session {
+	int connect_fd;
+	char session_id[SESSION_ID_LEN];
+	struct list_head list;
+};
+
 struct client_session {
 	int connect_fd;
 	char ip[IPV4_MAX_LEN];
@@ -67,6 +74,7 @@ struct client_session {
 	char pwd[DIR_PATH_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 	struct user_base_info user;
+	struct list_head peers;
 };
 
 struct server_session {

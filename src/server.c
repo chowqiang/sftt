@@ -1227,9 +1227,11 @@ struct logged_in_user *get_logged_in_users(int *count)
 	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
 		if (client_connected(session)) {
+			strncpy(users[j].session_id, session->session_id, SESSION_ID_LEN - 1);
+			strncpy(users[j].name, session->user.name, USER_NAME_MAX_LEN - 1);
 			strncpy(users[j].ip, session->ip, IPV4_MAX_LEN - 1);
 			users[j].port = session->port;
-			strncpy(users[j].name, session->user.name, USER_NAME_MAX_LEN - 1);
+			users[j].task_port = session->task_port;
 			++j;
 		}
 	}
@@ -1301,9 +1303,35 @@ int handle_who_req(struct client_session *client,
 	return ret;
 }
 
+int check_user(struct logged_in_user *user)
+{
+	int i, j;
+	struct logged_in_user *users;
+	struct client_session *session;
+
+	server->pm->ops->lock(server->pm);
+
+	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
+		session = &server->sessions[i];
+		if (client_connected(session) &&
+			strcmp(session->session_id, user->session_id) == 0) {
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
 int handle_write_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	struct write_req *req;
+
+	req = req_packet->obj;
+	if (check_user(&req->user) == -1) {
+		printf("user not found!\n");
+		return -1;
+	}
 
 	return 0;
 }

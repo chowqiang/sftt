@@ -560,13 +560,18 @@ xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
 	register int32_t *buf;
 
 	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->ip, IPV4_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->port))
 		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
-		sizeof (char), (xdrproc_t) xdr_char))
+	 if (!xdr_int (xdrs, &objp->task_port))
 		 return FALSE;
 	return TRUE;
 }
@@ -605,7 +610,7 @@ xdr_write_req (XDR *xdrs, write_req *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_int (xdrs, &objp->user_no))
+	 if (!xdr_logged_in_user (xdrs, &objp->user))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->len))
 		 return FALSE;

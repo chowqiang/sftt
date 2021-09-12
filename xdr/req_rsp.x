@@ -146,9 +146,11 @@ struct directcmd_resp {
 };
 
 struct logged_in_user {
+	char session_id[SESSION_ID_LEN];
+	char name[USER_NAME_MAX_LEN];
 	char ip[IPV4_MAX_LEN];
 	int port;
-	char name[USER_NAME_MAX_LEN];
+	int task_port;
 };
 
 struct who_req {
@@ -162,7 +164,7 @@ struct who_resp {
 };
 
 struct write_req {
-	int user_no;
+	struct logged_in_user user;
 	int len;
 	char message[WRITE_MSG_MAX_LEN];
 };

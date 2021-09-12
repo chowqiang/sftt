@@ -23,6 +23,7 @@
 #include "connect.h"
 #include "dlist.h"
 #include "file.h"
+#include "friend.h"
 #include "mem_pool.h"
 #include "option.h"
 #include "packet.h"
@@ -109,14 +110,14 @@ struct client_task_handler {
 
 struct sftt_client_v2 {
 	struct client_sock_conn conn_ctrl;
-	struct dlist *conn_data;
 	struct mem_pool *mp;
-	struct user_base_info *uinfo;
+	struct user_base_info uinfo;
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
 	char pwd[DIR_PATH_MAX_LEN];
 	struct client_task_handler task_handler;
+	struct list_head friends;
 };
 
 struct thread_input_params {
