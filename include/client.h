@@ -92,7 +92,7 @@ struct sftt_client {
 	void *trans_session;
 };
 
-struct client_task {
+struct peer_task {
 	pthread_t tid;
 	char session_id[SESSION_ID_LEN];
 	int sock;
@@ -100,12 +100,12 @@ struct client_task {
 	struct list_head list;
 };
 
-struct client_task_handler {
+struct peer_task_handler {
 	pthread_t tid;
 	int port;
 	int sock;
 	struct pthread_mutex *pm;
-	struct client_task *tasks;
+	struct peer_task *tasks;
 };
 
 struct sftt_client_v2 {
@@ -116,7 +116,7 @@ struct sftt_client_v2 {
 	char host[HOST_MAX_LEN];
     	struct sftt_client_config config;
 	char pwd[DIR_PATH_MAX_LEN];
-	struct client_task_handler task_handler;
+	struct peer_task_handler task_handler;
 	struct list_head friends;
 };
 

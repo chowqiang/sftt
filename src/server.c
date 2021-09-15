@@ -37,6 +37,7 @@
 #include "autoconf.h"
 #include "base.h"
 #include "config.h"
+#include "connect.h"
 #include "context.h"
 #include "debug.h"
 #include "encrypt.h"
@@ -1204,7 +1205,7 @@ int handle_mp_stat_req(struct client_session *client,
 struct logged_in_user *get_logged_in_users(int *count)
 {
 	int i, j;
-	struct logged_in_user *users;
+	struct logged_in_user *users = NULL;
 	struct client_session *session;
 
 	server->pm->ops->lock(server->pm);
@@ -1217,6 +1218,9 @@ struct logged_in_user *get_logged_in_users(int *count)
 	}
 
 	*count = j;
+	if (j == 0)
+		goto done;
+
 	users = mp_malloc(g_mp, __func__, sizeof(struct logged_in_user) * (*count));
 	if (users == NULL) {
 		*count = -1;
@@ -1274,7 +1278,6 @@ int handle_who_req(struct client_session *client,
 		return 0;
 	}
 
-
 	count = 0;
 	do {
 		num = (total - count) >= LOGGED_IN_USER_MAX_CNT ?
@@ -1283,11 +1286,14 @@ int handle_who_req(struct client_session *client,
 		resp->num = num;
 		for (i = 0; i < num; ++i) {
 			bzero(&resp->users[i], sizeof(struct logged_in_user));
+			strncpy(resp->users[i].session_id, users[i + count].session_id,
+					SESSION_ID_LEN - 1);
 			strncpy(resp->users[i].ip, users[i + count].ip,
 					IPV4_MAX_LEN - 1);
 			strncpy(resp->users[i].name, users[i + count].name,
 					USER_NAME_MAX_LEN - 1);
 			resp->users[i].port = users[i + count].port;
+			resp->users[i].task_port = users[i + count].task_port;
 		}
 
 		resp_packet->obj = resp;
@@ -1306,6 +1312,7 @@ int handle_who_req(struct client_session *client,
 int check_user(struct logged_in_user *user)
 {
 	int i, j;
+	int ret = -1;
 	struct logged_in_user *users;
 	struct client_session *session;
 
@@ -1313,23 +1320,65 @@ int check_user(struct logged_in_user *user)
 
 	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
+		printf("%s:%d, session->session_id=%s, user->session_id=%s\n",
+				__func__, __LINE__, session->session_id,
+				user->session_id);
 		if (client_connected(session) &&
 			strcmp(session->session_id, user->session_id) == 0) {
-			return 0;
+			ret = 0;
+			goto done;
 		}
 	}
 
-	return -1;
+done:
+	server->pm->ops->unlock(server->pm);
+
+	return ret;
 }
 
 int handle_write_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct write_req *req;
+	struct logged_in_user *user;
+	struct peer_session *peer = NULL;
+	struct peer_session *pos = NULL;
+	int ret;
 
 	req = req_packet->obj;
-	if (check_user(&req->user) == -1) {
+	user = &req->user;
+	if (check_user(user) == -1) {
 		printf("user not found!\n");
+		return -1;
+	}
+
+	list_for_each_entry(pos, &client->peers, list)
+		if (strcmp(pos->session_id, user->session_id) == 0) {
+			peer = pos;
+			break;
+		}
+
+	if (peer == NULL) {
+		peer = mp_malloc(g_mp, "new_peer_session", sizeof(struct peer_session));
+		if (peer == NULL) {
+			printf("cannot alloc peer session!\n");
+			return -1;
+		}
+
+		strncpy(peer->session_id, user->session_id, SESSION_ID_LEN - 1);
+
+		peer->connect_fd = make_connect(user->ip, user->task_port);
+		if (peer->connect_fd == -1) {
+			printf("cannot make connect to peer!\n");
+			return -1;
+		}
+
+		list_add(&peer->list, &client->peers);
+	}
+
+	ret = send_sftt_packet(peer->connect_fd, req_packet);
+	if (ret == -1) {
+		printf("send write message to peer failed!\n");
 		return -1;
 	}
 
@@ -1493,11 +1542,18 @@ struct client_session *find_get_new_session(void)
 	return NULL;
 }
 
+void init_client_session(struct client_session *session)
+{
+	set_client_disconnected(session);
+
+	INIT_LIST_HEAD(&session->peers);
+}
+
 void init_sessions(void)
 {
 	int i = 0;
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
-		set_client_disconnected(&server->sessions[i]);
+		init_client_session(&server->sessions[i]);
 	}
 }
 

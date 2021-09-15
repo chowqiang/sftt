@@ -1030,11 +1030,11 @@ static int init_sftt_client_session(struct sftt_client_v2 *client)
 	return 0;
 }
 
-struct client_task *create_client_task(struct client_task_handler *handler)
+struct peer_task *create_peer_task(struct peer_task_handler *handler)
 {
-	struct client_task *task;
+	struct peer_task *task;
 
-	task = mp_malloc(g_mp, "client_task", sizeof(struct client_task));
+	task = mp_malloc(g_mp, "peer_task", sizeof(struct peer_task));
 	if (task == NULL)
 		return NULL;
 
@@ -1052,33 +1052,84 @@ struct client_task *create_client_task(struct client_task_handler *handler)
 	return task;
 }
 
-void *do_task(void *arg)
+int handle_peer_write_req(struct peer_task *task, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_pakcet)
 {
-	struct client_task *task;
+	struct write_req *req = req_packet->obj;
 
-	task = (struct client_task *)arg;
+	printf("%s\n", req->message);
 
-	while (1) {
+	return 0;
+}
+
+void *handle_peer_task(void *arg)
+{
+	struct peer_task *task = (struct peer_task *)arg;
+	int sock = task->sock;
+	struct sftt_packet *resp;
+	struct sftt_packet *req;
+	int ret;
+
+	DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
+	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
+	if (!req) {
+		printf("cannot allocate resources from memory pool!\n");
+		return NULL;
 	}
 
+	//DEBUG((DEBUG_INFO, "normal"));
+	//signal(SIGTERM, child_process_exit);
+	//signal(SIGSEGV, child_process_exception_handler);
+
+	//if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
+	//	printf("set sockfd to non-block failed!\n");
+	//		return -1;
+	//}
+
+	add_log(LOG_INFO, "begin to communicate with client ...");
+	//DEBUG((DEBUG_INFO, "normal"));
+	while (1) {
+		ret = recv_sftt_packet(sock, req);
+		//DEBUG((DEBUG_INFO, "normal"));
+		add_log(LOG_INFO, "recv ret: %d", ret);
+		if (ret == -1) {
+			printf("recv encountered unrecoverable error, child process is exiting ...\n");
+			goto exit;
+		}
+		if (ret == 0) {
+			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
+			goto exit;
+		}
+		switch (req->type) {
+		case PACKET_TYPE_WRITE_REQ:
+			resp = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_write_req(task, req, resp);
+			break;
+		}
+		free_sftt_packet(&resp);
+	}
+
+exit:
+	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 	return NULL;
 }
 
-void clean_task(struct client_task_handler *handler)
+void clean_task(struct peer_task_handler *handler)
 {
 
 }
 
-
-
-void *sftt_client_task_handler(void *arg)
+void *sftt_peer_task_handler(void *arg)
 {
 	struct sftt_client_v2 *client;
 	struct sockaddr_in addr_server;
 	int conn_fd;
 	int len;
 	int ret;
-	struct client_task *task;
+	struct peer_task *task;
 
 	client = (struct sftt_client_v2 *)arg;
 	len = sizeof(struct sockaddr_in);
@@ -1091,14 +1142,14 @@ void *sftt_client_task_handler(void *arg)
 		}
 		printf("server is connected, ip=%s, port=%d\n", inet_ntoa(addr_server.sin_addr),
 				ntohs(addr_server.sin_port));
-		task = create_client_task(&client->task_handler);
+		task = create_peer_task(&client->task_handler);
 		if (task == NULL) {
 			printf("cannot create client task!\n");
 			close(conn_fd);
 		}
 		task->sock = conn_fd;
 
-		ret = pthread_create(&task->tid, NULL, do_task, task);
+		ret = pthread_create(&task->tid, NULL, handle_peer_task, task);
 		if (ret == -1) {
 			perror("create task thread failed");
 			task->status = TASK_STATUS_ABORT;
@@ -1109,7 +1160,7 @@ void *sftt_client_task_handler(void *arg)
 	}
 }
 
-int init_sftt_client_task_handler(struct sftt_client_v2 *client)
+int init_sftt_peer_task_handler(struct sftt_client_v2 *client)
 {
 	struct sockaddr_in taskaddr;
 	int len;
@@ -1157,7 +1208,8 @@ int init_sftt_client_task_handler(struct sftt_client_v2 *client)
 
 	client->task_handler.tasks = NULL;
 
-	if (pthread_create(&client->task_handler.tid, NULL, sftt_client_task_handler, client) == -1) {
+	if (pthread_create(&client->task_handler.tid, NULL, sftt_peer_task_handler,
+				client) == -1) {
 		perror("pthread create error");
 		goto failed;
 	}
@@ -1276,7 +1328,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 
 	logger_init(client->config.log_dir, PROC_NAME);
 
-	if (init_sftt_client_task_handler(client) == -1) {
+	if (init_sftt_peer_task_handler(client) == -1) {
 		printf("init sftt client task handler failed!\n");
 		return -1;
 	}
@@ -2200,6 +2252,11 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	strncpy(req_info->message, argv[1], WRITE_MSG_MAX_LEN - 1);
 	req_info->len = strlen(req_info->message);
 
+
+	printf("req_info->user->session_id=%s\n", req_info->user.session_id);
+	printf("req_info->user->ip=%s\n", req_info->user.ip);
+	printf("req_info->user->port=%d\n", req_info->user.port);
+	printf("req_info->user->name=%s\n", req_info->user.name);
 	req_packet->obj = req_info;
 	req_packet->block_size = WRITE_REQ_PACKET_MIN_LEN;
 
@@ -2475,6 +2532,7 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 	struct sftt_client_v2 *client = obj;
 	struct friend_user *p;
 	int i = 0;
+	char *hint;
 
 	clear_friend_list(client);
 	if (get_friend_list(client) == -1) {
@@ -2483,8 +2541,14 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 	}
 
 	list_for_each_entry(p, &client->friends, list) {
-		printf("%d\t%s\t%s\t%d\n", i++, p->info.name,
-				p->info.ip, p->info.port);
+		if (strcmp(client->session_id, p->info.session_id) == 0)
+			hint = " (me)";
+		else
+			hint = "";
+		printf("%d\t%s\t%s\t%d\t%d\t%s%s\n", i++, p->info.name,
+				p->info.ip, p->info.port,
+				p->info.task_port,
+				p->info.session_id, hint);
 	}
 
 	return 0;

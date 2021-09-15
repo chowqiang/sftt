@@ -60,8 +60,10 @@ int gen_id(void)
 void gen_session_id(char *buf, int len)
 {
 	int i;
+	time_t t;
 
-	//t = time(NULL);
+	t = time(NULL);
+	srand((unsigned)(t));
 	for (i = 0; i < len - 1; ++i) {
 		if (i % 2) {
 			//buf[i] = gen_char('a', 'z');
