@@ -80,6 +80,9 @@ int consult_block_size_with_server(int sock,
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp);
 
+struct logged_in_user *find_logged_in_user(struct sftt_client_v2 *client,
+		int user_no);
+
 int file_get_next_buffer(struct file_input_stream *fis,
 	char *buffer, size_t size)
 {
@@ -1221,7 +1224,8 @@ failed:
 	return -1;
 }
 
-int get_friend_list(struct sftt_client_v2 *client) {
+int get_friend_list(struct sftt_client_v2 *client)
+{
 	struct sftt_packet *req_packet, *resp_packet;
 	struct who_req *req_info;
 	struct who_resp *resp_info;
@@ -1367,7 +1371,7 @@ int show_options(char *host, char *user_name, char *password)
 
 void sftt_client_ll_usage(void)
 {
-	printf("Usage: ll [path]\n");
+	printf("Usage: ll [user_no] [path]\n");
 }
 
 int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
@@ -1379,18 +1383,30 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct dlist *fe_list;
 	struct file_entry *entry;
 	struct dlist_node *node;
+	struct logged_in_user *user;
 	char *path = NULL;
 	int ret, i = 0;
 
-	if (argc > 1 || argc < 0) {
+	if (argc > 2 || argc < 0) {
 		sftt_client_ll_usage();
 		return -1;
 	}
 
+	req_info->to_peer = 0;
 	if (argc == 0)
 		path = client->pwd;
-	else
+	else if (argc == 1)
 		path = argv[0];
+	else {
+		req_info->to_peer = 1;
+		user = find_logged_in_user(client, atoi(argv[0]));
+		if (user == NULL) {
+			printf("cannot find logged in user for %s\n", argv[0]);
+			return -1;
+		}
+		req_info->user = *user;
+		path = argv[1];
+	}
 
 	req_packet = malloc_sftt_packet(LL_REQ_PACKET_MIN_LEN);
 	if (!req_packet) {
@@ -1841,7 +1857,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_get_usage(void)
 {
-	printf("Usage: get file|dir [file|dir]\n");
+	printf("Usage: get [user_no] file|dir [file|dir]\n");
 }
 
 int send_trans_entry_by_put_req(struct sftt_client_v2 *client,
@@ -2057,7 +2073,7 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 void sftt_client_put_usage(void)
 {
-	printf("Usage: put file|dir\n");
+	printf("Usage: put [user_no] file|dir\n");
 }
 
 int sftt_client_mps_detail(void *obj)

@@ -96,6 +96,28 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 }
 
 bool_t
+xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->ip, IPV4_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->port))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->task_port))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
 xdr_pwd_req (XDR *xdrs, pwd_req *objp)
 {
 	register int32_t *buf;
@@ -132,6 +154,10 @@ xdr_ll_req (XDR *xdrs, ll_req *objp)
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->path, DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->to_peer))
+		 return FALSE;
+	 if (!xdr_logged_in_user (xdrs, &objp->user))
 		 return FALSE;
 	return TRUE;
 }
@@ -274,6 +300,10 @@ xdr_get_req (XDR *xdrs, get_req *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->path, DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->to_peer))
+		 return FALSE;
+	 if (!xdr_logged_in_user (xdrs, &objp->user))
+		 return FALSE;
 	return TRUE;
 }
 
@@ -380,6 +410,10 @@ xdr_put_req (XDR *xdrs, put_req *objp)
 	 if (!xdr_long (xdrs, &objp->idx))
 		 return FALSE;
 	 if (!xdr_trans_entry (xdrs, &objp->entry))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->to_peer))
+		 return FALSE;
+	 if (!xdr_logged_in_user (xdrs, &objp->user))
 		 return FALSE;
 	return TRUE;
 }
@@ -550,28 +584,6 @@ xdr_directcmd_resp (XDR *xdrs, directcmd_resp *objp)
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->data, CMD_RET_BATCH_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
-	return TRUE;
-}
-
-bool_t
-xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
-{
-	register int32_t *buf;
-
-	int i;
-	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
-		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
-		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
-	 if (!xdr_vector (xdrs, (char *)objp->ip, IPV4_MAX_LEN,
-		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->port))
-		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->task_port))
 		 return FALSE;
 	return TRUE;
 }

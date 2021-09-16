@@ -45,6 +45,15 @@ struct validate_resp {
 };
 typedef struct validate_resp validate_resp;
 
+struct logged_in_user {
+	char session_id[SESSION_ID_LEN];
+	char name[USER_NAME_MAX_LEN];
+	char ip[IPV4_MAX_LEN];
+	int port;
+	int task_port;
+};
+typedef struct logged_in_user logged_in_user;
+
 struct pwd_req {
 	char session_id[SESSION_ID_LEN];
 };
@@ -59,6 +68,8 @@ typedef struct pwd_resp pwd_resp;
 struct ll_req {
 	char session_id[SESSION_ID_LEN];
 	char path[DIR_PATH_MAX_LEN];
+	int to_peer;
+	struct logged_in_user user;
 };
 typedef struct ll_req ll_req;
 
@@ -95,6 +106,8 @@ typedef struct cd_resp cd_resp;
 struct get_req {
 	char session_id[SESSION_ID_LEN];
 	char path[DIR_PATH_MAX_LEN];
+	int to_peer;
+	struct logged_in_user user;
 };
 typedef struct get_req get_req;
 
@@ -120,6 +133,8 @@ struct put_req {
 	long nr;
 	long idx;
 	struct trans_entry entry;
+	int to_peer;
+	struct logged_in_user user;
 };
 typedef struct put_req put_req;
 
@@ -182,15 +197,6 @@ struct directcmd_resp {
 };
 typedef struct directcmd_resp directcmd_resp;
 
-struct logged_in_user {
-	char session_id[SESSION_ID_LEN];
-	char name[USER_NAME_MAX_LEN];
-	char ip[IPV4_MAX_LEN];
-	int port;
-	int task_port;
-};
-typedef struct logged_in_user logged_in_user;
-
 struct who_req {
 	char session_id[SESSION_ID_LEN];
 };
@@ -221,6 +227,7 @@ typedef struct write_resp write_resp;
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_validate_req (XDR *, validate_req*);
 extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
+extern  bool_t xdr_logged_in_user (XDR *, logged_in_user*);
 extern  bool_t xdr_pwd_req (XDR *, pwd_req*);
 extern  bool_t xdr_pwd_resp (XDR *, pwd_resp*);
 extern  bool_t xdr_ll_req (XDR *, ll_req*);
@@ -241,7 +248,6 @@ extern  bool_t xdr_mp_stat_req (XDR *, mp_stat_req*);
 extern  bool_t xdr_mp_stat_resp (XDR *, mp_stat_resp*);
 extern  bool_t xdr_directcmd_req (XDR *, directcmd_req*);
 extern  bool_t xdr_directcmd_resp (XDR *, directcmd_resp*);
-extern  bool_t xdr_logged_in_user (XDR *, logged_in_user*);
 extern  bool_t xdr_who_req (XDR *, who_req*);
 extern  bool_t xdr_who_resp (XDR *, who_resp*);
 extern  bool_t xdr_write_req (XDR *, write_req*);
@@ -250,6 +256,7 @@ extern  bool_t xdr_write_resp (XDR *, write_resp*);
 #else /* K&R C */
 extern bool_t xdr_validate_req ();
 extern bool_t xdr_validate_resp ();
+extern bool_t xdr_logged_in_user ();
 extern bool_t xdr_pwd_req ();
 extern bool_t xdr_pwd_resp ();
 extern bool_t xdr_ll_req ();
@@ -270,7 +277,6 @@ extern bool_t xdr_mp_stat_req ();
 extern bool_t xdr_mp_stat_resp ();
 extern bool_t xdr_directcmd_req ();
 extern bool_t xdr_directcmd_resp ();
-extern bool_t xdr_logged_in_user ();
 extern bool_t xdr_who_req ();
 extern bool_t xdr_who_resp ();
 extern bool_t xdr_write_req ();

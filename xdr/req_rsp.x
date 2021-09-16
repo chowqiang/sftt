@@ -28,6 +28,14 @@ struct validate_resp {
 	char pwd[DIR_PATH_MAX_LEN];
 };
 
+struct logged_in_user {
+	char session_id[SESSION_ID_LEN];
+	char name[USER_NAME_MAX_LEN];
+	char ip[IPV4_MAX_LEN];
+	int port;
+	int task_port;
+};
+
 struct pwd_req {
 	char session_id[SESSION_ID_LEN];
 };
@@ -40,6 +48,8 @@ struct pwd_resp {
 struct ll_req {
 	char session_id[SESSION_ID_LEN];
 	char path[DIR_PATH_MAX_LEN];
+	int to_peer;
+	struct logged_in_user user;
 };
 
 struct file_entry {
@@ -71,6 +81,8 @@ struct cd_resp {
 struct get_req {
 	char session_id[SESSION_ID_LEN];
 	char path[DIR_PATH_MAX_LEN];
+	int to_peer;
+	struct logged_in_user user;
 };
 
 struct trans_entry {
@@ -93,6 +105,8 @@ struct put_req {
 	long nr;
 	long idx;
 	struct trans_entry entry;
+	int to_peer;
+	struct logged_in_user user;
 };
 
 struct put_resp {
@@ -143,14 +157,6 @@ struct directcmd_resp {
 	long total_len;
 	long this_len;
 	char data[CMD_RET_BATCH_LEN];
-};
-
-struct logged_in_user {
-	char session_id[SESSION_ID_LEN];
-	char name[USER_NAME_MAX_LEN];
-	char ip[IPV4_MAX_LEN];
-	int port;
-	int task_port;
 };
 
 struct who_req {
