@@ -57,13 +57,14 @@ int gen_id(void)
 	return gen_int(MIN_ID, MAX_ID);
 }
 
-void gen_session_id(char *buf, int len)
+void simple_session_id(char *buf, int len)
 {
 	int i;
 	time_t t;
 
 	t = time(NULL);
 	srand((unsigned)(t));
+
 	for (i = 0; i < len - 1; ++i) {
 		if (i % 2) {
 			//buf[i] = gen_char('a', 'z');
@@ -75,6 +76,44 @@ void gen_session_id(char *buf, int len)
 	}
 
 	buf[len] = 0;
+}
+
+void gen_session_id(char *buf, int len)
+{
+	const int SESSION_ID_PART1_LEN = 3;
+	const int SESSION_ID_PART2_LEN = 3;
+
+	char part1[SESSION_ID_PART1_LEN + 1];
+	char part2[SESSION_ID_PART2_LEN + 1];
+
+	static time_t last_ts = 0;
+	static int last_id = 0;
+
+	int i, id;
+	time_t t, ts;
+
+	t = time(NULL);
+	srand((unsigned)(t));
+
+	ts = get_ts();
+	if (ts != last_ts)
+		last_id = -1;
+	id = last_id + 1;
+
+	bzero(part1, sizeof(part1));
+	for (i = 0; i < SESSION_ID_PART1_LEN; ++i)
+		part1[i] = rand() % ('z' - 'a') + 'a';
+
+	bzero(part2, sizeof(part2));
+	for (i = 0; i < SESSION_ID_PART2_LEN; ++i)
+		part2[i] = rand() % ('z' - 'a') + 'a';
+
+	snprintf(buf, len, "%s%lu%s%04d", part1, ts, part2, id);
+
+	buf[len] = 0;
+
+	last_ts = ts;
+	last_id = id;
 }
 
 bool is_int(char *buf, int *num)

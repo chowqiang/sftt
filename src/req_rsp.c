@@ -6,6 +6,20 @@
 #include "req_rsp.h"
 
 bool_t
+xdr_version_info (XDR *xdrs, version_info *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_short (xdrs, &objp->major))
+		 return FALSE;
+	 if (!xdr_short (xdrs, &objp->minor))
+		 return FALSE;
+	 if (!xdr_short (xdrs, &objp->revision))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
 xdr_validate_req (XDR *xdrs, validate_req *objp)
 {
 	register int32_t *buf;
@@ -13,6 +27,8 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	int i;
 
 	if (xdrs->x_op == XDR_ENCODE) {
+		 if (!xdr_version_info (xdrs, &objp->ver))
+			 return FALSE;
 		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->task_port))
@@ -35,6 +51,8 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 			 return FALSE;
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
+		 if (!xdr_version_info (xdrs, &objp->ver))
+			 return FALSE;
 		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->task_port))
@@ -58,6 +76,8 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	 return TRUE;
 	}
 
+	 if (!xdr_version_info (xdrs, &objp->ver))
+		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->task_port))
 		 return FALSE;
 	 if (!xdr_long (xdrs, &objp->name_len))
@@ -90,6 +110,9 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	return TRUE;

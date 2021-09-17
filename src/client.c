@@ -919,10 +919,10 @@ bool parse_port(char *optarg, int *port)
 
 void client_usage_help(int exitcode)
 {
-    version();
+	show_version();
 	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
-       "\t" PROC_NAME " -u root -h localhost [-P port] -p\n");
-    exit(exitcode);
+		"\t" PROC_NAME " -u root -h localhost [-P port] -p\n");
+	exit(exitcode);
 }
 
 static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
@@ -958,6 +958,8 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 	assert(req_info != NULL);
+
+	req_info->ver = client->ver;
 
 	strncpy(req_info->name, client->uinfo.name, USER_NAME_MAX_LEN - 1);
 	req_info->name_len = strlen(req_info->name);
@@ -1008,6 +1010,9 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 			break;
 		case UVS_BLOCK:
 			printf("user %s blocked!\n", req_info->name);
+			break;
+		case UVS_BAD_VER:
+			printf("%s\n", resp_info->message);
 			break;
 		default:
 			printf("validate exception!\n");
@@ -1073,7 +1078,7 @@ void *handle_peer_task(void *arg)
 	struct sftt_packet *req;
 	int ret;
 
-	DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
+	//DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
 	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
@@ -1116,7 +1121,7 @@ void *handle_peer_task(void *arg)
 	}
 
 exit:
-	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+	//DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 	return NULL;
 }
 
@@ -1143,8 +1148,10 @@ void *sftt_peer_task_handler(void *arg)
 			usleep(100 * 1000);
 			continue;
 		}
+#if 0
 		printf("server is connected, ip=%s, port=%d\n", inet_ntoa(addr_server.sin_addr),
-				ntohs(addr_server.sin_port));
+			ntohs(addr_server.sin_port));
+#endif
 		task = create_peer_task(&client->task_handler);
 		if (task == NULL) {
 			printf("cannot create client task!\n");
@@ -1319,6 +1326,16 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	 */
 	set_current_context("client");
 	set_log_type(CLIENT_LOG);
+
+	if (get_version_info(&client->ver) == -1) {
+		printf("get sftt client version info failed!\n");
+		return -1;
+	}
+#if 0
+	client->ver.major = 1;
+	client->ver.minor = 0;
+	client->ver.revision = 1;
+#endif
 
 	strncpy(client->host, host, HOST_MAX_LEN - 1);
 
@@ -2268,11 +2285,12 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	strncpy(req_info->message, argv[1], WRITE_MSG_MAX_LEN - 1);
 	req_info->len = strlen(req_info->message);
 
-
+#if 0
 	printf("req_info->user->session_id=%s\n", req_info->user.session_id);
 	printf("req_info->user->ip=%s\n", req_info->user.ip);
 	printf("req_info->user->port=%d\n", req_info->user.port);
 	printf("req_info->user->name=%s\n", req_info->user.name);
+#endif
 	req_packet->obj = req_info;
 	req_packet->block_size = WRITE_REQ_PACKET_MIN_LEN;
 

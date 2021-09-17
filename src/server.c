@@ -421,8 +421,8 @@ static int validate_user_info(struct client_session *client,
 	struct validate_resp *resp_info;
 	struct user_base_info *user_base;
 	struct user_auth_info *user_auth;
-	int ret;
 	char *md5_str;
+	int ret;
 
 	DEBUG((DEBUG_INFO, "handle validate req in ...\n"));
 
@@ -436,6 +436,12 @@ static int validate_user_info(struct client_session *client,
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
+
+	if (check_version(&req_info->ver, &server->ver, resp_info->message,
+		RESP_MESSAGE_MAX_LEN - 1) == -1) {
+		resp_info->status = UVS_BAD_VER;
+		goto done;
+	}
 
 	user_base = find_user_base_by_name(req_info->name);
 	user_auth = find_user_auth_by_name(req_info->name);
@@ -475,6 +481,7 @@ static int validate_user_info(struct client_session *client,
 	}
 	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
 
+done:
 	resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
 	resp_packet->obj = resp_info;
 
@@ -1670,25 +1677,24 @@ int init_sftt_server(char *store_path)
 	int sockfd;
 	int ret;
 
-#if 0
-	char tmp_file[32];
-	if (create_temp_file(tmp_file, "sfttd_") == -1)
-		return -1;
-#endif
 	set_current_context("server");
-
-	sockfd = create_non_block_sock(&port);
-	if (sockfd == -1) {
-		return -1;
-	}
 
 	server = (struct sftt_server *)mp_malloc(g_mp, __func__, sizeof(struct sftt_server));
 	assert(server != NULL);
-	server->status = READY;
-	server->main_sock = sockfd;
-	server->main_port = port;
-	server->last_update_ts = (uint64_t)time(NULL);
+
+	if (get_version_info(&server->ver) == -1) {
+		printf("cannot get sfttd version info!\n");
+		return -1;
+	}
+
+#if 0
+	server->ver.major = 0;
+	server->ver.minor = 1;
+	server->ver.revision = 0;
+#endif
+
 	if (get_sftt_server_config(&(server->conf)) == -1) {
+		printf("cannot get sfttd config!\n");
 		return -1;
 	}
 
@@ -1696,12 +1702,16 @@ int init_sftt_server(char *store_path)
 		strcpy(server->conf.store_path, store_path);
 	}
 
-#if 0
-	if ((server->db = start_sftt_db_server()) == NULL) {
-		printf("cannot start " PROC_NAME " database!\n");
-		return false;
+	sockfd = create_non_block_sock(&port);
+	if (sockfd == -1) {
+		printf("cannot create non-block socket!\n");
+		return -1;
 	}
-#endif
+
+	server->status = READY;
+	server->main_sock = sockfd;
+	server->main_port = port;
+	server->last_update_ts = (uint64_t)time(NULL);
 
 	ret = start_sftt_log_server(server);
 	if (ret == -1) {
@@ -1842,7 +1852,7 @@ void sftt_server_exit(int sig)
 
 void server_usage_help(int exitcode)
 {
-	version();
+	show_version();
 	printf("usage:\t" PROC_NAME " options\n"
 		"\t" PROC_NAME " start [-d] [-s dir]\n"
 		"\t" PROC_NAME " restart [-d] [-s dir]\n"

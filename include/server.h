@@ -21,7 +21,7 @@
 #include "net_trans.h"
 #include "option.h"
 #include "db.h"
-//#include "encrypt.h"
+#include "version.h"
 
 #define ASSERT_STORE_PATH_LEN(opt, path, len)	\
 do {	\
@@ -51,6 +51,7 @@ struct sftt_server {
 	pthread_t log_tid;
 	uint64_t last_update_ts;
 	enum sftt_server_status status;
+	struct version_info ver;
 	struct sftt_server_config conf;
 	struct client_session sessions[MAX_CLIENT_NUM];
 	struct pthread_mutex *pm;

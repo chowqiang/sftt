@@ -17,8 +17,15 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
+#include "req_rsp.h"
+
 #define VERSION	"0.0.84"
 
-void version(void);
+void show_version(void);
+
+int get_version_info(struct version_info *ver);
+
+int check_version(struct version_info *client, struct version_info *server,
+	char *message, int len);
 
 #endif

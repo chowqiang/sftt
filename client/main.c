@@ -34,6 +34,7 @@ int main(int argc, char **argv)
 	char host[HOST_MAX_LEN];
 	char passwd_prompt[128];
 	char builtin[32];
+	char ch;
 
 	bool has_passwd_opt = true;
 	bool has_opt = false;
@@ -45,8 +46,6 @@ int main(int argc, char **argv)
 	int ret;
 
 	struct trans_info trans;
-
-	char ch;
 
 	struct sftt_client_v2 client;
 
@@ -78,7 +77,7 @@ int main(int argc, char **argv)
 		has_opt = true;
 	}
 
-	printf("optind=%d, argc=%d\n", optind, argc);
+	//printf("optind=%d, argc=%d\n", optind, argc);
 	if (has_opt) {
 		argc -= optind;
 		if (argc > 0) {

@@ -111,6 +111,7 @@ struct peer_task_handler {
 struct sftt_client_v2 {
 	struct client_sock_conn conn_ctrl;
 	struct mem_pool *mp;
+	struct version_info ver;
 	struct user_base_info uinfo;
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];

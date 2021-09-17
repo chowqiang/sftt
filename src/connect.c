@@ -27,7 +27,7 @@ int make_connect(char *ip, int port)
 	int ret, sock;
 	struct sockaddr_in serv_addr;
 
-	printf("%s:%d, ip=%s, port=%d\n", __func__, __LINE__, ip, port);
+	//printf("%s:%d, ip=%s, port=%d\n", __func__, __LINE__, ip, port);
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == -1) {
 		perror("create socket failed");

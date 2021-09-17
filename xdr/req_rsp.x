@@ -11,8 +11,16 @@ const CMD_RET_BATCH_LEN = 4096;
 const IPV4_MAX_LEN = 16;
 const LOGGED_IN_USER_MAX_CNT = 32;
 const WRITE_MSG_MAX_LEN = 4096;
+const RESP_MESSAGE_MAX_LEN = 1024;
+
+struct version_info {
+	short major;
+	short minor;
+	short revision;
+};
 
 struct validate_req {
+	struct version_info ver;
 	int task_port;
 	long name_len;
 	long passwd_len;
@@ -26,6 +34,7 @@ struct validate_resp {
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct logged_in_user {

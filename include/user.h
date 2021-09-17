@@ -27,6 +27,7 @@ enum user_validate_status {
 	UVS_INVALID,
 	UVS_MISSHOME,
 	UVS_BLOCK,
+	UVS_BAD_VER,
 	UVS_PASS
 };
 
