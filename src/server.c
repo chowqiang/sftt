@@ -82,6 +82,11 @@ struct sftt_server_stat *alloc_sftt_server_stat(void);
 
 void sync_server_stat(void);
 
+int check_user(struct logged_in_user *user);
+
+struct peer_session *get_create_peer_session(struct client_session *client,
+	struct logged_in_user *user);
+
 void server_init_func(struct sftt_server_config *server_config)
 {
 	DIR *mydir = NULL;
@@ -620,6 +625,8 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct dlist *file_list;
 	struct dlist_node *node, *next;
 	bool has_more = false;
+	struct logged_in_user *user;
+	struct peer_session *peer;
 
 	DEBUG((DEBUG_INFO, "handle ll req in ...\n"));
 
@@ -629,6 +636,68 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
+
+	// if the ll req is to peer?
+	if (req_info->to_peer) {
+		// check user info
+		user = &req_info->user;
+		if (check_user(user) == -1) {
+			resp_info->nr = -1;
+			strncpy(resp_info->message, "cannot check user!\n",
+				RESP_MESSAGE_MAX_LEN - 1);
+
+			send_ll_resp_once(client, resp_info, resp_packet);
+
+			return 0;
+		}
+
+		// get or create peer session
+		peer = get_create_peer_session(client, user);
+		if (peer == NULL) {
+			resp_info->nr = -1;
+			strncpy(resp_info->message, "cannot get peer session!\n",
+				RESP_MESSAGE_MAX_LEN - 1);
+
+			send_ll_resp_once(client, resp_info, resp_packet);
+
+			return 0;
+		}
+
+		// send ll req packet to peer
+		ret = send_sftt_packet(peer->connect_fd, req_packet);
+		if (ret == -1) {
+			printf("send ll req to peer failed!\n");
+			resp_info->nr = -1;
+			strncpy(resp_info->message, "send ll req to peer failed!\n",
+				RESP_MESSAGE_MAX_LEN - 1);
+
+			send_ll_resp_once(client, resp_info, resp_packet);
+			return 0;
+		}
+
+		// recv ll resp packet
+		ret = recv_sftt_packet(peer->connect_fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
+		}
+
+		resp_info = (struct ll_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+
+		while (resp_info->nr > 0) {
+			send_ll_resp_once(client, resp_info, resp_packet);
+			ret = recv_sftt_packet(peer->connect_fd, resp_packet);
+			if (ret == -1) {
+				printf("%s: recv sftt packet failed!\n", __func__);
+				return -1;
+			}
+			resp_info = (struct ll_resp *)resp_packet->obj;
+			assert(resp_info != NULL);
+		}
+
+		return 0;
+	}
 
 	if (is_abs_path(req_info->path)) {
 		strncpy(path, req_info->path, DIR_PATH_MAX_LEN - 1);
@@ -1332,6 +1401,8 @@ int check_user(struct logged_in_user *user)
 				user->session_id);
 		if (client_connected(session) &&
 			strcmp(session->session_id, user->session_id) == 0) {
+			strncpy(user->ip, session->ip, IPV4_MAX_LEN);
+			user->task_port = session->task_port;
 			ret = 0;
 			goto done;
 		}
@@ -1343,21 +1414,11 @@ done:
 	return ret;
 }
 
-int handle_write_req(struct client_session *client,
-	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+struct peer_session *get_create_peer_session(struct client_session *client,
+	struct logged_in_user *user)
 {
-	struct write_req *req;
-	struct logged_in_user *user;
 	struct peer_session *peer = NULL;
 	struct peer_session *pos = NULL;
-	int ret;
-
-	req = req_packet->obj;
-	user = &req->user;
-	if (check_user(user) == -1) {
-		printf("user not found!\n");
-		return -1;
-	}
 
 	list_for_each_entry(pos, &client->peers, list)
 		if (strcmp(pos->session_id, user->session_id) == 0) {
@@ -1369,7 +1430,7 @@ int handle_write_req(struct client_session *client,
 		peer = mp_malloc(g_mp, "new_peer_session", sizeof(struct peer_session));
 		if (peer == NULL) {
 			printf("cannot alloc peer session!\n");
-			return -1;
+			return NULL;
 		}
 
 		strncpy(peer->session_id, user->session_id, SESSION_ID_LEN - 1);
@@ -1377,10 +1438,34 @@ int handle_write_req(struct client_session *client,
 		peer->connect_fd = make_connect(user->ip, user->task_port);
 		if (peer->connect_fd == -1) {
 			printf("cannot make connect to peer!\n");
-			return -1;
+			return NULL;
 		}
 
 		list_add(&peer->list, &client->peers);
+	}
+
+	return peer;
+}
+
+int handle_write_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct write_req *req;
+	struct logged_in_user *user;
+	struct peer_session *peer;
+	int ret;
+
+	req = req_packet->obj;
+	user = &req->user;
+	if (check_user(user) == -1) {
+		printf("user not found!\n");
+		return -1;
+	}
+
+	peer = get_create_peer_session(client, user);
+	if (peer == NULL) {
+		printf("get or create peer session failed!\n");
+		return -1;
 	}
 
 	ret = send_sftt_packet(peer->connect_fd, req_packet);

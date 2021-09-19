@@ -101,7 +101,8 @@ void gen_session_id(char *buf, int len)
 	id = last_id + 1;
 
 	bzero(part1, sizeof(part1));
-	for (i = 0; i < SESSION_ID_PART1_LEN; ++i)
+	part1[0] = 's';
+	for (i = 1; i < SESSION_ID_PART1_LEN; ++i)
 		part1[i] = rand() % ('z' - 'a') + 'a';
 
 	bzero(part2, sizeof(part2));

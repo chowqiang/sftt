@@ -75,6 +75,7 @@ struct ll_resp {
 	int nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
 	int idx;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct cd_req {
@@ -107,6 +108,7 @@ struct get_resp {
 	long nr;
 	long idx;
 	struct trans_entry entry;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct put_req {
@@ -120,10 +122,12 @@ struct put_req {
 
 struct put_resp {
 	long status;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct common_resp {
 	long status;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct write_msg_req {
@@ -155,6 +159,7 @@ struct mp_stat_resp {
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct directcmd_req {
@@ -176,6 +181,7 @@ struct who_resp {
 	long total;
 	long num;
 	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 
 struct write_req {

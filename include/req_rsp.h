@@ -98,6 +98,7 @@ struct ll_resp {
 	int nr;
 	struct file_entry entries[FILE_ENTRY_MAX_CNT];
 	int idx;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct ll_resp ll_resp;
 
@@ -135,6 +136,7 @@ struct get_resp {
 	long nr;
 	long idx;
 	struct trans_entry entry;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct get_resp get_resp;
 
@@ -150,11 +152,13 @@ typedef struct put_req put_req;
 
 struct put_resp {
 	long status;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct put_resp put_resp;
 
 struct common_resp {
 	long status;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct common_resp common_resp;
 
@@ -191,6 +195,7 @@ struct mp_stat_resp {
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct mp_stat_resp mp_stat_resp;
 
@@ -216,6 +221,7 @@ struct who_resp {
 	long total;
 	long num;
 	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
+	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct who_resp who_resp;
 
