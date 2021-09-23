@@ -216,14 +216,14 @@ struct dlist *get_top_file_list(char *dir)
 
 bool same_file(char *path, char *md5)
 {
-	char real_md5[MD5_STR_LEN];
+	unsigned char real_md5[MD5_STR_LEN];
 
 	if (!file_existed(path))
 		return false;
 
 	md5_file(path, real_md5);
 
-	return strcmp(real_md5, md5) == 0;
+	return strcmp((char *)real_md5, md5) == 0;
 }
 
 struct path_entry *get_file_path_entry(char *file_name)
@@ -300,7 +300,7 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 
 	char dir_abs_path[FILE_NAME_MAX_LEN];
 	char dir_rel_path[FILE_NAME_MAX_LEN];
-	char tmp_path[FILE_NAME_MAX_LEN];
+	char tmp_path[2 * FILE_NAME_MAX_LEN + 1];
 
 	realpath(file_name, dir_abs_path);
 	char *p = basename(dir_abs_path);
@@ -317,7 +317,7 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 
 	chdir(file_name);
 	while ((entry = readdir(dp)) != NULL) {
-		sprintf(tmp_path, "%s/%s", dir_abs_path, entry->d_name);
+		snprintf(tmp_path, sizeof(tmp_path), "%s/%s", dir_abs_path, entry->d_name);
 		lstat(tmp_path, &statbuf);
 		if (S_ISDIR(statbuf.st_mode)) {
 			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
@@ -534,12 +534,4 @@ int create_temp_file(char *buf, char *prefix)
 	strcpy(buf, template);
 
 	return 0;
-}
-
-bool is_abs_path(char *buf)
-{
-	if (buf == NULL)
-		return false;
-
-	return buf[0] == '/';
 }

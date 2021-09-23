@@ -18,7 +18,7 @@
 #define _FRIEND_H_
 
 #include "list.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 
 struct friend_user {
 	struct logged_in_user info;

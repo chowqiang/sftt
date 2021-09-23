@@ -26,13 +26,13 @@ int main(void)
 {
 	struct msgbuf msg;
 	struct msg_queue *queue;
-	int ret;
 	struct mem_pool_stat *stat;
+	int ret;
 
 	set_current_context("mpstat");
 
 	queue = create_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
-	printf("queue: 0x%0lx\n", queue);
+	printf("queue: 0x%0lx\n", (unsigned long)queue);
 
 	printf("press any key to continue ...\n");
 	getchar();
@@ -46,6 +46,11 @@ int main(void)
 	for (;;) {
 		//system("clear");
 		ret = recv_msg(queue, &msg);
+		if (ret == -1) {
+			printf("recv msg failed!\n");
+			sleep(1);
+			continue;
+		}
 
 		//printf("msg.name=%s\n", msg.name);
 		if (strcmp(msg.name, "server") && strcmp(msg.name, "client"))
@@ -58,7 +63,7 @@ int main(void)
 			"    using_nodes    free_nodes\n");
 
 		printf("%8s%10d"
-			"%14d%15d"
+			"%14ld%15d"
 			"%15d%14d\n", msg.name, msg.pid,
 			stat->total_size, stat->total_nodes,
 			stat->using_nodes, stat->free_nodes);

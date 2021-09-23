@@ -1,6 +1,6 @@
 
-all: dlist mem_pool net_trans serialize utils db md5 file strops list client_task \
-	pthread
+all: dlist mem_pool net_trans serialize utils db md5 file strops list \
+	client_task resp pthread
 
 dlist: dlist.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
@@ -30,6 +30,9 @@ strops: strops.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 list: list.c
+	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
+
+resp: resp.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 client_task: client_task.c

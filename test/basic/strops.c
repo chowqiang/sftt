@@ -25,11 +25,11 @@ void test_parse_args(void)
 	int memsize2 = 0;
 
 	char **p = str;
-	parse_even_earlier(&freq, "freq", *p);
+	parse_even_earlier((u32 *)&freq, "freq", *p);
 	++p;
-	parse_even_earlier(&memsize1, "memsize1", *p);
+	parse_even_earlier((u32 *)&memsize1, "memsize1", *p);
 	++p;
-	parse_even_earlier(&memsize2, "memsize2", *p);
+	parse_even_earlier((u32 *)&memsize2, "memsize2", *p);
 	++p;
 
 	printf("freq: %d, memsize1: %d, memsize2: %d\n", freq, memsize1, memsize2);

@@ -107,15 +107,15 @@ int queue_test(void)
 
 	void *data = NULL;
 	queue_dequeue(q, &data);
-	printf("%d\n", data);
+	printf("%ld\n", (unsigned long)data);
 	queue_show(q, show_int);
 
 	queue_dequeue(q, &data);
-	printf("%d\n", data);
+	printf("%ld\n", (unsigned long)data);
 	queue_show(q, show_int);
 	
 	queue_dequeue(q, &data);
-	printf("%d\n", data);
+	printf("%ld\n", (unsigned long)data);
 	queue_show(q, show_int);
 		
 	return 0;

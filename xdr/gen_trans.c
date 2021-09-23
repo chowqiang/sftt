@@ -94,8 +94,7 @@ char *fetch_next_str(char **str)
 
 int req_resp_filter(char *struct_name)
 {
-	if (endswith(struct_name, "_req") ||
-		endswith(struct_name, "_resp")) {
+	if (endswith(struct_name, "_resp")) {
 		printf("%s:%d, strct_name=%s\n", __func__, __LINE__, struct_name);
 		return 0;
 	}
@@ -239,13 +238,12 @@ int gen_h_file(struct st_list *head, char *h_file)
 	}
 
 	fprintf(fp, "/*\n * Automatically generated - do not edit\n */\n\n");
-	fprintf(fp, "#ifndef _SERIALIZE_H_\n");
-	fprintf(fp, "#define _SERIALIZE_H_\n\n");
+	fprintf(fp, "#ifndef _TRANS_H_\n");
+	fprintf(fp, "#define _TRANS_H_\n\n");
 
-	fprintf(fp, "#include <stdbool.h>\n\n");
+	fprintf(fp, "#include \"packet.h\"\n\n");
 	while (p) {
-		fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len);\n\n", p->struct_name);
-		fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req);\n\n", p->struct_name);
+		fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet, int code, int next);\n\n", p->struct_name);
 		p = p->next;
 	}
 	fprintf(fp, "#endif\n");
@@ -255,43 +253,36 @@ int gen_h_file(struct st_list *head, char *h_file)
 	return 0;
 }
 
-void output_encode(FILE *fp, char *struct_name)
+char *get_packet_type(char *packet_type, char *name)
 {
-	fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len)\n", struct_name);
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: in\", __func__);\n");
-	fprintf(fp, "\tsize_t size = 0;\n");
-	fprintf(fp, "\tFILE *fp = open_memstream((char **)buf, &size);\n\n");
-	fprintf(fp, "\tXDR xdr;\n");
-	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_ENCODE);\n\n");
-	fprintf(fp, "\tint ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
-	fprintf(fp, "\tfclose(fp);\n");
-	fprintf(fp, "\t*len = size;\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encode ret=%%d, encode_len=%%d\",\n"
-			"\t\t__func__, ret, *len);\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
-	fprintf(fp, "\treturn ret;\n");
+	int i, j, count;
+	
+	count = sprintf(packet_type, "PACKET_TYPE_");
+	for (i = count, j = 0; name[j]; ++j, ++i) {
+		packet_type[i] = toupper(name[j]);
+	}
+	packet_type[i] = 0;
 
-	fprintf(fp, "}\n\n");
+	return packet_type;
 }
 
-void output_decode(FILE *fp, char *struct_name)
+void output_send_resp(FILE *fp, char *struct_name)
 {
-	fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req)\n", struct_name);
+	char packet_type[128];
+
+	fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,"
+		" int code, int next)\n", struct_name);
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: in\", __func__);\n");
-	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp,\n"
-			"\t\t__func__, sizeof(struct %s));\n\n",
-			struct_name, struct_name, struct_name);
-	fprintf(fp, "\tFILE *fp = fmemopen(buf, len, \"r\");\n\n");
-	fprintf(fp, "\tXDR xdr;\n");
-	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_DECODE);\n\n");
-	fprintf(fp, "\tint ret = xdr_%s(&xdr, _req);\n", struct_name);
-	fprintf(fp, "\tfclose(fp);\n\n");
-	fprintf(fp, "\t*req = _req;\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: decode ret=%%d\", __func__, ret);\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
-	fprintf(fp, "\treturn ret;\n");
+	fprintf(fp, "\tstruct %s *resp;\n\n", struct_name);
+	fprintf(fp, "\tresp = resp_packet->obj;\n", struct_name);
+	fprintf(fp, "\tresp->status = code;\n");
+	fprintf(fp, "\tstrncpy(resp->message, resp_messages[code],"
+		" RESP_MESSAGE_MAX_LEN - 1);\n");
+	fprintf(fp, "\tresp->next = next;\n\n");
+	fprintf(fp, "\tresp_packet->type = %s;\n\n",
+		get_packet_type(packet_type, struct_name));
+
+	fprintf(fp, "\treturn send_sftt_packet(fd, resp_packet);\n");
 	fprintf(fp, "}\n");
 }
 
@@ -308,19 +299,14 @@ int gen_c_file(struct st_list *head, char *c_file)
 	}
 
 	fprintf(fp, "/*\n * Automatically generated - do not edit\n */\n\n");
-	fprintf(fp, "#include <stdbool.h>\n");
-	fprintf(fp, "#include <stdio.h>\n");
-	fprintf(fp, "#include <rpc/types.h>\n");
-	fprintf(fp, "#include <rpc/xdr.h>\n");
-	fprintf(fp, "#include \"log.h\"\n");
-	fprintf(fp, "#include \"mem_pool.h\"\n");
+	fprintf(fp, "#include \"net_trans.h\"\n");
 	fprintf(fp, "#include \"req_resp.h\"\n");
-	fprintf(fp, "#include \"serialize.h\"\n\n");
-	fprintf(fp, "extern struct mem_pool *g_mp;\n\n");
+	fprintf(fp, "#include \"response.h\"\n");
+	fprintf(fp, "#include \"trans.h\"\n\n");
+	fprintf(fp, "extern const char *resp_messages[];\n\n");
 
 	while (p) {
-		output_encode(fp, p->struct_name);
-		output_decode(fp, p->struct_name);
+		output_send_resp(fp, p->struct_name);
 		p = p->next;
 		if (p) {
 			fprintf(fp, "\n");
@@ -332,7 +318,7 @@ int gen_c_file(struct st_list *head, char *c_file)
 	return 0;
 }
 
-int gen_serialize(struct st_list *head, char *h_file, char *c_file)
+int gen_trans(struct st_list *head, char *h_file, char *c_file)
 {
 	FILE *fp = NULL;
 
@@ -363,8 +349,8 @@ int main(int argc, char *argv[])
 	}
 
 	show_st_list(head);
-	if (gen_serialize(head, argv[2], argv[3]) == -1) {
-		printf("gen serialize failed\n");
+	if (gen_trans(head, argv[2], argv[3]) == -1) {
+		printf("gen trans failed\n");
 		return -1;
 	}
 

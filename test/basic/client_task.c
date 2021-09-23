@@ -86,7 +86,7 @@ pthread_t init_client_task(int *port)
 	}
 
 	len = sizeof(struct sockaddr_in);
-	if (getsockname(sock, (struct sockaddr *)&taskaddr, &len) == -1) {
+	if (getsockname(sock, (struct sockaddr *)&taskaddr, (socklen_t *)&len) == -1) {
 		perror("getsockname error");
 		return -1;
 	}

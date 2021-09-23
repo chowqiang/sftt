@@ -71,7 +71,7 @@ int sftt_packet_encode_content(struct sftt_packet *src, struct sftt_packet *dst)
 
 void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 {
-	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
+	unsigned char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header); 
 	int ret, encoded_len;
 	unsigned char *buffer;
@@ -212,7 +212,7 @@ int sftt_packet_decode_content(struct sftt_packet *src, struct sftt_packet *dst)
 
 int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 {
-	char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
+	unsigned char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
 	int header_len = sizeof(header);
 	int decoded_len, ret;
 	unsigned char *buffer;

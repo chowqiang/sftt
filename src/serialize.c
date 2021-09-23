@@ -8,7 +8,7 @@
 #include <rpc/xdr.h>
 #include "log.h"
 #include "mem_pool.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 #include "serialize.h"
 
 extern struct mem_pool *g_mp;

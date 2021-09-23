@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include "list.h"
 #include "msg_queue.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 
 struct msq_mgr {
 	struct list_head queues[MSQ_TYPE_CNT];
@@ -97,12 +97,12 @@ static void __attribute__((constructor)) msq_mgr_init(void)
 
 int send_msg_ipc(struct msg_queue *queue, struct msgbuf *msg)
 {
-
+	return 0;
 }
 
 int recv_msg_ipc(struct msg_queue *queue, struct msgbuf *msg)
 {
-
+	return 0;
 }
 
 struct msg_queue *create_msg_queue_ipc(char *name)
@@ -250,8 +250,7 @@ struct msg_queue *create_msg_queue_file(char *name)
 
 struct msg_queue *get_msg_queue_file(char *name)
 {
-
-
+	return NULL;
 }
 
 void delete_msg_queue_file(char *name)
@@ -261,22 +260,22 @@ void delete_msg_queue_file(char *name)
 
 int send_msg_net(struct msg_queue *queue, struct msgbuf *msg)
 {
-
+	return 0;
 }
 
 int recv_msg_net(struct msg_queue *queue, struct msgbuf *msg)
 {
-
+	return 0;
 }
 
 struct msg_queue *create_msg_queue_net(char *name)
 {
-
+	return NULL;
 }
 
 struct msg_queue *get_msg_queue_net(char *name)
 {
-
+	return NULL;
 }
 
 void delete_msg_queue_net(char *name)

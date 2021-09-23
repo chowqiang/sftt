@@ -41,7 +41,7 @@ int get_list_node_count(void)
 
 void test_list_add(void)
 {
-	int count;
+	//int count;
 	struct tc_list_node *node;
 
 	node = create_list_node("abc");

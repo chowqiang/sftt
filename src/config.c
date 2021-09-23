@@ -22,7 +22,7 @@
 #include "config.h"
 #include "file.h"
 #include "mem_pool.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 #include "utils.h"
 
 extern struct mem_pool *g_mp;

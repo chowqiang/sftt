@@ -67,7 +67,7 @@ struct sftt_server_stat {
 };
 
 void server_init_func();
-int  server_consult_block_size(int connect_fd,char *buff, int server_block_size);
+int  server_consult_block_size(int connect_fd, unsigned char *buff, int server_block_size);
 void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_server_config init_conf);
 FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_conf, char * data_buff);
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);

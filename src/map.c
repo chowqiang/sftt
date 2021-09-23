@@ -150,7 +150,7 @@ void show_keys(struct map *m)
 	printf("map keys:");
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
-		printf(" %s", kvn->key);
+		printf(" %s", (char *)kvn->key);
 	}
 	printf("\n");
 }

@@ -18,7 +18,7 @@
 #define _TRACE_H_
 
 #include "user.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 
 #define TRACE_ID_LEN 16	
 

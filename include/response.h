@@ -14,10 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HEAD_ENCRYPT_H_
-#define _HEAD_ENCRYPT_H_
+#ifndef _RESPONSE_H_
+#define _RESPONSE_H_
 
-unsigned char *sftt_encrypt_func(unsigned char *source, int size);
-unsigned char *sftt_decrypt_func(unsigned char *aim , int size);
+enum resp_code {
+	RESP_OK,
+	RESP_SERVER_EXCEPTION,
+	RESP_CANNOT_CD,
+	RESP_CONTINUE,
+	RESP_UVS_NTFD,
+	RESP_UVS_INVALID,
+	RESP_UVS_MISSHOME,
+	RESP_UVS_BLOCK,
+	RESP_UVS_BAD_VER,
+	RESP_UVS_PASS,
+	RESP_CNT_CHECK_USER,
+	RESP_CNT_GET_PEER,
+	RESP_SEND_PEER_ERR,
+	RESP_SESSION_INVALID,
+	RESP_FILE_NTFD,
+	RESP_INTERNAL_ERR,
+};
 
 #endif

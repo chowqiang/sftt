@@ -27,18 +27,18 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	char str[32];
-	char md5[33];
+	unsigned char str[32];
+	unsigned char md5[33];
 	//char *md5_print;
 
 	if (file_existed(argv[1])) {
 		printf("md5 file: %s\n", argv[1]);
 		md5_file(argv[1], md5);	
 	} else {
-		strcpy(str, argv[1]);
-		strcat(str, "\n");
-		printf("md5 str: %s\n", str);
-		md5_str(str, strlen(str), md5);
+		strcpy((char *)str, argv[1]);
+		strcat((char *)str, "\n");
+		printf("md5 str: %s\n", (char *)str);
+		md5_str(str, strlen((char *)str), md5);
 	}
 
 	//md5_print = md5_printable_str(md5);

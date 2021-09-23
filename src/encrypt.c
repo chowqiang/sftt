@@ -18,9 +18,9 @@
 #include <string.h>
 #include "encrypt.h"
 
-void  print_bytes(char *aim);
+void print_bytes(char *aim);
 
-void print_bytes(char * aim)
+void print_bytes(char *aim)
 {
 	int len = strlen(aim);
 	int j;
@@ -30,7 +30,7 @@ void print_bytes(char * aim)
         printf("\n");
 }
 
-char * sftt_encrypt_func(char * source , int size)
+unsigned char *sftt_encrypt_func(unsigned char *source , int size)
 {
 
 //	print_bytes(source);
@@ -45,7 +45,8 @@ char * sftt_encrypt_func(char * source , int size)
 
 }
 
-char * sftt_decrypt_func(char * aim, int size){
+unsigned char *sftt_decrypt_func(unsigned char *aim, int size)
+{
 	int i;
 	for(i = 0; i < size; i++ ){
 		aim[i] = aim[i] - i - 5;

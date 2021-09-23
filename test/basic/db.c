@@ -35,7 +35,7 @@ void test_select(int argc, char *argv[])
 	if (user_base == NULL)
 		return ;
 
-	printf("uid: %d, name: %s\n", user_base->uid, user_base->name);
+	printf("uid: %ld, name: %s\n", user_base->uid, user_base->name);
 
 	user_auth = find_user_auth_by_name(name);
 	if (user_auth == NULL)

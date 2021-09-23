@@ -573,12 +573,12 @@ int huffman_decompress(unsigned char *input, unsigned char *output)
 void test_basic(void)
 {
 	int i = 0;
-	unsigned char *text = "aaaabbbccd";
+	char *text = "aaaabbbccd";
 	int text_len = strlen(text);
 
 	unsigned char *output = (unsigned char *)mp_malloc(g_mp, __func__,
 			sizeof(unsigned char) * 1024);
-	int out_len = huffman_compress(text, text_len, output);
+	int out_len = huffman_compress((unsigned char *)text, text_len, output);
 	for (i = 0; i < out_len; ++i) {
 		printf("%0x", output[i]);
 	}
@@ -603,7 +603,7 @@ void test_file(void)
 	}
 
 	int encode_len = huffman_compress(contents, file_size, encodes);
-	printf("compress: file_size: %d, encode_len: %d\n", file_size, encode_len);
+	printf("compress: file_size: %ld, encode_len: %d\n", file_size, encode_len);
 	
 	unsigned char *decodes = (unsigned char *)mp_malloc(g_mp,
 			"test_file_decode", file_size + 1);

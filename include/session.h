@@ -22,7 +22,7 @@
 #include "list.h"
 #include "md5.h"
 #include "user.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 
 #define MAX_CLIENT_NUM 32
 /*
@@ -48,14 +48,6 @@ enum client_status {
 enum session_status {
 	VALIDATED,
 	INVALIDATED
-};
-
-enum resp_status {
-	SESSION_INVALID,
-	SERVER_EXCEPTION,
-	RESP_OK,
-	CANNOT_CD,
-	CONTINUE,
 };
 
 struct peer_session {

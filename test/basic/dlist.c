@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
 	//printf("test file: %s\n", __FILE__);
 	//show_argv(argc, argv);
-	struct dlist *list = dlist_create(FREE_MODE_NOTHING);
+	//struct dlist *list = dlist_create(FREE_MODE_NOTHING);
 
 	return -1;
 }

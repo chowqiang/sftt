@@ -18,7 +18,7 @@
 #define _LOG_H_
 
 #include "config.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 #include "trace.h"
 
 #define LOG_DEBUG	1

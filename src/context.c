@@ -23,7 +23,7 @@ struct context *g_ctx = NULL;
 void set_current_context(char *name)
 {
 	if (g_ctx == NULL)
-		g_ctx == get_current_context();
+		g_ctx = get_current_context();
 
 	if (name == NULL || strlen(name) >= 16)
 		return;

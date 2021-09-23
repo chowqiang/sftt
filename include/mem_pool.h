@@ -38,7 +38,7 @@ struct mem_node {
 };
 
 struct mem_pool_stat {
-	int total_size;
+	long total_size;
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;

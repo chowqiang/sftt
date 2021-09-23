@@ -19,7 +19,7 @@
 
 struct user_cmd *user_cmd_construct(void)
 {
-
+	return NULL;
 }
 
 void user_cmd_deconstruct(struct user_cmd *cmd)

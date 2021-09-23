@@ -48,9 +48,11 @@
 #include "mkdirp.h"
 #include "net_trans.h"
 #include "endpoint.h"
-#include "req_rsp.h"
+#include "req_resp.h"
+#include "response.h"
 #include "server.h"
 #include "session.h"
+#include "trans.h"
 #include "version.h"
 #include "user.h"
 #include "utils.h"
@@ -107,7 +109,7 @@ void server_init_func(struct sftt_server_config *server_config)
 
 }
 
-int server_consult_block_size(int connect_fd,char *buff,int server_block_size)
+int server_consult_block_size(int connect_fd, unsigned char *buff,int server_block_size)
 {
 	int trans_len = recv(connect_fd, buff, BUFFER_SIZE, 0);
 	if (trans_len <= 0 ) {
@@ -115,13 +117,13 @@ int server_consult_block_size(int connect_fd,char *buff,int server_block_size)
 		exit(0);
 	}
 
-	char *mybuff = sftt_decrypt_func(buff,trans_len);
-	int client_block_size = atoi(buff);
+	//char *mybuff = sftt_decrypt_func(buff,trans_len);
+	int client_block_size = atoi((char *)buff);
 	int min_block_size = client_block_size < server_block_size ?
 		client_block_size : server_block_size;
 
-	sprintf(buff,"%d",min_block_size);
-	int size = strlen(buff);
+	sprintf((char *)buff,"%d",min_block_size);
+	int size = strlen((char *)buff);
 	sftt_encrypt_func(buff,size);
 	send(connect_fd,buff,BUFFER_SIZE,0);
 
@@ -132,7 +134,6 @@ int server_consult_block_size(int connect_fd,char *buff,int server_block_size)
 void server_file_resv(int connect_fd, int consulted_block_size,
 	struct sftt_server_config init_conf)
 {
-	int trans_len;
 	struct sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
 	int connected = 1;
 
@@ -154,7 +155,7 @@ void server_file_resv(int connect_fd, int consulted_block_size,
 				j ++ ;
 				continue;
 			}
-			if (trans_len <= 0) {
+			if (sp->data_len <= 0) {
 				fclose(fd);
 				printf("recev failed!\n");
 				connected = 0;
@@ -201,10 +202,10 @@ void server_transport_data_to_file(FILE *fd, struct sftt_packet *sp)
 FILE *server_creat_file(struct sftt_packet *sp,
 	struct sftt_server_config init_conf, char *data_buff)
 {
-	int i;
+	//int i;
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
-	strcat(data_buff,sp->content);
+	strcat(data_buff, (char *)sp->content);
 			
 	is_exit(data_buff);
 
@@ -252,10 +253,10 @@ int server_main_old(void)
 {
 	int socket_fd = 0;
 	int	connect_fd;
-	int	trans_len;
+	//int	trans_len;
 	pid_t   pid;
-	char	buff[BUFFER_SIZE] = {'\0'};
-	char    quit[BUFFER_SIZE] = {'q','u','i','t'};
+	unsigned char	buff[BUFFER_SIZE] = {'\0'};
+	//char    quit[BUFFER_SIZE] = {'q','u','i','t'};
 	struct sftt_server_config  init_conf;
 	//init server 
 	server_init_func(&init_conf);
@@ -388,7 +389,7 @@ bool sftt_server_is_running(void)
 		return false;
 	}
 
-	return sss->status == RUNNING;
+	return sss->status == SERVERING;
 }
 
 void update_server(struct sftt_server *server)
@@ -424,9 +425,10 @@ static int validate_user_info(struct client_session *client,
 {
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
+	struct validate_resp_data *resp_data;
 	struct user_base_info *user_base;
 	struct user_auth_info *user_auth;
-	char *md5_str;
+	//char *md5_str;
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle validate req in ...\n"));
@@ -441,53 +443,61 @@ static int validate_user_info(struct client_session *client,
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
+	resp_data = &resp_info->data;
 
 	if (check_version(&req_info->ver, &server->ver, resp_info->message,
 		RESP_MESSAGE_MAX_LEN - 1) == -1) {
-		resp_info->status = UVS_BAD_VER;
-		goto done;
+		//resp_info->status = RESP_UVS_BAD_VER;
+		//goto done;
+		return send_validate_resp(client->connect_fd, resp_packet,
+				RESP_UVS_BAD_VER, 0);
 	}
 
 	user_base = find_user_base_by_name(req_info->name);
 	user_auth = find_user_auth_by_name(req_info->name);
 	if (user_base == NULL) {
-		resp_info->status = UVS_NTFD;
-		resp_info->uid = -1;
+		//resp_info->status = UVS_NTFD;
+		//resp_info->uid = -1;
 		DEBUG((DEBUG_INFO, "cannot find user!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
+		return send_validate_resp(client->connect_fd, resp_packet,
+			       RESP_UVS_NTFD, 0);	
 	} else if (strcmp(user_auth->passwd_md5, req_info->passwd_md5)) {
-		resp_info->status = UVS_INVALID;
-		resp_info->uid = -1;
+		//resp_info->status = UVS_INVALID;
+		//resp_info->uid = -1;
 		DEBUG((DEBUG_INFO, "passwd not correct!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
+		return send_validate_resp(client->connect_fd, resp_packet,
+				RESP_UVS_INVALID, 0);
 	} else if (!file_existed(user_base->home_dir)) {
-		resp_info->status = UVS_MISSHOME;
-		resp_info->uid = -1;
+		//resp_info->status = UVS_MISSHOME;
+		//resp_info->uid = -1;
 		DEBUG((DEBUG_INFO, "cannot find user's home dir!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
+		return send_validate_resp(client->connect_fd, resp_packet,
+				RESP_UVS_MISSHOME, 0);
 	} else {
-		resp_info->status = UVS_PASS;
-		resp_info->uid = user_base->uid;
 		client->status = ACTIVE;
 		client->task_port = req_info->task_port;
-
-		strncpy(resp_info->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
 		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
-
 		memcpy(&client->user, user_base, sizeof(struct user_base_info));
-
 		gen_session_id(client->session_id, SESSION_ID_LEN);
-		strncpy(resp_info->session_id, client->session_id, SESSION_ID_LEN);
+
+		resp_info->status = RESP_UVS_PASS;
+		resp_info->next = 0;
+
+		resp_data->uid = user_base->uid;
+		strncpy(resp_data->name, req_info->name, USER_NAME_MAX_LEN - 1);
+		strncpy(resp_data->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
+		strncpy(resp_data->session_id, client->session_id, SESSION_ID_LEN);
 
 		DEBUG((DEBUG_INFO, "validate user info successfully!\n"));
-		DEBUG((DEBUG_INFO, "user_name=%s|uid=%d|status=%d|home_dir=%s|"
+		DEBUG((DEBUG_INFO, "user_name=%s|uid=%ld|status=%d|home_dir=%s|"
 			"session_id=%s\n", client->user.name, client->user.uid,
 			resp_info->status, client->pwd, client->session_id));
 	}
-	strncpy(resp_info->name, req_info->name, USER_NAME_MAX_LEN - 1);
 
-done:
-	resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
+	resp_packet->type = PACKET_TYPE_VALIDATE_RESP;
 	resp_packet->obj = resp_info;
 
 	ret = send_sftt_packet(client->connect_fd, resp_packet);
@@ -514,11 +524,12 @@ void child_process_exit(int sig)
 	exit(-1);
 }
 
-void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet,
+int handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
 	struct pwd_req *req_info;
 	struct pwd_resp *resp_info;
+	struct pwd_resp_data *data;
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle pwd req in ...\n"));
@@ -527,27 +538,32 @@ void handle_pwd_req(struct client_session *client, struct sftt_packet *req_packe
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct pwd_resp));
 	assert(resp_info != NULL);
+	data = &resp_info->data;
 
 	DEBUG((DEBUG_INFO, "pwd_req: session_id=%s\n", req_info->session_id));
 	if (strcmp(req_info->session_id, client->session_id)) {
-		resp_info->status = SESSION_INVALID;
-		resp_info->pwd[0] = 0;
+		//resp_info->status = SESSION_INVALID;
+		//resp_info->pwd[0] = 0;
+		return send_pwd_resp(client->connect_fd, resp_packet,
+				RESP_SESSION_INVALID, 0);
 	} else {
 		resp_info->status = RESP_OK;
-		strncpy(resp_info->pwd, client->pwd, DIR_PATH_MAX_LEN);
+		strncpy(data->pwd, client->pwd, DIR_PATH_MAX_LEN);
 	}
 
-	resp_packet->type = PACKET_TYPE_PWD_RSP;
+	resp_packet->type = PACKET_TYPE_PWD_RESP;
 	resp_packet->obj = resp_info;
 
-	DEBUG((DEBUG_INFO, "pwd_resp: pwd=%s\n", resp_info->pwd));
+	DEBUG((DEBUG_INFO, "pwd_resp: pwd=%s\n", data->pwd));
 	ret = send_sftt_packet(client->connect_fd, resp_packet);
 	if (ret == -1) {
 		printf("send pwd response failed!\n");
-		return ;
+		return -1;
 	}
 
 	DEBUG((DEBUG_INFO, "handle pwd req out\n"));
+
+	return 0;
 }
 
 int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
@@ -555,7 +571,8 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 {
 	struct cd_req *req_info;
 	struct cd_resp *resp_info;
-	char buf[DIR_PATH_MAX_LEN];
+	struct cd_resp_data *data;
+	char buf[2 * DIR_PATH_MAX_LEN + 1];
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle cd req in ...\n"));
@@ -566,25 +583,28 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct cd_resp));
 	assert(resp_info != NULL);
+	data = &resp_info->data;
 
-	snprintf(buf, DIR_PATH_MAX_LEN - 1, "%s/%s",
+	snprintf(buf, sizeof(buf) - 1, "%s/%s",
 			client->pwd, req_info->path);
 
 	simplify_path(buf);
 	DEBUG((DEBUG_INFO, "change directory to: %s\n", buf));
 
 	if (chdir(buf) || getcwd(buf, DIR_PATH_MAX_LEN - 1) == NULL) {
-		resp_info->status = CANNOT_CD;
-		resp_info->pwd[0] = 0;
+		//resp_info->status = CANNOT_CD;
+		//resp_info->pwd[0] = 0;
 		DEBUG((DEBUG_INFO, "change directory failed!\n"));
+		return send_cd_resp(client->connect_fd, resp_packet,
+				RESP_CANNOT_CD, 0);
 	} else {
 		resp_info->status = RESP_OK;
-		strncpy(resp_info->pwd, buf, DIR_PATH_MAX_LEN - 1);
+		strncpy(data->pwd, buf, DIR_PATH_MAX_LEN - 1);
 		strncpy(client->pwd, buf, DIR_PATH_MAX_LEN - 1);
 		DEBUG((DEBUG_INFO, "change directory successfully!\n"));
 	}
 
-	resp_packet->type = PACKET_TYPE_CD_RSP;
+	resp_packet->type = PACKET_TYPE_CD_RESP;
 	resp_packet->obj = resp_info;
 	ret = send_sftt_packet(client->connect_fd, resp_packet);
 	if (ret == -1) {
@@ -602,7 +622,7 @@ int send_ll_resp_once(struct client_session *client, struct ll_resp *resp_info,
 {
 	int ret;
 
-	resp_packet->type = PACKET_TYPE_LL_RSP;
+	resp_packet->type = PACKET_TYPE_LL_RESP;
 	resp_packet->obj = resp_info;
 
 	ret = send_sftt_packet(client->connect_fd, resp_packet);
@@ -614,127 +634,154 @@ int send_ll_resp_once(struct client_session *client, struct ll_resp *resp_info,
 	return 0;
 }
 
-int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
+int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
-	struct ll_req *req_info;
-	struct ll_resp *resp_info;
-	char tmp[DIR_PATH_MAX_LEN];
-	char path[DIR_PATH_MAX_LEN];
-	int i = 0, j = 0, k = 0, ret = 0;
-	struct dlist *file_list;
-	struct dlist_node *node, *next;
-	bool has_more = false;
 	struct logged_in_user *user;
 	struct peer_session *peer;
-
-	DEBUG((DEBUG_INFO, "handle ll req in ...\n"));
-
-	req_info = req_packet->obj;
-	assert(req_info != NULL);
-	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req_info->path));
+	struct ll_req *req_info;
+	struct ll_resp *resp_info;
+	int ret;
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
 	assert(resp_info != NULL);
 
-	// if the ll req is to peer?
-	if (req_info->to_peer) {
-		// check user info
-		user = &req_info->user;
-		if (check_user(user) == -1) {
-			resp_info->nr = -1;
-			strncpy(resp_info->message, "cannot check user!\n",
-				RESP_MESSAGE_MAX_LEN - 1);
+	// check user info
+	req_info = req_packet->obj;
+	user = &req_info->user;
+	if (check_user(user) == -1) {
+		//resp_info->status = RESP_CNT_CHECK_USER;
+		//strncpy(resp_info->message, resp_messages[RESP_CNT_CHECK_USER], 
+		//	RESP_MESSAGE_MAX_LEN - 1);
 
-			send_ll_resp_once(client, resp_info, resp_packet);
+		//send_ll_resp_once(client, resp_info, resp_packet);
 
-			return 0;
-		}
+		//return 0;
+		return send_ll_resp(client->connect_fd, resp_packet,
+				RESP_CNT_CHECK_USER, 0);
+	}
 
-		// get or create peer session
-		peer = get_create_peer_session(client, user);
-		if (peer == NULL) {
-			resp_info->nr = -1;
-			strncpy(resp_info->message, "cannot get peer session!\n",
-				RESP_MESSAGE_MAX_LEN - 1);
+	// get or create peer session
+	peer = get_create_peer_session(client, user);
+	if (peer == NULL) {
+		//resp_info->status = RESP_CNT_GET_PEER;
+		//strncpy(resp_info->message, resp_messages[RESP_CNT_GET_PEER],
+		//	RESP_MESSAGE_MAX_LEN - 1);
 
-			send_ll_resp_once(client, resp_info, resp_packet);
+		//send_ll_resp_once(client, resp_info, resp_packet);
 
-			return 0;
-		}
+		//return 0;
+		return send_ll_resp(client->connect_fd, resp_packet,
+				RESP_CNT_GET_PEER, 0);
+	}
 
-		// send ll req packet to peer
-		ret = send_sftt_packet(peer->connect_fd, req_packet);
-		if (ret == -1) {
-			printf("send ll req to peer failed!\n");
-			resp_info->nr = -1;
-			strncpy(resp_info->message, "send ll req to peer failed!\n",
-				RESP_MESSAGE_MAX_LEN - 1);
+	// send ll req packet to peer
+	ret = send_sftt_packet(peer->connect_fd, req_packet);
+	if (ret == -1) {
+		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
+		//resp_info->status = RESP_SEND_PEER_ERR;
+		//strncpy(resp_info->message, "send ll req to peer failed!\n",
+		//	RESP_MESSAGE_MAX_LEN - 1);
 
-			send_ll_resp_once(client, resp_info, resp_packet);
-			return 0;
-		}
+		//send_ll_resp_once(client, resp_info, resp_packet);
+		//return 0;
+		return send_ll_resp(client->connect_fd, resp_packet,
+				RESP_SEND_PEER_ERR, 0);
+	}
 
-		// recv ll resp packet
+	// recv ll resp packet
+	ret = recv_sftt_packet(peer->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct ll_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	while (resp_info->next) {
+		send_ll_resp_once(client, resp_info, resp_packet);
 		ret = recv_sftt_packet(peer->connect_fd, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return -1;
 		}
-
 		resp_info = (struct ll_resp *)resp_packet->obj;
 		assert(resp_info != NULL);
-
-		while (resp_info->nr > 0) {
-			send_ll_resp_once(client, resp_info, resp_packet);
-			ret = recv_sftt_packet(peer->connect_fd, resp_packet);
-			if (ret == -1) {
-				printf("%s: recv sftt packet failed!\n", __func__);
-				return -1;
-			}
-			resp_info = (struct ll_resp *)resp_packet->obj;
-			assert(resp_info != NULL);
-		}
-
-		return 0;
 	}
 
-	if (is_abs_path(req_info->path)) {
+	return 0;
+}
+
+int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
+	struct sftt_packet *resp_packet)
+{
+	struct ll_req *req_info;
+	struct ll_resp *resp_info;
+	struct ll_resp_data *data;
+	char tmp[2 * DIR_PATH_MAX_LEN + 4];
+	char path[2 * DIR_PATH_MAX_LEN + 2];
+	int i = 0;
+	struct dlist *file_list;
+	struct dlist_node *node;
+	bool has_more = false;
+
+	DEBUG((DEBUG_INFO, "handle ll req in ...\n"));
+
+	req_info = req_packet->obj;
+	assert(req_info != NULL);
+
+	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req_info->path));
+
+	resp_info = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
+	assert(resp_info != NULL);
+	data = &resp_info->data;
+
+	// if the ll req is to peer?
+	if (req_info->to_peer)
+		return handle_fwd_ll_req(client, req_packet, resp_packet);
+
+	if (is_absolute_path(req_info->path)) {
 		strncpy(path, req_info->path, DIR_PATH_MAX_LEN - 1);
 	} else {
-		snprintf(path, DIR_PATH_MAX_LEN - 1, "%s/%s",
+		snprintf(path, sizeof(path) - 1, "%s/%s",
 			client->pwd, req_info->path);
 	}
 
 	simplify_path(path);
+
 	DEBUG((DEBUG_INFO, "ls -l|path=%s\n", path));
 
 	if (!file_existed(path)) {
-		resp_info->nr = -1;
-		resp_info->idx = -1;
+		data->total = -1;
+		//resp_info->idx = -1;
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		send_ll_resp_once(client, resp_info, resp_packet);
-
-		return 0;
+		//send_ll_resp_once(client, resp_info, resp_packet);
+		//return 0;
+		return send_ll_resp(client->connect_fd, resp_packet,
+			       RESP_FILE_NTFD, 0);
 	}
 
 	if (is_file(path)) {
-		resp_info->nr = 1;
-		resp_info->idx = -1;
+		data->total = 1;
+		//resp_info->idx = -1;
 
-		strncpy(resp_info->entries[0].name, basename(path), FILE_NAME_MAX_LEN - 1);
-		resp_info->entries[0].type = FILE_TYPE_FILE;
+		strncpy(data->entries[0].name, basename(path), FILE_NAME_MAX_LEN - 1);
+		data->entries[0].type = FILE_TYPE_FILE;
 
 		DEBUG((DEBUG_INFO, "list file successfully!\n"));
-		send_ll_resp_once(client, resp_info, resp_packet);
+		//send_ll_resp_once(client, resp_info, resp_packet);
 
-		return 0;
+		return send_ll_resp(client->connect_fd, resp_packet,
+				RESP_OK, 0);
 	} else if (is_dir(path)) {
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
-			resp_info->nr = -1;
-			resp_info->idx = -1;
-			send_ll_resp_once(client, resp_info, resp_packet);
+			data->total = -1;
+			//data->idx = -1;
+			//send_ll_resp_once(client, resp_info, resp_packet);
+			send_ll_resp(client->connect_fd, resp_packet,
+				RESP_INTERNAL_ERR, 0);
 
 			return -1;
 		}
@@ -746,32 +793,38 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 			dlist_for_each_pos(node) {
 				if (i == FILE_ENTRY_MAX_CNT)
 					break;
-				strncpy(resp_info->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
-				snprintf(tmp, DIR_PATH_MAX_LEN - 1, "%s/%s", path, node->data);
+				strncpy(data->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
+				snprintf(tmp, sizeof(tmp) - 1, "%s/%s", path, (char *)node->data);
 				DEBUG((DEBUG_INFO, "file_name=%s\n", tmp));
 
 				if (is_file(tmp))
-					resp_info->entries[i].type = FILE_TYPE_FILE;
+					data->entries[i].type = FILE_TYPE_FILE;
 				else if (is_dir(tmp))
-					resp_info->entries[i].type = FILE_TYPE_DIR;
+					data->entries[i].type = FILE_TYPE_DIR;
 				else
-					resp_info->entries[i].type = FILE_TYPE_UNKNOWN;
+					data->entries[i].type = FILE_TYPE_UNKNOWN;
 				++i;
 			}
-			resp_info->nr = i;
+			data->total = i;
 			if (node) {
-				resp_info->idx = k++;
+				//resp_info->idx = k++;
 				has_more = true;
+				send_ll_resp(client->connect_fd, resp_packet,
+					RESP_OK, 1);
 			} else {
-				resp_info->idx = -1;
+				//resp_info->idx = -1;
 				has_more = false;
+				send_ll_resp(client->connect_fd, resp_packet,
+					RESP_OK, 0);
 			}
-			send_ll_resp_once(client, resp_info, resp_packet);
+			//send_ll_resp_once(client, resp_info, resp_packet);
 		}
 	}
 
 	if (has_more)
-		send_ll_resp_once(client, resp_info, resp_packet);
+		//send_ll_resp_once(client, resp_info, resp_packet);
+		send_ll_resp(client->connect_fd, resp_packet,
+			RESP_OK, 0);
 
 	DEBUG((DEBUG_INFO, "list file successfully!\n"));
 	DEBUG((DEBUG_INFO, "handle ll req out\n"));
@@ -782,7 +835,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 int send_trans_entry_by_get_resp(struct client_session *client,
 	struct sftt_packet *resp_packet, struct get_resp *resp)
 {
-	resp_packet->type = PACKET_TYPE_GET_RSP;
+	resp_packet->type = PACKET_TYPE_GET_RESP;
 
 	// how to serialize and deserialize properly ???
 	resp_packet->obj = resp;
@@ -801,15 +854,18 @@ int send_file_name_by_get_resp(struct client_session *client,
 	struct sftt_packet *resp_packet, char *path,
 	char *fname, struct get_resp *resp)
 {
+	struct get_resp_data *data;
+	
+	data = &resp->data;
 	DEBUG((DEBUG_INFO, "path=%s|fname=%s\n", path, fname));
 	if (is_dir(path))
-		resp->entry.type = FILE_TYPE_DIR;
+		data->entry.type = FILE_TYPE_DIR;
 	else
-		resp->entry.type = FILE_TYPE_FILE;
+		data->entry.type = FILE_TYPE_FILE;
 
-	resp->entry.mode = file_mode(path);
-	strncpy(resp->entry.content, fname, FILE_NAME_MAX_LEN);
-	resp->entry.len = strlen(fname);
+	data->entry.mode = file_mode(path);
+	strncpy((char *)data->entry.content, fname, FILE_NAME_MAX_LEN);
+	data->entry.this_size = strlen(fname);
 
 	return send_trans_entry_by_get_resp(client, resp_packet, resp);
 }
@@ -819,18 +875,20 @@ int send_file_md5_by_get_resp(struct client_session *client,
 	struct get_resp *resp)
 {
 	int ret;
+	struct get_resp_data *data;
 
 	if (is_dir(file))
 		return 0;
 
-	resp->entry.total_size = file_size(file);
+	data = &resp->data;
+	data->entry.total_size = file_size(file);
 
-	ret = md5_file(file, resp->entry.content);
+	ret = md5_file(file, data->entry.content);
 	if (ret == -1)
 		return -1;
 
-	resp->entry.len = strlen(resp->entry.content);
-	DEBUG((DEBUG_INFO, "file=%s|md5=%s\n", file, resp->entry.content));
+	data->entry.this_size = strlen((char *)data->entry.content);
+	DEBUG((DEBUG_INFO, "file=%s|md5=%s\n", file, data->entry.content));
 
 	return send_trans_entry_by_get_resp(client, resp_packet, resp);
 }
@@ -846,18 +904,20 @@ int send_one_file_by_get_resp(struct client_session *client,
 	char *fname, int nr, int idx)
 {
 	struct get_resp *resp;
+	struct get_resp_data *data;
 	struct common_resp *com_resp;
 	int ret;
-	int len;
-	int i = 0;
+	//int len;
+	//int i = 0;
 	FILE *fp;
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
+	data = &resp->data;
 
-	resp->nr = nr;
-	resp->idx = idx;
-	resp->entry.idx = 0;
+	data->total_files = nr;
+	data->file_idx = idx;
+	//resp->entry.idx = 0;
 
 	if (is_dir(path))
 		return send_file_name_by_get_resp(client, resp_packet, path, fname, resp);
@@ -865,7 +925,7 @@ int send_one_file_by_get_resp(struct client_session *client,
 	ret = send_file_name_by_get_resp(client, resp_packet, path, fname, resp);
 	if (ret == -1)
 		return -1;
-	resp->entry.idx += 1;
+	//resp->entry.idx += 1;
 
 	ret = send_file_md5_by_get_resp(client, resp_packet, path, resp);
 	if (ret == -1)
@@ -882,17 +942,17 @@ int send_one_file_by_get_resp(struct client_session *client,
 		return 0;
 	}
 
-	resp->entry.idx += 1;
+	//resp->entry.idx += 1;
 
 	fp = fopen(path, "r");
 	if (fp == NULL)
 		return -1;
 
 	while (!feof(fp)) {
-		ret = fread(resp->entry.content, 1, CONTENT_BLOCK_SIZE, fp);
+		ret = fread(data->entry.content, 1, CONTENT_BLOCK_SIZE, fp);
 
 		DEBUG((DEBUG_INFO, "send file block|len=%d\n", ret));
-		resp->entry.len = ret;
+		data->entry.this_size = ret;
 		ret = send_file_content_by_get_resp(client, resp_packet, resp);
 		if (ret == -1) {
 			printf("send file block failed!\n");
@@ -910,7 +970,7 @@ int send_one_file_by_get_resp(struct client_session *client,
 			break;
 		}
 
-		resp->entry.idx += 1;
+		//resp->entry.idx += 1;
 	}
 
 	if (!feof(fp))
@@ -921,15 +981,101 @@ int send_one_file_by_get_resp(struct client_session *client,
 	return ret;
 }
 
+int handle_fwd_get_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct logged_in_user *user; 
+	struct peer_session *peer;
+	struct get_req *req_info;
+	struct get_resp *resp_info;
+	int ret;
+
+	req_info = req_packet->obj;
+	assert(req_info != NULL);
+
+	// check user info
+	user = &req_info->user;
+	if (check_user(user) == -1) {
+		//resp_info->status = RESP_CNT_CHECK_USER;
+		//strncpy(resp_info->message, resp_messages[RESP_CNT_CHECK_USER],
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//resp_packet->obj = resp_info;
+		//resp_packet->type = PACKET_TYPE_GET_RESP; 
+		//send_sftt_packet(client->connect_fd, resp_packet);
+		send_get_resp(client->connect_fd, resp_packet,
+			RESP_CNT_CHECK_USER, 0);
+
+		return 0;
+	}
+
+	// get or create peer session
+	peer = get_create_peer_session(client, user);
+	if (peer == NULL) {
+		//resp_info->status = RESP_CNT_GET_PEER;
+		//strncpy(resp_info->message, resp_messages[RESP_CNT_GET_PEER],
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//resp_packet->obj = resp_info;
+		//resp_packet->type = PACKET_TYPE_GET_RESP;
+		//send_sftt_packet(client->connect_fd, resp_packet);
+		send_get_resp(client->connect_fd, resp_packet,
+			RESP_CNT_GET_PEER, 0);
+
+		return 0;
+	}
+
+	// send ll req packet to peer
+	ret = send_sftt_packet(peer->connect_fd, req_packet);
+	if (ret == -1) {
+		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
+		//resp_info->nr = -1;
+		//strncpy(resp_info->message, "send ll req to peer failed!\n",
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//send_ll_resp_once(client, resp_info, resp_packet);
+		send_get_resp(client->connect_fd, resp_packet,
+			RESP_SEND_PEER_ERR, 0);
+		return 0;
+	}
+
+	// recv ll resp packet
+	ret = recv_sftt_packet(peer->connect_fd, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct get_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	for (;;) {
+		if (resp_info->next) {
+			send_get_resp(client->connect_fd, resp_packet,
+				RESP_OK, 1);
+		} else {
+			send_get_resp(client->connect_fd, resp_packet,
+				RESP_OK, 0);
+			break;	
+		}
+
+		resp_info = (struct get_resp *)resp_packet->obj;
+		assert(resp_info != NULL);
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_GET_OVERLAP
 int handle_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct get_req *req;
 	struct get_resp *resp;
-	FILE *fp;
+	//struct get_resp_data *data;
+	//FILE *fp;
 	char file[FILE_NAME_MAX_LEN];
-	int ret;
+	//int ret;
 	struct dlist *file_list;
 	struct dlist_node *node;
 	int file_count, i = 0;
@@ -937,28 +1083,33 @@ int handle_get_req(struct client_session *client,
 
 	DEBUG((DEBUG_INFO, "handle get req in ...\n"));
 
+	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
+	assert(resp != NULL);
+	//data = &resp->data;
+
 	req = req_packet->obj;
+	if (req->to_peer)
+		return handle_fwd_get_req(client, req_packet, resp_packet);	
+
 	strncpy(file, req->path, FILE_NAME_MAX_LEN);
 	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
 		req->session_id, req->path));
 
-	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
-	assert(resp != NULL);
-
 	entry = get_path_entry(file, client->pwd);
-
 	if (!file_existed(entry->abs_path)) {
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		resp->nr = -1;
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_GET_RSP;
-		ret = send_sftt_packet(client->connect_fd, resp_packet);
-		if (ret == -1) {
-			printf("send sftt packet failed!\n");
-			return -1;
-		}
+		return send_get_resp(client->connect_fd, resp_packet,
+				RESP_FILE_NTFD, 0);
+		//data->total_files = -1;
+		//resp_packet->obj = resp;
+		//resp_packet->type = PACKET_TYPE_GET_RESP;
+		//ret = send_sftt_packet(client->connect_fd, resp_packet);
+		//if (ret == -1) {
+		//	printf("send sftt packet failed!\n");
+		//	return -1;
+		//}
 
-		return 0;
+		//return 0;
 	}
 
 	if (is_file(entry->abs_path)) {
@@ -976,7 +1127,7 @@ int handle_get_req(struct client_session *client,
 			DEBUG((DEBUG_INFO, "send %d-th file: %s\n", i, entry->abs_path));
 			if (send_one_file_by_get_resp(client, resp_packet,
 				entry->abs_path, entry->rel_path, file_count, i) == -1) {
-				printf("send file failed: %s\n", node->data);
+				DEBUG((DEBUG_INFO, "send file failed: %s\n", (char *)node->data));
 			}
 			DEBUG((DEBUG_INFO, "send file done\n"));
 			++i;
@@ -1006,36 +1157,38 @@ int recv_one_file_by_put_req(struct client_session *client,
 	FILE *fp = NULL;
 	int i = 0, ret = 0, total_size = 0;
 	struct put_req *req_info = NULL;
+	struct put_req_data *req_data = NULL;
 	struct put_resp *resp_info;
 
 	*has_more = true;
 
 	req_info = (struct put_req *)req_packet->obj;
 	assert(req_info != NULL);
+	req_data = &req_info->data;
 
-	DEBUG((DEBUG_INFO, "first_idx=%d\n", req_info->entry.idx));
-	DEBUG((DEBUG_INFO, "file_name=%s\n", req_info->entry.content));
-	DEBUG((DEBUG_INFO, "req_info->nr=%d|req_info->idx=%d\n",
-		req_info->nr, req_info->idx));
-	assert(req_info->entry.idx == 0);
+	//DEBUG((DEBUG_INFO, "first_idx=%d\n", req_data->file_idx));
+	DEBUG((DEBUG_INFO, "file_name=%s\n", (char *)req_data->entry.content));
+	DEBUG((DEBUG_INFO, "req_data->total_files=%d|req_data->file_idx=%d\n",
+		req_data->total_files, req_data->file_idx));
+	//assert(req_info->entry.idx == 0);
 
 	resp_info = (struct put_resp *)mp_malloc(g_mp,
 			__func__, sizeof(struct put_resp));
 	assert(resp_info != NULL);
 
-	rp = path_join(client->pwd, req_info->entry.content);
+	rp = path_join(client->pwd, (char *)req_data->entry.content);
 
 	DEBUG((DEBUG_INFO, "received put req|file=%s\n", rp));
-	if (req_info->entry.type == FILE_TYPE_DIR) {
+	if (req_data->entry.type == FILE_TYPE_DIR) {
 		if (!file_existed(rp)) {
-			mkdirp(rp, req_info->entry.mode);
+			mkdirp(rp, req_data->entry.mode);
 		}
 
 		goto recv_one_file_done;
 	}
 
 	/* save file name */
-	strncpy(file, req_info->entry.content, FILE_NAME_MAX_LEN);
+	strncpy(file, (char *)req_data->entry.content, FILE_NAME_MAX_LEN);
 	rp = path_join(client->pwd, file);
 
 	/* recv md5 packet */
@@ -1046,18 +1199,19 @@ int recv_one_file_by_put_req(struct client_session *client,
 		return -1;
 	}
 	req_info = req_packet->obj;
+	req_data = &req_info->data;
 
-	DEBUG((DEBUG_INFO, "file total size: %d\n", req_info->entry.total_size));
+	DEBUG((DEBUG_INFO, "file total size: %ld\n", req_data->entry.total_size));
 
 	/* save md5 */
-	strncpy(md5, req_info->entry.content, MD5_STR_LEN);
+	strncpy(md5, (char *)req_data->entry.content, MD5_STR_LEN);
 	if (same_file(rp, md5)) {
 		DEBUG((DEBUG_INFO, "file not changed: %s\n", rp));
 
 		/* send resp */
 		com_resp->status = RESP_OK;
 		resp_packet->obj = com_resp;
-		resp_packet->type = PACKET_TYPE_COMMON_RSP;
+		resp_packet->type = PACKET_TYPE_COMMON_RESP;
 
 		ret = send_sftt_packet(client->connect_fd, resp_packet);
 		if (ret == -1) {
@@ -1069,9 +1223,9 @@ int recv_one_file_by_put_req(struct client_session *client,
 
 	} else {
 		/* send resp */
-		com_resp->status = CONTINUE;
+		com_resp->status = RESP_CONTINUE;
 		resp_packet->obj = com_resp;
-		resp_packet->type = PACKET_TYPE_COMMON_RSP;
+		resp_packet->type = PACKET_TYPE_COMMON_RESP;
 
 		ret = send_sftt_packet(client->connect_fd, resp_packet);
 		if (ret == -1) {
@@ -1096,15 +1250,16 @@ int recv_one_file_by_put_req(struct client_session *client,
 			break;
 		}
 		req_info = req_packet->obj;
+		req_data = &req_info->data;
 		DEBUG((DEBUG_INFO, "receive %d-th block file content|size=%d\n",
-			(i + 1), req_info->entry.len));
+			(i + 1), req_data->entry.this_size));
 
-		fwrite(req_info->entry.content, req_info->entry.len, 1, fp);
+		fwrite(req_data->entry.content, req_data->entry.this_size, 1, fp);
 
 		/* send response */
 		resp_info->status = RESP_OK;
 		resp_packet->obj = resp_info;
-		resp_packet->type = PACKET_TYPE_PUT_RSP;
+		resp_packet->type = PACKET_TYPE_PUT_RESP;
 
 		ret = send_sftt_packet(client->connect_fd, resp_packet);
 		if (ret == -1) {
@@ -1112,13 +1267,13 @@ int recv_one_file_by_put_req(struct client_session *client,
 			break;
 		}
 
-		total_size += req_info->entry.len;
+		total_size += req_data->entry.this_size;
 		i += 1;
-	} while (total_size < req_info->entry.total_size);
+	} while (total_size < req_data->entry.total_size);
 
 	fclose(fp);
 
-	if (total_size == req_info->entry.total_size) {
+	if (total_size == req_data->entry.total_size) {
 		DEBUG((DEBUG_INFO, "received one file: %s\n", rp));
 	} else {
 		DEBUG((DEBUG_INFO, "receive file failed: %s\n", rp));
@@ -1132,12 +1287,94 @@ int recv_one_file_by_put_req(struct client_session *client,
 	}
 
 recv_one_file_done:
-	if (req_info->idx == req_info->nr - 1)
+	if (req_data->file_idx == req_data->total_files - 1)
 		*has_more = false;
 
-	set_file_mode(rp, req_info->entry.mode);
+	set_file_mode(rp, req_data->entry.mode);
 
 	DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+
+	return 0;
+}
+
+int handle_fwd_put_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct logged_in_user *user;
+	struct peer_session *peer;
+	struct put_req *req_info;
+	//struct put_req_data *req_data;
+	int ret;
+
+	req_info = req_packet->obj;
+	// check user info
+	user = &req_info->user;
+	if (check_user(user) == -1) {
+		//resp_info->nr = -1;
+		//strncpy(resp_info->message, "cannot check user!\n",
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//send_ll_resp_once(client, resp_info, resp_packet);
+
+		//return 0;
+		return send_put_resp(client->connect_fd, resp_packet,
+				RESP_CNT_CHECK_USER, 0);
+	}
+
+	// get or create peer session
+	peer = get_create_peer_session(client, user);
+	if (peer == NULL) {
+		//resp_info->nr = -1;
+		//strncpy(resp_info->message, "cannot get peer session!\n",
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//send_ll_resp_once(client, resp_info, resp_packet);
+
+		//return 0;
+		return send_put_resp(client->connect_fd, resp_packet,
+			       RESP_CNT_GET_PEER, 0);	
+	}
+
+	// send put req packet to peer
+	ret = send_sftt_packet(peer->connect_fd, req_packet);
+	if (ret == -1) {
+		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
+		//resp_info->nr = -1;
+		//strncpy(resp_info->message, "send ll req to peer failed!\n",
+		//	RESP_MESSAGE_MAX_LEN - 1);
+
+		//send_ll_resp_once(client, resp_info, resp_packet);
+		//return 0;
+		return send_put_resp(client->connect_fd, resp_packet,
+				RESP_SEND_PEER_ERR, 0);
+	}
+
+	// recv put req packet
+	ret = recv_sftt_packet(client->connect_fd, req_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	req_info = (struct put_req *)req_packet->obj;
+	assert(req_info != NULL);
+
+	for (;;) {
+		if (req_info->next) {
+			send_sftt_packet(peer->connect_fd, req_packet);
+		} else {
+			send_sftt_packet(peer->connect_fd, req_packet);
+			break;	
+		}
+
+		ret = recv_sftt_packet(client->connect_fd, req_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
+		}
+		req_info = (struct put_req *)req_packet->obj;
+		assert(req_info != NULL);
+	}
 
 	return 0;
 }
@@ -1148,11 +1385,16 @@ int handle_put_req(struct client_session *client,
 	struct common_resp *com_resp;
 	int ret, i = 0;
 	bool has_more = true;
+	struct put_req *req_info;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
 	com_resp = (struct common_resp *)mp_malloc(g_mp, __func__,
 			sizeof(struct common_resp));
 	assert(com_resp != NULL);
+
+	req_info = req_packet->obj;
+	if (req_info->to_peer)
+		return handle_fwd_put_req(client, req_packet, resp_packet);
 
 	do {
 		DEBUG((DEBUG_INFO, "recv %d-th file ...\n", i));
@@ -1179,7 +1421,8 @@ int handle_directcmd_req(struct client_session *client,
 {
 	struct directcmd_req *req;
 	struct directcmd_resp *resp;
-	char cmd[CMD_MAX_LEN + FILE_NAME_MAX_LEN];
+	struct directcmd_resp_data *data;
+	char cmd[CMD_MAX_LEN + FILE_NAME_MAX_LEN + 2];
 	char temp_file[FILE_NAME_MAX_LEN];
 	int ret;
 	long total_len;
@@ -1189,6 +1432,7 @@ int handle_directcmd_req(struct client_session *client,
 	resp = (struct directcmd_resp *)mp_malloc(g_mp, __func__,
 			sizeof(struct directcmd_resp));
 	assert(resp != NULL);
+	data = &resp->data;
 
 	req = req_packet->obj;
 	assert(req != NULL);
@@ -1196,51 +1440,58 @@ int handle_directcmd_req(struct client_session *client,
 	ret = create_temp_file(temp_file, "sfttd_directcmd_");
 	if (ret == -1) {
 		DEBUG((DEBUG_INFO, "cannot create temp file!\n"));
-		resp->total_len = -1;
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
+		//resp->total_len = -1;
+		//resp_packet->obj = resp;
+		//resp_packet->type = PACKET_TYPE_DIRECTCMD_RESP;
 
-		ret = send_sftt_packet(client->connect_fd, resp_packet);
-		if (ret == -1) {
-			printf("send mp stat response failed!\n");
-		}
-		return -1;
+		//ret = send_sftt_packet(client->connect_fd, resp_packet);
+		//if (ret == -1) {
+		//	printf("send mp stat response failed!\n");
+		//}
+		//return -1;
+		return send_directcmd_resp(client->connect_fd, resp_packet,
+				RESP_INTERNAL_ERR, 0);
 	}
 
 	snprintf(cmd, sizeof(cmd), "%s > %s", req->cmd, temp_file);
 	DEBUG((DEBUG_INFO, "%s\n", cmd));
 	system(cmd);
-	resp->total_len = file_size(temp_file);
 
 	fp = fopen(temp_file, "rb");
 	if (fp == NULL) {
 		DEBUG((DEBUG_INFO, "open command result file failed!\n"));
-		resp->total_len = -1;
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
+		//data->total_len = -1;
+		//resp_packet->obj = resp;
+		//resp_packet->type = PACKET_TYPE_DIRECTCMD_RESP;
 
-		ret = send_sftt_packet(client->connect_fd, resp_packet);
-		if (ret == -1) {
-			printf("send mp stat response failed!\n");
-		}
+		//ret = send_sftt_packet(client->connect_fd, resp_packet);
+		//if (ret == -1) {
+		//	printf("send mp stat response failed!\n");
+		//}
 
-		return -1;
+		//return -1;
+		return send_directcmd_resp(client->connect_fd, resp_packet,
+				RESP_INTERNAL_ERR, 0);
 	}
 
 	total_len = 0;
+	data->total_len = file_size(temp_file);
 	do {
-		ret = fread(resp->data, 1, CMD_RET_BATCH_LEN - 1, fp);
-		resp->this_len = ret;
-		total_len += resp->this_len;
+		ret = fread(data->content, 1, CMD_RET_BATCH_LEN - 1, fp);
+		data->this_len = ret;
+		total_len += data->this_len;
+		
+		if (total_len < data->total_len)
+			ret = send_directcmd_resp(client->connect_fd, resp_packet,
+				RESP_OK, 1);
+		else
+			ret = send_directcmd_resp(client->connect_fd, resp_packet,
+				RESP_OK, 1);
 
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_DIRECTCMD_RSP;
-
-		ret = send_sftt_packet(client->connect_fd, resp_packet);
 		if (ret == -1) {
 			printf("send mp stat response failed!\n");
 		}
-	} while (total_len < resp->total_len);
+	} while (total_len < data->total_len);
 
 	unlink(temp_file);
 
@@ -1251,22 +1502,24 @@ int handle_mp_stat_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct mp_stat_resp *resp;
+	struct mp_stat_resp_data *data;
 	struct mem_pool_stat stat;
-	int ret, i = 0;
+	int ret;
 
 	DEBUG((DEBUG_INFO, "handle mempool stat req in ...\n"));
 	resp = (struct mp_stat_resp *)mp_malloc(g_mp, __func__,
 			sizeof(struct mp_stat_resp));
 	assert(resp != NULL);
+	data = &resp->data;
 
 	get_mp_stat(g_mp, &stat);
-	resp->total_size = stat.total_size;
-	resp->total_nodes = stat.total_nodes;
-	resp->using_nodes = stat.using_nodes;
-	resp->free_nodes = stat.free_nodes;
+	data->total_size = stat.total_size;
+	data->total_nodes = stat.total_nodes;
+	data->using_nodes = stat.using_nodes;
+	data->free_nodes = stat.free_nodes;
 
 	resp_packet->obj = resp;
-	resp_packet->type = PACKET_TYPE_MP_STAT_RSP;
+	resp_packet->type = PACKET_TYPE_MP_STAT_RESP;
 
 	ret = send_sftt_packet(client->connect_fd, resp_packet);
 	if (ret == -1) {
@@ -1326,6 +1579,7 @@ int handle_who_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct who_resp *resp;
+	struct who_resp_data *data;
 	struct logged_in_user *users;
 	int total, num, count;
 	int ret, i = 0;
@@ -1338,46 +1592,51 @@ int handle_who_req(struct client_session *client,
 		DEBUG((DEBUG_INFO, "cannot alloc memory for resp!\n"));
 		return -1;
 	}
+	data = &resp->data;
 
 	users = get_logged_in_users(&total);
 	DEBUG((DEBUG_INFO, "There has %d user(s) logged in\n", total));
 	if (users == NULL || total <= 0) {
-		DEBUG((DEBUG_INFO, "get logged in user failed\n"));
-		resp->total = -1;
-		resp->num = 0;
+		//DEBUG((DEBUG_INFO, "get logged in user failed\n"));
+		//resp->total = -1;
+		//resp->num = 0;
 
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_WHO_RSP;
+		//resp_packet->obj = resp;
+		//resp_packet->type = PACKET_TYPE_WHO_RESP;
 
-		send_sftt_packet(client->connect_fd, resp_packet);
+		//send_sftt_packet(client->connect_fd, resp_packet);
 
-		return 0;
+		//return 0;
+		return send_who_resp(client->connect_fd, resp_packet,
+				RESP_INTERNAL_ERR, 0);
 	}
 
 	count = 0;
 	do {
 		num = (total - count) >= LOGGED_IN_USER_MAX_CNT ?
 			LOGGED_IN_USER_MAX_CNT : (total - count);
-		resp->total = total;
-		resp->num = num;
+		data->total = total;
+		data->this_nr = num;
 		for (i = 0; i < num; ++i) {
-			bzero(&resp->users[i], sizeof(struct logged_in_user));
-			strncpy(resp->users[i].session_id, users[i + count].session_id,
+			bzero(&data->users[i], sizeof(struct logged_in_user));
+			strncpy(data->users[i].session_id, users[i + count].session_id,
 					SESSION_ID_LEN - 1);
-			strncpy(resp->users[i].ip, users[i + count].ip,
+			strncpy(data->users[i].ip, users[i + count].ip,
 					IPV4_MAX_LEN - 1);
-			strncpy(resp->users[i].name, users[i + count].name,
+			strncpy(data->users[i].name, users[i + count].name,
 					USER_NAME_MAX_LEN - 1);
-			resp->users[i].port = users[i + count].port;
-			resp->users[i].task_port = users[i + count].task_port;
+			data->users[i].port = users[i + count].port;
+			data->users[i].task_port = users[i + count].task_port;
 		}
 
-		resp_packet->obj = resp;
-		resp_packet->type = PACKET_TYPE_WHO_RSP;
+		//resp_packet->obj = resp;
+		//resp_packet->type = PACKET_TYPE_WHO_RESP;
 
-		send_sftt_packet(client->connect_fd, resp_packet);
+		//send_sftt_packet(client->connect_fd, resp_packet);
 
 		count += num;
+		ret = send_who_resp(client->connect_fd, resp_packet,
+			RESP_OK, count < total ? 1 : 0);
 	} while (count < total);
 
 	DEBUG((DEBUG_INFO, "handle who req out ...\n"));
@@ -1387,14 +1646,13 @@ int handle_who_req(struct client_session *client,
 
 int check_user(struct logged_in_user *user)
 {
-	int i, j;
-	int ret = -1;
-	struct logged_in_user *users;
+	int i, ret = -1;
+	//struct logged_in_user *users;
 	struct client_session *session;
 
 	server->pm->ops->lock(server->pm);
 
-	for (i = 0, j = 0; i < MAX_CLIENT_NUM; ++i) {
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
 		printf("%s:%d, session->session_id=%s, user->session_id=%s\n",
 				__func__, __LINE__, session->session_id,
@@ -1668,7 +1926,7 @@ void main_loop(void)
 	len = sizeof(struct sockaddr_in);
 	while (1) {
 		update_server(server);
-		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, &len);
+		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
 			continue;
@@ -1844,6 +2102,8 @@ int sftt_server_start(char *store_path, bool background)
 	signal(SIGTERM, sftt_server_exit);
 
 	main_loop();
+
+	return 0;
 }
 
 int sftt_server_restart(char *store_path, bool background)
@@ -2053,7 +2313,7 @@ void db_add_user(struct db_connect *db_con, char *info)
 		return ;
 	}
 
-	md5_str(passwd, strlen(passwd), passwd_md5);
+	md5_str((unsigned char *)passwd, strlen(passwd), (unsigned char *)passwd_md5);
 
 	if (user_add(name, passwd_md5) == -1) {
 		printf("add user failed!\n");
@@ -2092,7 +2352,8 @@ void db_update_user(struct db_connect *db_con, char *info)
 	}
 
 	if (strcmp(key_name, "passwd") == 0) {
-		md5_str(value, strlen(value), passwd_md5);
+		md5_str((unsigned char *)value, strlen(value),
+				(unsigned char *)passwd_md5);
 		update_user_base_info(name, "passwd_md5", passwd_md5);
 	} else if (strcmp(key_name, "home_dir") == 0 ||
 		   strcmp(key_name, "create_time") == 0) {
@@ -2124,7 +2385,7 @@ void db_user_info(struct db_connect *db_con, char *cmd)
 
 	ts_to_str(user_base->create_time, ctime_buf, 31);
 	ts_to_str(user_base->update_time, uptime_buf, 31);
-	printf("name: %s, uid: %d, home: %s, create time: %s, "
+	printf("name: %s, uid: %ld, home: %s, create time: %s, "
 		"last update: %s\n", user_base->name, user_base->uid,
 		user_base->home_dir, ctime_buf, uptime_buf);
 }

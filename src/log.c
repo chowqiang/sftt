@@ -31,7 +31,7 @@
 #include "mem_pool.h"
 #include "msg_queue.h"
 #include "ratelimit.h"
-#include "req_rsp.h"
+#include "req_resp.h"
 #include "utils.h"
 
 extern struct mem_pool *g_mp;

@@ -18,7 +18,7 @@
 #define _FILE_H_
 
 #include <stdbool.h>
-#include "req_rsp.h"
+#include "req_resp.h"
 
 #define FILE_TYPE_UNKNOWN	0
 #define FILE_TYPE_FILE		1
@@ -84,6 +84,7 @@ int set_file_mode(char *path, mode_t mode);
 
 int create_temp_file(char *buf, char *prefix);
 
-bool is_abs_path(char *buf);
+bool is_absolute_path(char *path);
+bool is_relative_path(char *path);
 
 #endif

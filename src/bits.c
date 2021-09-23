@@ -55,7 +55,7 @@ void test_code(void)
 	char *cc = "000";
 	char *dc = "001";
 	char *p = NULL;
-	unsigned char *text = "aaaabbbccd";
+	char *text = "aaaabbbccd";
 	unsigned char codes[128];
 	unsigned char *pos = codes, *q = NULL;
 	

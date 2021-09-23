@@ -184,11 +184,12 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
     state[3] += d;  
 }  
 
-int md5_file(unsigned char *file, unsigned char *digest) {
+int md5_file(char *file, unsigned char *digest) {
 	MD5_CTX context;
 	MD5Init(&context);
 	FILE *fp = fopen(file, "r");
-	char *data = NULL, *tmp = NULL;
+	unsigned char *data = NULL;
+	char *tmp = NULL;
 	int ret = 0;
 	unsigned char md5[MD5_LEN];
 	
@@ -197,7 +198,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 		perror("fopen failed");
 		return -1;
 	}
-	data = (char *)mp_malloc(g_mp, __func__, BLOCK_SIZE);
+	data = mp_malloc(g_mp, __func__, BLOCK_SIZE);
 	int i = 0;
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
@@ -217,7 +218,7 @@ int md5_file(unsigned char *file, unsigned char *digest) {
 	tmp = md5_printable_str(md5);
 	assert(tmp != NULL);
 
-	strcpy(digest, tmp);
+	strcpy((char *)digest, tmp);
 	mp_free(g_mp, tmp);
 
 	return 0;
@@ -246,7 +247,7 @@ int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 	tmp = md5_printable_str(md5);
 	assert(tmp != NULL);
 
-	strcpy(digest, tmp);
+	strcpy((char *)digest, tmp);
 	mp_free(g_mp, tmp);
 
 	return 0;

@@ -47,7 +47,7 @@ void test_get_all_file_list(void)
 	list = get_all_file_list("../sftt");
 #if 1
 	dlist_for_each(list, node)
-		printf("%s\n", node->data);
+		printf("%s\n", (char *)node->data);
 #endif
 }
 

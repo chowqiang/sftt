@@ -50,7 +50,7 @@ void trace_info_destruct(struct trace_info *ptr)
 
 int trace_info_set_user(struct trace_info *trace, struct user_base_info *user)
 {
-	if (trace->user == NULL);
+	if (trace->user == NULL)
 		trace->user = mp_malloc(g_mp, __func__, sizeof(struct user_base_info));
 	assert(trace->user != NULL);
 
@@ -68,7 +68,7 @@ struct sds *trace_info_to_str(struct trace_info *trace)
 	str = new(sds);
 	assert(str != NULL);
 
-	sprintf(buf, "uid=%d|", trace->user->uid);
+	sprintf(buf, "uid=%ld|", trace->user->uid);
 	sds_add_str(str, buf);
 
 	sprintf(buf, "name=%s|", trace->user->name);

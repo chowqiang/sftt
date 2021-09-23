@@ -30,15 +30,15 @@ int kstrtouint(const char *s, unsigned int base, unsigned int *res);
 
 int kstrtoull(const char *s, unsigned int base, unsigned long long *res);
 
-static int _kstrtoull(const char *s, unsigned int base, unsigned long long *res);
+//static int _kstrtoull(const char *s, unsigned int base, unsigned long long *res);
 
 const char *_parse_integer_fixup_radix(const char *s, unsigned int *base);
 
-static inline char _tolower(const char c);
+//static inline char _tolower(const char c);
 
-static inline int isdigit(int ch);
+//static inline int isdigit(int ch);
 
-static inline int isxdigit(int ch);
+//static inline int isxdigit(int ch);
 
 unsigned int _parse_integer(const char *s, unsigned int base, unsigned long long *p);
 

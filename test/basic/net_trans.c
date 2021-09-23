@@ -23,6 +23,7 @@
 #include "endpoint.h"
 #include "mem_pool.h"
 #include "net_trans.h"
+#include "response.h"
 #include "user.h"
 #include "utils.h"
 
@@ -45,6 +46,7 @@ int run_client(int port, char *user_name)
 	struct sftt_packet *req_packet, *resp_packet;
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
+	struct validate_resp_data *data;
 
 	if (port == -1)
 		port = get_random_port();
@@ -87,27 +89,31 @@ int run_client(int port, char *user_name)
 	}
 
 	resp_info = (validate_resp *)resp_packet->obj;
-	if (resp_info->status != UVS_PASS) {
+	if (resp_info->status != RESP_UVS_PASS) {
 		printf("validate status is not pass!\n");
 		return -1;
 	}
+	data = &resp_info->data;
 
 	printf("pass the validate\n"
 		"status: %d\n"
 		"user_name: %s\n"
-		"uid: %d\n"
+		"uid: %ld\n"
 		"session_id: %s\n",
-		resp_info->status, resp_info->name,
-		resp_info->uid, resp_info->session_id);
+		resp_info->status, data->name,
+		data->uid, data->session_id);
+
+	return 0;
 }
 
 int run_server(void)
 {
-	int ret, num;
+	int ret;
 	int port;
 	int socket_fd, connect_fd;
 	struct validate_req *req_info;
 	struct validate_resp *resp_info;
+	struct validate_resp_data *data;
 	struct sftt_packet *req_packet, *resp_packet;
 	struct user_base_info *user;
 	char session_id[32];
@@ -143,16 +149,17 @@ int run_server(void)
 		user = find_user_base_by_name(req_info->name);
 		if (user == NULL) {
 			printf("get user info by name failed!\n");
-			resp_info->status = UVS_INVALID;
+			resp_info->status = RESP_UVS_INVALID;
 		} else {
-			resp_info->status = UVS_PASS;
-			resp_info->uid = user->uid;
-			strcpy(resp_info->name, user->name);
+			resp_info->status = RESP_UVS_PASS;
+			data = &resp_info->data;
+			data->uid = user->uid;
+			strcpy(data->name, user->name);
 			gen_session_id(session_id, 16);
-			strcpy(resp_info->session_id, session_id);
+			strcpy(data->session_id, session_id);
 		}
 
-		resp_packet->type = PACKET_TYPE_VALIDATE_RSP;
+		resp_packet->type = PACKET_TYPE_VALIDATE_RESP;
 		resp_packet->obj = resp_info;
 
 		printf("to be sent ...\n");

@@ -35,6 +35,8 @@ void *test_mp_thread(void *info)
 	if (ti->idx % 3 == 1) {
 		mp_free(ti->mp, buf);
 	}
+
+	return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -49,6 +51,9 @@ int main(int argc, char *argv[])
 		thread_infos[i].mp = mp;
 		thread_infos[i].idx = i;
 		ret = pthread_create(&thread_ids[i], NULL, test_mp_thread, &thread_infos[i]);
+		if (ret) {
+			printf("create pthread failed! idx=%d\n", i);
+		}
 	}
 
 

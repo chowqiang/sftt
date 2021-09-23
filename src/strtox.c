@@ -21,6 +21,10 @@
 #include "strtox.h"
 #include "compiler.h"
 
+static int _kstrtoull(const char *s, unsigned int base, unsigned long long *res);
+static inline char _tolower(const char c);
+static inline int isxdigit(int ch);
+
 int kstrtou32(const char *s, unsigned int base, u32 *res)
 {
     return kstrtouint(s, base, res);
@@ -28,11 +32,12 @@ int kstrtou32(const char *s, unsigned int base, u32 *res)
 
 int parse_even_earlier(u32 *res, const char *option, char *p)
 {
-    unsigned int tmp;                \
-                                    \
-    if (strncmp(option, (char *)p, strlen(option)) == 0)        \
-        tmp = kstrtou32((char *)p + strlen(option) + 1, 10, res); \
+    int tmp = -1;
 
+    if (strncmp(option, (char *)p, strlen(option)) == 0)
+        tmp = kstrtou32((char *)p + strlen(option) + 1, 10, res);
+
+    return tmp;
 }
 
 /**

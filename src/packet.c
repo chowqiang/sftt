@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "req_rsp.h"
+#include "req_resp.h"
 
 #define SET_REQ_PACKET_MIN_LEN(type, ltype) \
 	int type##_REQ_PACKET_MIN_LEN = (sizeof(struct ltype##_req) * 10);

@@ -20,16 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "md5.h"
-#include "req_rsp.h"
-
-enum user_validate_status {
-	UVS_NTFD,
-	UVS_INVALID,
-	UVS_MISSHOME,
-	UVS_BLOCK,
-	UVS_BAD_VER,
-	UVS_PASS
-};
+#include "req_resp.h"
 
 struct user_base_info {
 	uint64_t uid;
