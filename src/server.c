@@ -832,66 +832,6 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	return 0;
 }
 
-int send_trans_entry_by_get_resp(struct client_session *client,
-	struct sftt_packet *resp_packet, struct get_resp *resp)
-{
-	resp_packet->type = PACKET_TYPE_GET_RESP;
-
-	// how to serialize and deserialize properly ???
-	resp_packet->obj = resp;
-	resp_packet->block_size = GET_RESP_PACKET_MIN_LEN;
-
-	int ret = send_sftt_packet(client->connect_fd, resp_packet);
-	if (ret == -1) {
-		printf("%s: send sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	return 0;
-}
-
-int send_file_name_by_get_resp(struct client_session *client,
-	struct sftt_packet *resp_packet, char *path,
-	char *fname, struct get_resp *resp)
-{
-	struct get_resp_data *data;
-	
-	data = &resp->data;
-	DEBUG((DEBUG_INFO, "path=%s|fname=%s\n", path, fname));
-	if (is_dir(path))
-		data->entry.type = FILE_TYPE_DIR;
-	else
-		data->entry.type = FILE_TYPE_FILE;
-
-	data->entry.mode = file_mode(path);
-	strncpy((char *)data->entry.content, fname, FILE_NAME_MAX_LEN);
-	data->entry.this_size = strlen(fname);
-
-	return send_trans_entry_by_get_resp(client, resp_packet, resp);
-}
-
-int send_file_md5_by_get_resp(struct client_session *client,
-	struct sftt_packet *resp_packet, char *file,
-	struct get_resp *resp)
-{
-	int ret;
-	struct get_resp_data *data;
-
-	if (is_dir(file))
-		return 0;
-
-	data = &resp->data;
-	data->entry.total_size = file_size(file);
-
-	ret = md5_file(file, data->entry.content);
-	if (ret == -1)
-		return -1;
-
-	data->entry.this_size = strlen((char *)data->entry.content);
-	DEBUG((DEBUG_INFO, "file=%s|md5=%s\n", file, data->entry.content));
-
-	return send_trans_entry_by_get_resp(client, resp_packet, resp);
-}
 
 int send_file_content_by_get_resp(struct client_session *client,
 	struct sftt_packet *resp_packet, struct get_resp *resp)
@@ -1067,7 +1007,7 @@ int handle_fwd_get_req(struct client_session *client,
 }
 
 #ifdef CONFIG_GET_OVERLAP
-int handle_get_req(struct client_session *client,
+int handle_get_req_old(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct get_req *req;
@@ -1140,12 +1080,17 @@ int handle_get_req(struct client_session *client,
 	return 0;
 }
 #else
+int handle_get_req_old(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	return 0;
+}
+#endif
 int handle_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
-
+	return 0;
 }
-#endif
 
 int recv_one_file_by_put_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet,
@@ -1379,7 +1324,7 @@ int handle_fwd_put_req(struct client_session *client,
 	return 0;
 }
 
-int handle_put_req(struct client_session *client,
+int handle_put_req_old(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	struct common_resp *com_resp;
@@ -1414,6 +1359,12 @@ int handle_put_req(struct client_session *client,
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
 	return ret;
+}
+
+int handle_put_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	return 0;
 }
 
 int handle_directcmd_req(struct client_session *client,
@@ -2442,4 +2393,3 @@ void sftt_server_db(void)
 		}
 	}
 }
-

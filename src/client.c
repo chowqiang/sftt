@@ -1134,6 +1134,14 @@ void *handle_peer_task(void *arg)
 			}
 			handle_peer_write_req(task, req, resp);
 			break;
+		case PACKET_TYPE_LL_REQ:
+			break;
+		case PACKET_TYPE_GET_REQ:
+			break;
+		case PACKET_TYPE_PUT_REQ:
+			break;
+		default:
+			break;
 		}
 		free_sftt_packet(&resp);
 	}
@@ -1846,7 +1854,7 @@ recv_one_file_done:
 	return 0;
 }
 
-int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
+int sftt_client_get_handler_old(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	struct sftt_packet *req_packet;
 	struct sftt_packet *resp_packet;
@@ -1935,6 +1943,11 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	free_sftt_packet(&resp_packet);
 
 	return ret;
+}
+
+int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
+{
+	return 0;
 }
 
 void sftt_client_get_usage(void)
@@ -2100,7 +2113,7 @@ int send_one_file_by_put_req(struct sftt_client_v2 *client,
 	return ret;
 }
 
-int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
+int sftt_client_put_handler_old(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	struct sftt_client_v2 *client = obj;
 	FILE *fp;
@@ -2157,6 +2170,11 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	free_sftt_packet(&req_packet);
 	free_sftt_packet(&resp_packet);
 
+	return 0;
+}
+
+int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
+{
 	return 0;
 }
 

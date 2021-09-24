@@ -243,7 +243,9 @@ int gen_h_file(struct st_list *head, char *h_file)
 
 	fprintf(fp, "#include \"packet.h\"\n\n");
 	while (p) {
-		fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet, int code, int next);\n\n", p->struct_name);
+		fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,\n"
+			"\tstruct %s *resp, int code, int next);\n\n",
+			p->struct_name, p->struct_name);
 		p = p->next;
 	}
 	fprintf(fp, "#endif\n");
@@ -251,6 +253,19 @@ int gen_h_file(struct st_list *head, char *h_file)
 	fclose(fp);
 
 	return 0;
+}
+
+char *get_packet_block_size(char *block_size, char *name)
+{
+	int i;
+
+	for (i = 0; name[i]; ++i) {
+		block_size[i] = toupper(name[i]);
+	}
+	block_size[i] = 0;
+	strcat(block_size, "_PACKET_MIN_LEN");
+
+	return block_size;
 }
 
 char *get_packet_type(char *packet_type, char *name)
@@ -269,18 +284,21 @@ char *get_packet_type(char *packet_type, char *name)
 void output_send_resp(FILE *fp, char *struct_name)
 {
 	char packet_type[128];
+	char block_size[128];
 
-	fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,"
-		" int code, int next)\n", struct_name);
+	fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,\n"
+		"\tstruct %s *resp, int code, int next)\n", struct_name,
+		struct_name);
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tstruct %s *resp;\n\n", struct_name);
-	fprintf(fp, "\tresp = resp_packet->obj;\n", struct_name);
 	fprintf(fp, "\tresp->status = code;\n");
 	fprintf(fp, "\tstrncpy(resp->message, resp_messages[code],"
 		" RESP_MESSAGE_MAX_LEN - 1);\n");
 	fprintf(fp, "\tresp->next = next;\n\n");
-	fprintf(fp, "\tresp_packet->type = %s;\n\n",
+	fprintf(fp, "\tresp_packet->obj = resp;\n");
+	fprintf(fp, "\tresp_packet->type = %s;\n",
 		get_packet_type(packet_type, struct_name));
+	fprintf(fp, "\tresp_packet->block_size = %s;\n\n",
+		get_packet_block_size(block_size, struct_name));
 
 	fprintf(fp, "\treturn send_sftt_packet(fd, resp_packet);\n");
 	fprintf(fp, "}\n");

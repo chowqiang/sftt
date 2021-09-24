@@ -535,3 +535,8 @@ int create_temp_file(char *buf, char *prefix)
 
 	return 0;
 }
+
+char *get_basename(char *path)
+{
+	return basename(path);
+}
