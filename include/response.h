@@ -34,6 +34,7 @@ enum resp_code {
 	RESP_SESSION_INVALID,
 	RESP_FILE_NTFD,
 	RESP_INTERNAL_ERR,
+	RESP_PATH_NOT_ABS,
 };
 
 #endif

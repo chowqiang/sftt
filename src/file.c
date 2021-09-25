@@ -459,8 +459,10 @@ struct dlist *get_path_entry_list(char *path, char *pwd)
 
 	if (is_absolute_path(path)) {
 		rp = path;
-	} else {
+	} else if (pwd) {
 		rp = path_join(pwd, path);
+	} else {
+		return NULL;
 	}
 
 	if (!file_existed(rp))

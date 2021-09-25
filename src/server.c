@@ -833,11 +833,6 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 }
 
 
-int send_file_content_by_get_resp(struct client_session *client,
-	struct sftt_packet *resp_packet, struct get_resp *resp)
-{
-	return send_trans_entry_by_get_resp(client, resp_packet, resp);
-}
 
 int send_one_file_by_get_resp(struct client_session *client,
 	struct sftt_packet *resp_packet, char *path,
@@ -1012,85 +1007,61 @@ int handle_get_req_old(struct client_session *client,
 {
 	struct get_req *req;
 	struct get_resp *resp;
-	//struct get_resp_data *data;
-	//FILE *fp;
-	char file[FILE_NAME_MAX_LEN];
-	//int ret;
-	struct dlist *file_list;
-	struct dlist_node *node;
-	int file_count, i = 0;
-	struct path_entry *entry;
+	struct get_resp_data *data;
+	char path[FILE_NAME_MAX_LEN];
+	char *fname; 
 
 	DEBUG((DEBUG_INFO, "handle get req in ...\n"));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
-	//data = &resp->data;
 
 	req = req_packet->obj;
 	if (req->to_peer)
 		return handle_fwd_get_req(client, req_packet, resp_packet);	
 
-	strncpy(file, req->path, FILE_NAME_MAX_LEN);
+	strncpy(path, req->path, FILE_NAME_MAX_LEN);
 	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
 		req->session_id, req->path));
 
-	entry = get_path_entry(file, client->pwd);
-	if (!file_existed(entry->abs_path)) {
-		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_get_resp(client->connect_fd, resp_packet,
-				RESP_FILE_NTFD, 0);
-		//data->total_files = -1;
-		//resp_packet->obj = resp;
-		//resp_packet->type = PACKET_TYPE_GET_RESP;
-		//ret = send_sftt_packet(client->connect_fd, resp_packet);
-		//if (ret == -1) {
-		//	printf("send sftt packet failed!\n");
-		//	return -1;
-		//}
-
-		//return 0;
+	if (!is_absolute_path(path)) {
+		DEBUG((DEBUG_INFO, "path not absolute!\n"));
+		return send_get_resp(client->connect_fd, resp_packet, resp,
+				RESP_PATH_NOT_ABS, 0);
 	}
 
-	if (is_file(entry->abs_path)) {
-		DEBUG((DEBUG_INFO, "send file: %s\n", entry->abs_path));
-		send_one_file_by_get_resp(client, resp_packet,
-				entry->abs_path, entry->rel_path, 1, 0);
+	if (!file_existed(path)) {
+		DEBUG((DEBUG_INFO, "file not existed!\n"));
+		return send_get_resp(client->connect_fd, resp_packet, resp,
+				RESP_FILE_NTFD, 0);
+	}
+
+	if (is_file(path)) {
+		DEBUG((DEBUG_INFO, "send file: %s\n", path));
+		data = &resp->data;
+		data->total_files = 1;
+		data->file_idx = 0;
+		fname = get_basename(path);	
+		ret = send_file_by_get_resp(client->connect_fd, path, fname, resp_packet,
+				resp, 0);
 		DEBUG((DEBUG_INFO, "send file done\n"));
 	} else {
-		DEBUG((DEBUG_INFO, "send dir: %s\n", entry->abs_path));
-		file_list = get_path_entry_list(file, client->pwd);
-		file_count = dlist_size(file_list);
-		DEBUG((DEBUG_INFO, "file_count: %d\n", file_count));
-		dlist_for_each(file_list, node) {
-			entry = node->data;
-			DEBUG((DEBUG_INFO, "send %d-th file: %s\n", i, entry->abs_path));
-			if (send_one_file_by_get_resp(client, resp_packet,
-				entry->abs_path, entry->rel_path, file_count, i) == -1) {
-				DEBUG((DEBUG_INFO, "send file failed: %s\n", (char *)node->data));
-			}
-			DEBUG((DEBUG_INFO, "send file done\n"));
-			++i;
-		}
+		DEBUG((DEBUG_INFO, "send dir: %s\n", path));
+		ret = send_dir_by_get_resp(client->connect_fd, path, resp_packet, resp);
 		DEBUG((DEBUG_INFO, "send dir done\n"));
 	}
 
 	DEBUG((DEBUG_INFO, "handle get req out\n"));
 
-	return 0;
+	return ret;
 }
 #else
-int handle_get_req_old(struct client_session *client,
-	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
-{
-	return 0;
-}
-#endif
 int handle_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	return 0;
 }
+#endif
 
 int recv_one_file_by_put_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet,

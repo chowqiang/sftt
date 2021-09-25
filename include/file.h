@@ -37,6 +37,9 @@ struct path_entry_list {
 	struct path_entry_list *next;
 };
 
+#define IS_DIR(type)	(type == FILE_TYPE_DIR)
+#define IS_FILE(type)	(type == FILE_TYPE_FILE)
+
 #define FILE_TYPE_NAME(type)          \
        ({                             \
 	const char *__name;           \
