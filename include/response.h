@@ -35,6 +35,7 @@ enum resp_code {
 	RESP_FILE_NTFD,
 	RESP_INTERNAL_ERR,
 	RESP_PATH_NOT_ABS,
+	RESP_UNKNOWN_FILE_TYPE,
 };
 
 #endif

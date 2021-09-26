@@ -34,4 +34,5 @@ const char *resp_messages[] = {
 	[RESP_FILE_NTFD] = "file not found!",
 	[RESP_INTERNAL_ERR] = "internal error!",
 	[RESP_PATH_NOT_ABS] = "path not absolute!",
+	[RESP_UNKNOWN_FILE_TYPE] = "unknown file type",
 };

@@ -538,6 +538,18 @@ int create_temp_file(char *buf, char *prefix)
 	return 0;
 }
 
+int create_new_file(char *fname, mode_t mode)
+{
+	FILE *fp;
+
+	fp = fopen(fname, "w+");
+	if (fp == NULL)
+		return -1;
+
+	fclose(fp);
+       	return set_file_mode(fp, mode);
+}
+
 char *get_basename(char *path)
 {
 	return basename(path);

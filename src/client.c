@@ -1854,16 +1854,12 @@ recv_one_file_done:
 	return 0;
 }
 
-int sftt_client_get_handler_old(void *obj, int argc, char *argv[], bool *argv_check)
+int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	struct sftt_packet *req_packet;
-	struct sftt_packet *resp_packet;
 	struct get_req *req;
-	struct get_resp *resp;
+	struct sftt_packet *req_packet;
 	struct sftt_client_v2 *client = obj;
-	struct common_resp *com_resp;
 	int ret, user_no;
-	bool has_more = true;
 	char *target = NULL;
 	struct logged_in_user *user;
 
@@ -1896,11 +1892,6 @@ int sftt_client_get_handler_old(void *obj, int argc, char *argv[], bool *argv_ch
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
-	if (resp_packet == NULL) {
-		printf("%s: malloc sftt paceket failed!\n", __func__);
-		return -1;
-	}
 
 	req = mp_malloc(g_mp, "get_handler_req", sizeof(struct get_req));
 	if (req == NULL) {
@@ -1931,23 +1922,13 @@ int sftt_client_get_handler_old(void *obj, int argc, char *argv[], bool *argv_ch
 		return -1;
 	}
 
-	do {
-		ret = recv_one_file_by_get_resp(client, resp_packet,
-			com_resp, target, &has_more);
-	} while (ret == 0 && has_more);
+	ret = recv_files_from_get_resp(fd, target);
 
 	mp_free(g_mp, req);
-	mp_free(g_mp, com_resp);
 
 	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
 
 	return ret;
-}
-
-int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
-{
-	return 0;
 }
 
 void sftt_client_get_usage(void)
