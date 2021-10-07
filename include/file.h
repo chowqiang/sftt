@@ -85,9 +85,11 @@ struct path_entry *get_dir_path_entry_array(char *file_name, char *prefix, int *
 mode_t file_mode(char *path);
 int set_file_mode(char *path, mode_t mode);
 
+int create_new_file(char *fname, mode_t mode);
 int create_temp_file(char *buf, char *prefix);
 
 bool is_absolute_path(char *path);
 bool is_relative_path(char *path);
 
+char *get_basename(char *path);
 #endif

@@ -547,7 +547,8 @@ int create_new_file(char *fname, mode_t mode)
 		return -1;
 
 	fclose(fp);
-       	return set_file_mode(fp, mode);
+
+       	return set_file_mode(fname, mode);
 }
 
 char *get_basename(char *path)
