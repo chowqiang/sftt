@@ -49,6 +49,7 @@
 #include "req_resp.h"
 #include "response.h"
 #include "state.h"
+#include "trans.h"
 #include "user.h"
 #include "utils.h"
 #include "version.h"
@@ -1080,13 +1081,162 @@ struct peer_task *create_peer_task(struct peer_task_handler *handler)
 }
 
 int handle_peer_write_req(struct peer_task *task, struct sftt_packet *req_packet,
-		struct sftt_packet *resp_pakcet)
+		struct sftt_packet *resp_packet)
 {
 	struct write_req *req = req_packet->obj;
 
 	printf("%s\n", req->message);
 
 	return 0;
+}
+int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet)
+{
+	struct ll_req *req;
+	struct ll_resp *resp;
+	struct ll_resp_data *data;
+	char tmp[2 * DIR_PATH_MAX_LEN + 4];
+	char path[2 * DIR_PATH_MAX_LEN + 2];
+	int i = 0;
+	struct dlist *file_list;
+	struct dlist_node *node;
+	bool has_more = false;
+
+	DEBUG((DEBUG_INFO, "handle ll req in ...\n"));
+
+	req = req_packet->obj;
+	assert(req != NULL);
+
+	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req->path));
+
+	resp = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
+	assert(resp != NULL);
+
+	data = &resp->data;
+
+	strncpy(path, req->path, FILE_NAME_MAX_LEN - 1);
+	simplify_path(path);
+
+	DEBUG((DEBUG_INFO, "ls -l|path=%s\n", path));
+
+	if (!file_existed(path)) {
+		data->total = -1;
+		DEBUG((DEBUG_INFO, "file not existed!\n"));
+		return send_ll_resp(task->sock, resp_packet,
+			       resp, RESP_FILE_NTFD, 0);
+	}
+
+	if (is_file(path)) {
+		data->total = 1;
+
+		strncpy(data->entries[0].name, basename(path), FILE_NAME_MAX_LEN - 1);
+		data->entries[0].type = FILE_TYPE_FILE;
+
+		DEBUG((DEBUG_INFO, "list file successfully!\n"));
+
+		return send_ll_resp(task->sock, resp_packet,
+				resp, RESP_OK, 0);
+	} else if (is_dir(path)) {
+		file_list = get_top_file_list(path);
+		if (file_list == NULL) {
+			data->total = -1;
+			send_ll_resp(task->sock, resp_packet,
+				resp, RESP_INTERNAL_ERR, 0);
+
+			return -1;
+		}
+		DEBUG((DEBUG_INFO, "list dir ...\n"));
+		DEBUG((DEBUG_INFO, "file_count=%d\n", dlist_size(file_list)));
+		node = dlist_head(file_list);
+		while (node) {
+			i = 0;
+			dlist_for_each_pos(node) {
+				if (i == FILE_ENTRY_MAX_CNT)
+					break;
+				strncpy(data->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
+				snprintf(tmp, sizeof(tmp) - 1, "%s/%s", path, (char *)node->data);
+				DEBUG((DEBUG_INFO, "file_name=%s\n", tmp));
+
+				if (is_file(tmp))
+					data->entries[i].type = FILE_TYPE_FILE;
+				else if (is_dir(tmp))
+					data->entries[i].type = FILE_TYPE_DIR;
+				else
+					data->entries[i].type = FILE_TYPE_UNKNOWN;
+				++i;
+			}
+			data->total = i;
+			if (node) {
+				has_more = true;
+				send_ll_resp(task->sock, resp_packet,
+					resp, RESP_OK, 1);
+			} else {
+				has_more = false;
+				send_ll_resp(task->sock, resp_packet,
+					resp, RESP_OK, 0);
+			}
+		}
+	}
+
+	if (has_more)
+		send_ll_resp(task->sock, resp_packet,
+			resp, RESP_OK, 0);
+
+	DEBUG((DEBUG_INFO, "list file successfully!\n"));
+	DEBUG((DEBUG_INFO, "handle ll req out\n"));
+
+	return 0;
+}
+
+int handle_peer_get_req(struct peer_task *task, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet)
+{
+	struct get_req *req;
+	struct get_resp *resp;
+	char path[FILE_NAME_MAX_LEN];
+	int ret;
+
+	DEBUG((DEBUG_INFO, "handle get req in ...\n"));
+
+	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
+	assert(resp != NULL);
+
+	req = req_packet->obj;
+
+	strncpy(path, req->path, FILE_NAME_MAX_LEN);
+	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
+		req->session_id, req->path));
+
+	if (!is_absolute_path(path)) {
+		DEBUG((DEBUG_INFO, "path not absolute!\n"));
+		return send_get_resp(task->sock, resp_packet, resp,
+				RESP_PATH_NOT_ABS, 0);
+	}
+
+	if (!file_existed(path)) {
+		DEBUG((DEBUG_INFO, "file not existed!\n"));
+		return send_get_resp(task->sock, resp_packet, resp,
+				RESP_FILE_NTFD, 0);
+	}
+
+	ret = send_files_by_get_resp(task->sock, path, resp_packet,
+			resp);
+
+	DEBUG((DEBUG_INFO, "handle get req out\n"));
+
+	return ret;
+}
+
+int handle_peer_put_req(struct peer_task *task, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet)
+{
+	int ret;
+
+	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
+	ret = recv_files_by_put_req(task->sock, req_packet);
+	DEBUG((DEBUG_INFO, "handle put req out\n"));
+
+	return ret;
 }
 
 void *handle_peer_task(void *arg)
@@ -1136,10 +1286,25 @@ void *handle_peer_task(void *arg)
 			handle_peer_write_req(task, req, resp);
 			break;
 		case PACKET_TYPE_LL_REQ:
+			resp = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_ll_req(task, req, resp);
 			break;
 		case PACKET_TYPE_GET_REQ:
+			resp = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_get_req(task, req, resp);
 			break;
 		case PACKET_TYPE_PUT_REQ:
+			resp = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_put_req(task, req, resp);
 			break;
 		default:
 			break;

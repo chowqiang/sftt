@@ -970,18 +970,13 @@ int handle_fwd_put_req(struct client_session *client,
 int handle_put_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
-	struct common_resp *com_resp;
-	int ret, i = 0;
-	bool has_more = true;
-	struct put_req *req_info;
+	int ret;
+	struct put_req *req;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
-	com_resp = (struct common_resp *)mp_malloc(g_mp, __func__,
-			sizeof(struct common_resp));
-	assert(com_resp != NULL);
 
-	req_info = req_packet->obj;
-	if (req_info->to_peer)
+	req = req_packet->obj;
+	if (req->to_peer)
 		return handle_fwd_put_req(client, req_packet, resp_packet);
 
 	ret = recv_files_by_put_req(client->connect_fd, req_packet);
