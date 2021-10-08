@@ -83,16 +83,20 @@ int send_file_md5_by_get_resp(int fd, char *path, struct sftt_packet *resp_packe
 }
 
 int send_file_by_get_resp(int fd, char *path, char *fname,
-	struct sftt_packet *resp_packet, struct get_resp *resp, int next)
+	struct sftt_packet *resp_packet, struct get_resp *resp)
 {
 	struct get_resp_data *data;
 	struct common_resp *com_resp;
-	int ret;
+	int ret, is_last, next;
 	long read_size;
 	FILE *fp;
 
-	if (is_dir(path))
+	is_last = resp->data.file_idx == resp->data.total_files - 1;
+
+	if (is_dir(path)) {
+		next = is_last ? 0 : 1;
 		return send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, next);
+	}
 
 	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, 1);
 	if (ret == -1)
@@ -156,7 +160,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	struct dlist *file_list;
 	struct dlist_node *node;
 	struct get_resp_data *data;
-	int file_count, next;
+	int file_count;
 	struct path_entry *entry;
 
 	DEBUG((DEBUG_INFO, "send dir: %s\n", path));
@@ -176,12 +180,10 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	data->total_files = file_count;
 	data->file_idx = 0;
 	dlist_for_each(file_list, node) {
-		next = data->file_idx < file_count - 1;
-
 		entry = node->data;
 		DEBUG((DEBUG_INFO, "send %d-th file: %s\n", data->file_idx, entry->abs_path));
 		if (send_file_by_get_resp(fd, entry->abs_path, entry->rel_path,
-				resp_packet, resp, next) == -1) {
+				resp_packet, resp) == -1) {
 			DEBUG((DEBUG_INFO, "send file failed: %s\n", (char *)node->data));
 		}
 		DEBUG((DEBUG_INFO, "send file done\n"));
@@ -206,8 +208,7 @@ int send_files_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 		data->total_files = 1;
 		data->file_idx = 0;
 		fname = get_basename(path);	
-		ret = send_file_by_get_resp(fd, path, fname, resp_packet,
-				resp, 0);
+		ret = send_file_by_get_resp(fd, path, fname, resp_packet, resp);
 		DEBUG((DEBUG_INFO, "send file done\n"));
 	} else {
 		DEBUG((DEBUG_INFO, "send dir: %s\n", path));
