@@ -223,7 +223,7 @@ void simplify_path(char *path)
 	assert(tmp);
 
 	i = len - 1;
-	while (i >= 0 && path[i] == '/')
+	while (i > 0 && path[i] == '/')
 		path[i--] = 0;
 
 	i = 0;

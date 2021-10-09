@@ -1155,6 +1155,7 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 					break;
 				strncpy(data->entries[i].name, node->data, FILE_NAME_MAX_LEN - 1);
 				snprintf(tmp, sizeof(tmp) - 1, "%s/%s", path, (char *)node->data);
+				simplify_path(tmp);
 				DEBUG((DEBUG_INFO, "file_name=%s\n", tmp));
 
 				if (is_file(tmp))

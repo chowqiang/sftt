@@ -658,26 +658,20 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 				resp, RESP_SEND_PEER_ERR, 0);
 	}
 
-	// recv ll resp packet
-	ret = recv_sftt_packet(peer->connect_fd, resp_packet);
-	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	resp = (struct ll_resp *)resp_packet->obj;
-	assert(resp != NULL);
-
-	while (resp->next) {
-		send_ll_resp_once(client, resp, resp_packet);
+	do {
+		// recv ll resp packet
 		ret = recv_sftt_packet(peer->connect_fd, resp_packet);
 		if (ret == -1) {
-			printf("%s: recv sftt packet failed!\n", __func__);
+			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 			return -1;
 		}
+
 		resp = (struct ll_resp *)resp_packet->obj;
 		assert(resp != NULL);
-	}
+
+		send_ll_resp_once(client, resp, resp_packet);
+
+	} while (resp->next);
 
 	return 0;
 }
@@ -819,7 +813,7 @@ int handle_fwd_get_req(struct client_session *client,
 				resp, RESP_CNT_GET_PEER, 0);
 	}
 
-	// send ll req packet to peer
+	// send get req packet to peer
 	ret = send_sftt_packet(peer->connect_fd, req_packet);
 	if (ret == -1) {
 		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
@@ -827,26 +821,21 @@ int handle_fwd_get_req(struct client_session *client,
 				resp, RESP_SEND_PEER_ERR, 0);
 	}
 
-	// recv ll resp packet
-	ret = recv_sftt_packet(peer->connect_fd, resp_packet);
-	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	for (;;) {
-		if (resp->next) {
-			send_get_resp(client->connect_fd, resp_packet,
-				resp, RESP_OK, 1);
-		} else {
-			send_get_resp(client->connect_fd, resp_packet,
-				resp, RESP_OK, 0);
-			break;	
+	do {
+		// recv get resp packet
+		ret = recv_sftt_packet(peer->connect_fd, resp_packet);
+		if (ret == -1) {
+			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+			return -1;
 		}
 
 		resp = (struct get_resp *)resp_packet->obj;
 		assert(resp != NULL);
-	}
+
+		send_get_resp(client->connect_fd, resp_packet,
+			resp, RESP_OK, resp->next);
+
+	} while (resp->next);
 
 	return 0;
 }
@@ -911,7 +900,8 @@ int handle_fwd_put_req(struct client_session *client,
 
 	resp = mp_malloc(g_mp, __func__, sizeof(put_resp));
 	if (resp == NULL) {
-		printf("%s:%d, alloc put_resp failed!\n", __func__, __LINE__);
+		DEBUG((DEBUG_INFO, "alloc put_resp failed!\n"));
+		return -1;
 	}
 
 	req = req_packet->obj;
@@ -937,32 +927,20 @@ int handle_fwd_put_req(struct client_session *client,
 				resp, RESP_SEND_PEER_ERR, 0);
 	}
 
-	// recv put req packet
-	ret = recv_sftt_packet(client->connect_fd, req_packet);
-	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
-	}
-
-	req = (struct put_req *)req_packet->obj;
-	assert(req != NULL);
-
-	for (;;) {
-		if (req->next) {
-			send_sftt_packet(peer->connect_fd, req_packet);
-		} else {
-			send_sftt_packet(peer->connect_fd, req_packet);
-			break;	
-		}
-
+	do {
+		// recv put req packet
 		ret = recv_sftt_packet(client->connect_fd, req_packet);
 		if (ret == -1) {
-			printf("%s: recv sftt packet failed!\n", __func__);
+			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 			return -1;
 		}
+
 		req = (struct put_req *)req_packet->obj;
 		assert(req != NULL);
-	}
+
+		send_sftt_packet(peer->connect_fd, req_packet);
+
+	} while (req->next);
 
 	return 0;
 }
@@ -980,6 +958,7 @@ int handle_put_req(struct client_session *client,
 		return handle_fwd_put_req(client, req_packet, resp_packet);
 
 	ret = recv_files_by_put_req(client->connect_fd, req_packet);
+
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
 	return ret;
@@ -1182,16 +1161,14 @@ int handle_who_req(struct client_session *client,
 int check_user(struct logged_in_user *user)
 {
 	int i, ret = -1;
-	//struct logged_in_user *users;
 	struct client_session *session;
 
 	server->pm->ops->lock(server->pm);
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
-		printf("%s:%d, session->session_id=%s, user->session_id=%s\n",
-				__func__, __LINE__, session->session_id,
-				user->session_id);
+		DEBUG((DEBUG_INFO, "session->session_id=%s|user->session_id=%s\n",
+				session->session_id, user->session_id));
 		if (client_connected(session) &&
 			strcmp(session->session_id, user->session_id) == 0) {
 			strncpy(user->ip, session->ip, IPV4_MAX_LEN);
