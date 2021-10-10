@@ -949,6 +949,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 		port = get_random_port();
 	}
 
+	printf("port of connecting: %d\n", port);
 	client->conn_ctrl.sock = make_connect(client->host, port);
 	if (client->conn_ctrl.sock == -1) {
 		return -1;
