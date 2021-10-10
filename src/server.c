@@ -741,8 +741,11 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 
 			return -1;
 		}
+
 		DEBUG((DEBUG_INFO, "list dir ...\n"));
 		DEBUG((DEBUG_INFO, "file_count=%d\n", dlist_size(file_list)));
+		data->total = dlist_size(file_list);
+
 		node = dlist_head(file_list);
 		while (node) {
 			i = 0;
@@ -761,7 +764,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 					data->entries[i].type = FILE_TYPE_UNKNOWN;
 				++i;
 			}
-			data->total = i;
+			data->this_nr = i;
 			if (node) {
 				has_more = true;
 				send_ll_resp(client->connect_fd, resp_packet,

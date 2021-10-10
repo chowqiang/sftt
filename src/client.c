@@ -1097,7 +1097,7 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 	struct ll_resp_data *data;
 	char tmp[2 * DIR_PATH_MAX_LEN + 4];
 	char path[2 * DIR_PATH_MAX_LEN + 2];
-	int i = 0;
+	int i = 0, ret;
 	struct dlist *file_list;
 	struct dlist_node *node;
 	bool has_more = false;
@@ -1140,13 +1140,19 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
 			data->total = -1;
-			send_ll_resp(task->sock, resp_packet,
+			ret = send_ll_resp(task->sock, resp_packet,
 				resp, RESP_INTERNAL_ERR, 0);
+			if (ret == -1) {
+				DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
+			}
 
 			return -1;
 		}
+
 		DEBUG((DEBUG_INFO, "list dir ...\n"));
 		DEBUG((DEBUG_INFO, "file_count=%d\n", dlist_size(file_list)));
+		data->total = dlist_size(file_list);
+
 		node = dlist_head(file_list);
 		while (node) {
 			i = 0;
@@ -1166,22 +1172,32 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 					data->entries[i].type = FILE_TYPE_UNKNOWN;
 				++i;
 			}
-			data->total = i;
+			data->this_nr = i;
 			if (node) {
 				has_more = true;
-				send_ll_resp(task->sock, resp_packet,
+				ret = send_ll_resp(task->sock, resp_packet,
 					resp, RESP_OK, 1);
+				if (ret == -1) {
+					DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
+				}
 			} else {
 				has_more = false;
-				send_ll_resp(task->sock, resp_packet,
+				ret = send_ll_resp(task->sock, resp_packet,
 					resp, RESP_OK, 0);
+				if (ret == -1) {
+					DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
+				}
 			}
 		}
 	}
 
-	if (has_more)
-		send_ll_resp(task->sock, resp_packet,
+	if (has_more) {
+		ret = send_ll_resp(task->sock, resp_packet,
 			resp, RESP_OK, 0);
+		if (ret == -1) {
+			DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
+		}
+	}
 
 	DEBUG((DEBUG_INFO, "list file successfully!\n"));
 	DEBUG((DEBUG_INFO, "handle ll req out\n"));

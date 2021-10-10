@@ -71,7 +71,7 @@ static inline void print_nch(char ch, int num) {
 
 #define debug_print(print_level, fmt, ...)		\
 	if (print_level & DEBUG_PRINT_MASK) {		\
-		printf("[%s](%s|%d)"fmt,				\
+		printf("[%s](%s|%d) "fmt,				\
 			get_debug_level_desc(print_level),		\
 			__func__,							\
 			__LINE__,							\
