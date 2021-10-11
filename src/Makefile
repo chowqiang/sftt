@@ -13,3 +13,4 @@ $(LIB_NAME): $(CUR_OBJS)
 
 clean:
 	@rm -f $(CUR_OBJS)
+	@rm -f $(LIB_DIR)/$(LIB_NAME)
