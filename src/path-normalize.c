@@ -21,8 +21,9 @@ path_normalize(const char *path) {
   char *copy = __strdup(path);
   if (NULL == copy) return NULL;
   char *ptr = copy;
+  int i;
 
-  for (int i = 0; copy[i]; i++) {
+  for (i = 0; copy[i]; i++) {
     *ptr++ = path[i];
     if ('/' == path[i]) {
       i++;
