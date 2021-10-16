@@ -260,7 +260,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 
 	ret = recv(sock, sp->content, sp->data_len, 0);
 	if (ret != sp->data_len) {
-		printf("%s: receive result not equal to data len, ret=%d, data_len=%d",
+		printf("%s: receive result not equal to data len, ret=%d, data_len=%d\n",
 			__func__, ret, sp->data_len);
 		if (ret == 0) {
 			return ret;
