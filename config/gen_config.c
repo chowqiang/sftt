@@ -123,7 +123,8 @@ int __gen_config(FILE *in_fp, FILE *out_fp)
 
 	while (!done) {
 		if (read_line(in_fp, buf, 1023) == -1) {
-			printf("read line from config file failed!\n");
+			if (!feof(in_fp))
+				printf("read line from config file failed!\n");
 			done = true;
 			continue;
 		}
