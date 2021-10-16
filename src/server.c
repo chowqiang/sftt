@@ -1458,7 +1458,7 @@ void main_loop(void)
 		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
 		session->port = ntohs(addr_client.sin_port);
 
-		DEBUG((DEBUG_INFO, "\na client is connecting ...\n"));
+		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
 		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->port));
 
 		ret = pthread_create(&child, NULL, handle_client_session, session);
