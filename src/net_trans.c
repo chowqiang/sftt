@@ -134,7 +134,7 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 				}
 				free(buf);
 			}
-			add_log(LOG_INFO, "%d: out, ret=%d", __func__, ret);
+			add_log(LOG_INFO, "%s: out, ret=%d", __func__, ret);
 			return ret;
 		}
 	}
@@ -240,10 +240,12 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 	assert(decoded_len == header_len);
 
 	add_log(LOG_INFO, "%s: header decoded len: %d", __func__, decoded_len);
-	add_log(LOG_INFO, "%s: received packet type: %d", __func__, sp->type);
 
 	memcpy(&(sp->type), buffer, PACKET_TYPE_SIZE);
 	memcpy(&(sp->data_len), buffer + PACKET_TYPE_SIZE, PACKET_LEN_SIZE);
+
+	add_log(LOG_INFO, "%s: received packet type: %d", __func__, sp->type);
+	add_log(LOG_INFO, "%s: reported data len: %d", __func__, sp->data_len);
 
 	mp_free(g_mp, buffer);
 	add_log(LOG_INFO, "%s: out", __func__);
@@ -258,7 +260,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 
 	memset(sp->content, 0, sp->block_size);
 
-	ret = recv(sock, sp->content, sp->data_len, 0);
+	ret = recv(sock, sp->content, sp->data_len, 0 | MSG_WAITALL);
 	if (ret != sp->data_len) {
 		printf("%s: receive result not equal to data len, ret=%d, data_len=%d\n",
 			__func__, ret, sp->data_len);
