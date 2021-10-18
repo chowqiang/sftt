@@ -1210,6 +1210,9 @@ struct peer_session *get_create_peer_session(struct client_session *client,
 
 		peer->connect_fd = make_connect(user->ip, user->task_port);
 		if (peer->connect_fd == -1) {
+			/*
+			 * if client connected by NAT, this could fail
+			 */
 			printf("cannot make connect to peer!\n");
 			return NULL;
 		}
