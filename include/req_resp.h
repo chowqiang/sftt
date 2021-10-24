@@ -28,6 +28,7 @@ extern "C" {
 #define WRITE_MSG_MAX_LEN 4096
 #define RESP_MESSAGE_MAX_LEN 128
 #define DIRECT_CMD_RESP_MAX_LEN 1024
+#define CONNECT_ID_LEN 32
 
 struct version_info {
 	short major;
@@ -37,7 +38,6 @@ struct version_info {
 typedef struct version_info version_info;
 
 struct validate_req {
-	int task_port;
 	int name_len;
 	int passwd_len;
 	char name[USER_NAME_MAX_LEN];
@@ -50,6 +50,7 @@ struct validate_resp_data {
 	long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
+	char connect_id[CONNECT_ID_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
 };
 typedef struct validate_resp_data validate_resp_data;
@@ -62,12 +63,30 @@ struct validate_resp {
 };
 typedef struct validate_resp validate_resp;
 
+struct append_conn_req {
+	char session_id[SESSION_ID_LEN];
+	int type;
+};
+typedef struct append_conn_req append_conn_req;
+
+struct append_conn_resp_data {
+	char connect_id[CONNECT_ID_LEN];
+};
+typedef struct append_conn_resp_data append_conn_resp_data;
+
+struct append_conn_resp {
+	int status;
+	int next;
+	char message[RESP_MESSAGE_MAX_LEN];
+	struct append_conn_resp_data data;
+};
+typedef struct append_conn_resp append_conn_resp;
+
 struct logged_in_user {
 	char session_id[SESSION_ID_LEN];
 	char name[USER_NAME_MAX_LEN];
 	char ip[IPV4_MAX_LEN];
 	int port;
-	int task_port;
 };
 typedef struct logged_in_user logged_in_user;
 
@@ -324,6 +343,9 @@ extern  bool_t xdr_version_info (XDR *, version_info*);
 extern  bool_t xdr_validate_req (XDR *, validate_req*);
 extern  bool_t xdr_validate_resp_data (XDR *, validate_resp_data*);
 extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
+extern  bool_t xdr_append_conn_req (XDR *, append_conn_req*);
+extern  bool_t xdr_append_conn_resp_data (XDR *, append_conn_resp_data*);
+extern  bool_t xdr_append_conn_resp (XDR *, append_conn_resp*);
 extern  bool_t xdr_logged_in_user (XDR *, logged_in_user*);
 extern  bool_t xdr_pwd_req (XDR *, pwd_req*);
 extern  bool_t xdr_pwd_resp_data (XDR *, pwd_resp_data*);
@@ -365,6 +387,9 @@ extern bool_t xdr_version_info ();
 extern bool_t xdr_validate_req ();
 extern bool_t xdr_validate_resp_data ();
 extern bool_t xdr_validate_resp ();
+extern bool_t xdr_append_conn_req ();
+extern bool_t xdr_append_conn_resp_data ();
+extern bool_t xdr_append_conn_resp ();
 extern bool_t xdr_logged_in_user ();
 extern bool_t xdr_pwd_req ();
 extern bool_t xdr_pwd_resp_data ();

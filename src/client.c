@@ -58,6 +58,7 @@ extern int errno;
 extern struct mem_pool *g_mp;
 
 bool directcmd = false;
+bool force_quit = false;
 
 struct sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
@@ -98,93 +99,6 @@ int dir_get_next_buffer(struct file_input_stream *fis, char *buffer,
 	size_t size)
 {
 	return 0;
-}
-
-int new_connect(char *ip, int port, struct sftt_client_config *config,
-	struct sock_connect *psc)
-{
-	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	struct sockaddr_in serv_addr;
-	memset(&serv_addr, 0, sizeof(serv_addr));
-
-	serv_addr.sin_family = AF_INET;
-    	serv_addr.sin_addr.s_addr = inet_addr(ip);
-	serv_addr.sin_port = htons(port);
-	int ret = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-	if (ret == -1) {
-		return -1;
-	}
-
-	printf("consulting block size with server ...\n");
-	int consulted_block_size = consult_block_size_with_server(sock, config);
-	if (consulted_block_size < 1) {
-		printf("Error. consult block size with server failed!\n");
-		return -1;
-	}
-	printf("consulting block size done!\nconsulted block size is: %d\n",
-		consulted_block_size);
-
-	psc->sock = sock;
-	psc->block_size = consulted_block_size;
-
-	return 0;
-}
-
-struct sftt_client *create_client(char *ip, struct sftt_client_config *config,
-	int connects_num)
-{
-	struct sftt_client *client = (struct sftt_client *)mp_malloc(g_mp,
-			__func__, sizeof(struct sftt_client));
-	if (client == NULL) {
-		return NULL;
-	}
-	memset(client, 0, sizeof(struct sftt_client));
-
-	strcpy(client->ip, ip);
-	printf("server ip is: %s\n", ip);
-
-	int port = get_cache_port();
-	printf("cache port is %d\n", port);
-	
-	int i = 0, ret = 0;
-	struct sock_connect sc;
-	for (i = 0; i < connects_num; ++i) {
-		ret = new_connect(ip, port, config, &sc);
-		if (ret == -1) {
-			break;
-		}	
-		client->connects[client->connects_num++] = sc;
-	}
-	
-	if (i > 0) {
-		printf("sock connects num is: %d\n", i);
-		client->port = port;
-		return client;
-	}
-	
-	port = get_random_port();
-	printf("random port is %d\n", port);
-	for (; i < connects_num; ++i) {
-		ret = new_connect(ip, port, config, &sc);
-		if (ret == -1) {
-			break;
-		}	
-		client->connects[client->connects_num++] = sc;
-	}
-
-	if (i > 0) {
-		printf("sock connects num is: %d\n", i);
-		client->port = port;
-		set_cache_port(port);
-		return client;
-	}
-
-	fprintf(stderr, "Value of errno: %d\n", errno);
-	fprintf(stderr, "Error opening file: %s\n", strerror(errno));
-	mp_free(g_mp, client);
-	
-	return NULL;
 }
 
 int get_cache_port()
@@ -341,45 +255,9 @@ int send_single_file(int sock, struct sftt_packet *sp, struct path_entry *pe)
 	return 0;
 }
 
-void destroy_sftt_client(struct sftt_client *client)
-{
-	if (client == NULL) {
-		return ;
-	}
-	int i = 0;
-	for (i = 0; i < client->connects_num; ++i) {
-		close(client->connects[i].sock);
-	}
-}
-
 void usage(char *exec_file)
 {
 	fprintf (stdout, "\nUsage: %s -h ip <input_file>\n\n", exec_file);
-}
-
-void *send_files_by_thread(void *args)
-{
-	struct thread_input_params *tip = (struct thread_input_params *)args;
-	struct sftt_packet *sp = malloc_sftt_packet((tip->connect).block_size);
-	if (sp == NULL) {
-		printf("Error. malloc sftt packet failed!\n");
-		return (void *)-1;
-	}
-	int i = 0, ret = 0;
-	for (i = tip->index; i < tip->pe_count; i += tip->step) {
-		ret = send_single_file((tip->connect).sock, sp, tip->pes + i);
-		if (ret == -1) {
-			printf("Error. send single file in thread %d failed!"
-					"abs path: %s, rel path: %s\n",
-					tip->index, tip->pes[i].abs_path,
-					tip->pes[i].rel_path);
-			break;
-		}
-	}
-
-	send_complete_end_packet((tip->connect).sock, sp);
-
-	return NULL;
 }
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp)
@@ -392,42 +270,6 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp)
 		return -1;
 	}	
 
-	return 0;
-}
-
-int send_multiple_file(struct sftt_client *client, struct path_entry *pes,
-	int count)
-{
-	if (count == 0) {
-		return -1;
-	}
-	
-	int i = 0, ret = 0;
-	pthread_t thread_ids[CLIENT_MAX_CONNECT_NUM];
-	struct thread_input_params tips[CLIENT_MAX_CONNECT_NUM];
-	for (i = 0; i < client->connects_num; ++i) {
-		tips[i].connect = client->connects[i];
-		tips[i].index = i;
-		tips[i].step = client->connects_num;
-		tips[i].pes = pes;
-		tips[i].pe_count = count;
-		ret = pthread_create(thread_ids + i, NULL, send_files_by_thread, tips + i);
-		if (ret != 0) {
-			printf("Error. thread %d create failed!\n", i);
-			return -1;
-		}
-	} 
-
-	void *pret = NULL;
-	for (i = 0; i < client->connects_num; ++i) {
-		pthread_join(thread_ids[i], &pret);
-		if(pret == (void*)-1)
-		{
-		    printf("Error. thread %d exit failed!\n", i);
-		    ret = -1;
-		}
-	}	
-	
 	return 0;
 }
 
@@ -451,117 +293,6 @@ int dir_trans_session_diff(struct dir_trans_session *old_session,
 int save_trans_session(struct sftt_client *client)
 {
 	return 0;
-}
-
-
-int client_main_old(int argc, char **argv)
-{
-	if (argc < 4) {
-		usage(argv[0]);
-		return -1;
-	}
-
-	char *ip = NULL;
-	char *target = NULL; 
-	int i = 1;
-	for (; i < argc; ++i) {
-		if (strcmp(argv[i], "-h") == 0) {
-			++i;
-			if (i >= argc) {
-				goto PARAMS_ERROR;
-			}	
-			ip = argv[i]; 
-			continue;
-		} 
-		if (i == argc - 1) {
-			target = argv[i];	
-		}
-	}
-
-	if (ip == NULL || !is_valid_ipv4(ip)) {
-		printf("Error. ip is invalid: %s\n", (ip == NULL) ? "NULL" : ip);
-		return -1;
-	}
-
-	if (target == NULL) {
-		goto PARAMS_ERROR;
-	}
-	if (strlen(target) > FILE_NAME_MAX_LEN) {
-		printf("Error. File name too long: %s\n", target);
-		return -1;
-	} 
-
-	printf("reading config ...\n");
-	struct sftt_client_config client_config;
-	int ret = get_sftt_client_config(&client_config);
-	if (ret == -1) {
-		printf("Error. get client config failed!\n");
-		return -1;
-	}
-	printf("reading config done!\nconfigured block size is: %d\n",
-		client_config.block_size);
-
-	int connects_num = 0; 
-	struct sftt_client *client = NULL;
-	if (is_file(target)) {
-		connects_num = 1;
-		client = create_client(ip, &client_config, connects_num);
-		if (client == NULL) {
-			printf("Error. create client failed!\n");
-			return -1;
-		} else {
-			printf("create client successfully!\n");
-		}
-
-		struct path_entry *pe = get_file_path_entry(target);	
-		if (pe == NULL) {
-			printf("Error. get file path entry failed!\n");
-			return -1;
-		}
-
-		struct sftt_packet *sp = malloc_sftt_packet(client->connects[0].block_size);
-		if (sp == NULL) {
-			printf("Error. malloc sftt packet failed!\n");
-			return -1;
-		}
-
-		send_single_file(client->connects[0].sock, sp, pe);
-		send_complete_end_packet(client->connects[0].sock, sp);
-
-		free_sftt_packet(&sp);
-		mp_free(g_mp, pe);
-
-	} else if (is_dir(target)) {
-		connects_num = CLIENT_MAX_CONNECT_NUM;
-		client = create_client(ip, &client_config, connects_num);
-		if (client == NULL) {
-			printf("Error. create client failed!\n");
-			return -1;
-		} else {
-			printf("create client successfully!\n");
-		}
-
-		char prefix[1] = {0};
-		int count = 0;
-		struct path_entry *pes = get_dir_path_entry_array(target, prefix, &count);
-		if (pes == NULL) {
-			printf("Error. get dir path entry list failed!\n");
-			return -1;
-		}
-
-		send_multiple_file(client, pes, count);
-
-		mp_free(g_mp, pes);
-	}
-
-	destroy_sftt_client(client);
-
-	return 0;
-
-PARAMS_ERROR:
-	usage(argv[0]);
-
-	return -1;
 }
 
 int check_command_format(char *buf)
@@ -797,7 +528,7 @@ void execute_directcmd(struct sftt_client_v2 *client, char *buf)
 	req_packet->obj = req_info;
 	req_packet->block_size = DIRECTCMD_REQ_PACKET_MIN_LEN;
 
-	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return;
@@ -809,7 +540,7 @@ void execute_directcmd(struct sftt_client_v2 *client, char *buf)
 		return;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return;
@@ -831,7 +562,7 @@ void execute_directcmd(struct sftt_client_v2 *client, char *buf)
 		if (total_len == data->total_len)
 			break;
 
-		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return;
@@ -950,13 +681,13 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 	}
 
 	printf("port of connecting: %d\n", port);
-	client->conn_ctrl.sock = make_connect(client->host, port);
-	if (client->conn_ctrl.sock == -1) {
+	client->main_conn.sock = make_connect(client->host, port);
+	if (client->main_conn.sock == -1) {
 		return -1;
 	}
 
-	client->conn_ctrl.type = CONN_TYPE_CTRL;
-	client->conn_ctrl.port = port;
+	client->main_conn.type = CONN_TYPE_CTRL;
+	client->main_conn.port = port;
 
 	return 0;
 }
@@ -990,12 +721,11 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 		req_info->passwd_md5[0] = 0;
 	}
 	req_info->passwd_len = strlen(req_info->passwd_md5);
-	req_info->task_port = client->task_handler.port;
 
 	req_packet->obj = req_info;
 	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1007,7 +737,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1081,7 +811,7 @@ struct peer_task *create_peer_task(struct peer_task_handler *handler)
 	return task;
 }
 
-int handle_peer_write_req(struct peer_task *task, struct sftt_packet *req_packet,
+int handle_peer_write_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
 	struct write_req *req = req_packet->obj;
@@ -1090,7 +820,8 @@ int handle_peer_write_req(struct peer_task *task, struct sftt_packet *req_packet
 
 	return 0;
 }
-int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
+
+int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
 	struct ll_req *req;
@@ -1123,7 +854,7 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 	if (!file_existed(path)) {
 		data->total = -1;
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_ll_resp(task->sock, resp_packet,
+		return send_ll_resp(conn->sock, resp_packet,
 			       resp, RESP_FILE_NTFD, 0);
 	}
 
@@ -1135,13 +866,13 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 
 		DEBUG((DEBUG_INFO, "list file successfully!\n"));
 
-		return send_ll_resp(task->sock, resp_packet,
+		return send_ll_resp(conn->sock, resp_packet,
 				resp, RESP_OK, 0);
 	} else if (is_dir(path)) {
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
 			data->total = -1;
-			ret = send_ll_resp(task->sock, resp_packet,
+			ret = send_ll_resp(conn->sock, resp_packet,
 				resp, RESP_INTERNAL_ERR, 0);
 			if (ret == -1) {
 				DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
@@ -1176,14 +907,14 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 			data->this_nr = i;
 			if (node) {
 				has_more = true;
-				ret = send_ll_resp(task->sock, resp_packet,
+				ret = send_ll_resp(conn->sock, resp_packet,
 					resp, RESP_OK, 1);
 				if (ret == -1) {
 					DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
 				}
 			} else {
 				has_more = false;
-				ret = send_ll_resp(task->sock, resp_packet,
+				ret = send_ll_resp(conn->sock, resp_packet,
 					resp, RESP_OK, 0);
 				if (ret == -1) {
 					DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
@@ -1193,7 +924,7 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 	}
 
 	if (has_more) {
-		ret = send_ll_resp(task->sock, resp_packet,
+		ret = send_ll_resp(conn->sock, resp_packet,
 			resp, RESP_OK, 0);
 		if (ret == -1) {
 			DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
@@ -1206,7 +937,7 @@ int handle_peer_ll_req(struct peer_task *task, struct sftt_packet *req_packet,
 	return 0;
 }
 
-int handle_peer_get_req(struct peer_task *task, struct sftt_packet *req_packet,
+int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
 	struct get_req *req;
@@ -1227,17 +958,17 @@ int handle_peer_get_req(struct peer_task *task, struct sftt_packet *req_packet,
 
 	if (!is_absolute_path(path)) {
 		DEBUG((DEBUG_INFO, "path not absolute!\n"));
-		return send_get_resp(task->sock, resp_packet, resp,
+		return send_get_resp(conn->sock, resp_packet, resp,
 				RESP_PATH_NOT_ABS, 0);
 	}
 
 	if (!file_existed(path)) {
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_get_resp(task->sock, resp_packet, resp,
+		return send_get_resp(conn->sock, resp_packet, resp,
 				RESP_FILE_NTFD, 0);
 	}
 
-	ret = send_files_by_get_resp(task->sock, path, resp_packet,
+	ret = send_files_by_get_resp(conn->sock, path, resp_packet,
 			resp);
 
 	DEBUG((DEBUG_INFO, "handle get req out\n"));
@@ -1245,201 +976,21 @@ int handle_peer_get_req(struct peer_task *task, struct sftt_packet *req_packet,
 	return ret;
 }
 
-int handle_peer_put_req(struct peer_task *task, struct sftt_packet *req_packet,
+int handle_peer_put_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
-	ret = recv_files_by_put_req(task->sock, req_packet);
+	ret = recv_files_by_put_req(conn->sock, req_packet);
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
 	return ret;
 }
 
-void *handle_peer_task(void *arg)
-{
-	struct peer_task *task = (struct peer_task *)arg;
-	int sock = task->sock;
-	struct sftt_packet *resp;
-	struct sftt_packet *req;
-	int ret;
-
-	//DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
-	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
-	if (!req) {
-		printf("cannot allocate resources from memory pool!\n");
-		return NULL;
-	}
-
-	//DEBUG((DEBUG_INFO, "normal"));
-	//signal(SIGTERM, child_process_exit);
-	//signal(SIGSEGV, child_process_exception_handler);
-
-	//if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
-	//	printf("set sockfd to non-block failed!\n");
-	//		return -1;
-	//}
-
-	add_log(LOG_INFO, "begin to communicate with client ...");
-	//DEBUG((DEBUG_INFO, "normal"));
-	while (1) {
-		ret = recv_sftt_packet(sock, req);
-		//DEBUG((DEBUG_INFO, "normal"));
-		add_log(LOG_INFO, "recv ret: %d", ret);
-		if (ret == -1) {
-			printf("recv encountered unrecoverable error, child process is exiting ...\n");
-			goto exit;
-		}
-		if (ret == 0) {
-			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
-			goto exit;
-		}
-		switch (req->type) {
-		case PACKET_TYPE_WRITE_REQ:
-			resp = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
-			handle_peer_write_req(task, req, resp);
-			break;
-		case PACKET_TYPE_LL_REQ:
-			resp = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
-			handle_peer_ll_req(task, req, resp);
-			break;
-		case PACKET_TYPE_GET_REQ:
-			resp = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
-			handle_peer_get_req(task, req, resp);
-			break;
-		case PACKET_TYPE_PUT_REQ:
-			resp = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
-			handle_peer_put_req(task, req, resp);
-			break;
-		default:
-			break;
-		}
-		free_sftt_packet(&resp);
-	}
-
-exit:
-	//DEBUG((DEBUG_INFO, "a client is disconnected\n"));
-	return NULL;
-}
-
 void clean_task(struct peer_task_handler *handler)
 {
 
-}
-
-void *sftt_peer_task_handler(void *arg)
-{
-	struct sftt_client_v2 *client;
-	struct sockaddr_in addr_server;
-	int conn_fd;
-	int len;
-	int ret;
-	struct peer_task *task;
-
-	client = (struct sftt_client_v2 *)arg;
-	len = sizeof(struct sockaddr_in);
-	while (1) {
-		conn_fd = accept(client->task_handler.sock, (struct sockaddr *)&addr_server,
-			(socklen_t *)&len);
-		if (conn_fd == -1) {
-			usleep(100 * 1000);
-			continue;
-		}
-#if 0
-		printf("server is connected, ip=%s, port=%d\n", inet_ntoa(addr_server.sin_addr),
-			ntohs(addr_server.sin_port));
-#endif
-		task = create_peer_task(&client->task_handler);
-		if (task == NULL) {
-			printf("cannot create client task!\n");
-			close(conn_fd);
-		}
-		task->sock = conn_fd;
-
-		ret = pthread_create(&task->tid, NULL, handle_peer_task, task);
-		if (ret == -1) {
-			perror("create task thread failed");
-			task->status = TASK_STATUS_ABORT;
-			close(task->sock);
-		}
-
-		clean_task(&client->task_handler);
-	}
-}
-
-int init_sftt_peer_task_handler(struct sftt_client_v2 *client)
-{
-	struct sockaddr_in taskaddr;
-	int len;
-
-	client->task_handler.sock = -1;
-	client->task_handler.port = -1;
-
-	if ((client->task_handler.sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("create socket failed");
-		goto failed;
-	}
-
-	if (fcntl(client->task_handler.sock, F_SETFL, O_NONBLOCK) == -1) {
-		perror("set sockfd to non-block failed");
-		goto failed;
-	}
-
-	memset(&taskaddr, 0, sizeof(taskaddr));
-	taskaddr.sin_family = AF_INET;
-	taskaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	taskaddr.sin_port = 0;
-
-	if (bind(client->task_handler.sock, (struct sockaddr *)&taskaddr, sizeof(taskaddr)) == -1) {
-		perror("bind socket error");
-		goto failed;
-	}
-
-	if (listen(client->task_handler.sock, 10) == -1) {
-		perror("listen socket error");
-		goto failed;
-	}
-
-	len = sizeof(struct sockaddr_in);
-	if (getsockname(client->task_handler.sock, (struct sockaddr *)&taskaddr,
-			(socklen_t *)&len) == -1) {
-		perror("getsockname error");
-		goto failed;
-	}
-
-	client->task_handler.port = ntohs(taskaddr.sin_port);
-	client->task_handler.pm = new(pthread_mutex);
-	if (client->task_handler.pm == NULL) {
-		printf("create pthread_mutex for task_handler\n");
-		goto failed;
-	}
-
-	client->task_handler.tasks = NULL;
-
-	if (pthread_create(&client->task_handler.tid, NULL, sftt_peer_task_handler,
-				client) == -1) {
-		perror("pthread create error");
-		goto failed;
-	}
-
-	return 0;
-failed:
-	close(client->task_handler.sock);
-
-	return -1;
 }
 
 int get_friend_list(struct sftt_client_v2 *client)
@@ -1466,7 +1017,7 @@ int get_friend_list(struct sftt_client_v2 *client)
 	req_packet->obj = req_info;
 	req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
 
-	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1478,7 +1029,7 @@ int get_friend_list(struct sftt_client_v2 *client)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1502,7 +1053,7 @@ int get_friend_list(struct sftt_client_v2 *client)
 		if (total == data->total)
 			break;
 
-		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return -1;
@@ -1530,9 +1081,226 @@ void clear_friend_list(struct sftt_client_v2 *client)
 	}
 }
 
-void init_friend_list(struct sftt_client_v2 *client)
+int init_friend_list(struct sftt_client_v2 *client)
 {
 	INIT_LIST_HEAD(&client->friends);
+
+	return 0;
+}
+
+void *do_task_handler(void *arg)
+{
+	struct client_sock_conn *conn = arg;
+	int sock = conn->sock;
+	struct sftt_packet *resp;
+	struct sftt_packet *req;
+	int ret;
+
+	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
+	if (!req) {
+		printf("cannot allocate resources from memory pool!\n");
+		return NULL;
+	}
+
+	add_log(LOG_INFO, "begin to communicate with client ...");
+	while (1) {
+		conn->is_using = false;
+		ret = recv_sftt_packet(sock, req);
+		add_log(LOG_INFO, "recv ret: %d", ret);
+		if (ret == -1) {
+			printf("recv encountered unrecoverable error, child process is exiting ...\n");
+			goto exit;
+		}
+		if (ret == 0) {
+			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
+			goto exit;
+		}
+		conn->is_using = true; 
+		switch (req->type) {
+		case PACKET_TYPE_WRITE_REQ:
+			resp = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_write_req(conn, req, resp);
+			break;
+		case PACKET_TYPE_LL_REQ:
+			resp = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_ll_req(conn, req, resp);
+			break;
+		case PACKET_TYPE_GET_REQ:
+			resp = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_get_req(conn, req, resp);
+			break;
+		case PACKET_TYPE_PUT_REQ:
+			resp = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+			if (resp == NULL) {
+				goto exit;
+			}
+			handle_peer_put_req(conn, req, resp);
+			break;
+		default:
+			break;
+		}
+		free_sftt_packet(&resp);
+	}
+
+exit:
+	//DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+	return NULL;
+}
+
+int start_task_handler(struct sftt_client_v2 *client, struct client_sock_conn *conn)
+{
+	int ret;
+
+	ret = pthread_create(&conn->tinfo.tid, NULL, do_task_handler, conn);
+	if (ret == -1) {
+		printf("create task handler thread failed!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int add_task_connect(struct sftt_client_v2 *client)
+{
+	int port;
+	struct client_sock_conn *conn;
+	struct sftt_packet *req_packet, *resp_packet;
+	struct append_conn_req *req_info;
+	struct append_conn_resp *resp_info;
+	int ret, i = 0, total = 0;
+
+	conn = mp_malloc(g_mp, "client_sock_conn", sizeof(struct client_sock_conn));
+	if (conn == NULL) {
+		printf("alloc client_sock_conn failed!\n");
+		return -1;
+	}
+
+	port = get_random_port();
+	conn->sock = make_connect(client->host, port);
+	if (conn->sock == -1) {
+		printf("make client sock connect failed!\n");
+		return -1;
+	}
+	conn->port = port;
+
+	req_packet = malloc_sftt_packet(APPEND_CONN_REQ_PACKET_MIN_LEN);
+	if (!req_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+	req_packet->type = PACKET_TYPE_APPEND_CONN_REQ;
+
+	req_info = mp_malloc(g_mp, "append_conn_req", sizeof(struct append_conn_req));
+	assert(req_info != NULL);
+
+	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
+	req_info->type = CONN_TYPE_TASK;
+
+	req_packet->obj = req_info;
+	req_packet->block_size = APPEND_CONN_REQ_PACKET_MIN_LEN;
+
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
+	if (ret == -1) {
+		printf("%s: send sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_packet = malloc_sftt_packet(APPEND_CONN_RESP_PACKET_MIN_LEN);
+	if (!resp_packet) {
+		printf("allocate response packet failed!\n");
+		return -1;
+	}
+
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
+	if (ret == -1) {
+		printf("%s: recv sftt packet failed!\n", __func__);
+		return -1;
+	}
+
+	resp_info = (struct append_conn_resp *)resp_packet->obj;
+	assert(resp_info != NULL);
+
+	if (resp_info->status != RESP_OK) {
+		printf("append conn failed: %s\n", resp_info->message);
+		return -1;
+	}
+
+	conn->type = CONN_TYPE_TASK;
+	strncpy(conn->connect_id, resp_info->data.connect_id, CONNECT_ID_LEN);
+
+	list_add(&conn->list, &client->task_conns);
+
+	ret = start_task_handler(client, conn);
+	if (ret == -1) {
+		printf("start task handle failed!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+void *do_connect_manager(void *arg)
+{
+	int idle_conns = 0;
+	struct sftt_client_v2 *client = arg;
+	struct client_sock_conn *conn;
+	int conns = 0;
+	int ret;
+
+	while (!force_quit) {
+		conns = 0;
+		idle_conns = 0;
+
+		client->tcs_lock->ops->lock(client->tcs_lock);
+		list_for_each_entry(conn, &client->task_conns, list) {
+			if (!conn->is_using)
+				idle_conns++;
+			conns++;
+		}
+		client->tcs_lock->ops->unlock(client->tcs_lock);
+
+		if (conns < CLIENT_MAX_TASK_CONN && idle_conns == 0) {
+			ret = add_task_connect(client);
+			if (ret == -1) {
+				printf("add task connect failed!\n");
+			}
+		}
+
+		sleep(1);
+	}
+	
+	return NULL;
+}
+
+int start_conn_mgr(struct sftt_client_v2 *client)
+{
+	int ret;
+
+	INIT_LIST_HEAD(&client->task_conns);
+
+	client->tcs_lock = new(pthread_mutex);
+	if (client->tcs_lock == NULL) {
+		printf("create tcs_lock failed!\n");
+		return -1;
+	}
+
+	ret = pthread_create(&client->conn_mgr.tid, NULL, do_connect_manager,
+			client);
+	if (ret == -1) {
+		perror("create conn_mgr fail");
+		return -1;
+	}
+
+	return 0;
 }
 
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
@@ -1559,11 +1327,8 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 		return -1;
 	}
 
-	logger_init(client->config.log_dir, PROC_NAME);
-
-	if (init_sftt_peer_task_handler(client) == -1) {
-		printf("init sftt client task handler failed!\n");
-		return -1;
+	if (logger_init(client->config.log_dir, PROC_NAME) == -1) {
+		printf("init logger failed!\n");
 	}
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {
@@ -1581,7 +1346,14 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 		return -1;
 	}
 
-	init_friend_list(client);
+	if (start_conn_mgr(client) == -1) {
+		printf("start task connects manager failed!\n");	
+	}
+
+	if (init_friend_list(client) == -1) {
+		printf("cannot init friend list!\n");
+		return -1;
+	}
 
 	if (get_friend_list(client) == -1) {
 		printf("cannot get friend list!\n");
@@ -1659,7 +1431,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req_info;
 	req_packet->block_size = LL_REQ_PACKET_MIN_LEN;
 
-	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1671,7 +1443,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1697,7 +1469,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		if (total == data->total)
 			break;
 
-		ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+		ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return -1;
@@ -1794,7 +1566,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req_info;
 	req_packet->block_size = CD_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1806,7 +1578,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1857,7 +1629,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req_info;
 	req_packet->block_size = PWD_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1869,7 +1641,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1947,7 +1719,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req;
 	req_packet->type = PACKET_TYPE_GET_REQ;
 
-	ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1959,7 +1731,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	ret = recv_files_from_get_resp(client->conn_ctrl.sock, target, resp_packet);
+	ret = recv_files_from_get_resp(client->main_conn.sock, target, resp_packet);
 
 	mp_free(g_mp, req);
 
@@ -2035,7 +1807,7 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	if (req->to_peer)
 		req->user = *user;
 
-	ret = send_files_by_put_req(client->conn_ctrl.sock, file, target, req_packet, req);
+	ret = send_files_by_put_req(client->main_conn.sock, file, target, req_packet, req);
 	if (ret == -1) {
 		printf("%s:%d, handle put req failed!\n", __func__, __LINE__);
 	}
@@ -2149,7 +1921,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req_info;
 	req_packet->block_size = MP_STAT_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -2161,7 +1933,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -2254,7 +2026,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	req_packet->obj = req_info;
 	req_packet->block_size = WRITE_REQ_PACKET_MIN_LEN;
 
-	int ret = send_sftt_packet(client->conn_ctrl.sock, req_packet);
+	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -2267,7 +2039,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->conn_ctrl.sock, resp_packet);
+	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -2539,9 +2311,8 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 			hint = " (me)";
 		else
 			hint = "";
-		printf("%d\t%s\t%s\t%d\t%d\t%s%s\n", i++, p->info.name,
+		printf("%d\t%s\t%s\t%d\t%s%s\n", i++, p->info.name,
 				p->info.ip, p->info.port,
-				p->info.task_port,
 				p->info.session_id, hint);
 	}
 

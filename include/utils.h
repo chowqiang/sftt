@@ -26,6 +26,8 @@
 
 void gen_session_id(char *buf, int len);
 
+void gen_connect_id(char *buf, int len);
+
 int now_time_str(char *buf, int max_len);
 
 int ts_to_str(uint64_t ts, char *buf, int max_len);

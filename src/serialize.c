@@ -95,6 +95,88 @@ bool validate_resp_decode(unsigned char *buf, int len, void **req)
 	return ret;
 }
 
+bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_append_conn_req(&xdr, (struct append_conn_req *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool append_conn_req_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct append_conn_req *_req = (struct append_conn_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct append_conn_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_append_conn_req(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	int ret = xdr_append_conn_resp(&xdr, (struct append_conn_resp *)req);
+
+	fclose(fp);
+	*len = size;
+	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+		__func__, ret, *len);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
+bool append_conn_resp_decode(unsigned char *buf, int len, void **req)
+{
+	add_log(LOG_INFO, "%s: in", __func__);
+	struct append_conn_resp *_req = (struct append_conn_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct append_conn_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	int ret = xdr_append_conn_resp(&xdr, _req);
+	fclose(fp);
+
+	*req = _req;
+	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: out", __func__);
+
+	return ret;
+}
+
 bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 {
 	add_log(LOG_INFO, "%s: in", __func__);

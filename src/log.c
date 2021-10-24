@@ -86,13 +86,15 @@ void get_log_file_name(char *dir, char *prefix, char *file_name, int max_len)
 	}
 }
 
-void logger_init(char *dir, char *prefix)
+int logger_init(char *dir, char *prefix)
 {
 	strcpy(client_log_dir, dir);
 	strcpy(client_log_prefix, prefix);
 
 	client_limit = new(ratelimit_state, 10, 1000);
 	assert(client_limit != NULL);
+
+	return 0;
 }
 
 void *logger_daemon(void *args)

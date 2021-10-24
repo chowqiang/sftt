@@ -43,5 +43,7 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_WHO_RESP, who_resp_encode, who_resp_decode},
 	{PACKET_TYPE_WRITE_REQ, write_req_encode, write_req_decode},
 	{PACKET_TYPE_WRITE_RESP, write_resp_encode, write_resp_decode},
+	{PACKET_TYPE_APPEND_CONN_REQ, append_conn_req_encode, append_conn_req_decode},
+	{PACKET_TYPE_APPEND_CONN_RESP, append_conn_resp_encode, append_conn_resp_decode},
 	{-1, NULL, NULL},
 };

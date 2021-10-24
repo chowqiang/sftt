@@ -23,6 +23,20 @@ int send_validate_resp(int fd, struct sftt_packet *resp_packet,
 	return send_sftt_packet(fd, resp_packet);
 }
 
+int send_append_conn_resp(int fd, struct sftt_packet *resp_packet,
+	struct append_conn_resp *resp, int code, int next)
+{
+	resp->status = code;
+	strncpy(resp->message, resp_messages[code], RESP_MESSAGE_MAX_LEN - 1);
+	resp->next = next;
+
+	resp_packet->obj = resp;
+	resp_packet->type = PACKET_TYPE_APPEND_CONN_RESP;
+	resp_packet->block_size = APPEND_CONN_RESP_PACKET_MIN_LEN;
+
+	return send_sftt_packet(fd, resp_packet);
+}
+
 int send_pwd_resp(int fd, struct sftt_packet *resp_packet,
 	struct pwd_resp *resp, int code, int next)
 {

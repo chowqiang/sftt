@@ -47,7 +47,7 @@ struct logger_init_ctx {
 	char prefix[LOGGER_PREFIX_LEN];
 };
 
-void logger_init(char *dir, char *prefix);
+int logger_init(char *dir, char *prefix);
 
 void *logger_daemon(void *args);
 

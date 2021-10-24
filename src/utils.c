@@ -117,6 +117,27 @@ void gen_session_id(char *buf, int len)
 	last_id = id;
 }
 
+void gen_connect_id(char *buf, int len)
+{
+	static time_t last_ts = 0;
+	static int last_id = 0;
+
+	int id;
+	time_t ts;
+
+	ts = get_ts();
+	if (ts != last_ts)
+		last_id = -1;
+	id = last_id + 1;
+
+	snprintf(buf, len, "%lu%06d", ts, id);
+
+	buf[len] = 0;
+
+	last_ts = ts;
+	last_id = id;
+}
+
 bool is_int(char *buf, int *num)
 {
 	if (!(buf[0] == '-' || buf[0] == '+' || isdigit(buf[0]))) {

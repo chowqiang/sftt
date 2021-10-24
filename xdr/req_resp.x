@@ -13,6 +13,7 @@ const LOGGED_IN_USER_MAX_CNT = 32;
 const WRITE_MSG_MAX_LEN = 4096;
 const RESP_MESSAGE_MAX_LEN = 128;
 const DIRECT_CMD_RESP_MAX_LEN = 1024;
+const CONNECT_ID_LEN = 32;
 
 struct version_info {
 	short major;
@@ -21,7 +22,6 @@ struct version_info {
 };
 
 struct validate_req {
-	int task_port;
 	int name_len;
 	int passwd_len;
 	char name[USER_NAME_MAX_LEN];
@@ -33,6 +33,7 @@ struct validate_resp_data {
 	long uid;
 	char name[USER_NAME_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
+	char connect_id[CONNECT_ID_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
 };
 
@@ -43,12 +44,27 @@ struct validate_resp {
 	struct validate_resp_data data;
 };
 
+struct append_conn_req {
+	char session_id[SESSION_ID_LEN];
+	int type;
+};
+
+struct append_conn_resp_data {
+	char connect_id[CONNECT_ID_LEN];
+};
+
+struct append_conn_resp {
+	int status;
+	int next;
+	char message[RESP_MESSAGE_MAX_LEN];
+	struct append_conn_resp_data data;
+};
+
 struct logged_in_user {
 	char session_id[SESSION_ID_LEN];
 	char name[USER_NAME_MAX_LEN];
 	char ip[IPV4_MAX_LEN];
 	int port;
-	int task_port;
 };
 
 struct pwd_req {

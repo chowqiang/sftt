@@ -10,6 +10,9 @@
 int send_validate_resp(int fd, struct sftt_packet *resp_packet,
 	struct validate_resp *resp, int code, int next);
 
+int send_append_conn_resp(int fd, struct sftt_packet *resp_packet,
+	struct append_conn_resp *resp, int code, int next);
+
 int send_pwd_resp(int fd, struct sftt_packet *resp_packet,
 	struct pwd_resp *resp, int code, int next);
 

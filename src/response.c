@@ -20,7 +20,7 @@ const char *resp_messages[] = {
 	[RESP_OK] = "ok!",
 	[RESP_SERVER_EXCEPTION] = "server exception!",
 	[RESP_CANNOT_CD] = "cannot change directory!",
-	[RESP_CONTINUE] = "continue",
+	[RESP_CONTINUE] = "continue!",
 	[RESP_UVS_NTFD] = "user not found!",
 	[RESP_UVS_INVALID] = "cannot validate user!",
 	[RESP_UVS_MISSHOME] = "cannot find user's home!",
@@ -34,5 +34,7 @@ const char *resp_messages[] = {
 	[RESP_FILE_NTFD] = "file not found!",
 	[RESP_INTERNAL_ERR] = "internal error!",
 	[RESP_PATH_NOT_ABS] = "path not absolute!",
-	[RESP_UNKNOWN_FILE_TYPE] = "unknown file type",
+	[RESP_UNKNOWN_FILE_TYPE] = "unknown file type!",
+	[RESP_UNKNOWN_CONN_TYPE] = "unknown connect type!",
+	[RESP_CNT_GET_TASK_CONN] = "cannot get task connect, please try again!",
 };

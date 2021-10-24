@@ -18,6 +18,11 @@
 #define _CONNECT_H_
 
 #include <pthread.h>
+#include "list.h"
+#include "req_resp.h"
+#include "thread.h"
+
+#define CLIENT_MAX_TASK_CONN 5
 
 enum connect_result {
 	CONN_RET_CONNECT_FAILED,
@@ -28,18 +33,18 @@ enum connect_result {
 
 enum connect_type {
 	CONN_TYPE_CTRL,
-	CONN_TYPE_DATA
-};
-
-struct sock_connect {
-	int sock;
-	int block_size;
+	CONN_TYPE_DATA,
+	CONN_TYPE_TASK,
 };
 
 struct client_sock_conn {
+	bool is_using;
 	int sock;
-	enum connect_type type;
 	int port;
+	enum connect_type type;
+	char connect_id[CONNECT_ID_LEN];
+	struct thread_info tinfo;
+	struct list_head list;
 };
 
 struct server_context {

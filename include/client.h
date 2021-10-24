@@ -28,6 +28,7 @@
 #include "option.h"
 #include "packet.h"
 #include "session.h"
+#include "thread.h"
 #include "user.h"
 
 #define PROC_NAME			"sftt"
@@ -85,7 +86,6 @@ struct sftt_client {
 	char ip[IPV4_MAX_LEN];
 	int port;
 	int configured_block_size;
-	struct sock_connect connects[CLIENT_MAX_CONNECT_NUM];
 	int connects_num;
 	char session_file[FILE_NAME_MAX_LEN];
 	int session_type;
@@ -109,20 +109,21 @@ struct peer_task_handler {
 };
 
 struct sftt_client_v2 {
-	struct client_sock_conn conn_ctrl;
+	struct client_sock_conn main_conn;
+	struct list_head task_conns;
+	struct pthread_mutex *tcs_lock;
+	struct thread_info conn_mgr;
 	struct mem_pool *mp;
 	struct version_info ver;
 	struct user_base_info uinfo;
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
-    	struct sftt_client_config config;
 	char pwd[DIR_PATH_MAX_LEN];
-	struct peer_task_handler task_handler;
+    	struct sftt_client_config config;
 	struct list_head friends;
 };
 
 struct thread_input_params {
-	struct sock_connect connect;
 	int index;
 	int step;
 	struct path_entry *pes;

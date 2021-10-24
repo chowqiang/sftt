@@ -14,18 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef _THREAD_H_
+#define _THREAD_H_
 
-#include "req_resp.h"
+#include <pthread.h>
 
-#define VERSION	"0.0.86"
+enum process_status {
+	RUNNING,
+	EXITED
+};
 
-void show_version(void);
-
-int get_version_info(struct version_info *ver);
-
-int check_version(struct version_info *client, struct version_info *server,
-	char *message, int len);
+struct thread_info {
+	pthread_t tid;
+	enum process_status status;
+};
 
 #endif

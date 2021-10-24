@@ -25,59 +25,6 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 	register int32_t *buf;
 
 	int i;
-
-	if (xdrs->x_op == XDR_ENCODE) {
-		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
-		if (buf == NULL) {
-			 if (!xdr_int (xdrs, &objp->task_port))
-				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->name_len))
-				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->passwd_len))
-				 return FALSE;
-
-		} else {
-		IXDR_PUT_LONG(buf, objp->task_port);
-		IXDR_PUT_LONG(buf, objp->name_len);
-		IXDR_PUT_LONG(buf, objp->passwd_len);
-		}
-		 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
-			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
-		 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MD5_LEN,
-			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
-		 if (!xdr_version_info (xdrs, &objp->ver))
-			 return FALSE;
-		return TRUE;
-	} else if (xdrs->x_op == XDR_DECODE) {
-		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
-		if (buf == NULL) {
-			 if (!xdr_int (xdrs, &objp->task_port))
-				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->name_len))
-				 return FALSE;
-			 if (!xdr_int (xdrs, &objp->passwd_len))
-				 return FALSE;
-
-		} else {
-		objp->task_port = IXDR_GET_LONG(buf);
-		objp->name_len = IXDR_GET_LONG(buf);
-		objp->passwd_len = IXDR_GET_LONG(buf);
-		}
-		 if (!xdr_vector (xdrs, (char *)objp->name, USER_NAME_MAX_LEN,
-			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
-		 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, PASSWD_MD5_LEN,
-			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
-		 if (!xdr_version_info (xdrs, &objp->ver))
-			 return FALSE;
-	 return TRUE;
-	}
-
-	 if (!xdr_int (xdrs, &objp->task_port))
-		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->name_len))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->passwd_len))
@@ -107,6 +54,9 @@ xdr_validate_resp_data (XDR *xdrs, validate_resp_data *objp)
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->connect_id, CONNECT_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
@@ -132,6 +82,50 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 }
 
 bool_t
+xdr_append_conn_req (XDR *xdrs, append_conn_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->type))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_append_conn_resp_data (XDR *xdrs, append_conn_resp_data *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->connect_id, CONNECT_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_append_conn_resp (XDR *xdrs, append_conn_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->status))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->next))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 return FALSE;
+	 if (!xdr_append_conn_resp_data (xdrs, &objp->data))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
 xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
 {
 	register int32_t *buf;
@@ -147,8 +141,6 @@ xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->port))
-		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->task_port))
 		 return FALSE;
 	return TRUE;
 }

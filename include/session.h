@@ -19,25 +19,14 @@
 
 #include <stdbool.h>
 #include "config.h"
+#include "connect.h"
 #include "list.h"
 #include "md5.h"
+#include "thread.h"
 #include "user.h"
 #include "req_resp.h"
 
 #define MAX_CLIENT_NUM 32
-/*
- *
- */
-
-enum process_status {
-	RUNNING,
-	EXITED
-};
-
-struct thread_info {
-	pthread_t tid;
-	enum process_status status;
-};
 
 enum client_status {
 	ACTIVE,
@@ -57,16 +46,15 @@ struct peer_session {
 };
 
 struct client_session {
-	int connect_fd;
 	char ip[IPV4_MAX_LEN];
-	int port;
-	int task_port;
+	struct client_sock_conn main_conn;
+	struct list_head task_conns;
+	struct pthread_mutex *tcs_lock;
 	struct thread_info tinfo;
 	enum client_status status;
 	char pwd[DIR_PATH_MAX_LEN];
 	char session_id[SESSION_ID_LEN];
 	struct user_base_info user;
-	struct list_head peers;
 };
 
 struct server_session {

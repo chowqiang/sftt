@@ -15,6 +15,14 @@ bool validate_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool validate_resp_decode(unsigned char *buf, int len, void **req);
 
+bool append_conn_req_encode(void *req, unsigned char **buf, int *len);
+
+bool append_conn_req_decode(unsigned char *buf, int len, void **req);
+
+bool append_conn_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool append_conn_resp_decode(unsigned char *buf, int len, void **req);
+
 bool pwd_req_encode(void *req, unsigned char **buf, int *len);
 
 bool pwd_req_decode(unsigned char *buf, int len, void **req);
