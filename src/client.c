@@ -1208,7 +1208,7 @@ int add_task_connect(struct sftt_client_v2 *client)
 	req_packet->obj = req_info;
 	req_packet->block_size = APPEND_CONN_REQ_PACKET_MIN_LEN;
 
-	ret = send_sftt_packet(client->main_conn.sock, req_packet);
+	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
 		return -1;
@@ -1220,7 +1220,7 @@ int add_task_connect(struct sftt_client_v2 *client)
 		return -1;
 	}
 
-	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
+	ret = recv_sftt_packet(conn->sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
@@ -1237,7 +1237,9 @@ int add_task_connect(struct sftt_client_v2 *client)
 	conn->type = CONN_TYPE_TASK;
 	strncpy(conn->connect_id, resp_info->data.connect_id, CONNECT_ID_LEN);
 
+	client->tcs_lock->ops->lock(client->tcs_lock);
 	list_add(&conn->list, &client->task_conns);
+	client->tcs_lock->ops->unlock(client->tcs_lock);
 
 	ret = start_task_handler(client, conn);
 	if (ret == -1) {
@@ -1296,7 +1298,7 @@ int start_conn_mgr(struct sftt_client_v2 *client)
 	ret = pthread_create(&client->conn_mgr.tid, NULL, do_connect_manager,
 			client);
 	if (ret == -1) {
-		perror("create conn_mgr fail");
+		perror("create conn_mgr failed");
 		return -1;
 	}
 

@@ -95,6 +95,8 @@ void put_peer_task_conn(struct client_sock_conn *conn);
 
 struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user);
 
+void init_client_session(struct client_session *session);
+
 void server_init_func(struct sftt_server_config *server_config)
 {
 	DIR *mydir = NULL;
@@ -1291,9 +1293,15 @@ int handle_append_conn_req(struct client_session *client,
 	struct client_session *real_session;
 	struct append_conn_resp *resp;
 	struct client_sock_conn *conn;
+	int ret;
+
+	DEBUG((DEBUG_INFO, "handle append_conn req in ...\n"));
 
 	req = req_packet->obj;
 	assert(req != NULL);
+
+	DEBUG((DEBUG_INFO, "req->session_id=%s|req->type=%d\n",
+			req->session_id, req->type));
 
 	if (req->type != CONN_TYPE_TASK) {
 		DEBUG((DEBUG_INFO, "invalid connect type: %d\n", req->type));
@@ -1305,6 +1313,8 @@ int handle_append_conn_req(struct client_session *client,
 		DEBUG((DEBUG_INFO, "invalid session id: %s\n", req->session_id));
 		return -1;
 	}
+	DEBUG((DEBUG_INFO, "find client session: session_id=%s\n",
+			real_session->session_id));
 
 	resp = mp_malloc(g_mp, "append_conn_resp", sizeof(struct append_conn_resp));
 	if (resp == NULL) {
@@ -1319,20 +1329,31 @@ int handle_append_conn_req(struct client_session *client,
 			return -1;
 		}
 
+		DEBUG((DEBUG_INFO, "conn=%p\n", conn));
 		*conn = client->main_conn;
+		DEBUG((DEBUG_INFO, "conn->connect_id=%s\n", conn->connect_id));
 		conn->type = CONN_TYPE_TASK;
+		conn->is_using = false;
 
+		DEBUG((DEBUG_INFO, "conn->type=%d, conn->is_using=%d\n",
+				conn->type, conn->is_using));
 		list_add(&conn->list, &real_session->task_conns);
 
+		DEBUG((DEBUG_INFO, "before copy connect_id\n"));
 		strncpy(resp->data.connect_id, conn->connect_id, CONNECT_ID_LEN);
+		DEBUG((DEBUG_INFO, "resp->data.connect_id=%s\n", resp->data.connect_id));
+		DEBUG((DEBUG_INFO, "append a new conn: session_id=%s|connect_id=%s\n",
+				real_session->session_id, conn->connect_id));
 
-		return send_append_conn_resp(client->main_conn.sock, resp_packet, resp, RESP_OK, 0);
+		ret = send_append_conn_resp(client->main_conn.sock, resp_packet, resp, RESP_OK, 0);
 	} else {
-		return send_append_conn_resp(client->main_conn.sock, resp_packet, resp,
+		ret = send_append_conn_resp(client->main_conn.sock, resp_packet, resp,
 				RESP_UNKNOWN_CONN_TYPE, 0); 
 	}
 
-	return 0;
+	DEBUG((DEBUG_INFO, "handle append_conn req out ...\n"));
+
+	return ret;
 }
 
 void *handle_client_session(void *args)
@@ -1483,7 +1504,10 @@ struct client_session *get_new_session(void)
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		if (!client_connected(&server->sessions[i])) {
+
+			init_client_session(&server->sessions[i]);
 			set_client_active(&server->sessions[i]);
+
 			return &server->sessions[i];
 		}
 	}

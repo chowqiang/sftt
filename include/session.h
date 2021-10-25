@@ -29,7 +29,7 @@
 #define MAX_CLIENT_NUM 32
 
 enum client_status {
-	ACTIVE,
+	ACTIVE = 1,
 	INACTIVE,
 	DISCONNECTED,
 };
