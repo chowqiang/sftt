@@ -154,6 +154,7 @@ struct get_resp {
 	int next;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct get_resp_data data;
+	int need_reply;
 };
 
 struct put_req_data {
@@ -168,6 +169,7 @@ struct put_req {
 	struct logged_in_user user;
 	struct put_req_data data;
 	int next;
+	int need_reply;
 };
 
 struct put_resp {

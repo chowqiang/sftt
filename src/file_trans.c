@@ -33,6 +33,8 @@ extern struct mem_pool *g_mp;
 int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 	struct get_resp *resp, int next)
 {
+	resp->need_reply = 1;
+
 	return send_get_resp(fd, resp_packet, resp, RESP_OK, next);
 }
 
@@ -53,6 +55,7 @@ int send_file_name_by_get_resp(int fd, char *path, char *fname,
 	data->entry.mode = file_mode(path);
 	strncpy((char *)data->entry.content, fname, FILE_NAME_MAX_LEN);
 	data->entry.this_size = strlen(fname);
+	resp->need_reply = 0;
 
 	return send_get_resp(fd, resp_packet, resp, RESP_OK, next);
 }
@@ -78,6 +81,7 @@ int send_file_md5_by_get_resp(int fd, char *path, struct sftt_packet *resp_packe
 	data->entry.this_size = strlen((char *)data->entry.content);
 
 	DEBUG((DEBUG_INFO, "file=%s|md5=%s\n", path, data->entry.content));
+	resp->need_reply = 1;
 
 	return send_get_resp(fd, resp_packet, resp, RESP_OK, 1);
 }
@@ -138,11 +142,18 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 			break;
 		}
 
+#if 1
+		ret = recv_sftt_packet(fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: recv sftt packet failed!\n", __func__);
+			return -1;
+		}
 		com_resp = resp_packet->obj;
 		if (com_resp->status != RESP_OK) {
 			printf("recv response failed!\n");
 			break;
 		}
+#endif
 
 	} while (read_size < data->entry.total_size);
 
@@ -252,6 +263,8 @@ int send_file_name_by_put_req(int fd, struct sftt_packet *req_packet,
 	strncpy((char *)data->entry.content, target, FILE_NAME_MAX_LEN);
 	data->entry.this_size = strlen(target);
 
+	req->need_reply = 1;
+
 	return send_trans_entry_by_put_req(fd, req_packet, req);
 }
 
@@ -273,12 +286,16 @@ int send_file_md5_by_put_req(int fd, struct sftt_packet *req_packet, char *file,
 
 	data->entry.this_size = strlen((char *)data->entry.content);
 
+	req->need_reply = 1;
+
 	return send_trans_entry_by_put_req(fd, req_packet, req);
 }
 
 int send_file_content_by_put_req(int fd,
 	struct sftt_packet *req_packet, struct put_req *req)
 {
+	req->need_reply = 1;
+
 	return send_trans_entry_by_put_req(fd, req_packet, req);
 }
 
@@ -353,6 +370,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 			break;
 		}
 
+#if 1
 		ret = recv_sftt_packet(fd, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
@@ -363,6 +381,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 			printf("recv response failed!\n");
 			break;
 		}
+#endif
 	}
 
 	if (!feof(fp)) {

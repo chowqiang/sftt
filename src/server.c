@@ -806,6 +806,7 @@ int handle_fwd_get_req(struct client_session *client,
 	struct get_req *req;
 	struct get_resp *resp;
 	struct client_sock_conn *conn = NULL;
+	struct common_resp *com_resp;
 
 	req = req_packet->obj;
 	assert(req != NULL);
@@ -854,6 +855,17 @@ int handle_fwd_get_req(struct client_session *client,
 
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
 			resp, RESP_OK, resp->next);
+
+		if (resp->need_reply) {
+			ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
+			if (ret == -1) {
+				DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+				goto done;
+			}
+			com_resp = (struct common_resp *)resp_packet->obj;
+			assert(com_resp != NULL);
+			ret = send_common_resp(conn->sock, resp_packet, com_resp, com_resp->status, 0);
+		}
 
 	} while (resp->next);
 	DEBUG((DEBUG_INFO, "handle get fwd req done!\n"));
@@ -922,6 +934,7 @@ int handle_fwd_put_req(struct client_session *client,
 	struct peer_session *peer;
 	struct put_req *req;
 	struct put_resp *resp;
+	struct common_resp *com_resp;
 	struct client_sock_conn *conn = NULL;
 
 	resp = mp_malloc(g_mp, __func__, sizeof(put_resp));
@@ -966,6 +979,17 @@ int handle_fwd_put_req(struct client_session *client,
 		assert(req != NULL);
 
 		send_sftt_packet(conn->sock, req_packet);
+
+		if (req->need_reply) {
+			ret = recv_sftt_packet(conn->sock, resp_packet);
+			if (ret == -1) {
+				DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+				goto done;
+			}
+			com_resp = (struct common_resp *)resp_packet->obj;
+			assert(com_resp != NULL);
+			ret = send_common_resp(client->main_conn.sock, resp_packet, com_resp, com_resp->status, 0);
+		}
 
 	} while (req->next);
 

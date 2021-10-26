@@ -481,6 +481,8 @@ xdr_get_resp (XDR *xdrs, get_resp *objp)
 		 return FALSE;
 	 if (!xdr_get_resp_data (xdrs, &objp->data))
 		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->need_reply))
+		 return FALSE;
 	return TRUE;
 }
 
@@ -514,6 +516,8 @@ xdr_put_req (XDR *xdrs, put_req *objp)
 	 if (!xdr_put_req_data (xdrs, &objp->data))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->next))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->need_reply))
 		 return FALSE;
 	return TRUE;
 }
