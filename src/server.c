@@ -822,19 +822,24 @@ int handle_fwd_get_req(struct client_session *client,
 
 	// get or create peer session
 	conn = get_peer_task_conn(user);
+	
 	if (conn == NULL) {
+		DEBUG((DEBUG_INFO, "cannot get peer task conn!\n"));
 		return send_get_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_CNT_GET_TASK_CONN, 0);
 	}
+	DEBUG((DEBUG_INFO, "get peer task conn, connect_id=%s\n", conn->connect_id));
 
 	// send get req packet to peer task conn
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
+		DEBUG((DEBUG_INFO, "send get req to peer failed!\n"));
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_SEND_PEER_ERR, 0);
 		goto done;
 	}
+	DEBUG((DEBUG_INFO, "send get req to peer done, path=%s\n",
+			req->path));
 
 	do {
 		// recv get resp packet
@@ -847,16 +852,17 @@ int handle_fwd_get_req(struct client_session *client,
 		resp = (struct get_resp *)resp_packet->obj;
 		assert(resp != NULL);
 
-		send_get_resp(client->main_conn.sock, resp_packet,
+		ret = send_get_resp(client->main_conn.sock, resp_packet,
 			resp, RESP_OK, resp->next);
 
 	} while (resp->next);
+	DEBUG((DEBUG_INFO, "handle get fwd req done!\n"));
 
 done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_GET_OVERLAP
@@ -1190,10 +1196,12 @@ int check_user(struct logged_in_user *user)
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
-		DEBUG((DEBUG_INFO, "session->session_id=%s|user->session_id=%s\n",
-				session->session_id, user->session_id));
 		if (client_connected(session) &&
 			strcmp(session->session_id, user->session_id) == 0) {
+
+			DEBUG((DEBUG_INFO, "session->session_id=%s|user->session_id=%s\n",
+				session->session_id, user->session_id));
+
 			strncpy(user->ip, session->ip, IPV4_MAX_LEN);
 			ret = 0;
 			goto done;

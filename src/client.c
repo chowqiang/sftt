@@ -1672,14 +1672,18 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct sftt_client_v2 *client = obj;
 	int ret, user_no;
 	char *target = NULL;
-	struct logged_in_user *user;
+	char *path = NULL;
+	struct logged_in_user *user = NULL;
 
 	if (!(argc == 2 || argc == 3)) {
 		sftt_client_get_usage();
 		return -1;
 	}
 
-	if (argc == 3) {
+	if (argc == 2) {
+		path = argv[0];
+		target = argv[1];
+	} else if (argc == 3) {
 		user_no = atoi(argv[0]);
 		user = find_logged_in_user(client, user_no);
 		if (user == NULL) {
@@ -1688,14 +1692,15 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 			return -1;
 		}
 
-		if (!is_absolute_path(argv[1])) {
-			printf("you must specify the absolute path when get"
-					" from peer!\n");
-			return -1;
-		}
+		path = argv[1];
+		target = argv[2];
 	}
 
-	target = argv[1];
+	if (!is_absolute_path(path)) {
+		printf("you must specify the absolute path when get"
+			" from peer!\n");
+		return -1;
+	}
 
 	req_packet = malloc_sftt_packet(GET_REQ_PACKET_MIN_LEN);
 	if (req_packet == NULL) {
@@ -1712,7 +1717,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	/* send get req */
 	strncpy(req->session_id, client->session_id, SESSION_ID_LEN);
-	strncpy(req->path, argv[0], FILE_NAME_MAX_LEN);
+	strncpy(req->path, path, FILE_NAME_MAX_LEN);
 	if (user) {
 		req->user = *user;
 		req->to_peer = 1;
