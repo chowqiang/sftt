@@ -135,7 +135,7 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 		data->entry.this_size = ret;
 		read_size += ret;
 
-		next = read_size < data->entry.total_size ? 1 : 0;
+		next = is_last ? (read_size < data->entry.total_size ? 1 : 0) : 1;
 		ret = send_file_content_by_get_resp(fd, resp_packet, resp, next);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
@@ -177,7 +177,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	DEBUG((DEBUG_INFO, "send dir: %s\n", path));
 
 	file_list = get_path_entry_list(path, NULL);
-	if (file_list) {
+	if (file_list == NULL) {
 		printf("%s:%d, cannot get file list, please ensure the path"
 				" is absolute path! (path: %s)\n",
 				__func__, __LINE__, path);
@@ -477,7 +477,8 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 			}
 		}
 
-		ret = send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
+		printf("%s:%d, recv dir (%s) done!\n", __func__, __LINE__, rp);
+		//ret = send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 		mp_free(g_mp, com_resp);
 		return ret;
 
