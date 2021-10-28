@@ -17,10 +17,10 @@
 #include "req_resp.h"
 
 #define SET_REQ_PACKET_MIN_LEN(type, ltype) \
-	int type##_REQ_PACKET_MIN_LEN = (sizeof(struct ltype##_req) * 10);
+	int type##_REQ_PACKET_MIN_LEN = (sizeof(struct ltype##_req) * 20);
 
 #define SET_RESP_PACKET_MIN_LEN(type, ltype) \
-	int type##_RESP_PACKET_MIN_LEN = (sizeof(struct ltype##_resp) * 10);
+	int type##_RESP_PACKET_MIN_LEN = (sizeof(struct ltype##_resp) * 20);
 
 SET_REQ_PACKET_MIN_LEN(VALIDATE, validate)
 SET_RESP_PACKET_MIN_LEN(VALIDATE, validate)

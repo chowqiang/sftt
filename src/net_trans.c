@@ -59,7 +59,7 @@ int sftt_packet_encode_content(struct sftt_packet *src, struct sftt_packet *dst)
 	/*
 	 * 1. compress and encrypt content
 	 * 2. update content len in header
-	 * */
+	 */
 	add_log(LOG_INFO, "%s: in, data_len=%d", __func__, src->data_len);
 	dst->data_len = sftt_buffer_encode(src->content, src->data_len,
 		dst->content, true, true);
@@ -167,11 +167,12 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: in", __func__);
 	add_log(LOG_INFO, "%s: before serialize, packet_size=%d", __func__,
 		sp->block_size * 2);
+
 	if (!sftt_packet_serialize(sp)) {
 		printf("sftt packet serialize failed!\n");
 		return -1;
 	}
-	//printf("%s: after serialize, packet data_len: %d\n", __func__, sp->data_len);
+	add_log(LOG_INFO, "%s: after serialize, packet data_len: %d\n", __func__, sp->data_len);
 
 	_sp = malloc_sftt_packet(sp->block_size * 2);
 	if (_sp == NULL) {
@@ -181,8 +182,10 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 
 	add_log(LOG_INFO, "%s: before encode content, data_len=%d", __func__,
 		sp->data_len);
+
 	_sp->type = sp->type;
 	sftt_packet_encode_content(sp, _sp);
+	assert(_sp->block_size > _sp->data_len);
 
 	add_log(LOG_INFO, "%s: before send, data_len=%d", __func__, _sp->data_len);
 	sftt_packet_send_header(sock, _sp);
@@ -259,6 +262,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: in", __func__);
 
 	memset(sp->content, 0, sp->block_size);
+	assert(sp->block_size > sp->data_len);
 
 	ret = recv(sock, sp->content, sp->data_len, 0 | MSG_WAITALL);
 	if (ret != sp->data_len) {
@@ -269,7 +273,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 		}
 		return -1;
 	}
-	add_log(LOG_INFO, "%s, receive content: ret=%d, sp->data_len=%d", __func__,
+	add_log(LOG_INFO, "%s: receive content, ret=%d, sp->data_len=%d", __func__,
 		ret, sp->data_len);
 
 #if 0
@@ -305,7 +309,11 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	sp->type = _sp->type;
 	add_log(LOG_INFO, "%s: receive packet type: %d", __func__, sp->type);
 	add_log(LOG_INFO, "%s: before decode content", __func__);
+
 	sftt_packet_decode_content(_sp, sp);
+	DEBUG((DEBUG_INFO, "after decode|sp->block_size=%d|sp->data=%d\n",
+			sp->block_size, sp->data_len));
+	assert(sp->block_size > sp->data_len);
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {

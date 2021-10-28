@@ -72,6 +72,7 @@ struct sftt_option sftt_server_opts[] = {
 };
 
 extern struct mem_pool *g_mp;
+extern int verbose_level;
 
 struct sftt_server *server;
 
@@ -829,7 +830,13 @@ int handle_fwd_get_req(struct client_session *client,
 		return send_get_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_CNT_GET_TASK_CONN, 0);
 	}
-	DEBUG((DEBUG_INFO, "get peer task conn, connect_id=%s\n", conn->connect_id));
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "get peer task conn|connect_id=%s\n",
+				conn->connect_id));
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send get req to peer|path=%s\n", req->path));
 
 	// send get req packet to peer task conn
 	ret = send_sftt_packet(conn->sock, req_packet);
@@ -839,8 +846,13 @@ int handle_fwd_get_req(struct client_session *client,
 				resp, RESP_SEND_PEER_ERR, 0);
 		goto done;
 	}
-	DEBUG((DEBUG_INFO, "send get req to peer done, path=%s\n",
-			req->path));
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send get req to peer done|path=%s\n",
+				req->path));
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to recv file from peer\n"));
 
 	do {
 		// recv get resp packet
@@ -849,27 +861,46 @@ int handle_fwd_get_req(struct client_session *client,
 			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 			goto done;
 		}
-
 		resp = (struct get_resp *)resp_packet->obj;
 		assert(resp != NULL);
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "recv a packet\n"));
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send this packet to geter\n"));
 
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
 			resp, RESP_OK, resp->next);
 
 		if (resp->need_reply) {
+			if (verbose_level > 0)
+				DEBUG((DEBUG_INFO, "this packet need reply\n"));
+
 			ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 			if (ret == -1) {
 				DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 				goto done;
 			}
+
+			if (verbose_level > 0)
+				DEBUG((DEBUG_INFO, "received a reply common resp\n"));
+
 			com_resp = (struct common_resp *)resp_packet->obj;
 			assert(com_resp != NULL);
+
+			if (verbose_level > 0)
+				DEBUG((DEBUG_INFO, "send this common resp to getee\n"));
+
 			ret = send_common_resp(conn->sock, resp_packet, com_resp, com_resp->status, 0);
 		}
 
-	} while (resp->next);
-	DEBUG((DEBUG_INFO, "handle get fwd req done!\n"));
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "have next?|next=%d\n", resp->next));
 
+	} while (resp->next);
+
+	DEBUG((DEBUG_INFO, "handle get fwd req done!\n"));
 done:
 	if (conn)
 		put_peer_task_conn(conn);

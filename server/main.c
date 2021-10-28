@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include "server.h"
 
+extern int verbose_level;
+
 extern char *optarg;
 extern int optind;
 extern int optopt;
@@ -35,13 +37,16 @@ int main(int argc, char **argv)
 	}
 
 	memset(store_path, 0, sizeof(store_path));
-	while ((ch = getopt(argc, argv, "s:d")) != -1) {
+	while ((ch = getopt(argc, argv, "s:d:v")) != -1) {
 		switch (ch) {
 		case 's':
 			strncpy(store_path, optarg, sizeof(store_path) - 1);
 			break;
 		case 'd':
 			background = true;
+			break;
+		case 'v':
+			verbose_level++;
 			break;
 		case '?':
 		default:

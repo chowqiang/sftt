@@ -39,6 +39,7 @@ size_t file_size(char *filename)
 	FILE *pfile = fopen(filename, "rb");
 	if (pfile == NULL)
 	{
+		printf("%s:%d, get file size failed!\n", __func__, __LINE__);
 		return 0;
 	}
 

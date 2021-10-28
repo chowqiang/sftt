@@ -21,6 +21,8 @@
 #include "cmdline.h"
 #include "log.h"
 
+extern int verbose_level;
+
 extern char *optarg;
 extern int optind;
 extern int optopt;
@@ -54,7 +56,7 @@ int main(int argc, char **argv)
 	memset(host, 0, sizeof(host));
 	memset(builtin, 0, sizeof(builtin));
 
-	while ((ch = getopt(argc, argv, "b:u:P:h:")) != -1) {
+	while ((ch = getopt(argc, argv, "b:u:P:h:v")) != -1) {
 		switch (ch) {
 		case 'b':
 			strncpy(builtin, optarg, sizeof(builtin) - 1);
@@ -68,6 +70,9 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 			strncpy(host, optarg, sizeof(host) - 1);
+			break;
+		case 'v':
+			verbose_level++;
 			break;
 		case '?':
 		default:

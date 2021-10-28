@@ -29,6 +29,7 @@
 #include "utils.h"
 
 extern struct mem_pool *g_mp;
+extern int verbose_level;
 
 int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 	struct get_resp *resp, int next)
@@ -45,8 +46,6 @@ int send_file_name_by_get_resp(int fd, char *path, char *fname,
 
 	data = &resp->data;
 
-	DEBUG((DEBUG_INFO, "path=%s|fname=%s\n", path, fname));
-
 	if (is_dir(path))
 		data->entry.type = FILE_TYPE_DIR;
 	else
@@ -55,6 +54,7 @@ int send_file_name_by_get_resp(int fd, char *path, char *fname,
 	data->entry.mode = file_mode(path);
 	strncpy((char *)data->entry.content, fname, FILE_NAME_MAX_LEN);
 	data->entry.this_size = strlen(fname);
+
 	resp->need_reply = 0;
 
 	return send_get_resp(fd, resp_packet, resp, RESP_OK, next);
@@ -99,25 +99,39 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 	if (is_dir(path)) {
 		next = is_last ? 0 : 1;
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send dir name|path=%s|fname=%s\n", path, fname));
+
 		return send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, next);
 	}
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send file name|path=%s|fname=%s\n", path, fname));
 
 	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, 1);
 	if (ret == -1)
 		return -1;
 
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send file md5|path=%s|fname=%s\n", path, fname));
+
 	ret = send_file_md5_by_get_resp(fd, path, resp_packet, resp);
 	if (ret == -1)
 		return -1;
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "recv md5 resp|path=%s|fname=%s\n", path, fname));
 
 	ret = recv_sftt_packet(fd, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
 		return -1;
 	}
+
 	com_resp = resp_packet->obj;
 	if (com_resp->status == RESP_OK) {
-		DEBUG((DEBUG_INFO, "file not changed: %s|skip ...\n", path));
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "file not changed|path=%s|skip ...\n", path));
 		return 0;
 	}
 
@@ -128,14 +142,21 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 	data = &resp->data;
 	data->entry.total_size = file_size(path);
 	read_size = 0;
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to send file block\n"));
+
 	do {
 		ret = fread(data->entry.content, 1, CONTENT_BLOCK_SIZE, fp);
-		DEBUG((DEBUG_INFO, "send file block|len=%d\n", ret));
 
 		data->entry.this_size = ret;
 		read_size += ret;
 
 		next = is_last ? (read_size < data->entry.total_size ? 1 : 0) : 1;
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file block|len=%d|next=%d\n", ret, next));
+
 		ret = send_file_content_by_get_resp(fd, resp_packet, resp, next);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
@@ -143,18 +164,21 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 		}
 
 #if 1
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "recv common resp\n"));
+
 		ret = recv_sftt_packet(fd, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return -1;
 		}
+
 		com_resp = resp_packet->obj;
 		if (com_resp->status != RESP_OK) {
 			printf("recv response failed!\n");
 			break;
 		}
 #endif
-
 	} while (read_size < data->entry.total_size);
 
 	if (!feof(fp))
@@ -174,7 +198,8 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	int file_count;
 	struct path_entry *entry;
 
-	DEBUG((DEBUG_INFO, "send dir: %s\n", path));
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send dir in ...|path: %s\n", path));
 
 	file_list = get_path_entry_list(path, NULL);
 	if (file_list == NULL) {
@@ -185,23 +210,35 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	}
 
 	file_count = dlist_size(file_list);
-	DEBUG((DEBUG_INFO, "file_count: %d\n", file_count));
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "file list|file_count=%d\n", file_count));
 
 	data = &resp->data;
 	data->total_files = file_count;
 	data->file_idx = 0;
+
 	dlist_for_each(file_list, node) {
 		entry = node->data;
-		DEBUG((DEBUG_INFO, "send %d-th file: %s\n", data->file_idx, entry->abs_path));
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file|idx=%d|path=%s\n",
+					data->file_idx, entry->abs_path));
+
 		if (send_file_by_get_resp(fd, entry->abs_path, entry->rel_path,
 				resp_packet, resp) == -1) {
-			DEBUG((DEBUG_INFO, "send file failed: %s\n", (char *)node->data));
+			DEBUG((DEBUG_ERROR, "send file failed: %s\n",
+					(char *)entry->abs_path));
 		}
-		DEBUG((DEBUG_INFO, "send file done\n"));
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file done|idx=%d|path=%s\n",
+					data->file_idx, entry->abs_path));
 
 		data->file_idx++;
 	}
-	DEBUG((DEBUG_INFO, "send dir done\n"));
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send dir out\n"));
 
 	return 0;
 }
@@ -214,17 +251,27 @@ int send_files_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	struct get_resp_data *data;
 
 	if (is_file(path)) {
-		DEBUG((DEBUG_INFO, "send file: %s\n", path));
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file|path=%s\n", path));
+
 		data = &resp->data;
 		data->total_files = 1;
 		data->file_idx = 0;
-		fname = get_basename(path);	
+
+		fname = get_basename(path);
 		ret = send_file_by_get_resp(fd, path, fname, resp_packet, resp);
-		DEBUG((DEBUG_INFO, "send file done\n"));
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file done|path=%s\n", path));
+
 	} else {
-		DEBUG((DEBUG_INFO, "send dir: %s\n", path));
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send multi files|path=%s\n", path));
+
 		ret = send_dir_by_get_resp(fd, path, resp_packet, resp);
-		DEBUG((DEBUG_INFO, "send dir done\n"));
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send multi files done|path=%s\n", path));
 	}
 
 	return ret;
@@ -465,41 +512,55 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	assert(com_resp != NULL);
 
 	rp = path;
-	printf("get one file: %s\n", rp);
+
 	if (IS_DIR(type)) {
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "get a dir|dir=%s\n", rp));
+
 		if (!file_existed(rp)) {
 			ret = mkdirp(rp, mode);
 			if (ret == -1) {
 				printf("create dir failed: %s\n", rp);
 				send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 				mp_free(g_mp, com_resp);
+
 				return -1;
 			}
 		}
 
-		printf("%s:%d, recv dir (%s) done!\n", __func__, __LINE__, rp);
-		//ret = send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+
 		mp_free(g_mp, com_resp);
+
 		return ret;
 
 	} else if (IS_FILE(type)) {
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "get a file|file=%s\n", rp));
+
 		if (!file_existed(rp)) {
 			ret = create_new_file(rp, mode);
 			if (ret == -1) {
 				printf("create file failed: %s\n", rp);
 				send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 				mp_free(g_mp, com_resp);
+
 				return -1;
 			}
-		}	
+		}
 	} else {
 		printf("unknown file type!\n");
 		ret = send_common_resp(fd, resp_packet, com_resp, RESP_UNKNOWN_FILE_TYPE, 0);	
 		mp_free(g_mp, com_resp);
+
 		return -1;	
 	}
 
 	assert(file_existed(rp) && is_file(rp));	
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to recv file md5\n"));
 
 	/* recv md5 */
 	ret = recv_sftt_packet(fd, resp_packet);
@@ -512,11 +573,20 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 
 	strncpy(md5, (char *)data->entry.content, MD5_STR_LEN);
 	if (same_file(rp, md5)) {
-		printf("file not changed: %s\n", rp);
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "file not changed|file=%s\n", rp));
+
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 		mp_free(g_mp, com_resp);
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+
 		return 0;
 	}
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send md5 common resp\n"));
 
 	send_common_resp(fd, resp_packet, com_resp, RESP_CONTINUE, 0);
 
@@ -525,8 +595,13 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		printf("%s: open file for write failed! file: %s\n", __func__, rp);
 		send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 		mp_free(g_mp, com_resp);
+
 		return -1;
 	}
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to recv file content|total_size=%ld\n",
+				data->entry.total_size));
 
 	do {
 		/* recv content */
@@ -537,9 +612,13 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		}
 		resp = resp_packet->obj;
 		data = &resp->data;
-		//printf("receive block len: %d\n", resp->entry.len);
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "received a block|len=%d\n", data->entry.this_size));
 
 		fwrite(data->entry.content, data->entry.this_size, 1, fp);
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "send file block common resp\n"));
 
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0); 
 
@@ -560,8 +639,8 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	}
 
 	//set_file_mode(rp, data->entry.mode);
-
-	printf("%s:%d, recv %s done!\n", __func__, __LINE__, rp);
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "recv %s done\n", rp));
 
 	return 0;
 }
@@ -582,6 +661,10 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet
 	}
 	resp = resp_packet->obj;
 	data = &resp->data;
+
+	if (verbose_level > 0) {
+		DEBUG((DEBUG_INFO, "total files will recv: %d\n", data->total_files));
+	}
 
 	if (!(data->total_files > 0)) {
 		printf("%s: target file not exist\n", __func__);
@@ -607,18 +690,27 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet
 
 	recv_count = 0;
 	do {
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "begin recv %d-th file\n", recv_count));
+
 		rp = path_join(path, (char *)data->entry.content);
 		recv_file_from_get_resp(fd, rp, data->entry.type,
 				data->entry.mode, resp_packet);	
+
+		if (verbose_level > 0)
+			DEBUG((DEBUG_INFO, "end recv %d-th file\n", recv_count));
+
 		recv_count++;
 		if (recv_count == data->total_files)
 			break;
+
 		/* recv file name */
 		ret = recv_sftt_packet(fd, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			return -1;
 		}
+
 		resp = resp_packet->obj;
 		data = &resp->data;
 	} while (recv_count < data->total_files);

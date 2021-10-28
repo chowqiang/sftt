@@ -56,6 +56,7 @@
 
 extern int errno;
 extern struct mem_pool *g_mp;
+extern int verbose_level;
 
 bool directcmd = false;
 bool force_quit = false;
@@ -945,16 +946,18 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	char path[FILE_NAME_MAX_LEN];
 	int ret;
 
-	DEBUG((DEBUG_INFO, "handle get req in ...\n"));
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "handle get req in ...\n"));
+
+	req = req_packet->obj;
+	strncpy(path, req->path, FILE_NAME_MAX_LEN);
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "get req|session_id=%s|path=%s\n",
+				req->session_id, req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
-
-	req = req_packet->obj;
-
-	strncpy(path, req->path, FILE_NAME_MAX_LEN);
-	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
-		req->session_id, req->path));
 
 	if (!is_absolute_path(path)) {
 		DEBUG((DEBUG_INFO, "path not absolute!\n"));
@@ -968,10 +971,14 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 				RESP_FILE_NTFD, 0);
 	}
 
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to send files by get resp"));
+
 	ret = send_files_by_get_resp(conn->sock, path, resp_packet,
 			resp);
 
-	DEBUG((DEBUG_INFO, "handle get req out\n"));
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "handle get req out\n"));
 
 	return ret;
 }
@@ -1102,9 +1109,12 @@ void *do_task_handler(void *arg)
 		return NULL;
 	}
 
-	add_log(LOG_INFO, "begin to communicate with client ...");
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to communicate with peer ...\n"));
+
 	while (1) {
 		conn->is_using = false;
+
 		ret = recv_sftt_packet(sock, req);
 		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
@@ -1115,6 +1125,7 @@ void *do_task_handler(void *arg)
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
 			goto exit;
 		}
+
 		conn->is_using = true; 
 		switch (req->type) {
 		case PACKET_TYPE_WRITE_REQ:
@@ -1152,7 +1163,9 @@ void *do_task_handler(void *arg)
 	}
 
 exit:
-	//DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+
 	return NULL;
 }
 
@@ -1726,6 +1739,9 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req;
 	req_packet->type = PACKET_TYPE_GET_REQ;
 
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "send get req to server\n"));
+
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
@@ -1738,7 +1754,13 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "begin to recv files from server\n"));
+
 	ret = recv_files_from_get_resp(client->main_conn.sock, target, resp_packet);
+
+	if (verbose_level > 0)
+		DEBUG((DEBUG_INFO, "end to recv files from server\n"));
 
 	mp_free(g_mp, req);
 

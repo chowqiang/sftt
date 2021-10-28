@@ -37,6 +37,7 @@
 extern struct mem_pool *g_mp;
 
 static enum log_type type = UNKNOWN_LOG;
+int verbose_level = 0;
 
 static char client_log_dir[DIR_PATH_MAX_LEN];
 static char client_log_prefix[32];
