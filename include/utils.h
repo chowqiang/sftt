@@ -24,6 +24,14 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+/* align must be power of 2 */
+#define ALIGN_FLOOR(val, align) \
+		((val) & (~(align - 1)))
+
+/* align must be power of 2 */
+#define ALIGN_CEIL(val, align) \
+		ALIGN_FLOOR(val + align - 1, align)
+
 void gen_session_id(char *buf, int len);
 
 void gen_connect_id(char *buf, int len);

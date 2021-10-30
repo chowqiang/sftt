@@ -62,7 +62,7 @@ int sftt_packet_encode_content(struct sftt_packet *src, struct sftt_packet *dst)
 	 */
 	add_log(LOG_INFO, "%s: in, data_len=%d", __func__, src->data_len);
 	dst->data_len = sftt_buffer_encode(src->content, src->data_len,
-		dst->content, true, true);
+		&dst->content, true, true);
 	add_log(LOG_INFO, "%s: out, data_len=%d", __func__, dst->data_len);
 	
 	return 0;
@@ -81,10 +81,12 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
 	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 	
+#if 0
 	buffer = mp_malloc(g_mp, __func__, header_len);
 	assert(buffer != NULL);
+#endif
 
-	encoded_len = sftt_buffer_encode(header, header_len, buffer, false, false);
+	encoded_len = sftt_buffer_encode(header, header_len, &buffer, false, false);
 	assert(encoded_len == header_len);
 
 	ret = send(sock, buffer, encoded_len, 0);
@@ -206,7 +208,7 @@ int sftt_packet_decode_content(struct sftt_packet *src, struct sftt_packet *dst)
 	*/
 	add_log(LOG_INFO, "%s: in", __func__);
  	dst->data_len = sftt_buffer_decode(src->content, src->data_len,
-		dst->content, true, true);
+		&dst->content, true, true);
 	add_log(LOG_INFO, "%s: after decode, data_len=%d", __func__, dst->data_len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -235,11 +237,13 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 		return -1;
 	}
 
+#if 0
 	buffer = mp_malloc(g_mp, __func__, header_len);
 	assert(buffer != NULL);
+#endif
 
 	add_log(LOG_INFO, "%s: before decode header", __func__);
-	decoded_len = sftt_buffer_decode(header, header_len, buffer, false, false);
+	decoded_len = sftt_buffer_decode(header, header_len, &buffer, false, false);
 	assert(decoded_len == header_len);
 
 	add_log(LOG_INFO, "%s: header decoded len: %d", __func__, decoded_len);
