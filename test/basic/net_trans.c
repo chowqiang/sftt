@@ -54,7 +54,7 @@ int run_client(int port, char *user_name)
 	sock = make_client(host, port);
 	assert(sock != -1);
 
-	req_packet = malloc_sftt_packet(VALIDATE_REQ_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
 		return -1;
@@ -68,7 +68,7 @@ int run_client(int port, char *user_name)
 	req_info->name_len = strlen(req_info->name);
 
 	req_packet->obj = (void *)req_info;
-	req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
+	//req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(sock, req_packet);
 	if (ret == -1) {
@@ -76,7 +76,7 @@ int run_client(int port, char *user_name)
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
 		return -1;
@@ -123,10 +123,10 @@ int run_server(void)
 	assert(ret != -1);
 	printf("server is running on 127.0.0.1:%d ...\n", port);
 
-	req_packet = malloc_sftt_packet(VALIDATE_REQ_PACKET_MIN_LEN);
+	req_packet = malloc_sftt_packet();
 	assert(req_packet != NULL);
 
-	resp_packet = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet();
 	assert(resp_packet != NULL);
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));

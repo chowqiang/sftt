@@ -297,8 +297,10 @@ void output_send_resp(FILE *fp, char *struct_name)
 	fprintf(fp, "\tresp_packet->obj = resp;\n");
 	fprintf(fp, "\tresp_packet->type = %s;\n",
 		get_packet_type(packet_type, struct_name));
+#if 0
 	fprintf(fp, "\tresp_packet->block_size = %s;\n\n",
 		get_packet_block_size(block_size, struct_name));
+#endif
 
 	fprintf(fp, "\treturn send_sftt_packet(fd, resp_packet);\n");
 	fprintf(fp, "}\n");

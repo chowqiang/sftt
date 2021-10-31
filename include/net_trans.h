@@ -19,7 +19,7 @@
 
 #include "packet.h"
 
-struct sftt_packet *malloc_sftt_packet(int block_size);
+struct sftt_packet *malloc_sftt_packet(void);
 
 int send_sftt_packet(int sock, struct sftt_packet *sp);
 

@@ -283,7 +283,7 @@ int send_trans_entry_by_put_req(int fd,
 	req_packet->type = PACKET_TYPE_PUT_REQ;
 
 	req_packet->obj = req;
-	req_packet->block_size = PUT_REQ_PACKET_MIN_LEN;
+	//req_packet->block_size = PUT_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(fd, req_packet);
 	if (ret == -1) {
@@ -478,7 +478,7 @@ int send_files_by_put_req(int fd, char *path, char *target,
 	struct sftt_packet *resp_packet;
 	int ret;
 	
-	resp_packet = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet();
 	if (resp_packet == NULL) {
 		printf("%s:%d, alloc sftt packet failed!\n", __func__, __LINE__);
 		return -1;
@@ -869,7 +869,7 @@ int recv_files_by_put_req(int fd, struct sftt_packet *req_packet)
 		return -1;
 	}
 
-	resp_packet = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet();
 	if (resp_packet == NULL) {
 		printf("%s:%d, alloc sftt packet failed!\n", __func__, __LINE__);
 		return -1;

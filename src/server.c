@@ -143,7 +143,7 @@ int server_consult_block_size(int connect_fd, unsigned char *buff,int server_blo
 void server_file_resv(int connect_fd, int consulted_block_size,
 	struct sftt_server_config init_conf)
 {
-	struct sftt_packet *sp = malloc_sftt_packet(consulted_block_size);
+	struct sftt_packet *sp = malloc_sftt_packet();
 	int connected = 1;
 
 	while (connected){
@@ -1428,10 +1428,15 @@ void *handle_client_session(void *args)
 	int ret;
 
 	DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
-	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
+	req = malloc_sftt_packet();
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
 		return NULL;
+	}
+
+	resp = malloc_sftt_packet();
+	if (resp == NULL) {
+		goto exit;
 	}
 
 	signal(SIGTERM, child_process_exit);
@@ -1451,11 +1456,6 @@ void *handle_client_session(void *args)
 		}
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
-			resp = malloc_sftt_packet(VALIDATE_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
-
 			ret = validate_user_info(client, req, resp);
 			if (ret == -1) {
 				free_sftt_packet(&resp);
@@ -1463,80 +1463,40 @@ void *handle_client_session(void *args)
 			}
 			break;
 		case PACKET_TYPE_APPEND_CONN_REQ:
-			resp = malloc_sftt_packet(APPEND_CONN_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_append_conn_req(client, req, resp);
 			goto exit;
 		case PACKET_TYPE_PWD_REQ:
-			resp = malloc_sftt_packet(PWD_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_pwd_req(client, req, resp);
 			break;
 		case PACKET_TYPE_CD_REQ:
-			resp = malloc_sftt_packet(CD_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_cd_req(client, req, resp);
 			break;
 		case PACKET_TYPE_LL_REQ:
-			resp = malloc_sftt_packet(LL_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_ll_req(client, req, resp);
 			break;
 		case PACKET_TYPE_PUT_REQ:
-			resp = malloc_sftt_packet(PUT_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_put_req(client, req, resp);
 			break;
 		case PACKET_TYPE_GET_REQ:
-			resp = malloc_sftt_packet(GET_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_get_req(client, req, resp);
 			break;
 		case PACKET_TYPE_MP_STAT_REQ:
-			resp = malloc_sftt_packet(MP_STAT_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_mp_stat_req(client, req, resp);
 			break;
 		case PACKET_TYPE_DIRECTCMD_REQ:
-			resp = malloc_sftt_packet(DIRECTCMD_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_directcmd_req(client, req, resp);
 			break;
 		case PACKET_TYPE_WHO_REQ:
-			resp = malloc_sftt_packet(WHO_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_who_req(client, req, resp);
 			break;
 		case PACKET_TYPE_WRITE_REQ:
-			resp = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
-			if (resp == NULL) {
-				goto exit;
-			}
 			handle_write_req(client, req, resp);
 			break;
 		default:
 			printf("%s: cannot recognize packet type!\n", __func__);
 			break;
 		}
-		free_sftt_packet(&resp);
+		//free_sftt_packet(&resp);
 	}
 
 exit:

@@ -124,7 +124,6 @@ struct sftt_packet {
 	void *obj;
 	unsigned char *content;
 	int data_len;
-	int block_size;
 };
 
 #endif

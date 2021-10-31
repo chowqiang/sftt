@@ -18,7 +18,7 @@ void *msq_main_loop(void *arg)
 	ctx = (struct server_context *)arg;
 	sockfd = ctx->sock;
 
-	req = malloc_sftt_packet(REQ_PACKET_MIN_LEN);
+	req = malloc_sftt_packet();
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
 		return NULL;
