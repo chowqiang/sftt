@@ -408,6 +408,8 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		return -1;
 	}
 
+	req->data.entry.total_size = file_size(file);
+
 	while (!feof(fp)) {
 		ret = fread(req->data.entry.content, 1, CONTENT_BLOCK_SIZE, fp);
 		req->data.entry.this_size = ret;
@@ -726,6 +728,7 @@ int recv_file_by_put_req(int fd, struct sftt_packet *req_packet,
 	FILE *fp = NULL;
 	int i = 0, ret = 0, total_size = 0;
 	struct put_req *req = NULL;
+	char tmp[FILE_NAME_MAX_LEN];
 
 	*has_more = true;
 
@@ -740,10 +743,76 @@ int recv_file_by_put_req(int fd, struct sftt_packet *req_packet,
 	DEBUG((DEBUG_INFO, "received put req|file=%s\n", rp));
 	if (req->data.entry.type == FILE_TYPE_DIR) {
 		if (!file_existed(rp)) {
-			mkdirp(rp, req->data.entry.mode);
+			ret = mkdirp(rp, req->data.entry.mode);
+		}
+
+		/* send resp */
+		resp->status = RESP_OK;
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_PUT_RESP;
+
+		ret = send_sftt_packet(fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: send resp failed!\n", __func__);
+			return -1;
 		}
 
 		goto recv_one_file_done;
+	} else {
+		if (!file_existed(rp)) {
+			ret = 0;
+			/* check parent dir whether existed */
+			strncpy(tmp, rp, FILE_NAME_MAX_LEN - 1);
+			parent = dirname(tmp);
+			if (!file_existed(parent)) {
+				ret = mkdirp(parent, req->data.entry.mode);
+			}
+			if (ret == -1) {
+				printf("%s:%d, create parent dir failed when recv file\n",
+						__func__, __LINE__);
+				/* send resp */
+				resp->status = RESP_INTERNAL_ERR;
+				resp_packet->obj = resp;
+				resp_packet->type = PACKET_TYPE_PUT_RESP;
+
+				ret = send_sftt_packet(fd, resp_packet);
+				if (ret == -1) {
+					printf("%s: send resp failed!\n", __func__);
+				}
+
+				return -1;
+			}
+
+			/* create new file */
+			ret = create_new_file(rp, req->data.entry.mode);
+			if (ret == -1) {
+				perror("create_new_file failed");
+				printf("%s:%d, create file failed when recv file, file=%s\n",
+						__func__, __LINE__, rp);
+				/* send resp */
+				resp->status = RESP_INTERNAL_ERR;
+				resp_packet->obj = resp;
+				resp_packet->type = PACKET_TYPE_PUT_RESP;
+
+				ret = send_sftt_packet(fd, resp_packet);
+				if (ret == -1) {
+					printf("%s: send resp failed!\n", __func__);
+				}
+
+				return -1;
+			}
+		}
+
+		/* send resp */
+		resp->status = RESP_OK;
+		resp_packet->obj = resp;
+		resp_packet->type = PACKET_TYPE_PUT_RESP;
+
+		ret = send_sftt_packet(fd, resp_packet);
+		if (ret == -1) {
+			printf("%s: send resp failed!\n", __func__);
+			return -1;
+		}
 	}
 
 	/* recv md5 packet */
@@ -792,7 +861,8 @@ int recv_file_by_put_req(int fd, struct sftt_packet *req_packet,
 
 	fp = fopen(rp, "w+");
 	if (fp == NULL) {
-		parent = dirname(rp);
+		strncpy(tmp, rp, FILE_NAME_MAX_LEN - 1);
+		parent = dirname(tmp);
 		if (!file_existed(parent)) {
 			mkdirp(parent, req->data.entry.mode);
 		}

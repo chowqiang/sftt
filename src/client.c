@@ -22,7 +22,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <libgen.h> 
+#include <libgen.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <assert.h>
@@ -123,8 +123,8 @@ int get_cache_port()
 
 	int port = atoi(str);
 	if (port == 0) {
-		return -1; 
-	} 
+		return -1;
+	}
 
 	return port;
 }
@@ -137,7 +137,7 @@ void set_cache_port(int port)
 	}	
 
 	char str[8];
-	//itoa(port, str); 
+	//itoa(port, str);
 	sprintf(str, "%d", port);
 	fputs(str, fp);
 }
@@ -184,7 +184,7 @@ int consult_block_size_with_server(int sock,
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
 	sprintf((char *)buffer, "%d", client_config->block_size);
 	//printf("client block size is : %d\n", client_config.block_size);
-	sftt_encrypt_func(buffer, BUFFER_SIZE); 
+	sftt_encrypt_func(buffer, BUFFER_SIZE);
 	
 	int ret = send(sock, buffer, BUFFER_SIZE, 0);
 	if (ret <= 0) {
@@ -192,7 +192,7 @@ int consult_block_size_with_server(int sock,
 	}
 	
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
-	ret = recv(sock, buffer, BUFFER_SIZE, 0); 
+	ret = recv(sock, buffer, BUFFER_SIZE, 0);
 	if (ret <= 0) {
 		return -1;
 	}
@@ -200,7 +200,7 @@ int consult_block_size_with_server(int sock,
 	int consulted_block_size = atoi((char *)buffer);
 	//printf("consulted block size is: %d\n", consulted_block_size);
 	
-	return consulted_block_size; 
+	return consulted_block_size;
 }
 
 void usage(char *exec_file)
@@ -1078,7 +1078,7 @@ void *do_task_handler(void *arg)
 			goto exit;
 		}
 
-		conn->is_using = true; 
+		conn->is_using = true;
 		switch (req->type) {
 		case PACKET_TYPE_WRITE_REQ:
 			handle_peer_write_req(conn, req, resp);
@@ -1722,7 +1722,6 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	char target[FILE_NAME_MAX_LEN + 2];
 	struct path_entry *entry;
 	struct sftt_packet *req_packet;
-	struct sftt_packet *resp_packet;
 	struct logged_in_user *user;
 	struct put_req *req;
 	int user_no;
@@ -1733,24 +1732,34 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 
 	user = NULL;
-	if (argc == 3) {
+	if (argc == 2) {
+		strncpy(file, argv[0], FILE_NAME_MAX_LEN - 1);
+		if (!is_absolute_path(argv[1])) {
+			snprintf(target, sizeof(target), "%s/%s",
+					client->pwd, argv[1]);
+		} else {
+			strncpy(target, argv[1], FILE_NAME_MAX_LEN - 1);
+		}
+	} else if (argc == 3) {
 		user_no = atoi(argv[0]);
 		user = find_logged_in_user(client, user_no);
 		if (user == NULL) {
-			printf("cannot find user %d, please update the user list by using"
-					" command \"w\"\n", user_no);
+			printf("cannot find user %d, please update the user"
+					" list by using command \"w\"\n", user_no);
 			return -1;
 		}
-	}
-
-	if (!is_absolute_path(argv[argc - 1])) {
-		snprintf(target, sizeof(target), "%s/%s",
-				client->pwd, argv[argc - 1]);	
+		strncpy(file, argv[1], FILE_NAME_MAX_LEN - 1);
+		if (!is_absolute_path(argv[2])) {
+			printf("when you put files to peer, please specify the"
+					" absolute path on peer\n");
+			return -1;
+		}
+		strncpy(target, argv[2], FILE_NAME_MAX_LEN - 1);
 	} else {
-		strncpy(target, argv[argc - 1], FILE_NAME_MAX_LEN - 1);
+		sftt_client_put_usage();
+		return -1;
 	}
 
-	strncpy(file, argv[0], FILE_NAME_MAX_LEN - 1);
 	if (!is_file(file) && !is_dir(file)) {
 		printf("cannot access: %s\n", file);
 		return -1;
@@ -1776,9 +1785,8 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	if (ret == -1) {
 		printf("%s:%d, handle put req failed!\n", __func__, __LINE__);
 	}
-	
+
 	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
 
 	return ret;
 }

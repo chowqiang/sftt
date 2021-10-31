@@ -989,6 +989,7 @@ int handle_fwd_put_req(struct client_session *client,
 			       resp, RESP_CNT_GET_TASK_CONN, 0);	
 	}
 
+#if 0
 	// send put req packet to peer task conn
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
@@ -997,31 +998,37 @@ int handle_fwd_put_req(struct client_session *client,
 				resp, RESP_SEND_PEER_ERR, 0);
 		goto done;
 	}
+#endif
 
 	do {
+		// send put req packet to peer task conn
+		ret = send_sftt_packet(conn->sock, req_packet);
+		if (ret == -1) {
+			DEBUG((DEBUG_ERROR, "send put req to peer failed!\n"));
+			goto done;
+		}
+
+		req = (struct put_req *)req_packet->obj;
+		if (req->need_reply) {
+			ret = recv_sftt_packet(conn->sock, resp_packet);
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
+				goto done;
+			}
+			resp = (struct put_resp *)resp_packet->obj;
+			assert(resp != NULL);
+			ret = send_put_resp(client->main_conn.sock, resp_packet, resp, resp->status, 0);
+		}
+
+		if (!req->next)
+			break;
+
 		// recv put req packet
 		ret = recv_sftt_packet(client->main_conn.sock, req_packet);
 		if (ret == -1) {
 			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 			goto done;
 		}
-
-		req = (struct put_req *)req_packet->obj;
-		assert(req != NULL);
-
-		send_sftt_packet(conn->sock, req_packet);
-
-		if (req->need_reply) {
-			ret = recv_sftt_packet(conn->sock, resp_packet);
-			if (ret == -1) {
-				DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
-				goto done;
-			}
-			com_resp = (struct common_resp *)resp_packet->obj;
-			assert(com_resp != NULL);
-			ret = send_common_resp(client->main_conn.sock, resp_packet, com_resp, com_resp->status, 0);
-		}
-
 	} while (req->next);
 
 done:

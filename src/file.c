@@ -515,7 +515,16 @@ mode_t file_mode(char *path)
 
 int set_file_mode(char *path, mode_t mode)
 {
-	return chmod(path, mode);
+	int ret;
+
+	ret = chmod(path, mode);
+	if (ret) {
+		perror("chmod failed");
+		printf("%s:%d, chmod failed: %s, mode: 0x%0x\n",
+			__func__, __LINE__, path, mode);
+	}
+
+	return ret;
 }
 
 int create_temp_file(char *buf, char *prefix)
@@ -544,8 +553,10 @@ int create_new_file(char *fname, mode_t mode)
 	FILE *fp;
 
 	fp = fopen(fname, "w+");
-	if (fp == NULL)
+	if (fp == NULL) {
+		printf("%s:%d, fopen file failed: %s\n", __func__, __LINE__, fname);
 		return -1;
+	}
 
 	fclose(fp);
 
