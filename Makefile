@@ -1,36 +1,79 @@
-INCL=-I ./head/
-all: server client install_conf
+CC=gcc
 
-validate.o:
-	gcc -o ./src/validate.o ${INCL} -c ./src/validate.c
+ROOT_DIR=$(shell pwd)
+OBJS_DIR=$(ROOT_DIR)/src
+LIB_DIR=$(ROOT_DIR)/lib
+SERVER_DIR=$(ROOT_DIR)/server
+CLIENT_DIR=$(ROOT_DIR)/client
+TOOLS_DIR=$(ROOT_DIR)/tools
+TEST_DIR=$(ROOT_DIR)/test
+XDR_DIR=$(ROOT_DIR)/xdr
+CONFIG_DIR=$(ROOT_DIR)/config
 
-net_trans.o:
-	gcc -o ./src/net_trans.o ${INCL} -c ./src/net_trans.c
+LIB=sftt
+LIB_NAME=libsftt.a
+SERVER_BIN=sfttd
+CLIENT_BIN=sftt
+TOOLS=tools
+TEST=test
+XDR=xdr
+CONFIG=config
 
-encrypt.o:
-	gcc -o ./src/encrypt.o ${INCL} -c ./src/encrypt.c
+CFLAGS=-g -Wall -Wno-unused-variable -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
 
-config.o:
-	gcc -o ./src/config.o ${INCL} -c ./src/config.c
+UNAME_S := $(shell uname -s)
 
-random_port.o:
-	gcc -o ./src/random_port.o ${INCL} -c ./src/random_port.c
+ifeq ($(UNAME_S),Linux)
+	CFLAGS += -ltirpc
+endif
 
-client: random_port.o config.o encrypt.o net_trans.o validate.o
-	gcc -o ./client/client ${INCL} ./client/client.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o ./src/validate.o
+export CC ROOT_DIR CFLAGS OBJS_DIR LIB_NAME LIB LIB_DIR SERVER_BIN \
+	CLIENT_BIN TOOLS_DIR TEST_DIR
 
-server: random_port.o config.o encrypt.o net_trans.o
-	gcc -o ./server/server ${INCL} ./server/server.c ./src/random_port.o ./src/config.o ./src/encrypt.o ./src/net_trans.o
+all: $(CONFIG) $(XDR) $(SERVER_BIN) $(CLIENT_BIN) $(LIB_NAME) $(TEST) \
+	$(TOOLS)
 
-install_conf:
-	@if [ ! -d "/etc/sftt/" ]; then \
-		mkdir -p /etc/sftt; \
-	fi; \
-	cp ./conf/* /etc/sftt/
+$(CONFIG): ECHO
+	make -C $(CONFIG_DIR)
+
+$(XDR): $(CONFIG) ECHO
+	make -C $(XDR_DIR)
+
+$(LIB_NAME): $(CONFIG) $(XDR) ECHO
+	make -C $(OBJS_DIR)
+
+$(SERVER_BIN): $(CONFIG) $(LIB_NAME) ECHO
+	make -C $(SERVER_DIR)
+
+$(CLIENT_BIN): $(CONFIG) $(LIB_NAME) ECHO
+	make -C $(CLIENT_DIR)
+
+$(TOOLS): $(LIB_NAME) ECHO
+	make -C $(TOOLS_DIR)
+
+$(TEST): $(LIB_NAME) ECHO
+	make -C $(TEST_DIR)
+
+gettest: $(TEST)
+	cd test/scripts && ./gettest file
+
+puttest: $(TEST)
+	cd test/scripts && ./puttest file
+
+mps: $(TEST)
+	cd test/scripts && ./mps
+
+basictest: $(TEST)
+	cd test && ./Run testcases
+
+ECHO:
+	@echo $(LIB_NAME) $(SERVER_BIN) $(CLIENT_BIN) $(TEST) $(XDR)
+
+.PHONY: clean
 
 clean:
-	rm ./src/*.o
-	rm ./client/*.o
-	rm ./server/*.o
-	
-	 
+	make clean -C $(OBJS_DIR)
+	make clean -C $(SERVER_DIR)
+	make clean -C $(CLIENT_DIR)
+	make clean -C $(TEST_DIR)
+	make clean -C $(TOOLS_DIR)

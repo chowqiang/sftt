@@ -1,0 +1,88 @@
+#!/bin/bash
+
+setup()
+{
+	echo "make ..."
+	make -C ./basic O=../bin
+}
+
+do_multi_tests()
+{
+	bin=./bin
+	testcases=$1
+
+	for rule_file in $(ls $testcases)
+	do
+		total=0
+		success=0
+		failed=0
+		echo ">> $rule_file cases begin"
+		while read line
+		do
+			if [[ "$line" = "^#*" ]]; then
+				continue
+			fi
+
+			cmd=$bin/$line
+			eval $cmd
+			if [ $? -eq 0 ]; then
+				echo "successful: $line"
+				success=$((success+1))
+			else
+				echo "failed: $line"
+				failed=$((failed+1))
+			fi
+			total=$((total+1))
+		done < $testcases/$rule_file
+		echo ">> total: $total, success: $success, failed: $failed"
+	done
+}
+
+do_single_test()
+{
+	bin=./bin
+	rule_file=$1
+
+	total=0
+	success=0
+	failed=0
+
+	echo ">> $rule_file cases begin"
+	while read line
+	do
+		if [[ "$line" = "^#*" ]]; then
+			continue
+		fi
+
+		cmd=$bin/$line
+		eval $cmd
+		if [ $? -eq 0 ]; then
+			echo "successful: $line"
+			success=$((success+1))
+		else
+			echo "failed: $line"
+			failed=$((failed+1))
+		fi
+		total=$((total+1))
+	done < $rule_file
+	echo ">> total: $total, success: $success, failed: $failed"
+}
+
+main()
+{
+	[ -z "$1" ] && echo "Usage: $0 cases-file" && exit -1
+
+	testcases=$1
+	echo "test begin ..."
+	if [ -d $testcases ]; then
+		do_multi_tests $testcases
+	else
+		do_single_test $testcases
+	fi
+	echo "test end"
+
+}
+
+#setup
+main "$@"
+

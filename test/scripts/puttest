@@ -1,0 +1,43 @@
+#!/bin/bash
+
+home=../../
+server_bin=$home/server/sfttd
+client_bin=$home/client/sftt
+
+src=$home/test
+dest=/var/sftt/tmp14
+
+case "$1" in
+"file")
+	;;
+"dir")
+	;;
+"all")
+	;;
+*)
+	echo "miss test target"
+	exit
+	;;
+esac
+
+[ ! -d $dest ] && mkdir $dest
+
+$server_bin stop
+nohup $server_bin start > /tmp/nohup.txt 2>&1 &
+
+sleep 1
+
+case "$1" in
+"file")
+	$client_bin $home/README.md root@127.0.0.1:$dest
+	;;
+"dir")
+	$client_bin $src root@127.0.0.1:$dest
+	;;
+"all")
+	$client_bin $home/README.md root@127.0.0.1:$dest
+	$client_bin $src root@127.0.0.1:$dest
+	;;
+*)
+	;;
+esac
