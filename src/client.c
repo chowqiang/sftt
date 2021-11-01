@@ -616,8 +616,8 @@ bool parse_port(char *optarg, int *port)
 void client_usage_help(int exitcode)
 {
 	show_version();
-	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
-		"\t" PROC_NAME " -u root -h localhost [-P port] -p\n");
+	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p port] [-v]\n"
+		"\t" PROC_NAME " -u root -h localhost [-p port]\n");
 	exit(exitcode);
 }
 

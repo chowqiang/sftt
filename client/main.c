@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	memset(host, 0, sizeof(host));
 	memset(builtin, 0, sizeof(builtin));
 
-	while ((ch = getopt(argc, argv, "b:u:P:h:v")) != -1) {
+	while ((ch = getopt(argc, argv, "b:u:p:h:v")) != -1) {
 		switch (ch) {
 		case 'b':
 			strncpy(builtin, optarg, sizeof(builtin) - 1);
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 		case 'u':
 			strncpy(user_name, optarg, sizeof(user_name) - 1);
 			break;
-		case 'P':
+		case 'p':
 			port = atoi(optarg);
 			break;
 		case 'h':

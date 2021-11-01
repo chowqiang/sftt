@@ -1860,11 +1860,10 @@ void server_usage_help(int exitcode)
 {
 	show_version();
 	printf("usage:\t" PROC_NAME " options\n"
-		"\t" PROC_NAME " start [-d] [-s dir]\n"
-		"\t" PROC_NAME " restart [-d] [-s dir]\n"
-		"\t" PROC_NAME " stop\n"
-		"\t" PROC_NAME " status\n"
-		"\t" PROC_NAME " db\n");
+		"\t" PROC_NAME " start [-v] [-d] [-s dir]\n"
+		"\t" PROC_NAME " restart [-v] [-d] [-s dir]\n"
+		"\t" PROC_NAME " stop [-v]\n"
+		"\t" PROC_NAME " status [-v]\n");
 	exit(exitcode);
 }
 
