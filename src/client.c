@@ -642,10 +642,12 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 
 static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 {
-	struct sftt_packet *req_packet, *resp_packet;
-	struct validate_req *req_info;
-	struct validate_resp *resp_info;
-	struct validate_resp_data *data;
+	struct sftt_packet *req_packet = NULL;
+	struct sftt_packet *resp_packet = NULL;
+	struct validate_req *req_info = NULL;
+	struct validate_resp *resp_info = NULL;
+	struct validate_resp_data *data = NULL;
+	int ret = 0;
 
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
@@ -655,10 +657,13 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	req_packet->type = PACKET_TYPE_VALIDATE_REQ;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc req_info failed!\n");
+		ret = -1;
+		goto done;
+	}
 
 	req_info->ver = client->ver;
-
 	strncpy(req_info->name, client->uinfo.name, USER_NAME_MAX_LEN - 1);
 	req_info->name_len = strlen(req_info->name);
 
@@ -671,24 +676,23 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	req_info->passwd_len = strlen(req_info->passwd_md5);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
-
-	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
 	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
-		return -1;
+		ret = -1;
+		goto done;
 	}
 
 	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
 	resp_info = (validate_resp *)resp_packet->obj;
@@ -717,7 +721,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 			printf("validate exception!\n");
 			break;
 		}
-		return -1;
+		goto done;
 	}
 
 	client->uinfo.uid = data->uid;
@@ -726,10 +730,21 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	strncpy(client->session_id, data->session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, data->pwd, DIR_PATH_MAX_LEN - 1);
 
-	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
+done:
 
-	return 0;
+	if (req_info)
+		mp_free(g_mp, req_info);
+
+	if (resp_info)
+		mp_free(g_mp, resp_info);
+
+	if (req_packet)
+		free_sftt_packet(&req_packet);
+
+	if (resp_packet)
+		free_sftt_packet(&resp_packet);
+
+	return ret;
 }
 
 static int init_sftt_client_session(struct sftt_client_v2 *client)
@@ -772,12 +787,12 @@ int handle_peer_write_req(struct client_sock_conn *conn, struct sftt_packet *req
 int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
-	struct ll_req *req;
-	struct ll_resp *resp;
+	struct ll_req *req = NULL;
+	struct ll_resp *resp = NULL;
 	struct ll_resp_data *data;
 	char tmp[2 * DIR_PATH_MAX_LEN + 4];
 	char path[2 * DIR_PATH_MAX_LEN + 2];
-	int i = 0, ret;
+	int i = 0, ret = 0;
 	struct dlist *file_list;
 	struct dlist_node *node;
 	bool has_more = false;

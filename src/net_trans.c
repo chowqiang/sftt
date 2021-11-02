@@ -63,7 +63,7 @@ int sftt_packet_encode_content(struct sftt_packet *src, struct sftt_packet *dst)
 void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 {
 	unsigned char header[PACKET_TYPE_SIZE + PACKET_LEN_SIZE];
-	int header_len = sizeof(header); 
+	int header_len = sizeof(header);
 	int ret, encoded_len;
 	unsigned char *buffer;
 
@@ -317,7 +317,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: out", __func__);
 		
 	return recv_len;
-} 
+}
 
 void free_sftt_packet(struct sftt_packet **sp)
 {
@@ -335,6 +335,6 @@ void free_sftt_packet(struct sftt_packet **sp)
 			mp_free(g_mp, (*sp)->obj);
 #endif
 		*sp = NULL;
-	} 
+	}
 }
 
