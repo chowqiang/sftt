@@ -74,7 +74,7 @@ void *stack_peek(const struct stack *s)
 	assert(s != NULL);
 	struct dlist_node *node = dlist_head(s->list);
 
-	return node == NULL ? NULL : dlist_data(node); 
+	return node == NULL ? NULL : dlist_data(node);
 }
 
 int stack_size(const struct stack *s)
@@ -105,7 +105,7 @@ void stack_peek_all(const struct stack *s, void **array)
 	dlist_for_each(s->list, node) {
 		array[i] = node->data;
 		++i;
-	} 
+	}
 }
 
 int stack_test(void)

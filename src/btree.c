@@ -66,7 +66,7 @@ void btree_set_root(struct btree *tree, struct btree_node *root)
 		return ;
 	}
 	tree->root = root;
-	tree->size = btree_node_count(root); 
+	tree->size = btree_node_count(root);
 }
 
 int btree_node_destroy(struct btree_node *node,
@@ -108,7 +108,7 @@ int btree_ins_left(struct btree *tree, struct btree_node *node, void *data)
 {
 	if (tree == NULL) {
 		return -1;
-	} 
+	}
 	struct btree_node *new_node = btree_node_create(data);
 	if (new_node == NULL) {
 		return -1;
@@ -157,7 +157,7 @@ int btree_rm_left(struct btree *tree, struct btree_node *node)
 {
 	if (tree == NULL || node == NULL) {
 		return -1;	
-	} 
+	}
 	int del_cnt = btree_node_destroy(node->left, tree->free_mode);
 	assert(del_cnt < tree->size);
 	tree->size -= del_cnt;

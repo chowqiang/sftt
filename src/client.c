@@ -805,20 +805,22 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
-	assert(resp != NULL);
-
-	data = &resp->data;
+	if (resp == NULL) {
+		printf("alloc ll_resp failed!\n");
+		return -1;
+	}
 
 	strncpy(path, req->path, FILE_NAME_MAX_LEN - 1);
 	simplify_path(path);
-
 	DEBUG((DEBUG_INFO, "ls -l|path=%s\n", path));
 
+	data = &resp->data;
 	if (!file_existed(path)) {
 		data->total = -1;
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_ll_resp(conn->sock, resp_packet,
+		ret = send_ll_resp(conn->sock, resp_packet,
 			       resp, RESP_FILE_NTFD, 0);
+		goto done;
 	}
 
 	if (is_file(path)) {
@@ -829,8 +831,9 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 
 		DEBUG((DEBUG_INFO, "list file successfully!\n"));
 
-		return send_ll_resp(conn->sock, resp_packet,
+		ret = send_ll_resp(conn->sock, resp_packet,
 				resp, RESP_OK, 0);
+		goto done;
 	} else if (is_dir(path)) {
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
@@ -841,7 +844,7 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 				DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
 			}
 
-			return -1;
+			goto done;
 		}
 
 		DEBUG((DEBUG_INFO, "list dir ...\n"));
@@ -896,8 +899,11 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 
 	DEBUG((DEBUG_INFO, "list file successfully!\n"));
 	DEBUG((DEBUG_INFO, "handle ll req out\n"));
+done:
+	if (resp)
+		mp_free(g_mp, resp);
 
-	return 0;
+	return ret;
 }
 
 int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
@@ -906,7 +912,7 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	struct get_req *req;
 	struct get_resp *resp;
 	char path[FILE_NAME_MAX_LEN];
-	int ret;
+	int ret = 0;
 
 	if (verbose_level > 0)
 		DEBUG((DEBUG_INFO, "handle get req in ...\n"));
@@ -919,18 +925,25 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 				req->session_id, req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
-	assert(resp != NULL);
+	if (resp == NULL) {
+		printf("alloc get_resp failed!\n");
+		return -1;
+	}
 
 	if (!is_absolute_path(path)) {
 		DEBUG((DEBUG_INFO, "path not absolute!\n"));
-		return send_get_resp(conn->sock, resp_packet, resp,
+		send_get_resp(conn->sock, resp_packet, resp,
 				RESP_PATH_NOT_ABS, 0);
+		ret = -1;
+		goto done;
 	}
 
 	if (!file_existed(path)) {
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_get_resp(conn->sock, resp_packet, resp,
+		send_get_resp(conn->sock, resp_packet, resp,
 				RESP_FILE_NTFD, 0);
+		ret = -1;
+		goto done;
 	}
 
 	if (verbose_level > 0)
@@ -941,6 +954,10 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 
 	if (verbose_level > 0)
 		DEBUG((DEBUG_INFO, "handle get req out\n"));
+
+done:
+	if (resp)
+		mp_free(g_mp, resp);
 
 	return ret;
 }
@@ -984,7 +1001,6 @@ int get_friend_list(struct sftt_client_v2 *client)
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {

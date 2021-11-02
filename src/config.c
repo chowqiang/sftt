@@ -68,10 +68,10 @@ int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 	
 	while (i < len && line[i] == ' ') {
 		++i;
-	}  
+	}
 	if (i >= len || line[i] != '=') {
 		return -1;
-	} 
+	}
 
 	++i;
 	while (i < len && line[i] == ' ') {
@@ -109,11 +109,7 @@ int get_sftt_server_config(struct sftt_server_config *ssc)
 	if (ssc == NULL) {
 		return -1;
 	}
-/*
-	char buf[80];   
-        getcwd(buf,sizeof(buf));   
-      	printf("current working directory: %s\n", buf);   
-*/
+
 	char *server_config_path;
 	if ((server_config_path	= search_config("sftt_server.conf")) == NULL) {
 		printf("cannot find server config file!\n");
@@ -192,10 +188,10 @@ int deal_client_config_line(char *line, struct sftt_client_config *scc)
 	
 	while (i < len && line[i] == ' ') {
 		++i;
-	}  
+	}
 	if (i >= len || line[i] != '=') {
 		return -1;
-	} 
+	}
 
 	++i;
 	while (i < len && line[i] == ' ') {
@@ -230,11 +226,7 @@ int get_sftt_client_config(struct sftt_client_config *scc)
 	if (scc == NULL) {
 		return -1;
 	}
-/*
-	char buf[80];   
-        getcwd(buf,sizeof(buf));   
-      	printf("current working directory: %s\n", buf);   
-*/
+
 	char *client_config_path;
 	if ((client_config_path	= search_config("sftt_client.conf")) == NULL) {
 		printf("cannot find client config file!\n");

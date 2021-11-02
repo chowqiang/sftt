@@ -70,7 +70,7 @@ int map_add(struct map *m, void *key, void *value)
 	if (data == NULL) {
 		printf("cannot alloc kv_node object\n");
 		return -1;
-	} 
+	}
 
 	data->key = key;
 	data->value = value;
@@ -85,7 +85,7 @@ int map_add(struct map *m, void *key, void *value)
 			mp_free(g_mp, data);
 			return 0;
 		}
-	} 
+	}
 
 	return dlist_append(m->list, (void *)data);
 }
@@ -94,7 +94,7 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
 {
 	if (m == NULL) {
 		printf("map object cannot be NULL\n");
-		return -1; 
+		return -1;
 	}
 	struct kv_node *kvn = NULL;
 	struct dlist_node *ln = NULL;

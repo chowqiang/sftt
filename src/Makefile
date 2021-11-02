@@ -1,7 +1,7 @@
 CUR_SOURCE=${wildcard *.c}
 CUR_OBJS=${patsubst %.c, %.o, $(CUR_SOURCE)}
 
-all:$(CUR_OBJS) $(LIB_NAME) 
+all:$(CUR_OBJS) $(LIB_NAME)
 
 $(CUR_OBJS):%.o:%.c
 	$(CC) -c $^ $(CFLAGS) -DHAVE_ARPA_INET_H

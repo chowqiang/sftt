@@ -22,7 +22,7 @@
 /**
  * skip_spaces - Removes leading whitespace from @str.
  * @str: The string to be stripped.
- * 
+ *
  * Returns a pointer to the first non-whitespace character in @str.
  **/
 char *skip_spaces(const char *str)

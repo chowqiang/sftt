@@ -34,7 +34,7 @@ void set_current_context(char *name)
 struct context *get_current_context(void)
 {
 	if (g_ctx == NULL) {
-		g_ctx = malloc(sizeof(struct context)); 
+		g_ctx = malloc(sizeof(struct context));
 	}
 
 	return g_ctx;

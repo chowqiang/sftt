@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h> 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "mem_pool.h"
@@ -87,7 +87,7 @@ void queue_show(struct queue *q, void (*show)(void *data))
 	assert(q != NULL);
 	
 	dlist_set_show(q->list, show);
-	dlist_show(q->list); 
+	dlist_show(q->list);
 }
 
 int queue_is_empty(struct queue *q)

@@ -34,7 +34,7 @@ char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid)
 	char tmp[4] = {0, 0, 0, 0};
 	int j = 0;
 	while (p[j] && p[j] != '.' && j < 3) {
-		tmp[j] = p[j]; 
+		tmp[j] = p[j];
 		j++;
 	}
 	//printf("parsed dotted decimal block: %s\n", tmp);
@@ -46,7 +46,7 @@ char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid)
 
 	if (is_last && p[j]) {
 		printf("last dotted decimal length should be less 4!\n");
-		goto RET_INVALID; 
+		goto RET_INVALID;
 	}
 
 	int decimal = atoi(tmp);
@@ -69,7 +69,7 @@ RET_INVALID:
 
 	return NULL;
 }
- 
+
 int is_valid_ipv4(char *ip)
 {
 	int len = strlen(ip);

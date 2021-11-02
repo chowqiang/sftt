@@ -86,4 +86,4 @@ void mp_free(struct mem_pool *mp, void *p);
 void mp_destroy(struct mem_pool *mp);
 void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat);
 struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp);
-#endif 
+#endif
