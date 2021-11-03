@@ -15,6 +15,7 @@
  */
 
 #include <unistd.h>
+#include "debug.h"
 #include "server.h"
 
 extern int verbose_level;
@@ -59,6 +60,8 @@ int main(int argc, char **argv)
 	if (argc != 1) {
 		server_usage_help(-1);
 	}
+
+	set_server_debug_level(verbose_level);
 
 	if (strcmp(argv[optind], "start") == 0) {
 		sftt_server_start(store_path, background);

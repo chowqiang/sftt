@@ -19,6 +19,7 @@
 #include "autoconf.h"
 #include "client.h"
 #include "cmdline.h"
+#include "debug.h"
 #include "log.h"
 
 extern int verbose_level;
@@ -82,7 +83,6 @@ int main(int argc, char **argv)
 		has_opt = true;
 	}
 
-	//printf("optind=%d, argc=%d\n", optind, argc);
 	if (has_opt) {
 		argc -= optind;
 		if (argc > 0) {
@@ -119,6 +119,8 @@ int main(int argc, char **argv)
 		printf("builtin is invalid!\n");
 		client_usage_help(-1);
 	}
+
+	set_client_debug_level(verbose_level);
 
 	snprintf(passwd_prompt, 127, "%s@%s's password: ", user_name, host);
 	passwd_len = get_pass(passwd_prompt, password, sizeof(password));

@@ -649,7 +649,9 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 		port = get_random_port();
 	}
 
-	printf("port of connecting: %d\n", port);
+	if (verbose_level)
+		printf("port of connecting: %d\n", port);
+
 	client->main_conn.sock = make_connect(client->host, port);
 	if (client->main_conn.sock == -1) {
 		return -1;
@@ -1518,13 +1520,21 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	int i;
 	*argv_check = true;
-	printf("sftt client commands:\n\n");
-	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
-		printf("\t%s\t\t%s\n", sftt_client_cmds[i].name, sftt_client_cmds[i].help);
-	}
-	printf("\t%s\t\t%s\n", "quit", "quit this session");
+
+	printf("sftt client commands:\n\n"
+		"\tcd         change work directory\n"
+		"\tdirectcmd  enter direct command mode\n"
+		"\tget        get file(s) from server\n"
+		"\thelp       show sftt client help info\n"
+		"\this        show history command\n"
+		"\tll         list directory contents using a long listing format\n"
+		"\tmps        show the mempool stat both client and server\n"
+		"\tput        put file(s) to server\n"
+		"\tpwd        get current directory\n"
+		"\tw          show logged in user(s)\n"
+		"\twrite      send a message to another user\n"
+	      );
 
 	return 0;
 }
@@ -1532,17 +1542,19 @@ int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check
 int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	int i = 0, num = 10;
+	HIST_ENTRY **his;
+
 	if (argc > 0) {
 		num = atoi(argv[0]);
 		add_log(LOG_INFO, "his number specified: %d", num);
 	}
 
-	struct dlist_node *node;
-	dlist_for_each(his_cmds, node) {
-		if (i >= num) {
-			break;
-		}
-		printf("%s\n", (char *)node->data);
+	his = history_list();
+	if (his == NULL)
+		return 0;
+
+	while (i < num && his[i] && his[i]->line) {
+		printf("%s\n", his[i]->line);
 		++i;
 	}
 

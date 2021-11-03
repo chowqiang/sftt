@@ -19,8 +19,11 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <string.h>
 
+#ifndef bzero
 #define bzero(addr, size)	memset(addr, 0, size)
+#endif
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
