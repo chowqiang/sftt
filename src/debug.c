@@ -20,27 +20,24 @@ int default_debug_level = DEBUG_WARN;
 
 void set_client_debug_level(int verbose)
 {
-	switch (verbose) {
-	case 1:
+	if (verbose == 1) {
 		default_debug_level = DEBUG_INFO;
-		break;
-	case 2:
+	} else if (verbose == 2) {
 		default_debug_level = DEBUG_DEBUG;
-		break;
-	default:
+	} else if (verbose > 2) {
+		default_debug_level = DEBUG_DEBUG;
+	} else {
 		default_debug_level = DEBUG_WARN;
-		break;
 	}
 }
 
 void set_server_debug_level(int verbose)
 {
-	switch (verbose) {
-	case 1:
+	if (verbose == 1) {
 		default_debug_level = DEBUG_DEBUG;
-		break;
-	default:
+	} else if (verbose > 1) {
+		default_debug_level = DEBUG_DEBUG;
+	} else {
 		default_debug_level = DEBUG_INFO;
-		break;
 	}
 }
