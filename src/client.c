@@ -30,6 +30,8 @@
 #include <curses.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "base.h"
 #include "command.h"
 #include "config.h"
@@ -2169,20 +2171,39 @@ int reader_loop2(struct sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
 	char prompt[PROMPT_MAX_LEN];
+	char *line;
+
 	his_cmds = dlist_create(FREE_MODE_MP_FREE);
 
 	for (;;) {
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
+#if 0
 		printf("%s", prompt);
 		fgets(cmd, CMD_MAX_LEN - 1, stdin);
-		if (strlen(cmd) <= 1)
-			continue;
-		cmd[strlen(cmd) - 1] = 0;
-		if (!strcmp(cmd, "quit")) {
+#endif
+		line = readline(prompt);
+		if (line == NULL) {
 			exit(0);
 		}
-		execute_cmd(client, cmd, -1);
+
+		if (strlen(line) == 0)
+			continue;
+
+		/*
+		 * no '\n' at the end of the line
+		 * line[strlen(line) - 1] = 0;
+		 */
+
+		if (!strcmp(line, "quit")) {
+			exit(0);
+		}
+
+		execute_cmd(client, line, -1);
+
+		add_history(line);
+#if 0
 		dlist_append(his_cmds, __strdup(cmd));
+#endif
 	}
 }
 

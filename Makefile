@@ -19,7 +19,7 @@ TEST=test
 XDR=xdr
 CONFIG=config
 
-CFLAGS=-g -Wall -Wno-unused-variable -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3
+CFLAGS=-g -Wall -Wno-unused-variable -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3 -lreadline
 
 UNAME_S := $(shell uname -s)
 
