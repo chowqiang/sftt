@@ -20,15 +20,22 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "autoconf.h"
+#include "utils.h"
 
-#define DEBUG_DEBUG			0x0000
-#define	DEBUG_INFO			0x1001
-#define	DEBUG_WARN			0x1002
-#define DEBUG_ERROR			0x1004
+extern int default_debug_level;
 
-#define DEBUG_PRINT_MASK	0x1000
+enum debug_level {
+	DEBUG_DEBUG = 1,
+	DEBUG_INFO,
+	DEBUG_WARN,
+	DEBUG_ERROR,
+};
 
-static inline char *get_debug_level_desc(int print_level) {
+void set_client_debug_level(int verbose);
+void set_server_debug_level(int verbose);
+
+static inline char *get_debug_level_desc(int print_level)
+{
 	switch (print_level) {
 	case DEBUG_DEBUG:
 		return "DEBUG";
@@ -38,16 +45,19 @@ static inline char *get_debug_level_desc(int print_level) {
 		return "WARN";
 	case DEBUG_ERROR:
 		return "ERROR";
+	default:
+		return "*";
 	}
-
-	return "";
 }
 
 #define DEBUG_ASSERT(Expression, fmt, ...)		\
 	do {										\
 		if (!(Expression)) {					\
-			printf("[%s](%s|%d) assert(%s) failed! "fmt,			\
+			char __now[32];			\
+			now_time_str(__now, 31);		\
+			printf("[%s][%s](%s|%d) assert(%s) failed! "fmt,			\
 				get_debug_level_desc(DEBUG_INFO),		\
+				__now,			\
 				__func__,						\
 				__LINE__,						\
 				#Expression,					\
@@ -70,9 +80,12 @@ static inline void print_nch(char ch, int num) {
 	} while (false)
 
 #define debug_print(print_level, fmt, ...)		\
-	if (print_level & DEBUG_PRINT_MASK) {		\
-		printf("[%s](%s|%d) "fmt,				\
+	if (print_level >= default_debug_level) {		\
+		char __now[32];			\
+		now_time_str(__now, 31);		\
+		printf("[%s][%s](%s|%d) "fmt,				\
 			get_debug_level_desc(print_level),		\
+			__now,			\
 			__func__,							\
 			__LINE__,							\
 			##__VA_ARGS__);						\

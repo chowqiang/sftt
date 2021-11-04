@@ -241,7 +241,7 @@ void sftt_client_mps_usage(void);
 void client_usage_help(int exitcode);
 int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 		char *user, char *passwd);
-int show_options(char *host, char *user_name, char *password); 
+int show_options(char *host, char *user_name, char *password);
 
 /*
  * Parse user's input.

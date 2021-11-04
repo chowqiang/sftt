@@ -35,7 +35,8 @@ struct char_stat_node {
 
 extern struct mem_pool *g_mp;
 
-struct char_stat_node *create_char_stat_node(int ch, int freq) {
+struct char_stat_node *create_char_stat_node(int ch, int freq)
+{
 
 	struct char_stat_node *node = (struct char_stat_node *)mp_malloc(
 			g_mp, __func__, sizeof(struct char_stat_node));
@@ -48,7 +49,8 @@ struct char_stat_node *create_char_stat_node(int ch, int freq) {
 	return node;
 }
 
-void show_char_stat_by_btree_node(void *data) {
+void show_char_stat_by_btree_node(void *data)
+{
 	if (data == NULL) {
 		return ;	
 	}
@@ -65,13 +67,15 @@ void show_char_stat_by_btree_node(void *data) {
 	}
 }
 
-void free_char_stata_node(struct char_stat_node *node) {
+void free_char_stata_node(struct char_stat_node *node)
+{
 	if (node) {
 		mp_free(g_mp, node);
 	}
 }
 
-int calc_char_freq(unsigned char *input, int input_len, int *char_freq) {
+int calc_char_freq(unsigned char *input, int input_len, int *char_freq)
+{
 	if (input == NULL || input_len < 1) {
 		printf("params error! func: %s, line: %d\n", __func__, __LINE__);
 		return -1;
@@ -86,7 +90,8 @@ int calc_char_freq(unsigned char *input, int input_len, int *char_freq) {
 	return 0;
 }
 
-void show_char_freq(int *char_freq) {
+void show_char_freq(int *char_freq)
+{
 	int i = 0, j = 0;
 	int sum = 0;
 	for (i = 0; i < CHARSET_SIZE; ++i) {
@@ -99,7 +104,8 @@ void show_char_freq(int *char_freq) {
 	printf("char freq summary: char count: %d, freq count: %d\n", j, sum);
 }
 
-int get_min_freq_char(int *char_freq, char *visited) {
+int get_min_freq_char(int *char_freq, char *visited)
+{
 	int min = 0, min_index = -1, i = 0;
 	for (i = 0; i < CHARSET_SIZE; ++i) {
 		if (char_freq[i] == 0 || visited[i]) {
@@ -114,7 +120,8 @@ int get_min_freq_char(int *char_freq, char *visited) {
 	return min_index;
 }
 
-struct btree_node *fetch_min_btree_node(struct dlist *list) {
+struct btree_node *fetch_min_btree_node(struct dlist *list)
+{
 	if (list == NULL || dlist_empty(list)) {
 		return NULL;
 	}
@@ -142,7 +149,8 @@ struct btree_node *fetch_min_btree_node(struct dlist *list) {
 	return min_tn;		
 }
 
-struct btree *generate_huffman_tree(int *char_freq) {
+struct btree *generate_huffman_tree(int *char_freq)
+{
 	if (char_freq == NULL) {
 		return NULL;
 	}
@@ -246,7 +254,8 @@ char *get_char_code(struct stack *s)
 	return code;	
 }
 
-void show_char_stat_node(char *prefix, struct char_stat_node *csn) {
+void show_char_stat_node(char *prefix, struct char_stat_node *csn)
+{
 	if (csn->ch == -1) {
 		printf("%s: %d, %d\n", prefix, csn->ch, csn->freq);
 	} else {
@@ -267,8 +276,8 @@ int get_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE])
 	int ret = 0;
 
 	if (tree == NULL || tree->root == NULL || char_codes == NULL) {
-		goto get_char_codes_done;
 		ret = -1;
+		goto get_char_codes_done;
 	}
 
 	root = tree->root;
@@ -382,7 +391,8 @@ int huffman_encode(unsigned char *input, int input_len,
 	return (pos - head + 1);
 }
 
-void show_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE]) {
+void show_char_codes(struct btree *tree, char *char_codes[CHARSET_SIZE])
+{
 	int i = 0;
 	struct dlist *bfs_list = btree_bfs(tree);
 

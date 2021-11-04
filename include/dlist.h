@@ -47,7 +47,7 @@ struct dlist {
 	struct dlist_node *tail;
 };
 
-struct dlist_node *dlist_node_create(void *data); 
+struct dlist_node *dlist_node_create(void *data);
 struct dlist *dlist_create(enum free_mode mode);
 void dlist_init(struct dlist *list, enum free_mode mode);
 void dlist_destroy(struct dlist *list);
@@ -68,12 +68,12 @@ void *dlist_data(struct dlist_node *elem);
 struct dlist_node *dlist_next(struct dlist_node *elem);
 struct dlist_node *dlist_prev(struct dlist_node *elem);
 
-int dlist_pop_front(struct dlist *list, void **data); 
-int dlist_pop_back(struct dlist *list, void **data); 
+int dlist_pop_front(struct dlist *list, void **data);
+int dlist_pop_back(struct dlist *list, void **data);
 
 void dlist_set_show(struct dlist *list, void (*show) (void *data));
 void dlist_show(struct dlist *list);
- 
+
 int dlist_empty(struct dlist *list);
 int dlist_size(struct dlist *list);
 

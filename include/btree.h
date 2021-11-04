@@ -34,7 +34,7 @@ struct btree {
 /*
  *
  */
-struct btree_node *btree_node_create(void *data); 
+struct btree_node *btree_node_create(void *data);
 
 /*
  *
@@ -104,7 +104,7 @@ struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left, st
 /*
  *
  */
-struct dlist *btree_bfs(struct btree *tree); 
+struct dlist *btree_bfs(struct btree *tree);
 
 /*
  *

@@ -86,7 +86,7 @@ void test_validate_resp(void)
 	printf("status: %d, session_id: %s\n", resp_info2->status, data2->session_id);
 
 	mp_stat(g_mp);
-	printf("sizeof int: %ld, sizeof long: %ld, sizeof short: %ld\n", 
+	printf("sizeof int: %ld, sizeof long: %ld, sizeof short: %ld\n",
 			sizeof(int), sizeof(long), sizeof(short));
 	//printf("%c\n", 0x72);
 }

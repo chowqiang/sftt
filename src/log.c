@@ -214,7 +214,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 	char *desc = get_log_level_desc(level);
 	now_time_str(now, 31);
 
-	int ret = sprintf(buf, "[%s] %s ", desc, now);
+	int ret = sprintf(buf, "[%s][%s]", desc, now);
 
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 
@@ -257,7 +257,7 @@ int add_server_log(int level, const char *fmt, va_list args)
 	msg.mtype = MSG_TYPE_LOG;
 	now_time_str(now, 31);
 
-	ret = sprintf(buf, "[%s] %s ", desc, now);
+	ret = sprintf(buf, "[%s][%s]", desc, now);
 
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 
@@ -337,7 +337,7 @@ int do_log(struct logger *log, struct trace_info *trace,
 	char *desc = get_log_level_desc(level);
 	now_time_str(now, 31);
 
-	int ret = sprintf(buf, "[%s] %s ", desc, now);
+	int ret = sprintf(buf, "[%s][%s]", desc, now);
 
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 

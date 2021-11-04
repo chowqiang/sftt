@@ -63,7 +63,7 @@ struct path_entry_list {
 size_t file_size(char *filename);
 
 unsigned char *file_get_contents(char *path, size_t *length);
-size_t file_put_contents(char *path, unsigned char *text, size_t length); 
+size_t file_put_contents(char *path, unsigned char *text, size_t length);
 
 bool file_existed(char *path);
 int is_dir(char *file_name);

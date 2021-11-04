@@ -30,6 +30,8 @@
 #include <curses.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "base.h"
 #include "command.h"
 #include "config.h"
@@ -448,80 +450,98 @@ void add_cmd_log(struct user_cmd *cmd)
 	mp_free(g_mp, buf);
 }
 
-void execute_directcmd(struct sftt_client_v2 *client, char *buf)
+int execute_directcmd(struct sftt_client_v2 *client, char *buf)
 {
-	struct sftt_packet *req_packet, *resp_packet;
-	struct directcmd_req *req_info;
-	struct directcmd_resp *resp_info;
-	struct directcmd_resp_data *data;
+	struct sftt_packet *req_packet = NULL;
+	struct sftt_packet *resp_packet = NULL;
+	struct directcmd_req *req_info = NULL;
+	struct directcmd_resp *resp_info = NULL;
+	long recv_len = 0, total_len = 0;
 	int ret = 0;
-	long total_len = 0;
 
 	if (strlen(buf) == 0)
-		return;
+		return -1;
 
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
-		return;
+		return -1;
 	}
 	req_packet->type = PACKET_TYPE_DIRECTCMD_REQ;
 
 	req_info = mp_malloc(g_mp, "directcmd_handler_req", sizeof(struct directcmd_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc directcmd_handler_req failed!\n");
+		ret = -1;
+		goto done;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 	strncpy(req_info->cmd, buf, CMD_MAX_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = DIRECTCMD_REQ_PACKET_MIN_LEN;
-
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
-		return;
+		goto done;
 	}
 
 	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
-		return;
+		ret = -1;
+		goto done;
 	}
 
 	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
-		return;
+		ret = -1;
+		goto done;
 	}
 
 	resp_info = (struct directcmd_resp *)resp_packet->obj;
 	assert(resp_info != NULL);
 
-	data = (struct directcmd_resp_data *)&resp_info->data;
-	if (data->total_len < 0 || data->this_len < 0) {
+	if (resp_info->data.total_len < 0 || resp_info->data.this_len < 0) {
 		printf("command execute failed!\n");
-		return;
+		ret = -1;
+		goto done;
 	}
 
-	while (total_len < data->total_len) {
-		printf("%s", data->content);
+	total_len = resp_info->data.total_len;
 
-		total_len += data->this_len;
-		if (total_len == data->total_len)
+	do {
+		printf("%s", resp_info->data.content);
+
+		recv_len += resp_info->data.this_len;
+		mp_free(g_mp, resp_info);
+
+		if (recv_len == total_len)
 			break;
 
 		ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
-			return;
+			break;
 		}
 
 		resp_info = (struct directcmd_resp *)resp_packet->obj;
 		assert(resp_info != NULL);
-	}
 
-	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
+	} while (recv_len < total_len);
+
+done:
+	if (req_info)
+		mp_free(g_mp, req_info);
+
+	if (req_packet)
+		free_sftt_packet(&req_packet);
+
+	if (resp_packet)
+		free_sftt_packet(&resp_packet);
+
+	return ret;
 }
 
 bool among_directcmds(char *name)
@@ -536,9 +556,9 @@ bool among_directcmds(char *name)
 	return false;
 }
 
-void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
+int execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 {
-	int i = 0;
+	int i = 0, ret = 0;
 	bool found = false;
 	struct user_cmd *cmd = NULL;
 
@@ -548,7 +568,7 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 	if (!cmd) {
 		printf("sftt client: cannot find command: %s\n"
 			"please input 'help' to get the usage.\n", buf);
-		return ;
+		return -1;
 	}
 
 	if (directcmd && among_directcmds(cmd->name))
@@ -558,7 +578,7 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
 		if (!strcmp(cmd->name, sftt_client_cmds[i].name)) {
 			found = true;
-			run_command(client, &sftt_client_cmds[i], cmd->argc, cmd->argv);
+			ret = run_command(client, &sftt_client_cmds[i], cmd->argc, cmd->argv);
 			break;
 		}
 	}
@@ -578,6 +598,8 @@ void execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
 		mp_free(g_mp, cmd->argv);
 
 	mp_free(g_mp, cmd);
+
+	return ret;
 }
 
 bool parse_user_name(char *optarg, char *user_name, int max_len)
@@ -616,19 +638,20 @@ bool parse_port(char *optarg, int *port)
 void client_usage_help(int exitcode)
 {
 	show_version();
-	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p password] [-P port]\n"
-		"\t" PROC_NAME " -u root -h localhost [-P port] -p\n");
+	printf("usage:\t" PROC_NAME " [-u user] [-h host] [-p port] [-v]\n"
+		"\t" PROC_NAME " -u root -h localhost [-p port]\n");
 	exit(exitcode);
 }
 
 static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 {
-	assert(client);
 	if (port == -1) {
 		port = get_random_port();
 	}
 
-	printf("port of connecting: %d\n", port);
+	if (verbose_level)
+		printf("port of connecting: %d\n", port);
+
 	client->main_conn.sock = make_connect(client->host, port);
 	if (client->main_conn.sock == -1) {
 		return -1;
@@ -642,10 +665,12 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 
 static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 {
-	struct sftt_packet *req_packet, *resp_packet;
-	struct validate_req *req_info;
-	struct validate_resp *resp_info;
-	struct validate_resp_data *data;
+	struct sftt_packet *req_packet = NULL;
+	struct sftt_packet *resp_packet = NULL;
+	struct validate_req *req_info = NULL;
+	struct validate_resp *resp_info = NULL;
+	struct validate_resp_data *data = NULL;
+	int ret = 0;
 
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
@@ -655,10 +680,13 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	req_packet->type = PACKET_TYPE_VALIDATE_REQ;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc req_info failed!\n");
+		ret = -1;
+		goto done;
+	}
 
 	req_info->ver = client->ver;
-
 	strncpy(req_info->name, client->uinfo.name, USER_NAME_MAX_LEN - 1);
 	req_info->name_len = strlen(req_info->name);
 
@@ -671,24 +699,23 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	req_info->passwd_len = strlen(req_info->passwd_md5);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
-
-	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
 	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
-		return -1;
+		ret = -1;
+		goto done;
 	}
 
 	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
 	resp_info = (validate_resp *)resp_packet->obj;
@@ -717,7 +744,7 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 			printf("validate exception!\n");
 			break;
 		}
-		return -1;
+		goto done;
 	}
 
 	client->uinfo.uid = data->uid;
@@ -726,10 +753,21 @@ static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
 	strncpy(client->session_id, data->session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, data->pwd, DIR_PATH_MAX_LEN - 1);
 
-	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
+done:
 
-	return 0;
+	if (req_info)
+		mp_free(g_mp, req_info);
+
+	if (resp_info)
+		mp_free(g_mp, resp_info);
+
+	if (req_packet)
+		free_sftt_packet(&req_packet);
+
+	if (resp_packet)
+		free_sftt_packet(&resp_packet);
+
+	return ret;
 }
 
 static int init_sftt_client_session(struct sftt_client_v2 *client)
@@ -772,12 +810,12 @@ int handle_peer_write_req(struct client_sock_conn *conn, struct sftt_packet *req
 int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
-	struct ll_req *req;
-	struct ll_resp *resp;
+	struct ll_req *req = NULL;
+	struct ll_resp *resp = NULL;
 	struct ll_resp_data *data;
 	char tmp[2 * DIR_PATH_MAX_LEN + 4];
 	char path[2 * DIR_PATH_MAX_LEN + 2];
-	int i = 0, ret;
+	int i = 0, ret = 0;
 	struct dlist *file_list;
 	struct dlist_node *node;
 	bool has_more = false;
@@ -790,20 +828,22 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 	DEBUG((DEBUG_INFO, "ll_req|path=%s\n", req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
-	assert(resp != NULL);
-
-	data = &resp->data;
+	if (resp == NULL) {
+		printf("alloc ll_resp failed!\n");
+		return -1;
+	}
 
 	strncpy(path, req->path, FILE_NAME_MAX_LEN - 1);
 	simplify_path(path);
-
 	DEBUG((DEBUG_INFO, "ls -l|path=%s\n", path));
 
+	data = &resp->data;
 	if (!file_existed(path)) {
 		data->total = -1;
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_ll_resp(conn->sock, resp_packet,
+		ret = send_ll_resp(conn->sock, resp_packet,
 			       resp, RESP_FILE_NTFD, 0);
+		goto done;
 	}
 
 	if (is_file(path)) {
@@ -814,8 +854,9 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 
 		DEBUG((DEBUG_INFO, "list file successfully!\n"));
 
-		return send_ll_resp(conn->sock, resp_packet,
+		ret = send_ll_resp(conn->sock, resp_packet,
 				resp, RESP_OK, 0);
+		goto done;
 	} else if (is_dir(path)) {
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
@@ -826,7 +867,7 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 				DEBUG((DEBUG_INFO, "send ll resp failed!\n"));
 			}
 
-			return -1;
+			goto done;
 		}
 
 		DEBUG((DEBUG_INFO, "list dir ...\n"));
@@ -881,8 +922,11 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 
 	DEBUG((DEBUG_INFO, "list file successfully!\n"));
 	DEBUG((DEBUG_INFO, "handle ll req out\n"));
+done:
+	if (resp)
+		mp_free(g_mp, resp);
 
-	return 0;
+	return ret;
 }
 
 int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
@@ -891,7 +935,7 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	struct get_req *req;
 	struct get_resp *resp;
 	char path[FILE_NAME_MAX_LEN];
-	int ret;
+	int ret = 0;
 
 	if (verbose_level > 0)
 		DEBUG((DEBUG_INFO, "handle get req in ...\n"));
@@ -904,18 +948,25 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 				req->session_id, req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
-	assert(resp != NULL);
+	if (resp == NULL) {
+		printf("alloc get_resp failed!\n");
+		return -1;
+	}
 
 	if (!is_absolute_path(path)) {
 		DEBUG((DEBUG_INFO, "path not absolute!\n"));
-		return send_get_resp(conn->sock, resp_packet, resp,
+		send_get_resp(conn->sock, resp_packet, resp,
 				RESP_PATH_NOT_ABS, 0);
+		ret = -1;
+		goto done;
 	}
 
 	if (!file_existed(path)) {
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_get_resp(conn->sock, resp_packet, resp,
+		send_get_resp(conn->sock, resp_packet, resp,
 				RESP_FILE_NTFD, 0);
+		ret = -1;
+		goto done;
 	}
 
 	if (verbose_level > 0)
@@ -926,6 +977,10 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 
 	if (verbose_level > 0)
 		DEBUG((DEBUG_INFO, "handle get req out\n"));
+
+done:
+	if (resp)
+		mp_free(g_mp, resp);
 
 	return ret;
 }
@@ -964,12 +1019,14 @@ int get_friend_list(struct sftt_client_v2 *client)
 	req_packet->type = PACKET_TYPE_WHO_REQ;
 
 	req_info = mp_malloc(g_mp, "get_friend_list_req", sizeof(struct who_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc get_friend_list_req failed!\n");
+		return -1;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = WHO_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -997,7 +1054,10 @@ int get_friend_list(struct sftt_client_v2 *client)
 		for (i = 0; i < data->this_nr; ++i) {
 			friend = mp_malloc(g_mp, "get_friend_list_resp_friend",
 					sizeof(struct friend_user));
-			assert(friend != NULL);
+			if (friend == NULL) {
+				printf("alloc get_friend_list_resp failed!\n");
+				return -1;
+			}
 			friend->info = data->users[i];
 
 			list_add_tail(&friend->list, &client->friends);
@@ -1149,7 +1209,10 @@ int add_task_connect(struct sftt_client_v2 *client)
 	req_packet->type = PACKET_TYPE_APPEND_CONN_REQ;
 
 	req_info = mp_malloc(g_mp, "append_conn_req", sizeof(struct append_conn_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc append_conn_req failed!\n");
+		return -1;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 	req_info->type = CONN_TYPE_TASK;
@@ -1368,7 +1431,11 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->type = PACKET_TYPE_LL_REQ;
 
 	req_info = mp_malloc(g_mp, "ll_handler_req", sizeof(struct ll_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc ll_handler_req failed!\n");
+		return -1;
+	}
+
 	if (user) {
 		req_info->to_peer = 1;
 		req_info->user = *user;
@@ -1401,7 +1468,10 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 
 	fe_list = dlist_create(FREE_MODE_MP_FREE);
-	assert(fe_list != NULL);
+	if (fe_list == NULL) {
+		printf("create dlist failed!\n");
+		return -1;
+	}
 
 	resp_info = (struct ll_resp *)resp_packet->obj;
 	assert(resp_info != NULL);
@@ -1411,7 +1481,10 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		for (i = 0; i < data->this_nr; ++i) {
 			entry = mp_malloc(g_mp, "ll_handler_resp_file_entry",
 					sizeof(struct file_entry));
-			assert(entry != NULL);
+			if (entry == NULL) {
+				printf("alloc ll_handler_resp_file_entry failed!\n");
+				return -1;
+			}
 			*entry = data->entries[i];
 			dlist_append(fe_list, entry);
 		}
@@ -1447,13 +1520,21 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	int i;
 	*argv_check = true;
-	printf("sftt client commands:\n\n");
-	for (i = 0; sftt_client_cmds[i].name != NULL; ++i) {
-		printf("\t%s\t\t%s\n", sftt_client_cmds[i].name, sftt_client_cmds[i].help);
-	}
-	printf("\t%s\t\t%s\n", "quit", "quit this session");
+
+	printf("sftt client commands:\n\n"
+		"\tcd         change work directory\n"
+		"\tdirectcmd  enter direct command mode\n"
+		"\tget        get file(s) from server\n"
+		"\thelp       show sftt client help info\n"
+		"\this        show history command\n"
+		"\tll         list directory contents using a long listing format\n"
+		"\tmps        show the mempool stat both client and server\n"
+		"\tput        put file(s) to server\n"
+		"\tpwd        get current directory\n"
+		"\tw          show logged in user(s)\n"
+		"\twrite      send a message to another user\n"
+	      );
 
 	return 0;
 }
@@ -1461,17 +1542,19 @@ int sftt_client_help_handler(void *obj, int argc, char *argv[], bool *argv_check
 int sftt_client_his_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	int i = 0, num = 10;
+	HIST_ENTRY **his;
+
 	if (argc > 0) {
 		num = atoi(argv[0]);
 		add_log(LOG_INFO, "his number specified: %d", num);
 	}
 
-	struct dlist_node *node;
-	dlist_for_each(his_cmds, node) {
-		if (i >= num) {
-			break;
-		}
-		printf("%s\n", (char *)node->data);
+	his = history_list();
+	if (his == NULL)
+		return 0;
+
+	while (i < num && his[i] && his[i]->line) {
+		printf("%s\n", his[i]->line);
 		++i;
 	}
 
@@ -1502,7 +1585,10 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	}
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct cd_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc cd_req failed!\n");
+		return -1;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 	strncpy(req_info->path, argv[0], DIR_PATH_MAX_LEN);
@@ -1573,7 +1659,10 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->type = PACKET_TYPE_PWD_REQ;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct pwd_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc pwd_req failed!\n");
+		return -1;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
@@ -1887,7 +1976,10 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->type = PACKET_TYPE_MP_STAT_REQ;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct mp_stat_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc mp_stat_req failed!\n");
+		return -1;
+	}
 
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
@@ -1976,7 +2068,10 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	req_packet->type = PACKET_TYPE_WRITE_REQ;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct write_req));
-	assert(req_info != NULL);
+	if (req_info == NULL) {
+		printf("alloc write_req failed!\n");
+		return -1;
+	}
 
 	user_no = atoi(argv[0]);
 	user = find_logged_in_user(client, user_no);
@@ -2088,20 +2183,39 @@ int reader_loop2(struct sftt_client_v2 *client)
 {
 	char cmd[CMD_MAX_LEN];
 	char prompt[PROMPT_MAX_LEN];
+	char *line;
+
 	his_cmds = dlist_create(FREE_MODE_MP_FREE);
 
 	for (;;) {
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
+#if 0
 		printf("%s", prompt);
 		fgets(cmd, CMD_MAX_LEN - 1, stdin);
-		if (strlen(cmd) <= 1)
-			continue;
-		cmd[strlen(cmd) - 1] = 0;
-		if (!strcmp(cmd, "quit")) {
+#endif
+		line = readline(prompt);
+		if (line == NULL) {
 			exit(0);
 		}
-		execute_cmd(client, cmd, -1);
+
+		if (strlen(line) == 0)
+			continue;
+
+		/*
+		 * no '\n' at the end of the line
+		 * line[strlen(line) - 1] = 0;
+		 */
+
+		if (!strcmp(line, "quit")) {
+			exit(0);
+		}
+
+		execute_cmd(client, line, -1);
+
+		add_history(line);
+#if 0
 		dlist_append(his_cmds, __strdup(cmd));
+#endif
 	}
 }
 

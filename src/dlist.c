@@ -100,7 +100,7 @@ int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data)
 	struct dlist_node *node = dlist_node_create(data);
 	if (node == NULL) {
 		return -1;
-	} 
+	}
 
 	struct dlist_node *next = elem->next;
 	node->next = next;
@@ -164,7 +164,7 @@ int dlist_prepend(struct dlist *list, void *data)
 		return list->size;
 	}
 
-	return dlist_ins_prev(list, list->head, data); 
+	return dlist_ins_prev(list, list->head, data);
 }
 
 int dlist_append(struct dlist *list, void *data)
@@ -184,7 +184,7 @@ int dlist_append(struct dlist *list, void *data)
 		return list->size;
 	}
 
-	return dlist_ins_next(list, list->tail, data); 
+	return dlist_ins_next(list, list->tail, data);
 }
 
 int dlist_remove(struct dlist *list, struct dlist_node *elem,
@@ -192,7 +192,7 @@ int dlist_remove(struct dlist *list, struct dlist_node *elem,
 {
 	if (list == NULL || elem == NULL) {
 		return -1;
-	} 
+	}
 
 	struct dlist_node *prev = elem->prev;
 	struct dlist_node *next = elem->next;
@@ -310,7 +310,7 @@ void dlist_set_show(struct dlist *list, void (*show) (void *data))
 {
 	if (list == NULL) {
 		return ;
-	} 
+	}
 	list->show = show;
 }
 
@@ -370,7 +370,7 @@ void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc)
 	list->head = new_head;
 	list->tail = new_tail;
 	list->size = size;
-} 
+}
 
 struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b))
 {

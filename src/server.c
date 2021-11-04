@@ -18,17 +18,17 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
-#include <sys/socket.h>  
+#include <sys/socket.h>
 #include <signal.h>
 #include <libgen.h>
-#include <netinet/in.h>  
+#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <dirent.h>
-#include <sys/types.h> 
-#include <sys/stat.h>  
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdbool.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -58,7 +58,7 @@
 #include "user.h"
 #include "utils.h"
 
-#define MODE (S_IRWXU | S_IRWXG | S_IRWXO)  
+#define MODE (S_IRWXU | S_IRWXG | S_IRWXO)
 
 struct sftt_option sftt_server_opts[] = {
 	{"start", START, NO_ARG},
@@ -149,7 +149,7 @@ void server_file_resv(int connect_fd, int consulted_block_size,
 	while (connected){
 		FILE * fd;
 		int i = 0 ;
-		int j = 0 ; 
+		int j = 0 ;
 		char *data_buff = (char *)mp_malloc(g_mp,
 			__func__, consulted_block_size * sizeof(char));
 
@@ -239,7 +239,7 @@ void is_exit(char *filepath)
 	int i;
 
 	for (i = 0; i <= str_len; i ++ ) {
-		if (tmp_path[i] == '/'){ 
+		if (tmp_path[i] == '/'){
 			tmp_path[i+1] = '\0';
 			if (access(tmp_path, F_OK) == -1) {
 				int status = mkdir(tmp_path,
@@ -267,7 +267,7 @@ int server_main_old(void)
 	unsigned char	buff[BUFFER_SIZE] = {'\0'};
 	//char    quit[BUFFER_SIZE] = {'q','u','i','t'};
 	struct sftt_server_config  init_conf;
-	//init server 
+	//init server
 	server_init_func(&init_conf);
 	
 	while(1){
@@ -803,7 +803,7 @@ int handle_fwd_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
 	int ret;
-	struct logged_in_user *user; 
+	struct logged_in_user *user;
 	struct get_req *req;
 	struct get_resp *resp;
 	struct client_sock_conn *conn = NULL;
@@ -1418,7 +1418,7 @@ int handle_append_conn_req(struct client_session *client,
 		ret = send_append_conn_resp(client->main_conn.sock, resp_packet, resp, RESP_OK, 0);
 	} else {
 		ret = send_append_conn_resp(client->main_conn.sock, resp_packet, resp,
-				RESP_UNKNOWN_CONN_TYPE, 0); 
+				RESP_UNKNOWN_CONN_TYPE, 0);
 	}
 
 	DEBUG((DEBUG_INFO, "handle append_conn req out ...\n"));
@@ -1860,11 +1860,10 @@ void server_usage_help(int exitcode)
 {
 	show_version();
 	printf("usage:\t" PROC_NAME " options\n"
-		"\t" PROC_NAME " start [-d] [-s dir]\n"
-		"\t" PROC_NAME " restart [-d] [-s dir]\n"
-		"\t" PROC_NAME " stop\n"
-		"\t" PROC_NAME " status\n"
-		"\t" PROC_NAME " db\n");
+		"\t" PROC_NAME " start [-v] [-d] [-s dir]\n"
+		"\t" PROC_NAME " restart [-v] [-d] [-s dir]\n"
+		"\t" PROC_NAME " stop [-v]\n"
+		"\t" PROC_NAME " status [-v]\n");
 	exit(exitcode);
 }
 

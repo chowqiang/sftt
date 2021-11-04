@@ -25,11 +25,11 @@ void set_bit(unsigned char *ch, int pos, unsigned char bit);
 /**
  *
  **/
-unsigned char get_bit(unsigned char ch, int pos); 
+unsigned char get_bit(unsigned char ch, int pos);
 
 /**
  *
  **/
-unsigned char *set_bits(unsigned char *dst, int pos, unsigned int src, int len, int *end); 
+unsigned char *set_bits(unsigned char *dst, int pos, unsigned int src, int len, int *end);
 
 #endif

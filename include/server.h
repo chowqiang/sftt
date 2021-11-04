@@ -80,7 +80,7 @@ int sftt_server_stop(void);
 bool parse_store_path(char *optarg, char *store_path, int max_len);
 
 void sftt_server_status(void);
-void sftt_server_db(void); 
+void sftt_server_db(void);
 void sftt_server_exit(int sig);
 void server_usage_help(int exitcode);
 #endif

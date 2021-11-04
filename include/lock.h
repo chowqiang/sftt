@@ -37,6 +37,6 @@ int sftt_pthread_mutex_unlock(struct pthread_mutex *mutex);
 int sftt_pthread_mutex_destroy(struct pthread_mutex *mutex);
 
 struct pthread_mutex *pthread_mutex_construct(void);
-void pthread_mutex_destruct(struct pthread_mutex *ptr); 
+void pthread_mutex_destruct(struct pthread_mutex *ptr);
 
 #endif

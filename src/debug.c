@@ -14,17 +14,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NET_TRANS_H_
-#define _NET_TRANS_H_
+#include "debug.h"
 
-#include "packet.h"
+int default_debug_level = DEBUG_WARN;
 
-struct sftt_packet *malloc_sftt_packet(void);
+void set_client_debug_level(int verbose)
+{
+	if (verbose == 1) {
+		default_debug_level = DEBUG_INFO;
+	} else if (verbose == 2) {
+		default_debug_level = DEBUG_DEBUG;
+	} else if (verbose > 2) {
+		default_debug_level = DEBUG_DEBUG;
+	} else {
+		default_debug_level = DEBUG_WARN;
+	}
+}
 
-int send_sftt_packet(int sock, struct sftt_packet *sp);
-
-int recv_sftt_packet(int sock, struct sftt_packet *sp);
-
-void free_sftt_packet(struct sftt_packet **sp);
-
-#endif
+void set_server_debug_level(int verbose)
+{
+	if (verbose == 1) {
+		default_debug_level = DEBUG_DEBUG;
+	} else if (verbose > 1) {
+		default_debug_level = DEBUG_DEBUG;
+	} else {
+		default_debug_level = DEBUG_INFO;
+	}
+}

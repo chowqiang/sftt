@@ -24,7 +24,7 @@ void set_bit(unsigned char *ch, int pos, unsigned char bit)
 	unsigned char mask = 0;
 	if (bit == 0) {
 		mask = 0xff;
-		mask = (mask << pos) | (mask >> (8 - pos + 1)); 
+		mask = (mask << pos) | (mask >> (8 - pos + 1));
 		*ch = *ch & mask;
 	} else {
 		mask = 1;	
@@ -96,11 +96,11 @@ void test_code(void)
 void test_bit_layout(void)
 {
 	unsigned char c = 1;
-	int i = 0; 
+	int i = 0;
 	for (i = 0; i < 8; ++i) {
 		if ((1 << i) & c) {
 			printf("%d\n", i);
-		} 
+		}
 	}
 }
 
