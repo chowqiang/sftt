@@ -211,17 +211,19 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 	int header_len = sizeof(header);
 	int decoded_len, ret;
 	unsigned char *buffer;
+	int err;
 
 	add_log(LOG_INFO, "%s: in", __func__);
 	ret = recv(sock, header, header_len, 0);
+	err = errno;
 	add_log(LOG_INFO, "%s: recv header, ret=%d, header_len=%d", __func__,
 		ret, header_len);
 	if (ret != header_len) {
-		perror("recv failed");
-		printf("%s: recv ret not equal to header len, ret = %d, header_len = %d\n",
-				__func__, ret, header_len);
+		DEBUG((DEBUG_WARN, "recv failed: %s\n", strerror(err)));
+		DEBUG((DEBUG_WARN, "recv ret not equal to header len, "
+				"ret = %d, header_len = %d\n", ret, header_len));
 		if (ret == 0) {
-			printf("%s: received zero byte!\n", __func__);
+			DEBUG((DEBUG_WARN, "received zero byte!\n"));
 			return ret;
 		}
 		return -1;
@@ -288,7 +290,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	ret = sftt_packet_recv_header(sock, _sp);
 	if (!(ret > 0)) {
-		printf("%s: recv header failed!\n", __func__);
+		DEBUG((DEBUG_WARN, "%s: recv header failed!\n", __func__));
 		return ret;
 	}
 

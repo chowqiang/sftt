@@ -396,11 +396,11 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	}
 	resp = resp_packet->obj;
 	if (resp->status == RESP_OK) {
-		printf("file not changed: %s, skip ...\n", file);
+		DEBUG((DEBUG_DEBUG, "file not changed: %s, skip ...\n", file));
 		return 0;
 	}
 
-	printf("open file: %s\n", file);
+	DEBUG((DEBUG_DEBUG, "open file: %s\n", file));
 	// open file for reading
 	fp = fopen(file, "r");
 	if (fp == NULL) {
@@ -454,6 +454,10 @@ int send_dir_by_put_req(int fd, char *path, char *target,
 	struct dlist_node *node;
 
 	file_list = get_path_entry_list(path, NULL);
+	if (file_list == NULL) {
+		DEBUG((DEBUG_ERROR, "file list is null!\n"));
+		return -1;
+	}
 	file_count = dlist_size(file_list);
 
 	req->data.total_files = file_count;
@@ -461,7 +465,7 @@ int send_dir_by_put_req(int fd, char *path, char *target,
 
 	dlist_for_each(file_list, node) {
 		entry = node->data;
-		printf("begin to send %s\n", entry->abs_path);
+		DEBUG((DEBUG_DEBUG, "begin to send %s\n", entry->abs_path));
 		snprintf(tmp, sizeof(tmp), "%s/%s", target, entry->rel_path);
 		ret = send_file_by_put_req(fd, entry->abs_path, tmp, req_packet, req, resp_packet);
 		if (ret == -1) {

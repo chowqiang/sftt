@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include "debug.h"
 #include "dlist.h"
 #include "file.h"
 #include "md5.h"
@@ -455,19 +456,24 @@ struct dlist *get_path_entry_list(char *path, char *pwd)
 		return NULL;
 
 	root = mp_malloc(g_mp, __func__, sizeof(struct path_entry));
-	if (root == NULL)
+	if (root == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc path_entry failed!\n"));
 		return NULL;
+	}
 
 	if (is_absolute_path(path)) {
 		rp = path;
 	} else if (pwd) {
 		rp = path_join(pwd, path);
 	} else {
-		return NULL;
+		rp = path;
+		//return NULL;
 	}
 
-	if (!file_existed(rp))
+	if (!file_existed(rp)) {
+		DEBUG((DEBUG_ERROR, "file not exists: %s\n", rp));
 		return NULL;
+	}
 
 	base = basename(rp);
 	set_path_entry(root, rp, base);

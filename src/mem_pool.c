@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include "base.h"
 #include "context.h"
+#include "debug.h"
 #include "mem_pool.h"
 #include "msg_queue.h"
 #include "utils.h"
@@ -273,8 +274,8 @@ void sub_purpose(struct mem_pool *mp, const char *purpose)
 
 	p = find_purpose(mp, purpose);
 	if (p == NULL) {
-		printf("sub purpose failed because cannot found "
-			"purpose node: %s\n", purpose);
+		DEBUG((DEBUG_WARN, "sub purpose failed because cannot found "
+			"purpose node: %s\n", purpose));
 		return;
 	}
 
