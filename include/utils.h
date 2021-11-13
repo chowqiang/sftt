@@ -59,4 +59,6 @@ char *__strdup(const char *buf);
 
 int gen_random(int min, int max);
 
+double get_double_time(void);
+
 #endif

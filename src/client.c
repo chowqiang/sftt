@@ -58,7 +58,6 @@
 
 extern int errno;
 extern struct mem_pool *g_mp;
-extern int verbose_level;
 
 bool directcmd = false;
 bool force_quit = false;
@@ -649,8 +648,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 		port = get_random_port();
 	}
 
-	if (verbose_level)
-		printf("port of connecting: %d\n", port);
+	DEBUG((DEBUG_DEBUG, "port of connecting: %d\n", port));
 
 	client->main_conn.sock = make_connect(client->host, port);
 	if (client->main_conn.sock == -1) {
@@ -937,14 +935,12 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	char path[FILE_NAME_MAX_LEN];
 	int ret = 0;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "handle get req in ...\n"));
+	DEBUG((DEBUG_INFO, "handle get req in ...\n"));
 
 	req = req_packet->obj;
 	strncpy(path, req->path, FILE_NAME_MAX_LEN);
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "get req|session_id=%s|path=%s\n",
+	DEBUG((DEBUG_INFO, "get req|session_id=%s|path=%s\n",
 				req->session_id, req->path));
 
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
@@ -969,14 +965,12 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 		goto done;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to send files by get resp"));
+	DEBUG((DEBUG_INFO, "begin to send files by get resp"));
 
 	ret = send_files_by_get_resp(conn->sock, path, resp_packet,
 			resp);
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "handle get req out\n"));
+	DEBUG((DEBUG_INFO, "handle get req out\n"));
 
 done:
 	if (resp)
@@ -1121,8 +1115,7 @@ void *do_task_handler(void *arg)
 		goto exit;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to communicate with peer ...\n"));
+	DEBUG((DEBUG_INFO, "begin to communicate with peer ...\n"));
 
 	while (1) {
 		conn->is_using = false;
@@ -1159,8 +1152,7 @@ void *do_task_handler(void *arg)
 	}
 
 exit:
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
 	return NULL;
 }
@@ -1764,8 +1756,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->obj = req;
 	req_packet->type = PACKET_TYPE_GET_REQ;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send get req to server\n"));
+	DEBUG((DEBUG_INFO, "send get req to server\n"));
 
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -1779,13 +1770,11 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to recv files from server\n"));
+	DEBUG((DEBUG_INFO, "begin to recv files from server\n"));
 
 	ret = recv_files_from_get_resp(client->main_conn.sock, target, resp_packet);
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "end to recv files from server\n"));
+	DEBUG((DEBUG_INFO, "end to recv files from server\n"));
 
 	mp_free(g_mp, req);
 

@@ -33,8 +33,6 @@
 extern struct mem_pool *g_mp;
 extern struct serialize_handler serializables[];
 
-extern int verbose_level;
-
 struct sftt_packet *malloc_sftt_packet(void)
 {
 	struct sftt_packet *sp = (struct sftt_packet *)mp_malloc(g_mp,
@@ -310,8 +308,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: before decode content", __func__);
 
 	sftt_packet_decode_content(_sp, sp);
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "after decode|sp->data_len=%d\n", sp->data_len));
+	DEBUG((DEBUG_INFO, "after decode|sp->data_len=%d\n", sp->data_len));
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {

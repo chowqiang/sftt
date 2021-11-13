@@ -339,3 +339,12 @@ int gen_random(int min, int max)
 {
 	return gen_int(min, max);
 }
+
+double get_double_time(void)
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	return (double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0;
+}

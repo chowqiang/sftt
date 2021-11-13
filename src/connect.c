@@ -21,16 +21,15 @@
 #include <stdio.h>
 #include <string.h>
 #include "connect.h"
-
-extern int verbose_level;
+#include "debug.h"
 
 int make_connect(char *ip, int port)
 {
 	int ret, sock;
 	struct sockaddr_in serv_addr;
 
-	if (verbose_level > 0)
-		printf("%s:%d, ip=%s, port=%d\n", __func__, __LINE__, ip, port);
+	DEBUG((DEBUG_DEBUG, "%s:%d, ip=%s, port=%d\n", __func__, __LINE__,
+			ip, port));
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == -1) {

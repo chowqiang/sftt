@@ -145,7 +145,7 @@ char *path_join(char *dir, char *fname)
 }
 
 /*
- * Get all files by DFS and link that in dlist.
+ * Get all files by DFS and link them in dlist.
  */
 struct dlist *get_all_file_list(char *dir)
 {

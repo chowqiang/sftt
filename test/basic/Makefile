@@ -1,6 +1,6 @@
 
 all: dlist mem_pool net_trans serialize utils db md5 file strops list \
-	client_task resp pthread options readline
+	client_task resp pthread options readline progress_viewer
 
 dlist: dlist.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
@@ -46,3 +46,6 @@ options: options.c
 
 readline: readline.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB) -lreadline
+
+progress_viewer: progress_viewer.c
+	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)

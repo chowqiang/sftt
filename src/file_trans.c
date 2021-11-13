@@ -24,12 +24,16 @@
 #include "mkdirp.h"
 #include "mem_pool.h"
 #include "net_trans.h"
+#include "progress_viewer.h"
 #include "response.h"
 #include "trans.h"
 #include "utils.h"
 
+#define SIZE_1G	(1024 * 1024 * 1024)
+#define SIZE_1M (1024 * 1024)
+#define SIZE_1K 1024
+
 extern struct mem_pool *g_mp;
-extern int verbose_level;
 
 int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 	struct get_resp *resp, int next)
@@ -99,28 +103,24 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 	if (is_dir(path)) {
 		next = is_last ? 0 : 1;
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send dir name|path=%s|fname=%s\n", path, fname));
+		DEBUG((DEBUG_INFO, "send dir name|path=%s|fname=%s\n", path, fname));
 
 		return send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, next);
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send file name|path=%s|fname=%s\n", path, fname));
+	DEBUG((DEBUG_INFO, "send file name|path=%s|fname=%s\n", path, fname));
 
 	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, 1);
 	if (ret == -1)
 		return -1;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send file md5|path=%s|fname=%s\n", path, fname));
+	DEBUG((DEBUG_INFO, "send file md5|path=%s|fname=%s\n", path, fname));
 
 	ret = send_file_md5_by_get_resp(fd, path, resp_packet, resp);
 	if (ret == -1)
 		return -1;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "recv md5 resp|path=%s|fname=%s\n", path, fname));
+	DEBUG((DEBUG_INFO, "recv md5 resp|path=%s|fname=%s\n", path, fname));
 
 	ret = recv_sftt_packet(fd, resp_packet);
 	if (ret == -1) {
@@ -130,8 +130,7 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 	com_resp = resp_packet->obj;
 	if (com_resp->status == RESP_OK) {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "file not changed|path=%s|skip ...\n", path));
+		DEBUG((DEBUG_INFO, "file not changed|path=%s|skip ...\n", path));
 		return 0;
 	}
 
@@ -143,8 +142,7 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 	data->entry.total_size = file_size(path);
 	read_size = 0;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to send file block\n"));
+	DEBUG((DEBUG_INFO, "begin to send file block\n"));
 
 	do {
 		ret = fread(data->entry.content, 1, CONTENT_BLOCK_SIZE, fp);
@@ -154,8 +152,7 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 		next = is_last ? (read_size < data->entry.total_size ? 1 : 0) : 1;
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file block|len=%d|next=%d\n", ret, next));
+		DEBUG((DEBUG_INFO, "send file block|len=%d|next=%d\n", ret, next));
 
 		ret = send_file_content_by_get_resp(fd, resp_packet, resp, next);
 		if (ret == -1) {
@@ -164,8 +161,7 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 		}
 
 #if 1
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "recv common resp\n"));
+		DEBUG((DEBUG_INFO, "recv common resp\n"));
 
 		ret = recv_sftt_packet(fd, resp_packet);
 		if (ret == -1) {
@@ -198,8 +194,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	int file_count;
 	struct path_entry *entry;
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send dir in ...|path: %s\n", path));
+	DEBUG((DEBUG_INFO, "send dir in ...|path: %s\n", path));
 
 	file_list = get_path_entry_list(path, NULL);
 	if (file_list == NULL) {
@@ -210,8 +205,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	}
 
 	file_count = dlist_size(file_list);
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "file list|file_count=%d\n", file_count));
+	DEBUG((DEBUG_INFO, "file list|file_count=%d\n", file_count));
 
 	data = &resp->data;
 	data->total_files = file_count;
@@ -220,8 +214,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	dlist_for_each(file_list, node) {
 		entry = node->data;
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file|idx=%d|path=%s\n",
+		DEBUG((DEBUG_INFO, "send file|idx=%d|path=%s\n",
 					data->file_idx, entry->abs_path));
 
 		if (send_file_by_get_resp(fd, entry->abs_path, entry->rel_path,
@@ -230,15 +223,13 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 					(char *)entry->abs_path));
 		}
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file done|idx=%d|path=%s\n",
+		DEBUG((DEBUG_INFO, "send file done|idx=%d|path=%s\n",
 					data->file_idx, entry->abs_path));
 
 		data->file_idx++;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send dir out\n"));
+	DEBUG((DEBUG_INFO, "send dir out\n"));
 
 	return 0;
 }
@@ -251,8 +242,7 @@ int send_files_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 	struct get_resp_data *data;
 
 	if (is_file(path)) {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file|path=%s\n", path));
+		DEBUG((DEBUG_INFO, "send file|path=%s\n", path));
 
 		data = &resp->data;
 		data->total_files = 1;
@@ -261,17 +251,14 @@ int send_files_by_get_resp(int fd, char *path, struct sftt_packet *resp_packet,
 		fname = get_basename(path);
 		ret = send_file_by_get_resp(fd, path, fname, resp_packet, resp);
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file done|path=%s\n", path));
+		DEBUG((DEBUG_INFO, "send file done|path=%s\n", path));
 
 	} else {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send multi files|path=%s\n", path));
+		DEBUG((DEBUG_INFO, "send multi files|path=%s\n", path));
 
 		ret = send_dir_by_get_resp(fd, path, resp_packet, resp);
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send multi files done|path=%s\n", path));
+		DEBUG((DEBUG_INFO, "send multi files done|path=%s\n", path));
 	}
 
 	return ret;
@@ -346,12 +333,70 @@ int send_file_content_by_put_req(int fd,
 	return send_trans_entry_by_put_req(fd, req_packet, req);
 }
 
+void format_trans_speed(long speed, char *buf, int max_len)
+{
+	if (speed > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB/s", speed * 1.0 / SIZE_1G);
+	} else if (speed > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB/s", speed * 1.0 / SIZE_1M);
+	} else if (speed > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB/s", speed * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB/s", (int)speed);
+	}
+}
+
+void format_left_time(int left, char *buf, int max_len)
+{
+	int hour, minute, second;
+
+	if (left > 3600) {
+		hour = left / 3600;
+		minute = left % 3600 / 60;
+		second = left % 60;
+		if (hour >= 10)
+			snprintf(buf, max_len, "%d:%02d:%02d", hour, minute,
+					second);
+		else
+			snprintf(buf, max_len, "%02d:%02d:%02d", hour, minute,
+					second);
+	} else {
+		minute = left / 60;
+		second = left % 60;
+		snprintf(buf, max_len, "%02d:%02d", minute, second);
+	}
+}
+
+void format_trans_size(long size, char *buf, int max_len)
+{
+	if (size > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB", size * 1.0 / SIZE_1G);
+	} else if (size > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB", size * 1.0 / SIZE_1M);
+	} else if (size > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB", size * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB", (int)size);
+	}
+}
+
 int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *req_packet,
 		struct put_req *req, struct sftt_packet *resp_packet)
 {
 	struct put_resp *resp;
 	int ret, is_last;
 	FILE *fp;
+	struct progress_viewer pv;
+	char progress_info[128];
+	long total_size = 0;
+	long send_size = 0;
+	long speed = 0;
+	float progress;
+	double start, now;
+	int left_time;
+	char speed_info[16];
+	char left_time_info[16];
+	char send_size_info[16];
 	
 	// if it is the last file?
 	is_last = req->data.file_idx == (req->data.total_files - 1);
@@ -381,6 +426,10 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	if (is_dir(file))
 		return 0;
 
+	start = get_double_time();
+	start_progress_viewer(&pv, 1000 * 1000);
+
+	total_size = file_size(file);
 	// send md5 of file
 	ret = send_file_md5_by_put_req(fd, req_packet, file, req);
 	if (ret == -1) {
@@ -397,6 +446,21 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	resp = resp_packet->obj;
 	if (resp->status == RESP_OK) {
 		DEBUG((DEBUG_DEBUG, "file not changed: %s, skip ...\n", file));
+
+		send_size = total_size;
+		progress = send_size / total_size;
+		now = get_double_time();
+		speed = send_size * 1.0 / (now - start);
+		left_time = (total_size - send_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+				(int)(progress * 100), send_size_info, speed_info, left_time_info);
+
+		stop_progress_viewer(&pv, progress_info);
+
 		return 0;
 	}
 
@@ -408,7 +472,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		return -1;
 	}
 
-	req->data.entry.total_size = file_size(file);
+	req->data.entry.total_size = total_size;
 
 	while (!feof(fp)) {
 		ret = fread(req->data.entry.content, 1, CONTENT_BLOCK_SIZE, fp);
@@ -431,6 +495,23 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 			break;
 		}
 #endif
+		send_size += req->data.entry.this_size;
+		progress = send_size / total_size;
+		now = get_double_time();
+		speed = send_size * 1.0 / (now - start);
+		left_time = (total_size - send_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+				(int)(progress * 100), send_size_info, speed_info,
+				left_time_info);
+		show_progress(&pv, progress_info);
+
+		if (send_size == total_size)
+			stop_progress_viewer(&pv, progress_info);
+
 	}
 
 	if (!feof(fp)) {
@@ -512,6 +593,16 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	char *rp;
 	long total_size = 0;
 	int ret = 0;
+	struct progress_viewer pv;
+	char progress_info[128];
+	long recv_size = 0;
+	long speed = 0;
+	float progress;
+	double start, now;
+	int left_time;
+	char speed_info[16];
+	char left_time_info[16];
+	char recv_size_info[16];
 
 	com_resp = (struct common_resp *)mp_malloc(g_mp, "send_one_file_com_resp",
 			sizeof(struct common_resp));
@@ -523,8 +614,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	rp = path;
 
 	if (IS_DIR(type)) {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "get a dir|dir=%s\n", rp));
+		DEBUG((DEBUG_INFO, "get a dir|dir=%s\n", rp));
 
 		if (!file_existed(rp)) {
 			ret = mkdirp(rp, mode);
@@ -535,13 +625,11 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 			}
 		}
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
 
 		goto done;
 	} else if (IS_FILE(type)) {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "get a file|file=%s\n", rp));
+		DEBUG((DEBUG_INFO, "get a file|file=%s\n", rp));
 
 		if (!file_existed(rp)) {
 			ret = create_new_file(rp, mode);
@@ -560,8 +648,9 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 
 	assert(file_existed(rp) && is_file(rp));	
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to recv file md5\n"));
+	DEBUG((DEBUG_INFO, "begin to recv file md5\n"));
+	start = get_double_time();
+	start_progress_viewer(&pv, 1000 * 1000);
 
 	/* recv md5 */
 	ret = recv_sftt_packet(fd, resp_packet);
@@ -571,23 +660,36 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	}
 	resp = resp_packet->obj;
 	data = &resp->data;
+	total_size = data->entry.total_size;
 
 	strncpy(md5, (char *)data->entry.content, MD5_STR_LEN);
 	if (same_file(rp, md5)) {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "file not changed|file=%s\n", rp));
+		DEBUG((DEBUG_INFO, "file not changed|file=%s\n", rp));
 
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 		mp_free(g_mp, com_resp);
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+
+		recv_size = total_size;
+		progress = recv_size / total_size;
+		now = get_double_time();
+		speed = recv_size * 1.0 / (now - start);
+		left_time = (total_size - recv_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+				(int)(progress * 100), recv_size_info, speed_info,
+				left_time_info);
+
+		stop_progress_viewer(&pv, progress_info);
 
 		goto done;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "send md5 common resp\n"));
+	DEBUG((DEBUG_INFO, "send md5 common resp\n"));
 
 	send_common_resp(fd, resp_packet, com_resp, RESP_CONTINUE, 0);
 
@@ -599,9 +701,8 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		goto done;
 	}
 
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "begin to recv file content|total_size=%ld\n",
-				data->entry.total_size));
+	DEBUG((DEBUG_INFO, "begin to recv file content|total_size=%ld\n",
+				total_size));
 
 	do {
 		/* recv content */
@@ -612,22 +713,37 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		}
 		resp = resp_packet->obj;
 		data = &resp->data;
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "received a block|len=%d\n", data->entry.this_size));
+		DEBUG((DEBUG_INFO, "received a block|len=%d\n", data->entry.this_size));
 
 		fwrite(data->entry.content, data->entry.this_size, 1, fp);
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "send file block common resp\n"));
+		DEBUG((DEBUG_INFO, "send file block common resp\n"));
 
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 
-		total_size += data->entry.this_size;
-	} while (total_size < data->entry.total_size);
+		recv_size += data->entry.this_size;
+		progress = recv_size / total_size;
+		now = get_double_time();
+		speed = recv_size * 1.0 / (now - start);
+		left_time = (total_size - recv_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+				(int)(progress * 100), recv_size_info, speed_info,
+				left_time_info);
+
+		show_progress(&pv, progress_info);
+
+		if (recv_size == total_size)
+			stop_progress_viewer(&pv, progress_info);
+
+	} while (recv_size < total_size);
 
 	fclose(fp);
 
-	if (total_size < data->entry.total_size) {
+	if (recv_size < total_size) {
 		printf("%s: recv one file failed: %s\n", __func__, rp);
 		ret = -1;
 		goto done;
@@ -641,8 +757,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	}
 
 	set_file_mode(rp, data->entry.mode);
-	if (verbose_level > 0)
-		DEBUG((DEBUG_INFO, "recv %s done\n", rp));
+	DEBUG((DEBUG_INFO, "recv %s done\n", rp));
 
 done:
 	if (com_resp)
@@ -668,9 +783,7 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet
 	resp = resp_packet->obj;
 	data = &resp->data;
 
-	if (verbose_level > 0) {
-		DEBUG((DEBUG_INFO, "total files will recv: %d\n", data->total_files));
-	}
+	DEBUG((DEBUG_INFO, "total files will recv: %d\n", data->total_files));
 
 	if (!(data->total_files > 0)) {
 		printf("%s: target file not exist\n", __func__);
@@ -696,15 +809,13 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet
 
 	recv_count = 0;
 	do {
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "begin recv %d-th file\n", recv_count));
+		DEBUG((DEBUG_INFO, "begin recv %d-th file\n", recv_count));
 
 		rp = path_join(path, (char *)data->entry.content);
 		recv_file_from_get_resp(fd, rp, data->entry.type,
 				data->entry.mode, resp_packet);	
 
-		if (verbose_level > 0)
-			DEBUG((DEBUG_INFO, "end recv %d-th file\n", recv_count));
+		DEBUG((DEBUG_INFO, "end recv %d-th file\n", recv_count));
 
 		recv_count++;
 		if (recv_count == data->total_files)

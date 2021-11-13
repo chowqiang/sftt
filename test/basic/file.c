@@ -44,7 +44,7 @@ void test_get_all_file_list(void)
 	struct dlist *list;
 	struct dlist_node *node;
 
-	list = get_all_file_list("../sftt");
+	list = get_all_file_list("/etc/acpi/");
 #if 1
 	dlist_for_each(list, node)
 		printf("%s\n", (char *)node->data);
@@ -71,8 +71,8 @@ void test_mode(void)
 
 int main(void)
 {
-	//test_get_all_file_list();
-	test_mode();
+	test_get_all_file_list();
+	//test_mode();
 
 	return 0;
 }
