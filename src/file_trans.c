@@ -24,9 +24,14 @@
 #include "mkdirp.h"
 #include "mem_pool.h"
 #include "net_trans.h"
+#include "progress_viewer.h"
 #include "response.h"
 #include "trans.h"
 #include "utils.h"
+
+#define SIZE_1G	(1024 * 1024 * 1024)
+#define SIZE_1M (1024 * 1024)
+#define SIZE_1K 1024
 
 extern struct mem_pool *g_mp;
 
@@ -328,12 +333,70 @@ int send_file_content_by_put_req(int fd,
 	return send_trans_entry_by_put_req(fd, req_packet, req);
 }
 
+void format_trans_speed(long speed, char *buf, int max_len)
+{
+	if (speed > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB/s", speed * 1.0 / SIZE_1G);
+	} else if (speed > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB/s", speed * 1.0 / SIZE_1M);
+	} else if (speed > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB/s", speed * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB/s", (int)speed);
+	}
+}
+
+void format_left_time(int left, char *buf, int max_len)
+{
+	int hour, minute, second;
+
+	if (left > 3600) {
+		hour = left / 3600;
+		minute = left % 3600 / 60;
+		second = left % 60;
+		if (hour >= 10)
+			snprintf(buf, max_len, "%d:%02d:%02d", hour, minute,
+					second);
+		else
+			snprintf(buf, max_len, "%02d:%02d:%02d", hour, minute,
+					second);
+	} else {
+		minute = left / 60;
+		second = left % 60;
+		snprintf(buf, max_len, "%02d:%02d", minute, second);
+	}
+}
+
+void format_trans_size(long size, char *buf, int max_len)
+{
+	if (size > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB", size * 1.0 / SIZE_1G);
+	} else if (size > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB", size * 1.0 / SIZE_1M);
+	} else if (size > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB", size * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB", (int)size);
+	}
+}
+
 int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *req_packet,
 		struct put_req *req, struct sftt_packet *resp_packet)
 {
 	struct put_resp *resp;
 	int ret, is_last;
 	FILE *fp;
+	struct progress_viewer pv;
+	char progress_info[128];
+	long total_size = 0;
+	long send_size = 0;
+	long speed = 0;
+	float progress;
+	double start, now;
+	int left_time;
+	char speed_info[16];
+	char left_time_info[16];
+	char send_size_info[16];
 	
 	// if it is the last file?
 	is_last = req->data.file_idx == (req->data.total_files - 1);
@@ -363,6 +426,10 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	if (is_dir(file))
 		return 0;
 
+	start = get_double_time();
+	start_progress_viewer(&pv, 1000 * 1000);
+
+	total_size = file_size(file);
 	// send md5 of file
 	ret = send_file_md5_by_put_req(fd, req_packet, file, req);
 	if (ret == -1) {
@@ -379,6 +446,21 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	resp = resp_packet->obj;
 	if (resp->status == RESP_OK) {
 		DEBUG((DEBUG_DEBUG, "file not changed: %s, skip ...\n", file));
+
+		send_size = total_size;
+		progress = send_size / total_size;
+		now = get_double_time();
+		speed = send_size * 1.0 / (now - start);
+		left_time = (total_size - send_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+				(int)(progress * 100), send_size_info, speed_info, left_time_info);
+
+		stop_progress_viewer(&pv, progress_info);
+
 		return 0;
 	}
 
@@ -390,7 +472,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		return -1;
 	}
 
-	req->data.entry.total_size = file_size(file);
+	req->data.entry.total_size = total_size;
 
 	while (!feof(fp)) {
 		ret = fread(req->data.entry.content, 1, CONTENT_BLOCK_SIZE, fp);
@@ -413,6 +495,23 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 			break;
 		}
 #endif
+		send_size += req->data.entry.this_size;
+		progress = send_size / total_size;
+		now = get_double_time();
+		speed = send_size * 1.0 / (now - start);
+		left_time = (total_size - send_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+				(int)(progress * 100), send_size_info, speed_info,
+				left_time_info);
+		show_progress(&pv, progress_info);
+
+		if (send_size == total_size)
+			stop_progress_viewer(&pv, progress_info);
+
 	}
 
 	if (!feof(fp)) {
@@ -494,6 +593,16 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	char *rp;
 	long total_size = 0;
 	int ret = 0;
+	struct progress_viewer pv;
+	char progress_info[128];
+	long recv_size = 0;
+	long speed = 0;
+	float progress;
+	double start, now;
+	int left_time;
+	char speed_info[16];
+	char left_time_info[16];
+	char recv_size_info[16];
 
 	com_resp = (struct common_resp *)mp_malloc(g_mp, "send_one_file_com_resp",
 			sizeof(struct common_resp));
@@ -540,6 +649,8 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	assert(file_existed(rp) && is_file(rp));	
 
 	DEBUG((DEBUG_INFO, "begin to recv file md5\n"));
+	start = get_double_time();
+	start_progress_viewer(&pv, 1000 * 1000);
 
 	/* recv md5 */
 	ret = recv_sftt_packet(fd, resp_packet);
@@ -549,6 +660,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	}
 	resp = resp_packet->obj;
 	data = &resp->data;
+	total_size = data->entry.total_size;
 
 	strncpy(md5, (char *)data->entry.content, MD5_STR_LEN);
 	if (same_file(rp, md5)) {
@@ -558,6 +670,21 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		mp_free(g_mp, com_resp);
 
 		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+
+		recv_size = total_size;
+		progress = recv_size / total_size;
+		now = get_double_time();
+		speed = recv_size * 1.0 / (now - start);
+		left_time = (total_size - recv_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+				(int)(progress * 100), recv_size_info, speed_info,
+				left_time_info);
+
+		stop_progress_viewer(&pv, progress_info);
 
 		goto done;
 	}
@@ -575,7 +702,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	}
 
 	DEBUG((DEBUG_INFO, "begin to recv file content|total_size=%ld\n",
-				data->entry.total_size));
+				total_size));
 
 	do {
 		/* recv content */
@@ -594,12 +721,29 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 
-		total_size += data->entry.this_size;
-	} while (total_size < data->entry.total_size);
+		recv_size += data->entry.this_size;
+		progress = recv_size / total_size;
+		now = get_double_time();
+		speed = recv_size * 1.0 / (now - start);
+		left_time = (total_size - recv_size) / speed;
+
+		format_trans_speed(speed, speed_info, sizeof(speed_info));
+		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
+		format_left_time(left_time, left_time_info, sizeof(left_time_info));
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+				(int)(progress * 100), recv_size_info, speed_info,
+				left_time_info);
+
+		show_progress(&pv, progress_info);
+
+		if (recv_size == total_size)
+			stop_progress_viewer(&pv, progress_info);
+
+	} while (recv_size < total_size);
 
 	fclose(fp);
 
-	if (total_size < data->entry.total_size) {
+	if (recv_size < total_size) {
 		printf("%s: recv one file failed: %s\n", __func__, rp);
 		ret = -1;
 		goto done;
