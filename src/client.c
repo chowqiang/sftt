@@ -1148,10 +1148,10 @@ void *do_task_handler(void *arg)
 		default:
 			break;
 		}
-		free_sftt_packet(&resp);
 	}
 
 exit:
+	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
 	return NULL;

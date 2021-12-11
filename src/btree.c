@@ -120,7 +120,7 @@ int btree_ins_left(struct btree *tree, struct btree_node *node, void *data)
 		new_node->left = node->left;
 		node->left = new_node;
 	}
-	tree->size += 1;	
+	tree->size += 1;
 
 	return tree->size;
 }

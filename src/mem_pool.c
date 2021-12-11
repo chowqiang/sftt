@@ -427,6 +427,12 @@ void mp_free(struct mem_pool *mp, void *p)
 
 	list_for_each_entry(m_node, &mem_nodes, list) {
 		if (m_node->address == p) {
+			if (!m_node->is_using) {
+				printf("warning: double free! purpose: %s\n",
+					m_node->purpose);
+				found = true;
+				break;
+			}
 			m_node->is_using = 0;
 			//m_node->used_cnt += 1;
 			mp->stat.free_nodes += 1;

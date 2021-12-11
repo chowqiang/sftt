@@ -22,7 +22,6 @@
 #include "btree.h"
 #include "compress.h"
 #include "dlist.h"
-#include "file.h"
 #include "map.h"
 #include "mem_pool.h"
 #include "stack.h"
@@ -183,8 +182,8 @@ struct btree *generate_huffman_tree(int *char_freq)
 		t_node1 = fetch_min_btree_node(list);
 		assert(t_node1 != NULL);
 #ifdef CONFIG_HUFFMAN_TREE_DEBUG
-		ch1 = ((char_stat_node *)t_node1->data)->ch;
-		freq1 = ((char_stat_node *)t_node1->data)->freq;	
+		ch1 = ((struct char_stat_node *)t_node1->data)->ch;
+		freq1 = ((struct char_stat_node *)t_node1->data)->freq;
 		if (ch1 == -1) {
 			printf("%d(%d),", ch1, freq1);
 		} else {
@@ -194,22 +193,28 @@ struct btree *generate_huffman_tree(int *char_freq)
 		t_node2 = fetch_min_btree_node(list);
 		if (t_node2 == NULL) {
 			if (btree_is_leaf(t_node1)) {
-				t_node = btree_node_gen_parent((void *)cs_node, t_node1, t_node2);
+				sum = ((struct char_stat_node *)t_node1->data)->freq;
+				cs_node = create_char_stat_node(-1, sum);
+				assert(cs_node != NULL);
+
+				t_node = btree_node_gen_parent((void *)cs_node,
+						t_node1, t_node2);
 				assert(t_node != NULL);
 				t_node1 = t_node;
 			}
 			break;
 		}
 #ifdef CONFIG_HUFFMAN_TREE_DEBUG
-		ch2 = ((char_stat_node *)t_node2->data)->ch;
-		freq2 = ((char_stat_node *)t_node2->data)->freq;	
+		ch2 = ((struct char_stat_node *)t_node2->data)->ch;
+		freq2 = ((struct char_stat_node *)t_node2->data)->freq;
 		if (ch2 == -1) {
 			printf("%d(%d)\n", ch2, freq2);
 		} else {
 			printf("%c(%d)\n", ch2, freq2);
 		}
 #endif
-		sum = ((struct char_stat_node *)t_node1->data)->freq + ((struct char_stat_node *)t_node2->data)->freq;	
+		sum = ((struct char_stat_node *)t_node1->data)->freq +
+			((struct char_stat_node *)t_node2->data)->freq;
 		cs_node = create_char_stat_node(-1, sum);
 		assert(cs_node != NULL);
 
@@ -625,63 +630,4 @@ int huffman_decompress(unsigned char *input, unsigned char **output)
 	btree_destroy(tree);
 	
 	return output_len;
-}
-
-void test_basic(void)
-{
-	int i = 0;
-	char *text = "aaaabbbccd";
-	int text_len = strlen(text);
-	unsigned char *output;
-#if 0
-	unsigned char *output = (unsigned char *)mp_malloc(g_mp, __func__,
-			sizeof(unsigned char) * 1024);
-#endif
-	int out_len = huffman_compress((unsigned char *)text, text_len, &output);
-
-	for (i = 0; i < out_len; ++i) {
-		printf("%0x", output[i]);
-	}
-	printf("\n");
-}
-
-void test_file(void)
-{
-	size_t file_size = 0;
-
-	unsigned char *contents = file_get_contents("./dlist.c", &file_size);
-	if (contents == NULL) {
-		printf("get file contents failed!\n");
-		return ;
-	}
-
-#if 0
-	unsigned char *encodes = (unsigned char *)mp_malloc(g_mp,
-			"test_file_encode",CHARSET_SIZE * sizeof(int) + 5 * file_size);
-	if (encodes == NULL) {
-		printf("alloc merroy for encode failed!\n");
-		return ;
-	}
-#endif
-	unsigned char *encodes;
-
-	int encode_len = huffman_compress(contents, file_size, &encodes);
-	printf("compress: file_size: %ld, encode_len: %d\n", file_size, encode_len);
-
-#if 0
-	unsigned char *decodes = (unsigned char *)mp_malloc(g_mp,
-			"test_file_decode", file_size + 1);
-	if (decodes == NULL) {
-		printf("alloc merroy for decode failed!\n");
-		return ;
-	}
-#endif
-	unsigned char *decodes;
-	
-	int decode_len = huffman_decompress(encodes, &decodes);
-	printf("decompress: encode_len: %d, decode_len: %d\n", encode_len, decode_len);
-
-	file_put_contents("./tmp.txt", decodes, (size_t)decode_len);
-
-	return ;	
 }
