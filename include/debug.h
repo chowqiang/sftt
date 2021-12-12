@@ -22,6 +22,34 @@
 #include "autoconf.h"
 #include "utils.h"
 
+#define DBUG_DUMP _db_dump_
+
+#define DBUG_LEAVE do { \
+	_db_stack_frame_.line = __LINE__; \
+	_db_return_(&_db_stack_frame_); \
+	_db_stack_frame_.line = 0; \
+	} while (0)
+
+#define DBUG_ENTER(a) struct _db_stack_frame_ _db_stack_frame_; \
+	_db_enter_(a, __FILE__, __LINE__, &_db_stack_frame_)
+
+#define DBUG_RETURN(a1) do {DBUG_LEAVE; return (a1);} while(0)
+#define DBUG_VOID_RETURN do {DBUG_LEAVE; return;} while(0)
+
+struct _db_stack_frame_ {
+	const char *func;
+	const char *file;
+	int level;
+	int line;
+	struct _db_stack_frame_ *prev;
+};
+
+struct _db_code_state_ {
+	struct _db_stack_frame_ *framep;
+	int level;
+	/* any other variables */
+};
+
 extern int default_debug_level;
 
 enum debug_level {
