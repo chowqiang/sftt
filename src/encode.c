@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "compress.h"
+#include "debug.h"
 #include "encrypt.h"
 #include "encode.h"
 #include "mem_pool.h"
@@ -30,6 +31,8 @@ extern struct mem_pool *g_mp;
 int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 		bool zip, bool crypt)
 {
+	DBUG_ENTER(__func__);
+
 	int output_len = len;
 
 	if (zip) {
@@ -39,19 +42,19 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 			sftt_encrypt_func(*output, output_len);
 		}
 
-		return output_len;
+		DBUG_RETURN(output_len);
 
 	} else if (crypt) {
 		*output = mp_malloc(g_mp, __func__, output_len * sizeof(unsigned char));
 
 		sftt_encrypt_func(*output, output_len);
 
-		return output_len;
+		DBUG_RETURN(output_len);
 	} else {
 		*output = mp_malloc(g_mp, __func__, output_len * sizeof(unsigned char));
 		memcpy(*output, input, output_len);
 
-		return output_len;
+		DBUG_RETURN(output_len);
 	}
 }
 
@@ -61,6 +64,8 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 		bool unzip, bool decrypt)
 {
+	DBUG_ENTER(__func__);
+
 	int output_len = len;
 	unsigned char *tmp;
 
@@ -78,16 +83,16 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 
 		mp_free(g_mp, tmp);
 
-		return output_len;
+		DBUG_RETURN(output_len);
 
 	} else if (unzip) {
 		output_len = huffman_decompress(input, output);
 
-		return output_len;
+		DBUG_RETURN(output_len);
 	} else {
 		*output = mp_malloc(g_mp, __func__, output_len * sizeof(unsigned char));
 		memcpy(*output, input, output_len);
 
-		return output_len;
+		DBUG_RETURN(output_len);
 	}
 }
