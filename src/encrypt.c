@@ -16,44 +16,47 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "debug.h"
 #include "encrypt.h"
 
 void print_bytes(char *aim);
 
 void print_bytes(char *aim)
 {
+	DBUG_ENTER(__func__);
+
 	int len = strlen(aim);
 	int j;
         for (j=0; j < len; j++) {
                 printf("%d ",aim[j]);
         }
         printf("\n");
+
+	DBUG_VOID_RETURN;
 }
 
 unsigned char *sftt_encrypt_func(unsigned char *source , int size)
 {
+	DBUG_ENTER(__func__);
 
-//	print_bytes(source);
-	
 	int i;
 	for(i = 0; i < size; i++){
 		source[i] = source[i] + i + 5;
-		
-	}
-	
-	return source;
 
+	}
+
+	DBUG_RETURN(source);
 }
 
 unsigned char *sftt_decrypt_func(unsigned char *aim, int size)
 {
+	DBUG_ENTER(__func__);
+
 	int i;
 	for(i = 0; i < size; i++ ){
 		aim[i] = aim[i] - i - 5;
-		
+
 	}
 
-//	print_bytes(aim);
-
-	return aim;
+	DBUG_RETURN(aim);
 }
