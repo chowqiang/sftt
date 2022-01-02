@@ -92,8 +92,8 @@ struct logged_in_user *find_logged_in_user(struct sftt_client_v2 *client,
 int file_get_next_buffer(struct file_input_stream *fis,
 	char *buffer, size_t size)
 {
-	int ret = fread(buffer, 1, size, fis->fp);		
-	
+	int ret = fread(buffer, 1, size, fis->fp);
+
 	return ret;
 }
 
@@ -108,7 +108,7 @@ int get_cache_port()
 	FILE *fp = fopen(PORT_CACHE_FILE, "r");
 	if (fp == NULL) {
 		return -1;
-	} 	
+	}
 
 	char str[8];
 	fgets(str, 8, fp);
@@ -135,7 +135,7 @@ void set_cache_port(int port)
 	FILE *fp = fopen(PORT_CACHE_FILE, "w+");
 	if (fp == NULL || port > MAX_PORT_NUM) {
 		return ;
-	}	
+	}
 
 	char str[8];
 	//itoa(port, str);
@@ -157,7 +157,7 @@ struct file_input_stream *create_file_input_stream(char *file_name)
 
 	memset(fis->target, 0, FILE_NAME_MAX_LEN);
 	strcpy(fis->target, file_name);
-	
+
 	if (is_file(fis->target)) {
 		fis->get_next_buffer = file_get_next_buffer;
 	} else if (is_dir(fis->target)) {
@@ -181,17 +181,17 @@ int consult_block_size_with_server(int sock,
 	struct sftt_client_config *client_config)
 {
 	unsigned char buffer[BUFFER_SIZE];
-		
+
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
 	sprintf((char *)buffer, "%d", client_config->block_size);
 	//printf("client block size is : %d\n", client_config.block_size);
 	sftt_encrypt_func(buffer, BUFFER_SIZE);
-	
+
 	int ret = send(sock, buffer, BUFFER_SIZE, 0);
 	if (ret <= 0) {
 		return -1;
 	}
-	
+
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
 	ret = recv(sock, buffer, BUFFER_SIZE, 0);
 	if (ret <= 0) {
@@ -200,7 +200,7 @@ int consult_block_size_with_server(int sock,
 	sftt_decrypt_func(buffer, ret);
 	int consulted_block_size = atoi((char *)buffer);
 	//printf("consulted block size is: %d\n", consulted_block_size);
-	
+
 	return consulted_block_size;
 }
 
@@ -217,14 +217,14 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp)
 	if (ret == -1) {
 		printf("Error. send complete end block failed!\n");
 		return -1;
-	}	
+	}
 
 	return 0;
 }
 
 int find_unfinished_session(struct path_entry *pe, char *ip)
 {
-	return 0;		
+	return 0;
 }
 
 int file_trans_session_diff(struct file_trans_session *old_session,
@@ -419,7 +419,7 @@ static int run_command(struct sftt_client_v2 *client,
 {
 	int ret;
 	bool argv_check = true;
-	
+
 	add_log(LOG_INFO, "running command: %s", cmd->name);
 	ret = cmd->fn(client, argc, argv, &argv_check);
 	if (!argv_check) {
@@ -606,7 +606,7 @@ bool parse_user_name(char *optarg, char *user_name, int max_len)
 	int len = strlen(optarg);
 	if (!(0 < len && len <= max_len )) {
 		return false;
-	}	
+	}
 	strcpy(user_name, optarg);
 
 	return true;
@@ -1283,7 +1283,7 @@ void *do_connect_manager(void *arg)
 
 		sleep(1);
 	}
-	
+
 	return NULL;
 }
 
@@ -1353,7 +1353,7 @@ int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
 	}
 
 	if (start_conn_mgr(client) == -1) {
-		printf("start task connects manager failed!\n");	
+		printf("start task connects manager failed!\n");
 	}
 
 	if (init_friend_list(client) == -1) {

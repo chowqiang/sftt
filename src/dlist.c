@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "debug.h"
 #include "dlist.h"
 #include "mem_pool.h"
 #include "show.h"
@@ -31,31 +32,37 @@ extern struct mem_pool *g_mp;
  */
 struct dlist_node *dlist_node_create(void *data)
 {
+	DBUG_ENTER(__func__);
+
 	struct dlist_node *node = (struct dlist_node *)mp_malloc(g_mp,
 			__func__, sizeof(struct dlist_node));
 	if (node == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
 	node->data = data;
 	node->prev = node->next = NULL;
-	
-	return node;
+
+	DBUG_RETURN(node);
 }
 
 struct dlist *dlist_create(enum free_mode mode)
 {
+	DBUG_ENTER(__func__);
+
 	struct dlist *list = (struct dlist *)mp_malloc(g_mp,
 			__func__, sizeof(struct dlist));
 	dlist_init(list, mode);
 
-	return list;
+	DBUG_RETURN(list);
 }
 
 void dlist_init(struct dlist *list, enum free_mode mode)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 
 	list->size = 0;
@@ -63,12 +70,16 @@ void dlist_init(struct dlist *list, enum free_mode mode)
 	list->show = NULL;
 	list->head = NULL;
 	list->tail = NULL;
+
+	DBUG_VOID_RETURN;
 }
 
 void dlist_destroy(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 
 	struct dlist_node *p = list->head;
@@ -89,17 +100,21 @@ void dlist_destroy(struct dlist *list)
 		mp_free(g_mp, p);
 		p = q;
 	}
+
+	DBUG_VOID_RETURN;
 }
 
 int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || elem == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct dlist_node *node = dlist_node_create(data);
 	if (node == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct dlist_node *next = elem->next;
@@ -109,25 +124,27 @@ int dlist_ins_next(struct dlist *list, struct dlist_node *elem, void *data)
 	}
 	node->prev = elem;
 	elem->next = node;
-	
+
 	list->size += 1;
 
 	if (list->tail == elem) {
 		list->tail = node;
 	}
 
-	return list->size;
+	DBUG_RETURN(list->size);
 }
 
 int dlist_ins_prev(struct dlist *list, struct dlist_node *elem, void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || elem == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
-	
+
 	struct dlist_node *node = dlist_node_create(data);
 	if (node == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct dlist_node *prev = elem->prev;
@@ -143,55 +160,61 @@ int dlist_ins_prev(struct dlist *list, struct dlist_node *elem, void *data)
 	if (list->head == elem) {
 		list->head = node;
 	}
-	
-	return list->size;
+
+	DBUG_RETURN(list->size);
 }
 
 int dlist_prepend(struct dlist *list, void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	if (list->head == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
 		struct dlist_node *node = dlist_node_create(data);
 		if (node == NULL) {
-			return -1;
+			DBUG_RETURN(-1);
 		}
 		list->head = list->tail = node;
 		list->size += 1;
 
-		return list->size;
+		DBUG_RETURN(list->size);
 	}
 
-	return dlist_ins_prev(list, list->head, data);
+	DBUG_RETURN(dlist_ins_prev(list, list->head, data));
 }
 
 int dlist_append(struct dlist *list, void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	if (list->tail == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
 		struct dlist_node *node = dlist_node_create(data);
 		if (node == NULL) {
-			return -1;
+			DBUG_RETURN(-1);
 		}
 		list->head = list->tail = node;
 		list->size += 1;
 
-		return list->size;
+		DBUG_RETURN(list->size);
 	}
 
-	return dlist_ins_next(list, list->tail, data);
+	DBUG_RETURN(dlist_ins_next(list, list->tail, data));
 }
 
 int dlist_remove(struct dlist *list, struct dlist_node *elem,
 	void **data, int need_free)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || elem == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct dlist_node *prev = elem->prev;
@@ -207,7 +230,7 @@ int dlist_remove(struct dlist *list, struct dlist_node *elem,
 		list->head = next;
 	}
 	if (elem == list->tail) {
-		list->tail = prev;	
+		list->tail = prev;
 	}
 
 	if (data) {
@@ -221,104 +244,129 @@ int dlist_remove(struct dlist *list, struct dlist_node *elem,
 
 	list->size -= 1;
 
-	return list->size;
+	DBUG_RETURN(list->size);
 }
 
 int dlist_pop_front(struct dlist *list, void **data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
-		
+
 	if (list->head == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
-
-		return list->size;
+		DBUG_RETURN(list->size);
 	}
-	
-	return dlist_remove(list, list->head, data, 1);
+
+	DBUG_RETURN(dlist_remove(list, list->head, data, 1));
 }
 
 int dlist_pop_back(struct dlist *list, void **data)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	if (list->tail == NULL) {
 		assert(list->head == NULL && list->tail == NULL);
-	
-		return list->size;
+		DBUG_RETURN(list->size);
 	}
 
-	return dlist_remove(list, list->tail, data, 1);
+	DBUG_RETURN(dlist_remove(list, list->tail, data, 1));
 }
 
 int dlist_size(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return 0;
+		DBUG_RETURN(0);
 	}
 
-	return list->size;
+	DBUG_RETURN(list->size);
 }
 
 struct dlist_node *dlist_head(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
-	
-	return list->head;
+
+	DBUG_RETURN(list->head);
 }
 
 struct dlist_node *dlist_tail(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
-	return list->tail;
+	DBUG_RETURN(list->tail);
 }
 
 int dlist_is_head(struct dlist_node *elem)
 {
-	return elem && elem->prev == NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(elem && elem->prev == NULL);
 }
 
 int dlist_is_tail(struct dlist_node *elem)
 {
-	return elem && elem->next == NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(elem && elem->next == NULL);
 }
 
 void *dlist_data(struct dlist_node *elem)
 {
-	return elem ? elem->data : NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(elem ? elem->data : NULL);
 }
 
 struct dlist_node *dlist_next(struct dlist_node *elem)
 {
-	return elem ? elem->next : NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(elem ? elem->next : NULL);
 }
 
 struct dlist_node *dlist_prev(struct dlist_node *elem)
 {
-	return elem ? elem->prev : NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(elem ? elem->prev : NULL);
 }
 
 void dlist_set_show(struct dlist *list, void (*show) (void *data))
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 	list->show = show;
+
+	DBUG_VOID_RETURN;
 }
 
 void dlist_show(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return ;
-	}		
+		DBUG_VOID_RETURN;
+	}
+
 	struct dlist_node *p = list->head;
 	printf("list: ( ");
 	while (p) {
@@ -326,27 +374,33 @@ void dlist_show(struct dlist *list)
 		p = p->next;
 	}
 	printf(" )\n");
+
+	DBUG_VOID_RETURN;
 }
 
 int dlist_empty(struct dlist *list)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL) {
-		return 1;
+		DBUG_RETURN(1);
 	}
 	if (list->size == 0) {
 		assert(list->head == NULL && list->tail == NULL);
-		return 1;
+		DBUG_RETURN(1);
 	}
 
 	assert(list->head != NULL && list->tail != NULL);
 
-	return 0;	
+	DBUG_RETURN(0);
 }
 
 void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc)
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || cmp == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 
 	int size = dlist_size(list);
@@ -370,13 +424,18 @@ void dlist_sort(struct dlist *list, int (*cmp)(void *a, void *b), int asc)
 	list->head = new_head;
 	list->tail = new_tail;
 	list->size = size;
+
+	DBUG_VOID_RETURN;
 }
 
 struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b))
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || cmp == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
+
 	struct dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {
 		if (node == NULL) {
@@ -388,14 +447,17 @@ struct dlist_node *dlist_get_max(struct dlist *list, int (*cmp)(void *a, void *b
 		}
 	}
 
-	return node;
+	DBUG_RETURN(node);
 }
 
 struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b))
 {
+	DBUG_ENTER(__func__);
+
 	if (list == NULL || cmp == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
+
 	struct dlist_node *node = NULL, *p = NULL;
 	dlist_for_each(list, p) {
 		if (node == NULL) {
@@ -407,19 +469,21 @@ struct dlist_node *dlist_get_min(struct dlist *list, int (*cmp)(void *a, void *b
 		}
 	}
 
-	return node;
+	DBUG_RETURN(node);
 }
 
 struct dlist *dlist_merge(struct dlist *list_a, struct dlist *list_b)
 {
+	DBUG_ENTER(__func__);
+
 	if (list_a == NULL && list_b == NULL)
-		return NULL;
+		DBUG_RETURN(NULL);
 
 	if (list_a == NULL || dlist_empty(list_a))
-		return list_b;
+		DBUG_RETURN(list_b);
 
 	if (list_b == NULL || dlist_empty(list_b))
-		return list_a;
+		DBUG_RETURN(list_a);
 
 	list_a->tail->next = list_b->head;
 	list_b->head->prev = list_a->tail;
@@ -428,5 +492,5 @@ struct dlist *dlist_merge(struct dlist *list_a, struct dlist *list_b)
 
 	list_a->size += list_b->size;
 
-	return list_a;
+	DBUG_RETURN(list_a);
 }

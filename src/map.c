@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "debug.h"
 #include "map.h"
 #include "mem_pool.h"
 
