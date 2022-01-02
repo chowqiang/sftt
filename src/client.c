@@ -37,6 +37,7 @@
 #include "config.h"
 #include "context.h"
 #include "client.h"
+#include "debug.h"
 #include "encrypt.h"
 #include "endpoint.h"
 #include "file.h"

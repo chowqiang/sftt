@@ -111,7 +111,7 @@ void server_init_func(struct sftt_server_config *server_config)
 		int ret = mkdir(filepath, MODE);
 		if (ret != 0) {
 			printf(PROC_NAME ": create work dir failed!\n");
-			exit(0);	
+			exit(0);
 		}
 	 }
 
@@ -214,12 +214,12 @@ FILE *server_creat_file(struct sftt_packet *sp,
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
 	strcat(data_buff, (char *)sp->content);
-			
+
 	is_exit(data_buff);
 
 	fd = fopen(data_buff,"w+");
 	if (fd == NULL) {
-		printf("create file received failed: %s\n ",data_buff);	
+		printf("create file received failed: %s\n ",data_buff);
 	}else{
 		printf("create file received: %s\n",data_buff);
 	}
@@ -268,7 +268,7 @@ int server_main_old(void)
 	struct sftt_server_config  init_conf;
 	//init server
 	server_init_func(&init_conf);
-	
+
 	while(1){
 		if( (connect_fd = accept(socket_fd, (struct sockaddr*)NULL,
 			NULL)) == -1) {
@@ -287,7 +287,7 @@ int server_main_old(void)
 		} else {
 			wait(NULL);
 		}
-		
+
 	}
 	close(socket_fd);
 }
@@ -464,7 +464,7 @@ static int validate_user_info(struct client_session *client,
 		DEBUG((DEBUG_INFO, "cannot find user!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
 		return send_validate_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_UVS_NTFD, 0);	
+			       resp, RESP_UVS_NTFD, 0);
 	} else if (strcmp(user_auth->passwd_md5, req->passwd_md5)) {
 		DEBUG((DEBUG_INFO, "passwd not correct!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
@@ -525,6 +525,8 @@ void child_process_exit(int sig)
 int handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct pwd_req *req;
 	struct pwd_resp *resp;
 	struct pwd_resp_data *data;
@@ -540,8 +542,8 @@ int handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet
 
 	DEBUG((DEBUG_INFO, "pwd_req: session_id=%s\n", req->session_id));
 	if (strcmp(req->session_id, client->session_id)) {
-		return send_pwd_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_SESSION_INVALID, 0);
+		DBUG_RETURN(send_pwd_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_SESSION_INVALID, 0));
 	} else {
 		resp->status = RESP_OK;
 		strncpy(data->pwd, client->pwd, DIR_PATH_MAX_LEN);
@@ -554,17 +556,19 @@ int handle_pwd_req(struct client_session *client, struct sftt_packet *req_packet
 	ret = send_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("send pwd response failed!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	DEBUG((DEBUG_INFO, "handle pwd req out\n"));
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct cd_req *req;
 	struct cd_resp *resp;
 	struct cd_resp_data *data;
@@ -589,8 +593,8 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 
 	if (chdir(buf) || getcwd(buf, DIR_PATH_MAX_LEN - 1) == NULL) {
 		DEBUG((DEBUG_INFO, "change directory failed!\n"));
-		return send_cd_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CANNOT_CD, 0);
+		DBUG_RETURN(send_cd_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CANNOT_CD, 0));
 	} else {
 		resp->status = RESP_OK;
 		strncpy(data->pwd, buf, DIR_PATH_MAX_LEN - 1);
@@ -603,17 +607,19 @@ int handle_cd_req(struct client_session *client, struct sftt_packet *req_packet,
 	ret = send_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("send cd response failed!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	DEBUG((DEBUG_INFO, "handle cd req out\n"));
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int send_ll_resp_once(struct client_session *client, struct ll_resp *resp_info,
 	struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 
 	resp_packet->type = PACKET_TYPE_LL_RESP;
@@ -622,15 +628,17 @@ int send_ll_resp_once(struct client_session *client, struct ll_resp *resp_info,
 	ret = send_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("send cd response failed!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 	struct logged_in_user *user;
 	struct peer_session *peer;
@@ -645,15 +653,15 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 	req = req_packet->obj;
 	user = &req->user;
 	if (check_user(user) == -1) {
-		return send_ll_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0);
+		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0));
 	}
 
 	// get or create peer task conn
 	conn = get_peer_task_conn(user);
 	if (conn == NULL) {
-		return send_ll_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_GET_PEER, 0);
+		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_GET_PEER, 0));
 	}
 
 	// send ll req packet to peer task conn
@@ -684,12 +692,14 @@ done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct ll_req *req;
 	struct ll_resp *resp;
 	struct ll_resp_data *data;
@@ -713,7 +723,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 
 	// if the ll req is to peer?
 	if (req->to_peer)
-		return handle_fwd_ll_req(client, req_packet, resp_packet);
+		DBUG_RETURN(handle_fwd_ll_req(client, req_packet, resp_packet));
 
 	if (is_absolute_path(req->path)) {
 		strncpy(path, req->path, DIR_PATH_MAX_LEN - 1);
@@ -729,8 +739,8 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	if (!file_existed(path)) {
 		data->total = -1;
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_ll_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_FILE_NTFD, 0);
+		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
+			       resp, RESP_FILE_NTFD, 0));
 	}
 
 	if (is_file(path)) {
@@ -741,8 +751,8 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 
 		DEBUG((DEBUG_INFO, "list file successfully!\n"));
 
-		return send_ll_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_OK, 0);
+		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_OK, 0));
 	} else if (is_dir(path)) {
 		file_list = get_top_file_list(path);
 		if (file_list == NULL) {
@@ -750,7 +760,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 			send_ll_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_INTERNAL_ERR, 0);
 
-			return -1;
+			DBUG_RETURN(-1);
 		}
 
 		DEBUG((DEBUG_INFO, "list dir ...\n"));
@@ -795,12 +805,14 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 	DEBUG((DEBUG_INFO, "list file successfully!\n"));
 	DEBUG((DEBUG_INFO, "handle ll req out\n"));
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int handle_fwd_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 	struct logged_in_user *user;
 	struct get_req *req;
@@ -817,17 +829,17 @@ int handle_fwd_get_req(struct client_session *client,
 	// check user info
 	user = &req->user;
 	if (check_user(user) == -1) {
-		return send_get_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0);
+		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0));
 	}
 
 	// get or create peer session
 	conn = get_peer_task_conn(user);
-	
+
 	if (conn == NULL) {
 		DEBUG((DEBUG_INFO, "cannot get peer task conn!\n"));
-		return send_get_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_GET_TASK_CONN, 0);
+		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_GET_TASK_CONN, 0));
 	}
 
 	DEBUG((DEBUG_INFO, "get peer task conn|connect_id=%s\n",
@@ -894,13 +906,15 @@ done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 #ifdef CONFIG_GET_OVERLAP
 int handle_get_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct get_req *req;
 	struct get_resp *resp;
 	char path[FILE_NAME_MAX_LEN];
@@ -913,7 +927,7 @@ int handle_get_req(struct client_session *client,
 
 	req = req_packet->obj;
 	if (req->to_peer)
-		return handle_fwd_get_req(client, req_packet, resp_packet);	
+		DBUG_RETURN(handle_fwd_get_req(client, req_packet, resp_packet));
 
 	strncpy(path, req->path, FILE_NAME_MAX_LEN);
 	DEBUG((DEBUG_INFO, "get_req: session_id=%s|path=%s\n",
@@ -921,14 +935,14 @@ int handle_get_req(struct client_session *client,
 
 	if (!is_absolute_path(path)) {
 		DEBUG((DEBUG_INFO, "path not absolute!\n"));
-		return send_get_resp(client->main_conn.sock, resp_packet, resp,
-				RESP_PATH_NOT_ABS, 0);
+		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet, resp,
+				RESP_PATH_NOT_ABS, 0));
 	}
 
 	if (!file_existed(path)) {
 		DEBUG((DEBUG_INFO, "file not existed!\n"));
-		return send_get_resp(client->main_conn.sock, resp_packet, resp,
-				RESP_FILE_NTFD, 0);
+		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet, resp,
+				RESP_FILE_NTFD, 0));
 	}
 
 	ret = send_files_by_get_resp(client->main_conn.sock, path, resp_packet,
@@ -936,7 +950,7 @@ int handle_get_req(struct client_session *client,
 
 	DEBUG((DEBUG_INFO, "handle get req out\n"));
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 #else
 int handle_get_req(struct client_session *client,
@@ -949,6 +963,8 @@ int handle_get_req(struct client_session *client,
 int handle_fwd_put_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 	struct logged_in_user *user;
 	struct peer_session *peer;
@@ -960,22 +976,22 @@ int handle_fwd_put_req(struct client_session *client,
 	resp = mp_malloc(g_mp, __func__, sizeof(put_resp));
 	if (resp == NULL) {
 		DEBUG((DEBUG_INFO, "alloc put_resp failed!\n"));
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	req = req_packet->obj;
 	// check user info
 	user = &req->user;
 	if (check_user(user) == -1) {
-		return send_put_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0);
+		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0));
 	}
 
 	// get or create peer task conn
 	conn = get_peer_task_conn(user);
 	if (conn == NULL) {
-		return send_put_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_CNT_GET_TASK_CONN, 0);	
+		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
+			       resp, RESP_CNT_GET_TASK_CONN, 0));
 	}
 
 #if 0
@@ -1024,12 +1040,14 @@ done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int handle_put_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 	struct put_req *req;
 
@@ -1037,18 +1055,20 @@ int handle_put_req(struct client_session *client,
 
 	req = req_packet->obj;
 	if (req->to_peer)
-		return handle_fwd_put_req(client, req_packet, resp_packet);
+		DBUG_RETURN(handle_fwd_put_req(client, req_packet, resp_packet));
 
 	ret = recv_files_by_put_req(client->main_conn.sock, req_packet);
 
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 int handle_directcmd_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct directcmd_req *req;
 	struct directcmd_resp *resp;
 	struct directcmd_resp_data *data;
@@ -1070,8 +1090,8 @@ int handle_directcmd_req(struct client_session *client,
 	ret = create_temp_file(temp_file, "sfttd_directcmd_");
 	if (ret == -1) {
 		DEBUG((DEBUG_INFO, "cannot create temp file!\n"));
-		return send_directcmd_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_INTERNAL_ERR, 0);
+		DBUG_RETURN(send_directcmd_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_INTERNAL_ERR, 0));
 	}
 
 	snprintf(cmd, sizeof(cmd), "%s > %s", req->cmd, temp_file);
@@ -1081,8 +1101,8 @@ int handle_directcmd_req(struct client_session *client,
 	fp = fopen(temp_file, "rb");
 	if (fp == NULL) {
 		DEBUG((DEBUG_INFO, "open command result file failed!\n"));
-		return send_directcmd_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_INTERNAL_ERR, 0);
+		DBUG_RETURN(send_directcmd_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_INTERNAL_ERR, 0));
 	}
 
 	total_len = 0;
@@ -1091,7 +1111,7 @@ int handle_directcmd_req(struct client_session *client,
 		ret = fread(data->content, 1, CMD_RET_BATCH_LEN - 1, fp);
 		data->this_len = ret;
 		total_len += data->this_len;
-		
+
 		if (total_len < data->total_len)
 			ret = send_directcmd_resp(client->main_conn.sock, resp_packet,
 					resp, RESP_OK, 1);
@@ -1106,12 +1126,14 @@ int handle_directcmd_req(struct client_session *client,
 
 	unlink(temp_file);
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int handle_mp_stat_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct mp_stat_resp *resp;
 	struct mp_stat_resp_data *data;
 	struct mem_pool_stat stat;
@@ -1139,7 +1161,7 @@ int handle_mp_stat_req(struct client_session *client,
 
 	DEBUG((DEBUG_INFO, "handle mempool stat req out\n"));
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 struct logged_in_user *get_logged_in_users(int *count)
@@ -1188,6 +1210,8 @@ done:
 int handle_who_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct who_resp *resp;
 	struct who_resp_data *data;
 	struct logged_in_user *users;
@@ -1200,15 +1224,15 @@ int handle_who_req(struct client_session *client,
 
 	if (resp == NULL) {
 		DEBUG((DEBUG_INFO, "cannot alloc memory for resp!\n"));
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	data = &resp->data;
 
 	users = get_logged_in_users(&total);
 	DEBUG((DEBUG_INFO, "There has %d user(s) logged in\n", total));
 	if (users == NULL || total <= 0) {
-		return send_who_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_INTERNAL_ERR, 0);
+		DBUG_RETURN(send_who_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_INTERNAL_ERR, 0));
 	}
 
 	count = 0;
@@ -1235,7 +1259,7 @@ int handle_who_req(struct client_session *client,
 
 	DEBUG((DEBUG_INFO, "handle who req out ...\n"));
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 int check_user(struct logged_in_user *user)
@@ -1285,7 +1309,7 @@ struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
 			break;
 		}
 	}
-	target_session->tcs_lock->ops->unlock(target_session->tcs_lock);	
+	target_session->tcs_lock->ops->unlock(target_session->tcs_lock);
 
 	return conn;
 }
@@ -1298,6 +1322,8 @@ void put_peer_task_conn(struct client_sock_conn *conn)
 int handle_write_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	int ret;
 	struct write_req *req;
 	struct logged_in_user *user;
@@ -1308,13 +1334,13 @@ int handle_write_req(struct client_session *client,
 	user = &req->user;
 	if (check_user(user) == -1) {
 		printf("user not found!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	conn = get_peer_task_conn(user);
 	if (conn == NULL) {
 		printf("get or create peer session failed!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	ret = send_sftt_packet(conn->sock, req_packet);
@@ -1327,7 +1353,7 @@ done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 struct client_session *find_client_session_by_id(char *session_id)
@@ -1348,6 +1374,8 @@ struct client_session *find_client_session_by_id(char *session_id)
 int handle_append_conn_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct append_conn_req *req;
 	struct client_session *real_session;
 	struct append_conn_resp *resp;
@@ -1364,13 +1392,13 @@ int handle_append_conn_req(struct client_session *client,
 
 	if (req->type != CONN_TYPE_TASK) {
 		DEBUG((DEBUG_INFO, "invalid connect type: %d\n", req->type));
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	real_session = find_client_session_by_id(req->session_id);
 	if (real_session == NULL) {
 		DEBUG((DEBUG_INFO, "invalid session id: %s\n", req->session_id));
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	DEBUG((DEBUG_INFO, "find client session: session_id=%s\n",
 			real_session->session_id));
@@ -1378,14 +1406,14 @@ int handle_append_conn_req(struct client_session *client,
 	resp = mp_malloc(g_mp, "append_conn_resp", sizeof(struct append_conn_resp));
 	if (resp == NULL) {
 		DEBUG((DEBUG_INFO, "alloc append_conn_resp failed!\n"));
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	if (req->type == CONN_TYPE_TASK) {
 		conn = mp_malloc(g_mp, "task_conn", sizeof(struct client_sock_conn));
 		if (conn == NULL) {
 			DEBUG((DEBUG_INFO, "alloc task_conn failed!\n"));
-			return -1;
+			DBUG_RETURN(-1);
 		}
 
 		DEBUG((DEBUG_INFO, "conn=%p\n", conn));
@@ -1412,11 +1440,13 @@ int handle_append_conn_req(struct client_session *client,
 
 	DEBUG((DEBUG_INFO, "handle append_conn req out ...\n"));
 
-	return ret;
+	DBUG_RETURN(ret);
 }
 
 void *handle_client_session(void *args)
 {
+	DBUG_ENTER(__func__);
+
 	struct client_session *client = (struct client_session *)args;
 	int sock = client->main_conn.sock;
 	struct sftt_packet *resp;
@@ -1427,7 +1457,7 @@ void *handle_client_session(void *args)
 	req = malloc_sftt_packet();
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
 	resp = malloc_sftt_packet();
@@ -1497,8 +1527,10 @@ void *handle_client_session(void *args)
 
 exit:
 	put_session(client);
+
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
-	return NULL;
+
+	DBUG_RETURN(NULL);
 }
 
 void sync_server_stat(void)
