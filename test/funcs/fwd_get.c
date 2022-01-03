@@ -15,15 +15,16 @@
  */
 
 /*
- * 1. Generate test dir in server
- * 2. Generate random file and dir in server test dir
+ * 1. Generate test dir in peer
+ * 2. Generate random file and dir in peer test dir
  * 3. Generate test dir in client
  * 4. Start server
- * 5. Start client and read commands from file
- * 6. Client run commands
- * 7. Check file md5 between server random file and client gotten file
- * 8. Check dir between server random dir and client gotten dir
- * 9. Give checked results
+ * 5. Start peer
+ * 6. Start client and read commands from file
+ * 7. Client run commands
+ * 8. Check file md5 between peer random file and client gotten file
+ * 9. Check dir between peer random dir and client gotten dir
+ * 10. Give checked results
  */
 int main(int argc, char *argv[])
 {
