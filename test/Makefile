@@ -8,6 +8,12 @@ BASIC:
 	$(shell if [ ! -d bin ]; then mkdir bin; fi)
 	make -C $(BASIC_DIR) O=../bin
 
+.PHONY: help
+help:
+	@echo "Running tests:"
+	@echo ""
+	@echo " test              - build and run function tests"
+
 .PHONY: clean
 
 clean:
