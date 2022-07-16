@@ -482,15 +482,15 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		DEBUG((DEBUG_DEBUG, "file not changed: %s, skip ...\n", file));
 
 		send_size = total_size;
-		progress = send_size / total_size;
 		now = get_double_time();
 		speed = send_size * 1.0 / (now - start);
-		left_time = (total_size - send_size) / speed;
+		left_time = speed ? (total_size - send_size) / speed : 0;
 
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+		progress = total_size ? send_size / total_size : 1;
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(file),
 				(int)(progress * 100), send_size_info, speed_info, left_time_info);
 
 		stop_progress_viewer(&pv, progress_info);
@@ -530,15 +530,15 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		}
 #endif
 		send_size += req->data.entry.this_size;
-		progress = send_size / total_size;
 		now = get_double_time();
 		speed = send_size * 1.0 / (now - start);
-		left_time = (total_size - send_size) / speed;
+		left_time = speed ? (total_size - send_size) / speed : 0;
 
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		snprintf(progress_info, 128, "%s    %d%% %s %s %s", file,
+		progress = total_size ? send_size / total_size : 1;
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(file),
 				(int)(progress * 100), send_size_info, speed_info,
 				left_time_info);
 		show_progress(&pv, progress_info);
@@ -712,15 +712,15 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
 
 		recv_size = total_size;
-		progress = recv_size / total_size;
 		now = get_double_time();
 		speed = recv_size * 1.0 / (now - start);
-		left_time = (total_size - recv_size) / speed;
+		left_time = speed ? (total_size - recv_size) / speed : 0;
 
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+		progress = total_size ? recv_size / total_size : 1;
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(rp),
 				(int)(progress * 100), recv_size_info, speed_info,
 				left_time_info);
 
@@ -762,15 +762,15 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 
 		recv_size += data->entry.this_size;
-		progress = recv_size / total_size;
 		now = get_double_time();
 		speed = recv_size * 1.0 / (now - start);
-		left_time = (total_size - recv_size) / speed;
+		left_time = speed ? (total_size - recv_size) / speed : 0;
 
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		snprintf(progress_info, 128, "%s    %d%% %s %s %s", rp,
+		progress = total_size ? recv_size / total_size : 1;
+		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(rp),
 				(int)(progress * 100), recv_size_info, speed_info,
 				left_time_info);
 

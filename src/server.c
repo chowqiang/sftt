@@ -839,7 +839,7 @@ int handle_fwd_get_req(struct client_session *client,
 	if (conn == NULL) {
 		DEBUG((DEBUG_INFO, "cannot get peer task conn!\n"));
 		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_GET_TASK_CONN, 0));
+				resp, RESP_PEER_BUSYING, 0));
 	}
 
 	DEBUG((DEBUG_INFO, "get peer task conn|connect_id=%s\n",
@@ -991,7 +991,7 @@ int handle_fwd_put_req(struct client_session *client,
 	conn = get_peer_task_conn(user);
 	if (conn == NULL) {
 		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_CNT_GET_TASK_CONN, 0));
+			       resp, RESP_PEER_BUSYING, 0));
 	}
 
 #if 0
@@ -1291,10 +1291,9 @@ done:
 
 struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
 {
-	struct peer_session *peer = NULL;
-	struct peer_session *pos = NULL;
 	struct client_session *target_session = NULL;
 	struct client_sock_conn *conn = NULL;
+	bool found = false;
 
 	target_session = find_client_session_by_id(user->session_id);
 	if (target_session == NULL) {
@@ -1306,10 +1305,14 @@ struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
 	list_for_each_entry(conn, &target_session->task_conns, list) {
 		if (!conn->is_using) {
 			conn->is_using = true;
+			found = true;
 			break;
 		}
 	}
 	target_session->tcs_lock->ops->unlock(target_session->tcs_lock);
+
+	if (!found)
+		return NULL;
 
 	return conn;
 }

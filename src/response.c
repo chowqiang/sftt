@@ -37,4 +37,5 @@ const char *resp_messages[] = {
 	[RESP_UNKNOWN_FILE_TYPE] = "unknown file type!",
 	[RESP_UNKNOWN_CONN_TYPE] = "unknown connect type!",
 	[RESP_CNT_GET_TASK_CONN] = "cannot get task connect, please try again!",
+	[RESP_PEER_BUSYING] = "peer is busing, cannot serve!"
 };
