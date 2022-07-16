@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "debug.h"
 #include "map.h"
 #include "mem_pool.h"
 
@@ -29,47 +30,53 @@ extern struct mem_pool *g_mp;
  */
 int map_init(struct map *m)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	m->list = dlist_create(FREE_MODE_MP_FREE);
 	if (m->list == NULL) {
 		mp_free(g_mp, m);
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 struct map *map_create(void)
 {
+	DBUG_ENTER(__func__);
+
 	struct map *m = (struct map *)mp_malloc(g_mp, __func__,
 			sizeof(struct map));
 	if (m == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 	m->list = dlist_create(FREE_MODE_MP_FREE);
 	if (m->list == NULL) {
 		mp_free(g_mp, m);
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
-	return m;
+	DBUG_RETURN(m);
 }
 
 int map_add(struct map *m, void *key, void *value)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL) {
 		printf("map object cannot be NULL\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct kv_node *data = (struct kv_node *)mp_malloc(g_mp,
 			__func__, sizeof(struct kv_node));
 	if (data == NULL) {
 		printf("cannot alloc kv_node object\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	data->key = key;
@@ -83,18 +90,20 @@ int map_add(struct map *m, void *key, void *value)
 		if (kvn->key == data->key) {
 			kvn->value = data->value;
 			mp_free(g_mp, data);
-			return 0;
+			DBUG_RETURN(0);
 		}
 	}
 
-	return dlist_append(m->list, (void *)data);
+	DBUG_RETURN(dlist_append(m->list, (void *)data));
 }
 
 int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL) {
 		printf("map object cannot be NULL\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	struct kv_node *kvn = NULL;
 	struct dlist_node *ln = NULL;
@@ -105,45 +114,54 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
 			if (value) {
 				*value = kvn->value;
 			}
-			return 0;
+			DBUG_RETURN(0);
 		}
 	}
 
 	//printf("cannot find elem!\n");
-	return -1;
+	DBUG_RETURN(-1);
 }
 
 int map_remove(struct map *m, void *key, void **value)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	struct kv_node *kvn = NULL;
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
 		if (kvn->key == key) {
-			dlist_remove(m->list, ln, value, 1); 			
-			return 0;
+			dlist_remove(m->list, ln, value, 1);
+			DBUG_RETURN(0);
 		}
 	}
-	return -1;
+
+	DBUG_RETURN(-1);
 }
 
 void map_destroy(struct map *m)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL || m->list == NULL) {
-		return ;
-	} 	
+		DBUG_VOID_RETURN;
+	}
 
 	dlist_destroy(m->list);
 	mp_free(g_mp, m);
+
+	DBUG_VOID_RETURN;
 }
 
 void show_keys(struct map *m)
 {
+	DBUG_ENTER(__func__);
+
 	if (m == NULL)
-		return ;
+		DBUG_VOID_RETURN;
 
 	struct kv_node *kvn = NULL;
 	struct dlist_node *ln = NULL;
@@ -153,4 +171,6 @@ void show_keys(struct map *m)
 		printf(" %s", (char *)kvn->key);
 	}
 	printf("\n");
+
+	DBUG_VOID_RETURN;
 }

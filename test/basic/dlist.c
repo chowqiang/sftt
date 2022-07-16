@@ -42,8 +42,11 @@ int dlist_test(void) {
 	size = dlist_append(&list, (void *)5);
 	size = dlist_ins_next(&list, dlist_tail(&list), (void *)2);
 	size = dlist_ins_prev(&list, dlist_tail(&list), (void *)7);
+
+	dlist_destroy(&list);
 	printf("%d, %d\n", size, dlist_size(&list));
 	dlist_show(&list);
+	return 0;
 
 	dlist_sort(&list, cmp_int, 1);
 	dlist_show(&list);
@@ -66,6 +69,7 @@ int main(int argc, char *argv[])
 	//printf("test file: %s\n", __FILE__);
 	//show_argv(argc, argv);
 	//struct dlist *list = dlist_create(FREE_MODE_NOTHING);
+	dlist_test();
 
 	return -1;
 }

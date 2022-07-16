@@ -4,6 +4,8 @@
 
 #define THREAD_NUM 4
 
+pthread_key_t key;
+
 struct thread_context {
 	int idx;
 };
@@ -24,6 +26,29 @@ void *task(void *arg)
 	return NULL;
 }
 
+void general_routine(void)
+{
+	struct thread_context *ctx;
+
+	ctx = (struct thread_context *)pthread_getspecific(key);
+
+	printf("id: %d\n", ctx->idx);
+}
+
+void *task2(void *arg)
+{
+	pthread_setspecific(key, arg);
+
+	general_routine();
+
+	return NULL;
+}
+
+int pthread_dummy(int ret)
+{
+	return ret;
+}
+
 void test_pthread_fault(void)
 {
 	int i;
@@ -31,9 +56,10 @@ void test_pthread_fault(void)
 	pthread_t pids[THREAD_NUM];
 	struct thread_context ctxs[THREAD_NUM];
 
+	pthread_key_create(&key, NULL);
 	for (i = 0; i < THREAD_NUM; ++i) {
 		ctxs[i].idx = i;
-		pthread_create(&pids[i], NULL, task, &ctxs[i]);
+		pthread_create(&pids[i], NULL, task2, &ctxs[i]);
 	}
 
 	for (i = 0; i < THREAD_NUM; ++i) {

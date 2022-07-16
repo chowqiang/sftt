@@ -14,9 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <pthread.h>
+#include <stdlib.h>
 #include "debug.h"
 
 int default_debug_level = DEBUG_WARN;
+
+pthread_key_t dbug_key;
 
 void set_client_debug_level(int verbose)
 {
@@ -40,4 +45,89 @@ void set_server_debug_level(int verbose)
 	} else {
 		default_debug_level = DEBUG_INFO;
 	}
+}
+
+static void _dbug_init_key(void)
+{
+	struct _db_code_state_ *cs;
+	int ret = 0;
+
+	cs = (struct _db_code_state_ *)malloc(sizeof(struct _db_code_state_));
+	cs->framep = NULL;
+	cs->level = 0;
+
+	ret = pthread_setspecific(dbug_key, cs);
+	if (ret)
+		perror("pthread set specific failed");
+
+}
+
+static struct _db_code_state_ *_dbug_get_code_state(void)
+{
+	struct _db_code_state_ *cs;
+
+	cs = pthread_getspecific(dbug_key);
+	if (cs)
+		return cs;
+
+	_dbug_init_key();
+
+	return pthread_getspecific(dbug_key);
+}
+
+static void _dbug_make_key(void)
+{
+	pthread_key_create(&dbug_key, NULL);
+}
+
+void _db_enter_(const char *_func_, const char *_file_,
+		int _line_, struct _db_stack_frame_ *_stack_frame_)
+{
+	struct _db_code_state_ *cs;
+
+	cs = _dbug_get_code_state();
+	assert(cs != NULL);
+
+	_stack_frame_->func = _func_;
+	_stack_frame_->file = _file_;
+	_stack_frame_->line = _line_;
+
+	_stack_frame_->level = ++cs->level;
+	_stack_frame_->prev = cs->framep;
+	cs->framep = _stack_frame_;
+}
+
+void _db_return_(struct _db_stack_frame_ *_stack_frame_)
+{
+	struct _db_code_state_ *cs;
+
+	cs = _dbug_get_code_state();
+	assert(cs != NULL);
+
+	assert(cs->framep != NULL);
+
+	cs->framep = cs->framep->prev;
+}
+
+void _db_dump_(void)
+{
+	struct _db_stack_frame_ *_stack_frame_;
+	struct _db_code_state_ *cs;
+
+	cs = _dbug_get_code_state();
+	assert(cs != NULL);
+
+	_stack_frame_ = cs->framep;
+	while (_stack_frame_) {
+		printf("#%d %s() at %s:%d\n", _stack_frame_->level,
+				_stack_frame_->func, _stack_frame_->file,
+				_stack_frame_->line);
+		_stack_frame_ = _stack_frame_->prev;
+	}
+}
+
+static void __attribute__((constructor)) dbug_key_init(void)
+{
+	_dbug_make_key();
+	DEBUG((DEBUG_INFO, "dbug key init done!\n"));
 }

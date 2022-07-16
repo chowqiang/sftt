@@ -19,6 +19,9 @@ TEST=test
 XDR=xdr
 CONFIG=config
 
+OS_BIN_DIR=/usr/bin
+OS_LIB_DIR=/usr/lib64
+
 CFLAGS=-g -Wall -Wno-unused-variable -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3 -lreadline
 
 UNAME_S := $(shell uname -s)
@@ -68,6 +71,22 @@ basictest: $(TEST)
 
 ECHO:
 	@echo $(LIB_NAME) $(SERVER_BIN) $(CLIENT_BIN) $(TEST) $(XDR)
+
+.PHONY: help
+help:
+	@echo "Make Targets:"
+	@echo " install           - install binaries on this system"
+	@echo " test              - run all test cases"
+	@echo " test-help         - show help on test"
+
+.PHONY: test-help
+test-help:
+	@make -C test help
+
+install: all
+	@cp $(SERVER_DIR)/$(SERVER_BIN) $(OS_BIN_DIR)
+	@cp $(CLIENT_DIR)/$(CLIENT_BIN) $(OS_BIN_DIR)
+	@cp $(LIB_DIR)/$(LIB_NAME) $(OS_LIB_DIR)
 
 .PHONY: clean
 

@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "btree.h"
+#include "debug.h"
 #include "mem_pool.h"
 #include "queue.h"
 #include "destroy.h"
@@ -26,54 +27,68 @@ extern struct mem_pool *g_mp;
 
 struct btree_node *btree_node_create(void *data)
 {
+	DBUG_ENTER(__func__);
+
 	struct btree_node *node = (struct btree_node *)mp_malloc(g_mp,
 		__func__, sizeof(struct btree_node));
 	if (node == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
 	node->data = data;
 	node->left = node->right = NULL;
 
-	return node;
+	DBUG_RETURN(node);
 }
 
 struct btree *btree_create(enum free_mode mode)
 {
+	DBUG_ENTER(__func__);
+
 	struct btree *tree = (struct btree *)mp_malloc(g_mp,
 		__func__, sizeof(struct btree));
 	if (tree == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 	btree_init(tree, mode);
-		
-	return tree;	
+
+	DBUG_RETURN(tree);
 }
 
 void btree_init(struct btree *tree, enum free_mode mode)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 	tree->size = 0;
 	tree->free_mode = mode;
 	tree->root = NULL;
+
+	DBUG_VOID_RETURN;
 }
 
 void btree_set_root(struct btree *tree, struct btree_node *root)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 	tree->root = root;
 	tree->size = btree_node_count(root);
+
+	DBUG_VOID_RETURN;
 }
 
 int btree_node_destroy(struct btree_node *node,
 	enum free_mode mode)
 {
+	DBUG_ENTER(__func__);
+
 	if (node == NULL) {
-		return 0;
+		DBUG_RETURN(0);
 	}
 	int left_cnt = btree_node_destroy(node->left, mode);
 	int right_cnt = btree_node_destroy(node->right, mode);
@@ -91,27 +106,33 @@ int btree_node_destroy(struct btree_node *node,
 	}
 	mp_free(g_mp, node);
 
-	return left_cnt + right_cnt + 1;
+	DBUG_RETURN(left_cnt + right_cnt + 1);
 }
 
 void btree_destroy(struct btree *tree)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 	btree_node_destroy(tree->root, tree->free_mode);
 	tree->size = 0;
 	tree->root = NULL;
+
+	DBUG_VOID_RETURN;
 }
 
 int btree_ins_left(struct btree *tree, struct btree_node *node, void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	struct btree_node *new_node = btree_node_create(data);
 	if (new_node == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	if (node == NULL && btree_is_empty(tree)) {
@@ -120,28 +141,32 @@ int btree_ins_left(struct btree *tree, struct btree_node *node, void *data)
 		new_node->left = node->left;
 		node->left = new_node;
 	}
-	tree->size += 1;	
+	tree->size += 1;
 
-	return tree->size;
+	DBUG_RETURN(tree->size);
 }
 
 int btree_is_empty(struct btree *tree)
 {
-	return tree == NULL ? 1 : tree->root == NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(tree == NULL ? 1 : tree->root == NULL);
 }
 
 int btree_ins_right(struct btree *tree, struct btree_node *node,
 	void *data)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	struct btree_node *new_node = btree_node_create(data);
 	if (new_node == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
-	
+
 	if (node == NULL && btree_is_empty(tree)) {
 		tree->root = new_node;
 	} else {
@@ -150,75 +175,92 @@ int btree_ins_right(struct btree *tree, struct btree_node *node,
 	}
 	tree->size += 1;
 
-	return tree->size;
+	DBUG_RETURN(tree->size);
 }
 
 int btree_rm_left(struct btree *tree, struct btree_node *node)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL || node == NULL) {
-		return -1;	
+		DBUG_RETURN(-1);
 	}
+
 	int del_cnt = btree_node_destroy(node->left, tree->free_mode);
 	assert(del_cnt < tree->size);
 	tree->size -= del_cnt;
-	
-	return tree->size;
+
+	DBUG_RETURN(tree->size);
 }
 
 int btree_rm_right(struct btree *tree, struct btree_node *node)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL || node == NULL) {
-		return -1;
+		DBUG_RETURN(-1);
 	}
 	int del_cnt = btree_node_destroy(node->right, tree->free_mode);
 	assert(del_cnt < tree->size);
 	tree->size -= del_cnt;
-	
-	return tree->size;
+
+	DBUG_RETURN(tree->size);
 }
 
 int btree_size(struct btree *tree)
 {
-	return tree == NULL ? 0 : tree->size;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(tree == NULL ? 0 : tree->size);
 }
 
 struct btree_node *btree_root(struct btree *tree)
 {
-	return tree == NULL ? NULL : tree->root;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(tree == NULL ? NULL : tree->root);
 }
 
 int btree_is_leaf(struct btree_node *node)
 {
-	return node == NULL ? 0 : node->left == NULL && node->right == NULL;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(node == NULL ? 0 : node->left == NULL && node->right == NULL);
 }
 
 struct btree_node *btree_node_gen_parent(void *data, struct btree_node *left,
 	struct btree_node *right)
 {
+	DBUG_ENTER(__func__);
+
 	struct btree_node *parent = btree_node_create(data);
 	if (parent == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 	parent->left = left;
 	parent->right = right;
 
-	return parent;
+	DBUG_RETURN(parent);
 }
 
 void *btree_data(struct btree_node *node)
 {
-	return node == NULL ? NULL : node->data;
+	DBUG_ENTER(__func__);
+
+	DBUG_RETURN(node == NULL ? NULL : node->data);
 }
 
 struct dlist *btree_bfs(struct btree *tree)
 {
+	DBUG_ENTER(__func__);
+
 	if (tree == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
 	struct dlist *list = dlist_create(FREE_MODE_NOTHING);
 	if (list == NULL) {
-		return NULL;
+		DBUG_RETURN(NULL);
 	}
 
 	struct btree_node *node = NULL;
@@ -238,20 +280,24 @@ struct dlist *btree_bfs(struct btree *tree)
 
 	queue_destroy(q);
 
-	return list;
+	DBUG_RETURN(list);
 }
 
 int btree_node_count(struct btree_node *node)
 {
+	DBUG_ENTER(__func__);
+
 	if (node == NULL) {
-		return 0;
+		DBUG_RETURN(0);
 	} else {
-		return btree_node_count(node->left) + btree_node_count(node->right) + 1;
+		DBUG_RETURN(btree_node_count(node->left) + btree_node_count(node->right) + 1);
 	}
 }
 
 int btree_test(void)
 {
+	DBUG_ENTER(__func__);
+
 	struct btree tree;
 	btree_init(&tree, FREE_MODE_NOTHING);
 
@@ -260,9 +306,9 @@ int btree_test(void)
 	btree_ins_left(&tree, root, (void *) 2);
 	btree_ins_right(&tree, root, (void *) 2);
 	printf("%d\n", btree_size(&tree));
-	
+
 	btree_destroy(&tree);
 	printf("%d\n", btree_size(&tree));
-	
-	return 0;	
+
+	DBUG_RETURN(0);
 }
