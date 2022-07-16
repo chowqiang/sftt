@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	}
 
 	memset(store_path, 0, sizeof(store_path));
-	while ((ch = getopt(argc, argv, "s:d:v")) != -1) {
+	while ((ch = getopt(argc, argv, "s:dv")) != -1) {
 		switch (ch) {
 		case 's':
 			strncpy(store_path, optarg, sizeof(store_path) - 1);
