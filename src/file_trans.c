@@ -902,6 +902,7 @@ int recv_file_by_put_req(int fd, struct sftt_packet *req_packet,
 	DEBUG((DEBUG_INFO, "received put req|file=%s\n", rp));
 	if (req->data.entry.type == FILE_TYPE_DIR) {
 		if (!file_existed(rp)) {
+			// FIXME: care about the ret
 			ret = mkdirp(rp, req->data.entry.mode);
 		}
 
