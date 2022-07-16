@@ -88,7 +88,7 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 
 	ret = send(sock, buffer, encoded_len, 0);
 	if (ret != encoded_len) {
-		printf("send header failed! %s\n", strerror(errno));
+		DEBUG((DEBUG_INFO, "send header failed! %s\n", strerror(errno)));
 	}
 	assert(ret == encoded_len);
 
@@ -177,7 +177,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 		sp->data_len);
 
 	if (!sftt_packet_serialize(sp)) {
-		printf("sftt packet serialize failed!\n");
+		DEBUG((DEBUG_INFO, "sftt packet serialize failed!\n"));
 		DBUG_RETURN(-1);
 	}
 	add_log(LOG_INFO, "%s: after serialize, packet data_len=%d", __func__,
@@ -185,7 +185,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 
 	_sp = malloc_sftt_packet();
 	if (_sp == NULL) {
-		printf("%s:%d, malloc sftt packet failed!\n", __func__, __LINE__);
+		DEBUG((DEBUG_INFO, "%s:%d, malloc sftt packet failed!\n", __func__, __LINE__));
 		DBUG_RETURN(-1);
 	}
 
@@ -283,8 +283,8 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 
 	ret = recv(sock, sp->content, sp->data_len, 0 | MSG_WAITALL);
 	if (ret != sp->data_len) {
-		printf("%s: receive result not equal to data len, ret=%d, data_len=%d\n",
-			__func__, ret, sp->data_len);
+		DEBUG((DEBUG_INFO, "%s: receive result not equal to data len, ret=%d, data_len=%d\n",
+			__func__, ret, sp->data_len));
 		if (ret == 0) {
 			DBUG_RETURN(ret);
 		}
@@ -315,7 +315,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	ret = sftt_packet_recv_header(sock, _sp);
 	if (!(ret > 0)) {
 		DEBUG((DEBUG_WARN, "%s: recv header failed!\n", __func__));
-		DBUG_RETURN(ret);
+		DBUG_RETURN(-1);
 	}
 
 	recv_len += ret;
@@ -323,8 +323,8 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: before receive content", __func__);
 	ret = sftt_packet_recv_content(sock, _sp);
 	if (!(ret > 0)) {
-		printf("%s: recv content failed!\n", __func__);
-		DBUG_RETURN(ret);
+		DEBUG((DEBUG_WARN, "%s: recv header failed!\n", __func__));
+		DBUG_RETURN(-1);
 	}
 
 	recv_len += ret;
@@ -338,7 +338,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {
-		printf("%s: recv deserialize failed!\n", __func__);
+		DEBUG((DEBUG_INFO, "%s: recv deserialize failed!\n", __func__));
 	}
 
 	free_sftt_packet(&_sp);

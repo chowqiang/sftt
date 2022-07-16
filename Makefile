@@ -84,9 +84,9 @@ test-help:
 	@make -C test help
 
 install: all
-	@cp $(SERVER_DIR)/$(SERVER_BIN) $(OS_BIN_DIR)
-	@cp $(CLIENT_DIR)/$(CLIENT_BIN) $(OS_BIN_DIR)
-	@cp $(LIB_DIR)/$(LIB_NAME) $(OS_LIB_DIR)
+	@cp -f $(SERVER_DIR)/$(SERVER_BIN) $(OS_BIN_DIR)
+	@cp -f $(CLIENT_DIR)/$(CLIENT_BIN) $(OS_BIN_DIR)
+	@cp -f $(LIB_DIR)/$(LIB_NAME) $(OS_LIB_DIR)
 
 .PHONY: clean
 
