@@ -997,17 +997,6 @@ int handle_fwd_put_req(struct client_session *client,
 			       resp, RESP_PEER_BUSYING, 0));
 	}
 
-#if 0
-	// send put req packet to peer task conn
-	ret = send_sftt_packet(conn->sock, req_packet);
-	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
-		ret = send_put_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_SEND_PEER_ERR, 0);
-		goto done;
-	}
-#endif
-
 	do {
 		// send put req packet to peer task conn
 		ret = send_sftt_packet(conn->sock, req_packet);
@@ -1717,12 +1706,6 @@ int init_sftt_server(char *store_path)
 		printf("cannot get sfttd version info!\n");
 		return -1;
 	}
-
-#if 0
-	server->ver.major = 0;
-	server->ver.minor = 1;
-	server->ver.revision = 0;
-#endif
 
 	if (get_sftt_server_config(&(server->conf)) == -1) {
 		printf("cannot get sfttd config!\n");
