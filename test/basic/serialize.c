@@ -45,7 +45,7 @@ void test_validate_req(void)
 	ret = validate_req_encode(req_info, &buf, &len);
 	printf("encode ret = %d, buf = %p, len = %d\n", ret, buf, len);
 
-	
+
 	ret = validate_req_decode(buf, len, (void *)&req_info2);
 	printf("decode ret = %d\n", ret);
 	printf("name: %s, passwd: %s\n", req_info2->name, req_info2->passwd_md5);
@@ -78,7 +78,7 @@ void test_validate_resp(void)
 	ret = validate_resp_encode(resp_info, &buf, &len);
 	printf("encode ret = %d, buf = %p, len = %d\n", ret, buf, len);
 
-	
+
 	ret = validate_resp_decode(buf, len, (void *)&resp_info2);
 	printf("decode ret = %d\n", ret);
 	data2 = &resp_info2->data;
@@ -91,16 +91,19 @@ void test_validate_resp(void)
 	//printf("%c\n", 0x72);
 }
 
-#if 0
 void test_ll_resp(void)
 {
 	struct ll_resp resp = {
-		3,
-		{{1, 1, "a.txt", 1, 10, 20210606, 20210605, 20210604},
-		 {"b.txt", 1, 10, 20210603, 20210602, 20210601},
-		 {"src", 2, 10, 20210503, 20210502, 20210501},
+		.status = 0,
+		.next = 1,
+		.message = "message",
+		.data = {
+			.total = 10,
+			.this_nr = 3,
+			.entries[0] = {"a.txt", 0, 1, 10, 20210606, 20210605, 20210604},
+			.entries[1] = {"b.txt", 0, 1, 10, 20210606, 20210605, 20210604},
+			.entries[2] = {"src", 0, 2, 10, 20210606, 20210605, 20210604},
 		},
-		2
 	};
 	struct ll_resp *_resp = NULL;
 
@@ -112,11 +115,11 @@ void test_ll_resp(void)
 	printf("ll resp encode: ret=%d, len=%d\n", ret, len);
 
 	ret = ll_resp_decode(buf, len, (void **)&_resp);
-	printf("ll resp decode: ret=%d, nr=%d, idx=%d\n", ret, _resp->nr, _resp->idx);
-	printf("file list: %s, %s, %s\n", _resp->entries[0].name, _resp->entries[1].name,
-			_resp->entries[2].name);
+	printf("ll resp decode: ret=%d, total=%d, this_nr=%d\n",
+		ret, _resp->data.total, _resp->data.this_nr);
+	printf("file list: %s, %s, %s\n", _resp->data.entries[0].name,
+		_resp->data.entries[1].name, _resp->data.entries[2].name);
 }
-#endif
 
 void test_ll_req(void)
 {
@@ -138,36 +141,12 @@ void test_ll_req(void)
 	printf("ll req decode: ret=%d, path=%s\n", ret, _req->path);
 }
 
-#if 0
-void test_ll_resp_v2(void)
-{
-	struct ll_resp resp = {
-		3,
-		{{"a.txt", 1, 12, 0, 0, 0},
-		{"b.txt", 1, 24, 0, 0, 0},
-		{"c.txt", 1, 36, 0, 0, 0}},
-		-1
-	};
-	struct ll_resp *_resp = NULL;
-
-	bool ret = 0;
-	int len = 0;
-	unsigned char *buf = NULL;
-
-	ret = ll_resp_encode(&resp, &buf, &len);
-	printf("ll resp encode: ret=%d, len=%d\n", ret, len);
-
-	ret = ll_resp_decode(buf, len, (void **)&_resp);
-	printf("ll resp decode: ret=%d, nr=%d, idx=%d\n", ret, _resp->nr, _resp->idx);
-}
-#endif
-
 int main(void)
 {
 	test_validate_req();
 	test_validate_resp();
 	test_ll_req();
-	//test_ll_resp_v2();
+	test_ll_resp();
 
 	return 0;
 }

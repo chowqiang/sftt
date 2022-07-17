@@ -87,7 +87,7 @@ int consult_block_size_with_server(int sock,
 
 int send_complete_end_packet(int sock, struct sftt_packet *sp);
 
-struct logged_in_user *find_logged_in_user(struct sftt_client_v2 *client,
+struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no);
 
 int file_get_next_buffer(struct file_input_stream *fis,
@@ -415,7 +415,7 @@ struct user_cmd *parse_command(char *buf)
 	return cmd;
 }
 
-static int run_command(struct sftt_client_v2 *client,
+static int run_command(struct sftt_client *client,
 	const struct cmd_handler *cmd, int argc, char *argv[])
 {
 	int ret;
@@ -450,7 +450,7 @@ void add_cmd_log(struct user_cmd *cmd)
 	mp_free(g_mp, buf);
 }
 
-int execute_directcmd(struct sftt_client_v2 *client, char *buf)
+int execute_directcmd(struct sftt_client *client, char *buf)
 {
 	struct sftt_packet *req_packet = NULL;
 	struct sftt_packet *resp_packet = NULL;
@@ -556,7 +556,7 @@ bool among_directcmds(char *name)
 	return false;
 }
 
-int execute_cmd(struct sftt_client_v2 *client, char *buf, int flag)
+int execute_cmd(struct sftt_client *client, char *buf, int flag)
 {
 	int i = 0, ret = 0;
 	bool found = false;
@@ -643,7 +643,7 @@ void client_usage_help(int exitcode)
 	exit(exitcode);
 }
 
-static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
+static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 {
 	if (port == -1) {
 		port = get_random_port();
@@ -662,7 +662,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client_v2 *client, int port)
 	return 0;
 }
 
-static int validate_user_base_info(struct sftt_client_v2 *client, char *passwd)
+static int validate_user_base_info(struct sftt_client *client, char *passwd)
 {
 	struct sftt_packet *req_packet = NULL;
 	struct sftt_packet *resp_packet = NULL;
@@ -769,7 +769,7 @@ done:
 	return ret;
 }
 
-static int init_sftt_client_session(struct sftt_client_v2 *client)
+static int init_sftt_client_session(struct sftt_client *client)
 {
 	return 0;
 }
@@ -997,7 +997,7 @@ void clean_task(struct peer_task_handler *handler)
 
 }
 
-int get_friend_list(struct sftt_client_v2 *client)
+int get_friend_list(struct sftt_client *client)
 {
 	struct sftt_packet *req_packet, *resp_packet;
 	struct who_req *req_info;
@@ -1080,7 +1080,7 @@ int get_friend_list(struct sftt_client_v2 *client)
 	return 0;
 }
 
-void clear_friend_list(struct sftt_client_v2 *client)
+void clear_friend_list(struct sftt_client *client)
 {
 	struct friend_user *p, *q;
 
@@ -1090,7 +1090,7 @@ void clear_friend_list(struct sftt_client_v2 *client)
 	}
 }
 
-int init_friend_list(struct sftt_client_v2 *client)
+int init_friend_list(struct sftt_client *client)
 {
 	INIT_LIST_HEAD(&client->friends);
 
@@ -1158,7 +1158,7 @@ exit:
 	return NULL;
 }
 
-int start_task_handler(struct sftt_client_v2 *client, struct client_sock_conn *conn)
+int start_task_handler(struct sftt_client *client, struct client_sock_conn *conn)
 {
 	int ret;
 
@@ -1171,7 +1171,7 @@ int start_task_handler(struct sftt_client_v2 *client, struct client_sock_conn *c
 	return 0;
 }
 
-int add_task_connect(struct sftt_client_v2 *client)
+int add_task_connect(struct sftt_client *client)
 {
 	int port;
 	struct client_sock_conn *conn;
@@ -1258,7 +1258,7 @@ int add_task_connect(struct sftt_client_v2 *client)
 void *do_connect_manager(void *arg)
 {
 	int idle_conns = 0;
-	struct sftt_client_v2 *client = arg;
+	struct sftt_client *client = arg;
 	struct client_sock_conn *conn;
 	int conns = 0;
 	int ret;
@@ -1288,7 +1288,7 @@ void *do_connect_manager(void *arg)
 	return NULL;
 }
 
-int start_conn_mgr(struct sftt_client_v2 *client)
+int start_conn_mgr(struct sftt_client *client)
 {
 	int ret;
 
@@ -1310,7 +1310,7 @@ int start_conn_mgr(struct sftt_client_v2 *client)
 	return 0;
 }
 
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
+int init_sftt_client(struct sftt_client *client, char *host, int port,
 	char *user, char *passwd)
 {
 	/*
@@ -1390,7 +1390,7 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct ll_req *req_info;
 	struct ll_resp *resp_info;
 	struct ll_resp_data *data;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct dlist *fe_list;
 	struct file_entry *entry;
 	struct dlist_node *node;
@@ -1569,7 +1569,7 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct sftt_packet *req_packet, *resp_packet;
 	struct cd_req *req_info;
 	struct cd_resp *resp_info;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct cd_resp_data *data;
 
 	if (argc != 1 || strlen(argv[0]) == 0) {
@@ -1641,7 +1641,7 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct sftt_packet *req_packet, *resp_packet;
 	struct pwd_req *req_info;
 	struct pwd_resp *resp_info;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct pwd_resp_data *data;
 
 	req_packet = malloc_sftt_packet();
@@ -1700,7 +1700,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct get_req *req;
 	struct sftt_packet *req_packet;
 	struct sftt_packet *resp_packet;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	int ret, user_no;
 	char *target = NULL;
 	char *path = NULL;
@@ -1791,7 +1791,7 @@ void sftt_client_get_usage(void)
 
 int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	FILE *fp;
 	int i = 0, ret;
 	struct dlist *file_list;
@@ -1913,7 +1913,7 @@ void sftt_client_directcmd_usage(void)
 int sftt_client_directcmd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
 	int i = 0;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 
 	if (argc != 1) {
 		sftt_client_directcmd_usage();
@@ -1941,7 +1941,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct sftt_packet *req_packet, *resp_packet;
 	struct mp_stat_req *req_info;
 	struct mp_stat_resp *resp_info;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct mem_pool_stat stat;
 	struct mp_stat_resp_data *data;
 
@@ -2022,7 +2022,7 @@ void sftt_client_write_usage(void)
 	printf("Usage: write user_no \"message\"\n");
 }
 
-struct logged_in_user *find_logged_in_user(struct sftt_client_v2 *client,
+struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no)
 {
 	struct friend_user *p;
@@ -2041,7 +2041,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	struct sftt_packet *req_packet, *resp_packet;
 	struct write_req *req_info;
 	struct write_resp *resp_info;
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct logged_in_user *user;
 	int user_no;
 
@@ -2112,48 +2112,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	return 0;
 }
 
-
-/* Read and execute commands until user inputs 'quit' command */
-int reader_loop(struct sftt_client_v2 *client)
-{
-	int start;
-	struct cmd_line cmd;
-	struct dlist_node *last = NULL, *next = NULL;
-	his_cmds = dlist_create(FREE_MODE_FREE);
-
-	start = 0;
-	cmd.buf[0] = 0;
-	while (1) {
-		get_user_command("sftt>> ", &cmd, start);
-		if (cmd.type == CMD_LINE_ARROW) {
-			if (cmd.buf[0] == 'A') { // code for arrow up
-				next = dlist_prev(last);
-			} else if (cmd.buf[0] == 'B') { // code for arrow down
-				next = dlist_next(last);
-			}
-			if (last && last->data) {
-				strcpy(cmd.buf, last->data);
-				start = strlen(last->data);
-			} else {
-				cmd.buf[0] = 0;
-				start = 0;
-			}
-			last = next;
-			continue;
-		}
-		if (!strcmp(cmd.buf, "quit")) {
-			exit(0);
-		} else {
-			dlist_append(his_cmds, __strdup(cmd.buf));
-			last = dlist_tail(his_cmds);
-			execute_cmd(client, cmd.buf, -1);
-			start = 0;
-			cmd.buf[0] = 0;
-		}
-	}
-}
-
-void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
+void get_prompt(struct sftt_client *client, char *prompt, int len)
 {
 	char sub_path[DIR_PATH_MAX_LEN];
 	char *pos;
@@ -2169,7 +2128,7 @@ void get_prompt(struct sftt_client_v2 *client, char *prompt, int len)
 			client->host, sub_path);
 }
 
-int reader_loop2(struct sftt_client_v2 *client)
+int reader_loop(struct sftt_client *client)
 {
 	char cmd[CMD_MAX_LEN];
 	char prompt[PROMPT_MAX_LEN];
@@ -2307,7 +2266,7 @@ int try_fetch_trans_info(char *arg1, char *arg2, char *user_name,
 	return 0;
 }
 
-int do_trans(struct sftt_client_v2 *client, struct trans_info *trans)
+int do_trans(struct sftt_client *client, struct trans_info *trans)
 {
 	char *args[2];
 	bool argv_check = true;
@@ -2331,7 +2290,7 @@ int do_trans(struct sftt_client_v2 *client, struct trans_info *trans)
 	}
 }
 
-int execute_multi_cmds(struct sftt_client_v2 *client, char *buf)
+int execute_multi_cmds(struct sftt_client *client, char *buf)
 {
 	char cmd[CMD_MAX_LEN];
 	char *p;
@@ -2351,7 +2310,7 @@ int execute_multi_cmds(struct sftt_client_v2 *client, char *buf)
 	return 0;
 }
 
-int do_builtin(struct sftt_client_v2 *client, char *builtin)
+int do_builtin(struct sftt_client *client, char *builtin)
 {
 	int i = 0;
 	char buf[10 * CMD_MAX_LEN];
@@ -2372,7 +2331,7 @@ int do_builtin(struct sftt_client_v2 *client, char *builtin)
 int sftt_client_who_handler(void *obj, int argc, char *argv[],
 		bool *argv_check)
 {
-	struct sftt_client_v2 *client = obj;
+	struct sftt_client *client = obj;
 	struct friend_user *p;
 	int i = 0;
 	char *hint;

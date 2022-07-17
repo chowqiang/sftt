@@ -82,16 +82,6 @@ struct file_input_stream {
 			size_t size);
 };
 
-struct sftt_client {
-	char ip[IPV4_MAX_LEN];
-	int port;
-	int configured_block_size;
-	int connects_num;
-	char session_file[FILE_NAME_MAX_LEN];
-	int session_type;
-	void *trans_session;
-};
-
 struct peer_task {
 	pthread_t tid;
 	char session_id[SESSION_ID_LEN];
@@ -108,7 +98,7 @@ struct peer_task_handler {
 	struct peer_task *tasks;
 };
 
-struct sftt_client_v2 {
+struct sftt_client {
 	struct client_sock_conn main_conn;
 	struct list_head task_conns;
 	struct pthread_mutex *tcs_lock;
@@ -161,8 +151,6 @@ int file_trans_session_diff(struct file_trans_session *old_session,
 		struct file_trans_session *new_seesion);
 int dir_trans_session_diff(struct dir_trans_session *old_session,
 		struct dir_trans_session *new_session);
-int save_trans_session(struct sftt_client *client);
-
 /*
  * Todo: need delete?
  */
@@ -188,8 +176,6 @@ void set_cache_port(int port);
  */
 struct sftt_client *create_client(char *ip, struct sftt_client_config *config,
 		int connects_num);
-void destroy_sftt_client(struct sftt_client *client);
-
 /*
  * List directory contents in long format.
  */
@@ -239,7 +225,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 void sftt_client_mps_usage(void);
 
 void client_usage_help(int exitcode);
-int init_sftt_client_v2(struct sftt_client_v2 *client, char *host, int port,
+int init_sftt_client(struct sftt_client *client, char *host, int port,
 		char *user, char *passwd);
 int show_options(char *host, char *user_name, char *password);
 
@@ -250,15 +236,15 @@ bool parse_user_name(char *arg, char *user_name, int maxlen);
 bool parse_host(char *arg, char *host, int maxlen);
 bool parse_port(char *arg, int *port);
 
-int reader_loop2(struct sftt_client_v2 *client);
+int reader_loop(struct sftt_client *client);
 
 int try_fetch_login_info(char *input, char *user_name, char *host);
 int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host,
 		struct trans_info *trans);
-int do_trans(struct sftt_client_v2 *client, struct trans_info *trans);
-int do_builtin(struct sftt_client_v2 *client, char *builtin);
+int do_trans(struct sftt_client *client, struct trans_info *trans);
+int do_builtin(struct sftt_client *client, char *builtin);
 
-int recv_one_file_by_get_resp(struct sftt_client_v2 *client,
+int recv_one_file_by_get_resp(struct sftt_client *client,
 		struct sftt_packet *resp_packet, struct common_resp *com_resp,
 		char *target, bool *has_more);
 
