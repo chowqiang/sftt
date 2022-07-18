@@ -61,7 +61,13 @@ int main(int argc, char **argv)
 		server_usage_help(-1);
 	}
 
-	set_server_debug_level(verbose_level);
+#ifdef CONFIG_SERVER_DEFAULT_DEBUG_LEVEL
+	set_server_debug_level(verbose_level, CONFIG_SERVER_DEFAULT_DEBUG_LEVEL);
+#elif defined(CONFIG_DEFAULT_DEBUG_LEVEL)
+	set_server_debug_level(verbose_level, CONFIG_DEFAULT_DEBUG_LEVEL);
+#else
+	set_server_debug_level(verbose_level, "info");
+#endif
 
 	if (strcmp(argv[optind], "start") == 0) {
 		sftt_server_start(store_path, background);

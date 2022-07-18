@@ -64,8 +64,8 @@ enum debug_level {
 	DEBUG_ERROR,
 };
 
-void set_client_debug_level(int verbose);
-void set_server_debug_level(int verbose);
+void set_client_debug_level(int verbose, char *debug_level);
+void set_server_debug_level(int verbose, char *debug_level);
 
 static inline char *get_debug_level_desc(int print_level)
 {

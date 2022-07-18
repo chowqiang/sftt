@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <libgen.h>
 #include <stdio.h>
+#include "autoconf.h"
 #include "debug.h"
 #include "dlist.h"
 #include "file.h"

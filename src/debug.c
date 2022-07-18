@@ -23,27 +23,52 @@ int default_debug_level = DEBUG_WARN;
 
 pthread_key_t dbug_key;
 
-void set_client_debug_level(int verbose)
+void set_default_debug_level(char *debug_level)
 {
+	 if (debug_level == NULL)
+		 return;
+
+	 if (strcmp("debug", debug_level) == 0) {
+		default_debug_level = DEBUG_DEBUG;
+
+	 } else if (strcmp("info", debug_level) == 0) {
+		default_debug_level = DEBUG_INFO;
+
+	 } else if (strcmp("warn", debug_level) == 0) {
+		default_debug_level = DEBUG_WARN;
+
+	 } else if (strcmp("info", debug_level) == 0) {
+		default_debug_level = DEBUG_ERROR;
+	 }
+}
+
+void set_client_debug_level(int verbose, char *debug_level)
+{
+	if (verbose == 0) {
+		set_default_debug_level(debug_level);
+		return;
+	}
+
 	if (verbose == 1) {
 		default_debug_level = DEBUG_INFO;
 	} else if (verbose == 2) {
 		default_debug_level = DEBUG_DEBUG;
 	} else if (verbose > 2) {
 		default_debug_level = DEBUG_DEBUG;
-	} else {
-		default_debug_level = DEBUG_WARN;
 	}
 }
 
-void set_server_debug_level(int verbose)
+void set_server_debug_level(int verbose, char *debug_level)
 {
+	if (verbose == 0) {
+		set_default_debug_level(debug_level);
+		return;
+	}
+
 	if (verbose == 1) {
 		default_debug_level = DEBUG_DEBUG;
 	} else if (verbose > 1) {
 		default_debug_level = DEBUG_DEBUG;
-	} else {
-		default_debug_level = DEBUG_INFO;
 	}
 }
 

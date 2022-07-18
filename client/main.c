@@ -120,7 +120,13 @@ int main(int argc, char **argv)
 		client_usage_help(-1);
 	}
 
-	set_client_debug_level(verbose_level);
+#ifdef CONFIG_CLIENT_DEFAULT_DEBUG_LEVEL
+	set_client_debug_level(verbose_level, CONFIG_CLIENT_DEFAULT_DEBUG_LEVEL);
+#elif defined(CONFIG_DEFAULT_DEBUG_LEVEL)
+	set_client_debug_level(verbose_level, CONFIG_DEFAULT_DEBUG_LEVEL);
+#else
+	set_client_debug_level(verbose_level, "warn");
+#endif
 
 	snprintf(passwd_prompt, 127, "%s@%s's password: ", user_name, host);
 	passwd_len = get_pass(passwd_prompt, password, sizeof(password));

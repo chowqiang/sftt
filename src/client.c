@@ -2136,6 +2136,8 @@ int reader_loop(struct sftt_client *client)
 
 	his_cmds = dlist_create(FREE_MODE_MP_FREE);
 
+	DEBUG((DEBUG_INFO, "begin to read loop ...\n"));
+
 	for (;;) {
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
 #if 0
