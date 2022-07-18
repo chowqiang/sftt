@@ -707,7 +707,6 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		DEBUG((DEBUG_INFO, "file not changed|file=%s\n", rp));
 
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
-		mp_free(g_mp, com_resp);
 
 		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
 
