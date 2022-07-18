@@ -15,8 +15,68 @@
  */
 
 #include <stdio.h>
+#include "debug.h"
 #include "progress_viewer.h"
 #include "utils.h"
+
+void format_trans_speed(long speed, char *buf, int max_len)
+{
+	DBUG_ENTER(__func__);
+
+	if (speed > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB/s", speed * 1.0 / SIZE_1G);
+	} else if (speed > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB/s", speed * 1.0 / SIZE_1M);
+	} else if (speed > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB/s", speed * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB/s", (int)speed);
+	}
+
+	DBUG_VOID_RETURN;
+}
+
+void format_left_time(int left, char *buf, int max_len)
+{
+	DBUG_ENTER(__func__);
+
+	int hour, minute, second;
+
+	if (left > 3600) {
+		hour = left / 3600;
+		minute = left % 3600 / 60;
+		second = left % 60;
+		if (hour >= 10)
+			snprintf(buf, max_len, "%d:%02d:%02d", hour, minute,
+					second);
+		else
+			snprintf(buf, max_len, "%02d:%02d:%02d", hour, minute,
+					second);
+	} else {
+		minute = left / 60;
+		second = left % 60;
+		snprintf(buf, max_len, "%02d:%02d", minute, second);
+	}
+
+	DBUG_VOID_RETURN;
+}
+
+void format_trans_size(long size, char *buf, int max_len)
+{
+	DBUG_ENTER(__func__);
+
+	if (size > SIZE_1G) {
+		snprintf(buf, max_len, "%.2fGB", size * 1.0 / SIZE_1G);
+	} else if (size > SIZE_1M) {
+		snprintf(buf, max_len, "%.2fMB", size * 1.0 / SIZE_1M);
+	} else if (size > SIZE_1K) {
+		snprintf(buf, max_len, "%.2fKB", size * 1.0 / SIZE_1K);
+	} else {
+		snprintf(buf, max_len, "%dB", (int)size);
+	}
+
+	DBUG_VOID_RETURN;
+}
 
 void start_progress_viewer(struct progress_viewer *pv, int udelay)
 {
@@ -25,42 +85,6 @@ void start_progress_viewer(struct progress_viewer *pv, int udelay)
 	pv->char_cnt = 0;
 }
 
-#if 0
-void stop_progress_viewer(struct progress_viewer *pv, char *prompt, float progress,
-	long recv_size, float speed, int left)
-{
-	int i;
-
-	for (i = 0; i < pv->char_cnt; ++i)
-		putchar(' ');
-	putchar('\r');
-
-	pv->char_cnt = printf("%s  %d%% %ld %.1f %d\n",
-			prompt, (int)(progress * 100), recv_size, speed, left);
-}
-
-void show_progress(struct progress_viewer *pv, char *prompt, float progress,
-	long recv_size, float speed, int left)
-{
-	double now;
-	int i;
-
-	now = get_double_time();
-	if (pv->idx == 0 || ((now - pv->last) * 1000000 > pv->udelay)) {
-		for (i = 0; i < pv->char_cnt; ++i)
-			putchar(' ');
-		putchar('\r');
-
-		pv->char_cnt = printf("%s  %d%% %ld %.1f %d\r",
-			prompt, (int)(progress * 100), recv_size, speed, left);
-		pv->idx++;
-		pv->last = now;
-    	fflush(stdout);
-
-		return ;
-	}
-}
-#endif
 void stop_progress_viewer(struct progress_viewer *pv, char *info)
 {
 	int i;

@@ -1049,7 +1049,7 @@ int handle_put_req(struct client_session *client,
 	if (req->to_peer)
 		DBUG_RETURN(handle_fwd_put_req(client, req_packet, resp_packet));
 
-	ret = recv_files_by_put_req(client->main_conn.sock, req_packet);
+	ret = recv_files_from_put_req(client->main_conn.sock, req_packet);
 
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 

@@ -17,6 +17,10 @@
 #ifndef _PROGRESS_VIEWER_H_
 #define _PROGRESS_VIEWER_H_
 
+#define SIZE_1G	(1024 * 1024 * 1024)
+#define SIZE_1M (1024 * 1024)
+#define SIZE_1K 1024
+
 struct progress_viewer
 {
 	int idx;
@@ -25,10 +29,12 @@ struct progress_viewer
 	int char_cnt;
 };
 
+void format_trans_speed(long speed, char *buf, int max_len);
+void format_left_time(int left, char *buf, int max_len);
+void format_trans_size(long size, char *buf, int max_len);
+
 void start_progress_viewer(struct progress_viewer *pv, int udelay);
-
 void show_progress(struct progress_viewer *pv, char *info);
-
 void stop_progress_viewer(struct progress_viewer *pv, char *info); 
 
 #endif

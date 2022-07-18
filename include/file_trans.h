@@ -27,6 +27,6 @@ int send_files_by_put_req(int fd, char *path, char *target,
 
 int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet);
 
-int recv_files_by_put_req(int fd, struct sftt_packet *req_packet);
+int recv_files_from_put_req(int fd, struct sftt_packet *req_packet);
 
 #endif

@@ -986,7 +986,7 @@ int handle_peer_put_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
-	ret = recv_files_by_put_req(conn->sock, req_packet);
+	ret = recv_files_from_put_req(conn->sock, req_packet);
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
 	return ret;
