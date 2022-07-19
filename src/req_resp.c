@@ -71,7 +71,7 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -115,7 +115,7 @@ xdr_append_conn_resp (XDR *xdrs, append_conn_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -177,7 +177,7 @@ xdr_pwd_resp (XDR *xdrs, pwd_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -311,7 +311,7 @@ xdr_ll_resp (XDR *xdrs, ll_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -356,7 +356,7 @@ xdr_cd_resp (XDR *xdrs, cd_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -474,7 +474,7 @@ xdr_get_resp (XDR *xdrs, get_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -515,7 +515,7 @@ xdr_put_req (XDR *xdrs, put_req *objp)
 		 return FALSE;
 	 if (!xdr_put_req_data (xdrs, &objp->data))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->need_reply))
 		 return FALSE;
@@ -530,7 +530,7 @@ xdr_put_resp (XDR *xdrs, put_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -546,7 +546,7 @@ xdr_common_resp (XDR *xdrs, common_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -614,7 +614,7 @@ xdr_read_msg_resp (XDR *xdrs, read_msg_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -699,7 +699,7 @@ xdr_mp_stat_resp (XDR *xdrs, mp_stat_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -748,7 +748,7 @@ xdr_directcmd_resp (XDR *xdrs, directcmd_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -794,7 +794,7 @@ xdr_who_resp (XDR *xdrs, who_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
@@ -840,7 +840,7 @@ xdr_write_resp (XDR *xdrs, write_resp *objp)
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
 		 return FALSE;
-	 if (!xdr_int (xdrs, &objp->next))
+	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
 	 if (!xdr_vector (xdrs, (char *)objp->message, RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))

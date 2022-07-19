@@ -120,7 +120,9 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 		printf("file %s too long, failed to hanlde\n", xdr_file);
 		return -1;
 	}
-	//printf("xdr file size: %d\n", size);
+#if DEBUG
+	printf("xdr file size: %d\n", size);
+#endif
 
 	content = malloc(size + 1);
 	if (!content) {
@@ -136,7 +138,9 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 	assert(ret == size);
 	fclose(xdr_fp);
 
-	//printf("begin parse xdr file\n");
+#if DEBUG
+	printf("begin parse xdr file\n");
+#endif
 	p = content;
 	key_word = fetch_next_str(&p);
 #if DEBUG
@@ -158,7 +162,9 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 				assert(strlen(struct_name) < 1024);
 				if (req_resp_filter(struct_name))
 					goto fetch_next;
-				//printf("find a struct: %s\n", struct_name);
+#if DEBUG
+				printf("find a struct: %s\n", struct_name);
+#endif
 				node = malloc(sizeof(struct st_list));
 				assert(node != NULL);
 
@@ -181,7 +187,9 @@ int get_struct_list(char *xdr_file, struct st_list **phead)
 					assert(strlen(struct_name) < 1024);
 					if (req_resp_filter(struct_name))
 						goto fetch_next;
-					//printf("find a struct: %s\n", struct_name);
+#if DEBUG
+					printf("find a struct: %s\n", struct_name);
+#endif
 
 					node = malloc(sizeof(struct st_list));
 					assert(node != NULL);
@@ -206,7 +214,9 @@ fetch_next:
 #endif
 	}
 
-	//printf("end parse xdr file\n");
+#if DEBUG
+	printf("end parse xdr file\n");
+#endif
 	free(content);
 
 	*phead = head;

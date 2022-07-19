@@ -95,7 +95,7 @@ void test_ll_resp(void)
 {
 	struct ll_resp resp = {
 		.status = 0,
-		.next = 1,
+		.flag = REQ_RESP_FLAG_NONE,
 		.message = "message",
 		.data = {
 			.total = 10,

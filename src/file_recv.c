@@ -102,7 +102,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		ret = -1;
 		goto done;
 	}
-	/* Before to receive file content, the file should exist */
+	/* Before to receive file content, the file should be existed */
 	assert(file_existed(rp) && is_file(rp));
 
 	DEBUG((DEBUG_INFO, "begin to recv file md5\n"));
