@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <libgen.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "autoconf.h"
 #include "debug.h"
 #include "dlist.h"
@@ -396,11 +397,15 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	char speed_info[16];
 	char left_time_info[16];
 	char send_size_info[16];
+	bool need_stop;
 
 	// If it is the last file?
 	is_last = req->data.file_idx == (req->data.total_files - 1);
-
-	req->next = is_last && is_dir(file) ? 0 : 1;
+	need_stop = is_last && is_dir(file);
+	if (need_stop)
+		req->flag = REQ_RESP_FLAG_STOP;
+	else
+		req->flag = REQ_RESP_FLAG_NONE;
 
 	// Send file name
 	ret = send_file_name_by_put_req(fd, req_packet, file, target, req);
@@ -476,7 +481,11 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	while (!feof(fp)) {
 		ret = fread(req->data.entry.content, 1, CONTENT_BLOCK_SIZE, fp);
 		req->data.entry.this_size = ret;
-		req->next = is_last && feof(fp) ? 0 : 1;
+		need_stop = is_last && feof(fp);
+		if (need_stop)
+			req->flag = REQ_RESP_FLAG_STOP;
+		else
+			req->flag = REQ_RESP_FLAG_NONE;
 		ret = send_file_content_by_put_req(fd, req_packet, req);
 		if (ret == -1) {
 			break;
