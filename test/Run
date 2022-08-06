@@ -50,7 +50,11 @@ do_single_test()
 	echo ">> $rule_file cases begin"
 	while read line
 	do
-		if [[ "$line" = "^#*" ]]; then
+		#echo $line
+		if [ "$line" == "" ]; then
+			continue
+		fi
+		if [[ "$line" =~ ^#.* ]]; then
 			continue
 		fi
 
@@ -70,19 +74,27 @@ do_single_test()
 
 main()
 {
-	[ -z "$1" ] && echo "Usage: $0 cases-file" && exit -1
+	[ ! $# -eq 2 ] && echo "Usage: $0 case-dir case-name" && exit -1
 
-	testcases=$1
+	case_dir=$1
 	echo "test begin ..."
-	if [ -d $testcases ]; then
-		do_multi_tests $testcases
-	else
-		do_single_test $testcases
+	if [ ! -d $case_dir ]; then
+		echo "case dir '$case_dir' not exist!"
+		exit -1
 	fi
+
+	case_name=$2
+	case_file=$case_dir/$case_name
+	echo "do test for $case_name ..."
+	if [ ! -f $case_file ]; then
+	       echo "case file '$case_file' not exist!"
+	       exit -1
+	fi
+
+	do_single_test $case_file
 	echo "test end"
 
 }
 
 #setup
 main "$@"
-

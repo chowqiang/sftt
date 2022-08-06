@@ -287,13 +287,13 @@ void output_send_resp(FILE *fp, char *struct_name)
 	char block_size[128];
 
 	fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,\n"
-		"\tstruct %s *resp, int code, int next)\n", struct_name,
+		"\tstruct %s *resp, int code, int flags)\n", struct_name,
 		struct_name);
 	fprintf(fp, "{\n");
 	fprintf(fp, "\tresp->status = code;\n");
 	fprintf(fp, "\tstrncpy(resp->message, resp_messages[code],"
 		" RESP_MESSAGE_MAX_LEN - 1);\n");
-	fprintf(fp, "\tresp->next = next;\n\n");
+	fprintf(fp, "\tresp->flags = flags;\n\n");
 	fprintf(fp, "\tresp_packet->obj = resp;\n");
 	fprintf(fp, "\tresp_packet->type = %s;\n",
 		get_packet_type(packet_type, struct_name));

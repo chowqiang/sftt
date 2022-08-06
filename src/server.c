@@ -482,7 +482,7 @@ static int validate_user_info(struct client_session *client,
 		gen_session_id(client->session_id, SESSION_ID_LEN);
 
 		resp->status = RESP_UVS_PASS;
-		resp->flag = REQ_RESP_FLAG_NONE;
+		resp->flags = REQ_RESP_FLAG_NONE;
 
 		resp_data->uid = user_base->uid;
 		strncpy(resp_data->name, req->name, USER_NAME_MAX_LEN - 1);
@@ -686,7 +686,7 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 
 		send_ll_resp_once(client, resp, resp_packet);
 
-	} while (!(resp->flag & REQ_RESP_FLAG_STOP));
+	} while (!(resp->flags & REQ_RESP_FLAG_STOP));
 
 done:
 	if (conn)
@@ -877,9 +877,9 @@ int handle_fwd_get_req(struct client_session *client,
 		DEBUG((DEBUG_INFO, "send this packet to geter\n"));
 
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
-			resp, RESP_OK, resp->flag);
+			resp, RESP_OK, resp->flags);
 
-		stop = resp->flag & REQ_RESP_FLAG_STOP;
+		stop = resp->flags & REQ_RESP_FLAG_STOP;
 		if (resp->need_reply) {
 			DEBUG((DEBUG_INFO, "this packet need reply\n"));
 
@@ -897,7 +897,7 @@ int handle_fwd_get_req(struct client_session *client,
 			DEBUG((DEBUG_INFO, "send this common resp to getee\n"));
 
 			ret = send_common_resp(conn->sock, resp_packet, com_resp, com_resp->status, 0);
-			stop = com_resp->flag & REQ_RESP_FLAG_STOP;
+			stop = com_resp->flags & REQ_RESP_FLAG_STOP;
 		}
 
 		DEBUG((DEBUG_INFO, "need stop?|stop=%d\n", stop));
@@ -1017,7 +1017,7 @@ int handle_fwd_put_req(struct client_session *client,
 			ret = send_put_resp(client->main_conn.sock, resp_packet, resp, resp->status, 0);
 		}
 
-		if (req->flag & REQ_RESP_FLAG_STOP)
+		if (req->flags & REQ_RESP_FLAG_STOP)
 			break;
 
 		// recv put req packet
@@ -1026,7 +1026,7 @@ int handle_fwd_put_req(struct client_session *client,
 			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
 			goto done;
 		}
-	} while (!(req->flag & REQ_RESP_FLAG_STOP));
+	} while (!(req->flags & REQ_RESP_FLAG_STOP));
 
 done:
 	if (conn)

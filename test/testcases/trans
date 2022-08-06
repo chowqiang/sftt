@@ -1,0 +1,11 @@
+# test get
+get
+
+# test put
+put
+
+# test fwd get
+fwd_get
+
+# test fwd put
+fwd_put

@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 /*
  * 1. Generate test dir in server
  * 2. Generate random file and dir in server test dir
@@ -27,5 +29,6 @@
  */
 int main(int argc, char *argv[])
 {
+	printf("get test done!\n");
 	return 0;
 }

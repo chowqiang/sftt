@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 /*
  * 1. Generate test dir in peer
  * 2. Generate test dir in client
@@ -28,5 +30,6 @@
  */
 int main(int argc, char *argv[])
 {
+	printf("fwd_put test done!\n");
 	return 0;
 }

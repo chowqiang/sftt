@@ -60,7 +60,7 @@ typedef struct validate_resp_data validate_resp_data;
 
 struct validate_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct validate_resp_data data;
 };
@@ -79,7 +79,7 @@ typedef struct append_conn_resp_data append_conn_resp_data;
 
 struct append_conn_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct append_conn_resp_data data;
 };
@@ -105,7 +105,7 @@ typedef struct pwd_resp_data pwd_resp_data;
 
 struct pwd_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct pwd_resp_data data;
 };
@@ -139,7 +139,7 @@ typedef struct ll_resp_data ll_resp_data;
 
 struct ll_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct ll_resp_data data;
 };
@@ -158,7 +158,7 @@ typedef struct cd_resp_data cd_resp_data;
 
 struct cd_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct cd_resp_data data;
 };
@@ -190,7 +190,7 @@ typedef struct get_resp_data get_resp_data;
 
 struct get_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct get_resp_data data;
 	int need_reply;
@@ -209,21 +209,21 @@ struct put_req {
 	int to_peer;
 	struct logged_in_user user;
 	struct put_req_data data;
-	int flag;
+	int flags;
 	int need_reply;
 };
 typedef struct put_req put_req;
 
 struct put_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct put_resp put_resp;
 
 struct common_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 };
 typedef struct common_resp common_resp;
@@ -253,7 +253,7 @@ typedef struct read_msg_resp_data read_msg_resp_data;
 
 struct read_msg_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct read_msg_resp_data data;
 };
@@ -274,7 +274,7 @@ typedef struct mp_stat_resp_data mp_stat_resp_data;
 
 struct mp_stat_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct mp_stat_resp_data data;
 };
@@ -295,7 +295,7 @@ typedef struct directcmd_resp_data directcmd_resp_data;
 
 struct directcmd_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct directcmd_resp_data data;
 };
@@ -315,7 +315,7 @@ typedef struct who_resp_data who_resp_data;
 
 struct who_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct who_resp_data data;
 };
@@ -335,7 +335,7 @@ typedef struct write_resp_data write_resp_data;
 
 struct write_resp {
 	int status;
-	int flag;
+	int flags;
 	char message[RESP_MESSAGE_MAX_LEN];
 	struct write_resp_data data;
 };

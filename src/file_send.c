@@ -403,9 +403,9 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	is_last = req->data.file_idx == (req->data.total_files - 1);
 	need_stop = is_last && is_dir(file);
 	if (need_stop)
-		req->flag = REQ_RESP_FLAG_STOP;
+		req->flags = REQ_RESP_FLAG_STOP;
 	else
-		req->flag = REQ_RESP_FLAG_NONE;
+		req->flags = REQ_RESP_FLAG_NONE;
 
 	// Send file name
 	ret = send_file_name_by_put_req(fd, req_packet, file, target, req);
@@ -483,9 +483,9 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		req->data.entry.this_size = ret;
 		need_stop = is_last && feof(fp);
 		if (need_stop)
-			req->flag = REQ_RESP_FLAG_STOP;
+			req->flags = REQ_RESP_FLAG_STOP;
 		else
-			req->flag = REQ_RESP_FLAG_NONE;
+			req->flags = REQ_RESP_FLAG_NONE;
 		ret = send_file_content_by_put_req(fd, req_packet, req);
 		if (ret == -1) {
 			break;

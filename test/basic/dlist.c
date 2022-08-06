@@ -46,7 +46,6 @@ int dlist_test(void) {
 	dlist_destroy(&list);
 	printf("%d, %d\n", size, dlist_size(&list));
 	dlist_show(&list);
-	return 0;
 
 	dlist_sort(&list, cmp_int, 1);
 	dlist_show(&list);
@@ -69,7 +68,5 @@ int main(int argc, char *argv[])
 	//printf("test file: %s\n", __FILE__);
 	//show_argv(argc, argv);
 	//struct dlist *list = dlist_create(FREE_MODE_NOTHING);
-	dlist_test();
-
-	return -1;
+	return dlist_test();
 }

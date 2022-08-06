@@ -1,0 +1,9 @@
+# test dlist
+dlist -a -f
+dlist -n 10
+
+# test list
+list
+
+# test strops
+strops

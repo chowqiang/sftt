@@ -13,14 +13,23 @@ FUNCS:
 	$(shell if [ ! -d bin ]; then mkdir bin; fi)
 	make -C $(FUNCS_DIR) O=../bin
 
+
+ifeq ("$(CASE)", "")
+	@echo "run all test cases ..."
+else ifneq ("$(CASE)", "NO")
+	@echo "run test case '$(CASE)'"
+	@./Run $(TEST_DIR)/testcases $(CASE)
+else
+	@echo "don't run any test cases"
+endif
+
 .PHONY: help
 help:
 	@echo "Running tests:"
-	@echo ""
-	@echo " test              - build and run function tests"
+	@echo " test        - build and run function tests"
 
 .PHONY: clean
 
-clean:
+
 	@rm -f $(TEST_DIR)/bin/*
 	@rm -f $(BASIC_DIR)/*.o

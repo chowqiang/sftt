@@ -30,6 +30,10 @@ ifeq ($(UNAME_S),Linux)
 	CFLAGS += -ltirpc
 endif
 
+ifeq ("$(CASE)", "")
+	CASE=NO
+endif
+
 export CC ROOT_DIR CFLAGS OBJS_DIR LIB_NAME LIB LIB_DIR SERVER_BIN \
 	CLIENT_BIN TOOLS_DIR TEST_DIR
 
@@ -55,19 +59,7 @@ $(TOOLS): $(LIB_NAME) ECHO
 	make -C $(TOOLS_DIR)
 
 $(TEST): $(LIB_NAME) ECHO
-	make -C $(TEST_DIR)
-
-gettest: $(TEST)
-	cd test/scripts && ./gettest file
-
-puttest: $(TEST)
-	cd test/scripts && ./puttest file
-
-mps: $(TEST)
-	cd test/scripts && ./mps
-
-basictest: $(TEST)
-	cd test && ./Run testcases
+	make -C $(TEST_DIR) CASE=$(CASE)
 
 ECHO:
 	@echo $(LIB_NAME) $(SERVER_BIN) $(CLIENT_BIN) $(TEST) $(XDR)
@@ -96,3 +88,4 @@ clean:
 	make clean -C $(CLIENT_DIR)
 	make clean -C $(TEST_DIR)
 	make clean -C $(TOOLS_DIR)
+	make clean -C $(CONFIG)

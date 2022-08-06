@@ -14,22 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
+#include "thread_pool.h"
 
-/*
- * 1. Generate test dir in peer
- * 2. Generate random file and dir in peer test dir
- * 3. Generate test dir in client
- * 4. Start server
- * 5. Start peer
- * 6. Start client and read commands from file
- * 7. Client run commands
- * 8. Check file md5 between peer random file and client gotten file
- * 9. Check dir between peer random dir and client gotten dir
- * 10. Give checked results
- */
-int main(int argc, char *argv[])
+struct thread_pool *create_thread_pool(int size)
 {
-	printf("fwd_get test done!\n");
+	return NULL;
+}
+
+void destroy_thread_pool(struct thread_pool *tp)
+{
+
+}
+
+int launch_thread_in_pool(struct thread_pool *tp, int tid,
+		int (*f)(void *), void *args)
+{
+	return 0;
+}
+
+int launch_one_thread(struct thread_instance *ti,
+		int (*f)(void *), void *args)
+{
 	return 0;
 }
