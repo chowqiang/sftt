@@ -49,6 +49,7 @@
 #include "mkdirp.h"
 #include "net_trans.h"
 #include "endpoint.h"
+#include "thread_pool.h"
 #include "req_resp.h"
 #include "response.h"
 #include "server.h"
@@ -297,7 +298,7 @@ void sighandler(int signum)
    add_log(LOG_INFO, "Caught signal %d, coming out ...", signum);
 }
 
-int init_sftt_server_stat(void)
+int init_sftt_server_stat(struct sftt_server *server)
 {
 	struct sftt_server_stat *sss = alloc_sftt_server_stat();
 	assert(sss != NULL);
@@ -1438,7 +1439,7 @@ int handle_append_conn_req(struct client_session *client,
 	DBUG_RETURN(ret);
 }
 
-void *handle_client_session(void *args)
+int handle_client_session(void *args)
 {
 	DBUG_ENTER(__func__);
 
@@ -1452,7 +1453,7 @@ void *handle_client_session(void *args)
 	req = malloc_sftt_packet();
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
-		DBUG_RETURN(NULL);
+		DBUG_RETURN(-1);
 	}
 
 	resp = malloc_sftt_packet();
@@ -1525,7 +1526,7 @@ exit:
 
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
-	DBUG_RETURN(NULL);
+	DBUG_RETURN(-1);
 }
 
 void sync_server_stat(void)
@@ -1595,7 +1596,7 @@ void main_loop(void)
 	struct sockaddr_in addr_client;
 	int len;
 
-	server->status = RUNNING;
+	server->status = SERVERING;
 	init_sessions();
 
 	len = sizeof(struct sockaddr_in);
@@ -1623,10 +1624,11 @@ void main_loop(void)
 		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
 		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
 
-		ret = pthread_create(&child, NULL, handle_client_session, session);
+		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
+				handle_client_session, session);
 		if (ret) {
 			add_log(LOG_INFO, "create thread failed!");
-			session->status = EXITED;
+			session->status = DISCONNECTED;
 		}
 	}
 }
@@ -1684,8 +1686,18 @@ int start_sftt_log_server(struct sftt_server *server)
 	strncpy(logger_ctx.dir, server->conf.log_dir, DIR_PATH_MAX_LEN - 1);
 	strncpy(logger_ctx.prefix, PROC_NAME, LOGGER_PREFIX_LEN - 1);
 
-	ret = pthread_create(&server->log_tid, NULL, logger_daemon, &logger_ctx);
+	ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
+			logger_daemon, &logger_ctx);
 	if (ret)
+		return -1;
+
+	return 0;
+}
+
+int init_sftt_server_thread_pool(struct sftt_server *server)
+{
+	server->thread_pool = create_thread_pool(16);
+	if (server->thread_pool == NULL)
 		return -1;
 
 	return 0;
@@ -1716,8 +1728,7 @@ int init_sftt_server(char *store_path)
 		strcpy(server->conf.store_path, store_path);
 	}
 
-	sockfd = create_non_block_sock(&port);
-	if (sockfd == -1) {
+	if ((sockfd = create_non_block_sock(&port)) == -1) {
 		printf("cannot create non-block socket!\n");
 		return -1;
 	}
@@ -1727,14 +1738,17 @@ int init_sftt_server(char *store_path)
 	server->main_port = port;
 	server->last_update_ts = (uint64_t)time(NULL);
 
-	ret = start_sftt_log_server(server);
-	if (ret == -1) {
+	if (init_sftt_server_thread_pool(server) == -1) {
+		printf("cannot create thread pool!\n");
+		return -1;
+	}
+
+	if (start_sftt_log_server(server) == -1) {
 		printf("cannot start log server!\n");
 		return -1;
 	}
 
-	ret = init_sftt_server_stat();
-	if (ret == -1) {
+	if (init_sftt_server_stat(server)) {
 		printf(PROC_NAME " start failed! Because cannot init "
 			PROC_NAME " server info.\n");
 		return -1;

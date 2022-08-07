@@ -20,7 +20,6 @@
 #include <pthread.h>
 #include "list.h"
 #include "req_resp.h"
-#include "thread.h"
 
 #define CLIENT_MAX_TASK_CONN 5
 
@@ -43,7 +42,6 @@ struct client_sock_conn {
 	int port;
 	enum connect_type type;
 	char connect_id[CONNECT_ID_LEN];
-	struct thread_info tinfo;
 	struct list_head list;
 };
 

@@ -55,6 +55,7 @@ struct sftt_server {
 	struct sftt_server_config conf;
 	struct client_session sessions[MAX_CLIENT_NUM];
 	struct pthread_mutex *pm;
+	struct thread_pool *thread_pool;
 };
 
 struct sftt_server_stat {

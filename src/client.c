@@ -26,7 +26,6 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <assert.h>
-#include <pthread.h>
 #include <curses.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -48,6 +47,7 @@
 #include "validate.h"
 #include "cmdline.h"
 #include "packet.h"
+#include "thread_pool.h"
 #include "debug.h"
 #include "req_resp.h"
 #include "response.h"
@@ -1097,7 +1097,7 @@ int init_friend_list(struct sftt_client *client)
 	return 0;
 }
 
-void *do_task_handler(void *arg)
+int do_task_handler(void *arg)
 {
 	struct client_sock_conn *conn = arg;
 	int sock = conn->sock;
@@ -1108,7 +1108,7 @@ void *do_task_handler(void *arg)
 	req = malloc_sftt_packet();
 	if (!req) {
 		printf("cannot allocate resources from memory pool!\n");
-		return NULL;
+		return -1;
 	}
 
 	resp = malloc_sftt_packet();
@@ -1155,16 +1155,17 @@ exit:
 	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
-	return NULL;
+	return -1;
 }
 
 int start_task_handler(struct sftt_client *client, struct client_sock_conn *conn)
 {
 	int ret;
 
-	ret = pthread_create(&conn->tinfo.tid, NULL, do_task_handler, conn);
+	ret = launch_thread_in_pool(client->thread_pool, THREAD_INDEX_ANY,
+			do_task_handler, conn);
 	if (ret == -1) {
-		printf("create task handler thread failed!\n");
+		printf("lanunch task handler thread failed!\n");
 		return -1;
 	}
 
@@ -1255,7 +1256,7 @@ int add_task_connect(struct sftt_client *client)
 	return 0;
 }
 
-void *do_connect_manager(void *arg)
+int do_connect_manager(void *arg)
 {
 	int idle_conns = 0;
 	struct sftt_client *client = arg;
@@ -1285,7 +1286,7 @@ void *do_connect_manager(void *arg)
 		sleep(1);
 	}
 
-	return NULL;
+	return 0;
 }
 
 int start_conn_mgr(struct sftt_client *client)
@@ -1300,12 +1301,21 @@ int start_conn_mgr(struct sftt_client *client)
 		return -1;
 	}
 
-	ret = pthread_create(&client->conn_mgr.tid, NULL, do_connect_manager,
-			client);
+	ret = launch_thread_in_pool(client->thread_pool, THREAD_INDEX_ANY,
+			do_connect_manager, client);
 	if (ret == -1) {
-		perror("create conn_mgr failed");
+		perror("launch connection manager failed");
 		return -1;
 	}
+
+	return 0;
+}
+
+int init_sftt_client_thread_pool(struct sftt_client *client)
+{
+	client->thread_pool = create_thread_pool(CLIENT_MAX_TASK_CONN + 1);
+	if (client->thread_pool == NULL)
+		return -1;
 
 	return 0;
 }
@@ -1336,6 +1346,11 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 
 	if (logger_init(client->config.log_dir, PROC_NAME) == -1) {
 		printf("init logger failed!\n");
+	}
+
+	if (init_sftt_client_thread_pool(client) == -1) {
+		printf("init sftt client thread pool failed!\n");
+		return -1;
 	}
 
 	if (init_sftt_client_ctrl_conn(client, port) == -1) {

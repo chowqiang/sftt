@@ -22,7 +22,6 @@
 #include "connect.h"
 #include "list.h"
 #include "md5.h"
-#include "thread.h"
 #include "user.h"
 #include "req_resp.h"
 
@@ -50,7 +49,6 @@ struct client_session {
 	struct client_sock_conn main_conn;
 	struct list_head task_conns;
 	struct pthread_mutex *tcs_lock;
-	struct thread_info tinfo;
 	enum client_status status;
 	char pwd[DIR_PATH_MAX_LEN];
 	char session_id[SESSION_ID_LEN];

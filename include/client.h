@@ -28,7 +28,6 @@
 #include "option.h"
 #include "packet.h"
 #include "session.h"
-#include "thread.h"
 #include "user.h"
 
 #define PROC_NAME			"sftt"
@@ -102,7 +101,7 @@ struct sftt_client {
 	struct client_sock_conn main_conn;
 	struct list_head task_conns;
 	struct pthread_mutex *tcs_lock;
-	struct thread_info conn_mgr;
+	struct thread_pool *thread_pool;
 	struct mem_pool *mp;
 	struct version_info ver;
 	struct user_base_info uinfo;

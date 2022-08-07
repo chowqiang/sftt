@@ -49,7 +49,7 @@ struct logger_init_ctx {
 
 int logger_init(char *dir, char *prefix);
 
-void *logger_daemon(void *args);
+int logger_daemon(void *args);
 
 void logger_exit(int sig);
 

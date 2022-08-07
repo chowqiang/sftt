@@ -98,7 +98,7 @@ int logger_init(char *dir, char *prefix)
 	return 0;
 }
 
-void *logger_daemon(void *args)
+int logger_daemon(void *args)
 {
 	char *dir, *prefix;
 	int msqid;
@@ -117,15 +117,15 @@ void *logger_daemon(void *args)
 
 	msqid = get_log_msqid(1);
 	if (msqid == -1) {
-	    perror("get log msqid failed");
-		return NULL;
+		perror("get log msqid failed");
+		return -1;
 	}
 
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
-	    printf("%d: open log file %s failed!\n", __LINE__, file1);
-		return NULL;
+		printf("%d: open log file %s failed!\n", __LINE__, file1);
+		return -1;
 	}
 
 	printf("logger thread begin to work ...\n");
@@ -160,7 +160,7 @@ void *logger_daemon(void *args)
 		fflush(server_log_fp);
 	}
 
-	return NULL;
+	return 0;
 }
 
 int get_log_msqid(int create_flag)
