@@ -1,6 +1,6 @@
 
 all: dlist mem_pool net_trans serialize utils db md5 file strops list \
-	resp pthread options readline compress debug
+	resp pthread options readline compress debug thread_pool
 
 dlist: dlist.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
@@ -48,4 +48,7 @@ compress: compress.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 debug: debug.c
+	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
+
+thread_pool: thread_pool.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)

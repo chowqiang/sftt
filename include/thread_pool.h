@@ -27,6 +27,7 @@
 #define THREAD_POOL_MAX_SIZE 32
 #endif
 
+#define THREAD_INDEX_ANY -1
 /**
  * Definition of a remote launch function.
  */
@@ -70,4 +71,6 @@ int launch_thread_in_pool(struct thread_pool *tp, int tid,
 
 int launch_one_thread(struct thread_instance *ti,
 		int (*f)(void *), void *args);
+
+int wait_worker_thread(struct thread_instance *ti);
 #endif

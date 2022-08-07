@@ -7,3 +7,6 @@ list
 
 # test strops
 strops
+
+# test thread pool
+thread_pool
