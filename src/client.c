@@ -33,6 +33,7 @@
 #include <readline/history.h>
 #include "base.h"
 #include "command.h"
+#include "common.h"
 #include "config.h"
 #include "context.h"
 #include "client.h"
@@ -49,7 +50,6 @@
 #include "packet.h"
 #include "thread_pool.h"
 #include "debug.h"
-#include "req_resp.h"
 #include "response.h"
 #include "state.h"
 #include "trans.h"
@@ -1813,7 +1813,7 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	struct dlist_node *node;
 	int file_count;
 	char file[FILE_NAME_MAX_LEN];
-	char target[FILE_NAME_MAX_LEN + 2];
+	char target[FILE_PATH_MAX_LEN + 1];
 	struct path_entry *entry;
 	struct sftt_packet *req_packet;
 	struct logged_in_user *user;

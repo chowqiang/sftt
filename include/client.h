@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include "command.h"
+#include "common.h"
 #include "config.h"
 #include "connect.h"
 #include "dlist.h"
@@ -36,7 +37,6 @@
 #define PORT_CACHE_FILE			"./.cache_port"
 #define MAX_PORT_NUM			65536
 
-#define IPV4_MAX_LEN			16	
 #define CLIENT_MAX_CONNECT_NUM		4
 
 #define SESSION_TYPE_FILE		1

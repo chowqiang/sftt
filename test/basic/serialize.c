@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "common.h"
 #include "mem_pool.h"
-#include "req_resp.h"
 #include "serialize.h"
 #include "utils.h"
 

@@ -18,7 +18,7 @@
 #define _CONFIG_H_
 
 #include <string.h>
-#include "req_resp.h"
+#include "common.h"
 
 #define BUFFER_SIZE	10240
 

@@ -19,8 +19,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "common.h"
 #include "md5.h"
-#include "req_resp.h"
 
 struct user_base_info {
 	uint64_t uid;

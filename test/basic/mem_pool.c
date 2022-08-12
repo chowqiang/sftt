@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "base.h"
 #include "mem_pool.h"
 
@@ -37,6 +38,45 @@ void *test_mp_thread(void *info)
 	}
 
 	return NULL;
+}
+
+int mem_pool_test(void)
+{
+	struct mem_pool *mp = mp_create();
+	printf("node count: %d\n", mp_node_cnt(mp));
+
+	char *str1 = (char *)mp_malloc(mp, "mem_pool_test1", 16);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	strcpy(str1, "hello");
+
+	char *str2 = (char *)mp_malloc(mp, "mem_pool_test2", 16);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	strcpy(str2, ", ");
+
+	char *str3 = (char *)mp_malloc(mp, "mem_pool_test3", 16);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	strcpy(str3, "world");
+
+	char *str4 = strcat(str1, str2);
+	str4 = strcat(str4, str3);
+	printf("str4: %s\n", str4);
+
+	mp_free(mp, str1);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	mp_free(mp, str2);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	mp_free(mp, str3);
+	printf("node count: %d\n", mp_node_cnt(mp));
+
+	char *str5 = (char *)mp_malloc(mp, "mem_pool_test4", 16);
+	printf("node count: %d\n", mp_node_cnt(mp));
+	strcpy(str5, "hello, world");
+	printf("str5: %s\n", str5);
+
+	mp_free(mp, str5);
+	mp_destroy(mp);
+
+	return 0;
 }
 
 int main(int argc, char *argv[])

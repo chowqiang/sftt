@@ -18,8 +18,8 @@
 #define _CONNECT_H_
 
 #include <pthread.h>
+#include "common.h"
 #include "list.h"
-#include "req_resp.h"
 
 #define CLIENT_MAX_TASK_CONN 5
 

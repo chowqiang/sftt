@@ -17,7 +17,7 @@
 #ifndef _CMDLINE_H_
 #define _CMDLINE_H_
 
-#define CMD_MAX_LEN				1024
+#include "common.h"
 
 #define	CMD_LINE_ARROW			0
 #define CMD_LINE_NORMAL			1

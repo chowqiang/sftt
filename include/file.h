@@ -18,7 +18,7 @@
 #define _FILE_H_
 
 #include <stdbool.h>
-#include "req_resp.h"
+#include "common.h"
 
 #define FILE_TYPE_UNKNOWN	0
 #define FILE_TYPE_FILE		1

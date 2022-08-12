@@ -14,13 +14,49 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "common.h"
 #include "mem_pool.h"
 #include "test_common.h"
+#include "utils.h"
 
 extern struct mem_pool *g_mp;
 
+#define TEST_ROOT_DIR "/tmp/sftt_test_%s_%d"
+
 struct test_context *test_context_create(const char *name)
 {
+	struct test_context *ctx;
+	char buf[DIR_PATH_MAX_LEN];
+	int ret;
+
+	ctx = mp_malloc(g_mp, __func__, sizeof(struct test_context));
+	if (ctx == NULL)
+		return NULL;
+
+	ctx->name = name;
+
+	snprintf(buf, DIR_PATH_MAX_LEN, TEST_ROOT_DIR, name, (int)getpid());
+	ctx->root = __strdup(buf);
+
+	ret = mkdir(ctx->root, S_IRUSR | S_IWUSR);
+	if (ret == -1) {
+		perror("create test root directory failed");
+		goto test_context_free;
+	}
+
+	return ctx;
+
+test_context_free:
+	if (ctx && ctx->root)
+		mp_free(g_mp, ctx->root);
+
+	if (ctx)
+		mp_free(g_mp, ctx);
+
 	return NULL;
 }
 

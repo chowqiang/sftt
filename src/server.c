@@ -36,6 +36,7 @@
 #include <time.h>
 #include "autoconf.h"
 #include "base.h"
+#include "common.h"
 #include "config.h"
 #include "connect.h"
 #include "context.h"
@@ -50,7 +51,6 @@
 #include "net_trans.h"
 #include "endpoint.h"
 #include "thread_pool.h"
-#include "req_resp.h"
 #include "response.h"
 #include "server.h"
 #include "session.h"

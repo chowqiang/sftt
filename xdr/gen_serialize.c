@@ -322,9 +322,9 @@ int gen_c_file(struct st_list *head, char *c_file)
 	fprintf(fp, "#include <stdio.h>\n");
 	fprintf(fp, "#include <rpc/types.h>\n");
 	fprintf(fp, "#include <rpc/xdr.h>\n");
+	fprintf(fp, "#include \"common.h\"\n");
 	fprintf(fp, "#include \"log.h\"\n");
 	fprintf(fp, "#include \"mem_pool.h\"\n");
-	fprintf(fp, "#include \"req_resp.h\"\n");
 	fprintf(fp, "#include \"serialize.h\"\n\n");
 	fprintf(fp, "extern struct mem_pool *g_mp;\n\n");
 

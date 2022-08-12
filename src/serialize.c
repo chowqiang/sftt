@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
+#include "common.h"
 #include "log.h"
 #include "mem_pool.h"
-#include "req_resp.h"
 #include "serialize.h"
 
 extern struct mem_pool *g_mp;

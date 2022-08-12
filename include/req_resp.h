@@ -13,25 +13,27 @@
 extern "C" {
 #endif
 
-#define USER_NAME_MAX_LEN 32
-#define PASSWD_MD5_LEN 33
-#define SESSION_ID_LEN 32
-#define DIR_PATH_MAX_LEN 256
-#define FILE_NAME_MAX_LEN 256
-#define FILE_ENTRY_MAX_CNT 16
-#define CONTENT_BLOCK_SIZE 2048
-#define NET_MSG_MAX_LEN 1024
-#define CMD_MAX_LEN 1024
-#define CMD_RET_BATCH_LEN 4096
-#define IPV4_MAX_LEN 16
-#define LOGGED_IN_USER_MAX_CNT 32
-#define WRITE_MSG_MAX_LEN 4096
-#define RESP_MESSAGE_MAX_LEN 128
-#define DIRECT_CMD_RESP_MAX_LEN 1024
-#define CONNECT_ID_LEN 32
-#define REQ_RESP_FLAG_NONE 0x0000
-#define REQ_RESP_FLAG_NEXT 0x0001
-#define REQ_RESP_FLAG_STOP 0x0002
+#define XDR_USER_NAME_MAX_LEN 32
+#define XDR_PASSWD_MD5_LEN 33
+#define XDR_SESSION_ID_LEN 32
+#define XDR_DIR_NAME_MAX_LEN 256
+#define XDR_FILE_NAME_MAX_LEN 256
+#define XDR_DIR_PATH_MAX_LEN 1024
+#define XDR_FILE_PATH_MAX_LEN 1024
+#define XDR_FILE_ENTRY_MAX_CNT 16
+#define XDR_CONTENT_BLOCK_SIZE 2048
+#define XDR_NET_MSG_MAX_LEN 1024
+#define XDR_CMD_MAX_LEN 1024
+#define XDR_CMD_RET_BATCH_LEN 4096
+#define XDR_IPV4_MAX_LEN 16
+#define XDR_LOGGED_IN_USER_MAX_CNT 32
+#define XDR_WRITE_MSG_MAX_LEN 4096
+#define XDR_RESP_MESSAGE_MAX_LEN 128
+#define XDR_DIRECT_CMD_RESP_MAX_LEN 1024
+#define XDR_CONNECT_ID_LEN 32
+#define XDR_REQ_RESP_FLAG_NONE 0x0000
+#define XDR_REQ_RESP_FLAG_NEXT 0x0001
+#define XDR_REQ_RESP_FLAG_STOP 0x0002
 
 struct version_info {
 	short major;
@@ -43,84 +45,84 @@ typedef struct version_info version_info;
 struct validate_req {
 	int name_len;
 	int passwd_len;
-	char name[USER_NAME_MAX_LEN];
-	char passwd_md5[PASSWD_MD5_LEN];
+	char name[XDR_USER_NAME_MAX_LEN];
+	char passwd_md5[XDR_PASSWD_MD5_LEN];
 	struct version_info ver;
 };
 typedef struct validate_req validate_req;
 
 struct validate_resp_data {
 	long uid;
-	char name[USER_NAME_MAX_LEN];
-	char session_id[SESSION_ID_LEN];
-	char connect_id[CONNECT_ID_LEN];
-	char pwd[DIR_PATH_MAX_LEN];
+	char name[XDR_USER_NAME_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char connect_id[XDR_CONNECT_ID_LEN];
+	char pwd[XDR_DIR_PATH_MAX_LEN];
 };
 typedef struct validate_resp_data validate_resp_data;
 
 struct validate_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct validate_resp_data data;
 };
 typedef struct validate_resp validate_resp;
 
 struct append_conn_req {
-	char session_id[SESSION_ID_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
 	int type;
 };
 typedef struct append_conn_req append_conn_req;
 
 struct append_conn_resp_data {
-	char connect_id[CONNECT_ID_LEN];
+	char connect_id[XDR_CONNECT_ID_LEN];
 };
 typedef struct append_conn_resp_data append_conn_resp_data;
 
 struct append_conn_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct append_conn_resp_data data;
 };
 typedef struct append_conn_resp append_conn_resp;
 
 struct logged_in_user {
-	char session_id[SESSION_ID_LEN];
-	char name[USER_NAME_MAX_LEN];
-	char ip[IPV4_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char name[XDR_USER_NAME_MAX_LEN];
+	char ip[XDR_IPV4_MAX_LEN];
 	int port;
 };
 typedef struct logged_in_user logged_in_user;
 
 struct pwd_req {
-	char session_id[SESSION_ID_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
 };
 typedef struct pwd_req pwd_req;
 
 struct pwd_resp_data {
-	char pwd[DIR_PATH_MAX_LEN];
+	char pwd[XDR_DIR_PATH_MAX_LEN];
 };
 typedef struct pwd_resp_data pwd_resp_data;
 
 struct pwd_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct pwd_resp_data data;
 };
 typedef struct pwd_resp pwd_resp;
 
 struct ll_req {
-	char session_id[SESSION_ID_LEN];
-	char path[DIR_PATH_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char path[XDR_DIR_PATH_MAX_LEN];
 	int to_peer;
 	struct logged_in_user user;
 };
 typedef struct ll_req ll_req;
 
 struct file_entry {
-	char name[FILE_NAME_MAX_LEN];
+	char name[XDR_FILE_NAME_MAX_LEN];
 	u_long mode;
 	long type;
 	long size;
@@ -133,40 +135,40 @@ typedef struct file_entry file_entry;
 struct ll_resp_data {
 	int total;
 	int this_nr;
-	struct file_entry entries[FILE_ENTRY_MAX_CNT];
+	struct file_entry entries[XDR_FILE_ENTRY_MAX_CNT];
 };
 typedef struct ll_resp_data ll_resp_data;
 
 struct ll_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct ll_resp_data data;
 };
 typedef struct ll_resp ll_resp;
 
 struct cd_req {
-	char session_id[SESSION_ID_LEN];
-	char path[DIR_PATH_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char path[XDR_DIR_PATH_MAX_LEN];
 };
 typedef struct cd_req cd_req;
 
 struct cd_resp_data {
-	char pwd[DIR_PATH_MAX_LEN];
+	char pwd[XDR_DIR_PATH_MAX_LEN];
 };
 typedef struct cd_resp_data cd_resp_data;
 
 struct cd_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct cd_resp_data data;
 };
 typedef struct cd_resp cd_resp;
 
 struct get_req {
-	char session_id[SESSION_ID_LEN];
-	char path[DIR_PATH_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char path[XDR_DIR_PATH_MAX_LEN];
 	int to_peer;
 	struct logged_in_user user;
 };
@@ -177,7 +179,7 @@ struct trans_entry {
 	long total_size;
 	int this_size;
 	u_long mode;
-	u_char content[CONTENT_BLOCK_SIZE];
+	u_char content[XDR_CONTENT_BLOCK_SIZE];
 };
 typedef struct trans_entry trans_entry;
 
@@ -191,7 +193,7 @@ typedef struct get_resp_data get_resp_data;
 struct get_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct get_resp_data data;
 	int need_reply;
 };
@@ -205,7 +207,7 @@ struct put_req_data {
 typedef struct put_req_data put_req_data;
 
 struct put_req {
-	char session_id[SESSION_ID_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
 	int to_peer;
 	struct logged_in_user user;
 	struct put_req_data data;
@@ -217,14 +219,14 @@ typedef struct put_req put_req;
 struct put_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 };
 typedef struct put_resp put_resp;
 
 struct common_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 };
 typedef struct common_resp common_resp;
 
@@ -233,7 +235,7 @@ struct write_msg_req {
 	char name[16];
 	int pid;
 	int length;
-	char mtext[NET_MSG_MAX_LEN];
+	char mtext[XDR_NET_MSG_MAX_LEN];
 };
 typedef struct write_msg_req write_msg_req;
 
@@ -247,20 +249,20 @@ struct read_msg_resp_data {
 	char name[16];
 	int pid;
 	int length;
-	char mtext[NET_MSG_MAX_LEN];
+	char mtext[XDR_NET_MSG_MAX_LEN];
 };
 typedef struct read_msg_resp_data read_msg_resp_data;
 
 struct read_msg_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct read_msg_resp_data data;
 };
 typedef struct read_msg_resp read_msg_resp;
 
 struct mp_stat_req {
-	char session_id[SESSION_ID_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
 };
 typedef struct mp_stat_req mp_stat_req;
 
@@ -275,48 +277,48 @@ typedef struct mp_stat_resp_data mp_stat_resp_data;
 struct mp_stat_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct mp_stat_resp_data data;
 };
 typedef struct mp_stat_resp mp_stat_resp;
 
 struct directcmd_req {
-	char session_id[SESSION_ID_LEN];
-	char cmd[CMD_MAX_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
+	char cmd[XDR_CMD_MAX_LEN];
 };
 typedef struct directcmd_req directcmd_req;
 
 struct directcmd_resp_data {
 	int total_len;
 	int this_len;
-	char content[DIRECT_CMD_RESP_MAX_LEN];
+	char content[XDR_DIRECT_CMD_RESP_MAX_LEN];
 };
 typedef struct directcmd_resp_data directcmd_resp_data;
 
 struct directcmd_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct directcmd_resp_data data;
 };
 typedef struct directcmd_resp directcmd_resp;
 
 struct who_req {
-	char session_id[SESSION_ID_LEN];
+	char session_id[XDR_SESSION_ID_LEN];
 };
 typedef struct who_req who_req;
 
 struct who_resp_data {
 	int total;
 	int this_nr;
-	struct logged_in_user users[LOGGED_IN_USER_MAX_CNT];
+	struct logged_in_user users[XDR_LOGGED_IN_USER_MAX_CNT];
 };
 typedef struct who_resp_data who_resp_data;
 
 struct who_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct who_resp_data data;
 };
 typedef struct who_resp who_resp;
@@ -324,19 +326,19 @@ typedef struct who_resp who_resp;
 struct write_req {
 	struct logged_in_user user;
 	int len;
-	char message[WRITE_MSG_MAX_LEN];
+	char message[XDR_WRITE_MSG_MAX_LEN];
 };
 typedef struct write_req write_req;
 
 struct write_resp_data {
-	char message[WRITE_MSG_MAX_LEN];
+	char message[XDR_WRITE_MSG_MAX_LEN];
 };
 typedef struct write_resp_data write_resp_data;
 
 struct write_resp {
 	int status;
 	int flags;
-	char message[RESP_MESSAGE_MAX_LEN];
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct write_resp_data data;
 };
 typedef struct write_resp write_resp;
