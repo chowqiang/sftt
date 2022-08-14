@@ -20,10 +20,11 @@
 #include "test_common.h"
 #include "utils.h"
 
-#define TEST_NAME	"get"
+#define TEST_NAME	"fwd_put"
 
-#define CLIENT_DIR	"client"
 #define SERVER_DIR	"server"
+#define CLIENT_DIR_1	"client_1"
+#define CLIENT_DIR_2	"client_2"
 
 #define TEST_CMD_FILE		"cmd_file"
 #define TEST_CMP_FILE		"cmp_file"
@@ -31,7 +32,8 @@
 
 const char *dirs[] = {
 	SERVER_DIR,
-	CLIENT_DIR,
+	CLIENT_DIR_1,
+	CLIENT_DIR_2,
 };
 
 struct test_cmd cmds[] = {
@@ -41,9 +43,9 @@ struct test_cmd cmds[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "get",
-		.args = {SERVER_DIR, CLIENT_DIR, NULL},
-		.chroot_flags = BIT32(0) | BIT32(1)
+		.cmd = "put",
+		.args = {0, CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{
 		.cmd = "touch",
@@ -53,7 +55,7 @@ struct test_cmd cmds[] = {
 };
 
 struct test_cmp_file_list cmp_file_list = {
-	.files = {CLIENT_DIR, SERVER_DIR, NULL},
+	.files = {CLIENT_DIR_1, CLIENT_DIR_2, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
 };
 

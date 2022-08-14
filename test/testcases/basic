@@ -10,3 +10,6 @@ strops
 
 # test thread pool
 thread_pool
+
+# test priority list
+priority_list

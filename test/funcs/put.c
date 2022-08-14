@@ -68,7 +68,7 @@ struct test_cmp_file_list cmp_file_list = {
  * 8. Check dir between client random dir and server gotten dir
  * 9. Give checked results
  */
-int test_get(int argc, char *argv[])
+int test_put(int argc, char *argv[])
 {
 	struct test_context *ctx = NULL;
 	char *root = NULL;
@@ -103,7 +103,7 @@ int test_get(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	test_get(argc, argv);
+	test_put(argc, argv);
 
 	return 0;
 }

@@ -32,7 +32,8 @@
 
 const char *dirs[] = {
 	SERVER_DIR,
-	CLIENT_DIR,
+	CLIENT_DIR_1,
+	CLIENT_DIR_2
 };
 
 struct test_cmd cmds[] = {
@@ -43,8 +44,8 @@ struct test_cmd cmds[] = {
 	},
 	{
 		.cmd = "get",
-		.args = {SERVER_DIR, CLIENT_DIR, NULL},
-		.chroot_flags = BIT32(0) | BIT32(1)
+		.args = {0, CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{
 		.cmd = "touch",
@@ -54,7 +55,7 @@ struct test_cmd cmds[] = {
 };
 
 struct test_cmp_file_list cmp_file_list = {
-	.files = {CLIENT_DIR, SERVER_DIR, NULL},
+	.files = {CLIENT_DIR_1, CLIENT_DIR_2, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
 };
 
