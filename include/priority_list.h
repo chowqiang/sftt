@@ -14,27 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BITS_H_
-#define _BITS_H_
+#ifndef _PRIORITY_LIST_H_
+#define _PRIORITY_LIST_H_
 
-#define UINT32_C(c)    c ## U
-#define BIT32(nr) (UINT32_C(1) << (nr))
+#include "list.h"
 
-#define TYPE_INT_BITS	(sizeof(int) * 8)
-
-/**
- *
- **/
-void set_bit(unsigned char *ch, int pos, unsigned char bit);
-
-/**
- *
- **/
-unsigned char get_bit(unsigned char ch, int pos);
-
-/**
- *
- **/
-unsigned char *set_bits(unsigned char *dst, int pos, unsigned int src, int len, int *end);
-
+struct priority_list_head {
+};
 #endif

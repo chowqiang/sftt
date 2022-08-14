@@ -15,6 +15,47 @@
  */
 
 #include <stdio.h>
+#include "bits.h"
+#include "common.h"
+#include "test_common.h"
+#include "utils.h"
+
+#define TEST_NAME	"get"
+
+#define CLIENT_DIR	"client"
+#define SERVER_DIR	"server"
+
+#define TEST_CMD_FILE		"cmd_file"
+#define TEST_CMP_FILE		"cmp_file"
+#define TEST_FINISH_FILE	"done"
+
+const char *dirs[] = {
+	SERVER_DIR,
+	CLIENT_DIR,
+};
+
+struct test_cmd cmds[] = {
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "get",
+		.args = {SERVER_DIR, CLIENT_DIR, NULL},
+		.chroot_flags = BIT32(0) | BIT32(1)
+	},
+	{
+		.cmd = "touch",
+		.args = {TEST_FINISH_FILE, NULL},
+		.chroot_flags = BIT32(0)
+	}
+};
+
+struct test_cmp_file_list cmp_file_list = {
+	.files = {CLIENT_DIR, SERVER_DIR, NULL},
+	.chroot_flags = BIT32(0) | BIT32(1)
+};
 
 /*
  * 1. Generate test dir in server
@@ -27,8 +68,42 @@
  * 8. Check dir between server random dir and client gotten dir
  * 9. Give checked results
  */
+int test_get(int argc, char *argv[])
+{
+	struct test_context *ctx = NULL;
+	char *root = NULL;
+	char res_msg[1024];
+	bool test_result;
+
+	ctx = test_context_create(TEST_NAME);
+	if (ctx == NULL)
+		return -1;
+
+	test_context_add_dirs(ctx, dirs, ARRAY_SIZE(dirs));
+
+	test_context_generate_cmd_file(ctx, TEST_CMD_FILE, cmds, ARRAY_SIZE(cmds));
+
+	test_context_generate_cmp_file(ctx, TEST_CMP_FILE, &cmp_file_list);
+
+	test_context_add_finish_file(ctx, TEST_FINISH_FILE);
+
+	test_context_run_test(ctx);
+
+	test_context_get_result(ctx, &test_result, res_msg, sizeof(res_msg));
+	if (test_result) {
+		printf("test successfully!\n");
+	} else {
+		printf("test failed: %s\n", res_msg);
+	}
+
+	test_context_destroy(ctx);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
-	printf("get test done!\n");
+	test_get(argc, argv);
+
 	return 0;
 }

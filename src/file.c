@@ -125,7 +125,7 @@ int is_file(char *file_name)
 	return S_ISREG(file_stat.st_mode);
 }
 
-char *path_join(char *dir, char *fname)
+char *path_join(const char *dir, const char *fname)
 {
 	char *path = NULL;
 	char *pos;
@@ -573,3 +573,16 @@ char *get_basename(char *path)
 {
 	return basename(path);
 }
+
+int write_new_line(FILE *fp)
+{
+	int ret = 0;
+	const char *new_line = "\n";
+
+	ret = fwrite(new_line, strlen(new_line), 1, fp);
+	if (ret != strlen(new_line))
+		return -1;
+
+	return 0;
+}
+

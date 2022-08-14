@@ -70,7 +70,7 @@ int is_dir(char *file_name);
 int is_file(char *file_name);
 bool same_file(char *path, char *md5);
 
-char *path_join(char *dir, char *fname);
+char *path_join(const char *dir, const char *fname);
 
 struct dlist *get_top_file_list(char *dir);
 struct dlist *get_all_file_list(char *dir);
@@ -92,4 +92,7 @@ bool is_absolute_path(char *path);
 bool is_relative_path(char *path);
 
 char *get_basename(char *path);
+
+int write_new_line(FILE *fp);
+
 #endif
