@@ -66,13 +66,28 @@ int basic_test(int argc, char *argv[])
 		.name = "client4",
 		.pid = 4,
 	};
-	PRIORITY_INIT_LIST_HEAD(&p5.list, 4);
+	PRIORITY_INIT_LIST_HEAD(&p5.list, 1);
 
-	priority_list_add(&p4.list, &ctx.list);
-	priority_list_add(&p2.list, &ctx.list);
-	priority_list_add(&p3.list, &ctx.list);
+	struct test_process p6 = {
+		.name = "client5",
+		.pid = 5,
+	};
+	PRIORITY_INIT_LIST_HEAD(&p6.list, 2);
+
+	struct test_process p7 = {
+		.name = "client6",
+		.pid = 6,
+	};
+	PRIORITY_INIT_LIST_HEAD(&p7.list, 3);
+
+
 	priority_list_add(&p5.list, &ctx.list);
+	priority_list_add(&p2.list, &ctx.list);
 	priority_list_add(&p1.list, &ctx.list);
+	priority_list_add(&p3.list, &ctx.list);
+	priority_list_add(&p4.list, &ctx.list);
+	priority_list_add(&p6.list, &ctx.list);
+	priority_list_add(&p7.list, &ctx.list);
 
 	priority_list_for_each_entry(tp, &ctx.list, list)
 		printf("name = %s, pid = %d, priority = %d\n",
