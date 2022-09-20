@@ -25,13 +25,33 @@
 #define CLIENT_DIR	"client"
 #define SERVER_DIR	"server"
 
+#define TEST_STATE_FILE_SERVER	"server.st"
+#define TEST_STATE_FILE_CLIENT	"client.st"
 #define TEST_CMD_FILE		"cmd_file"
 #define TEST_CMP_FILE		"cmp_file"
 #define TEST_FINISH_FILE	"done"
 
+#define CLIENT_PROCESS	"client"
+#define SERVER_PROCESS	"server"
+
+#ifndef CLIENT_PATH
+#error "please define CLIENT_PATH as client path"
+#endif
+
+#ifndef SERVER_PATH
+#error "please define SERVER_PATH as server path"
+#endif
+
 const char *dirs[] = {
 	SERVER_DIR,
 	CLIENT_DIR,
+};
+
+struct file_gen_attr attrs[] = {
+	{"a/e.txt", FILE_TYPE_FILE, 100000, 0666},
+	{"c/g.txt", FILE_TYPE_FILE, 200000, 0666},
+	{"a/d/h.txt", FILE_TYPE_FILE, 300000, 0666},
+	{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, 0666}
 };
 
 struct test_cmd cmds[] = {
@@ -55,6 +75,19 @@ struct test_cmd cmds[] = {
 struct test_cmp_file_list cmp_file_list = {
 	.files = {CLIENT_DIR, SERVER_DIR, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
+};
+
+static const char *client_args[] = {
+	"-h",
+	"127.0.0.1",
+	"-u",
+	"root",
+	"-p",
+	"root"
+};
+
+static const char *server_args[] = {
+	"-d"
 };
 
 /*
@@ -81,7 +114,20 @@ int test_put(int argc, char *argv[])
 
 	test_context_add_dirs(ctx, dirs, ARRAY_SIZE(dirs));
 
-	test_context_generate_cmd_file(ctx, TEST_CMD_FILE, cmds, ARRAY_SIZE(cmds));
+	test_context_gen_random_files(ctx, CLIENT_DIR, attrs, ARRAY_SIZE(attrs));
+
+	test_context_add_process(ctx, SERVER_PROCESS, SERVER_PATH,
+			TEST_PROCESS_PRIORITY_SERVER, TEST_STATE_FILE_SERVER,
+			is_started_default, server_args,
+			ARRAY_SIZE(server_args));
+
+	test_context_add_process(ctx, CLIENT_PROCESS, CLIENT_PATH,
+			TEST_PROCESS_PRIORITY_CLIENT_1, TEST_STATE_FILE_CLIENT,
+			is_started_default, client_args,
+			ARRAY_SIZE(client_args));
+
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS, TEST_CMD_FILE,
+			cmds, ARRAY_SIZE(cmds));
 
 	test_context_generate_cmp_file(ctx, TEST_CMP_FILE, &cmp_file_list);
 

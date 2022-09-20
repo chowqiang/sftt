@@ -335,7 +335,7 @@ char *__strdup(const char *buf)
 	return tmp;
 }
 
-int gen_random(int min, int max)
+int gen_random_num(int min, int max)
 {
 	return gen_int(min, max);
 }
@@ -347,4 +347,18 @@ double get_double_time(void)
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	return (double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0;
+}
+
+void gen_random_str(char buf[], int len)
+{
+	int i = 0;
+
+	if (len < 1)
+		return;
+
+	for (i = 0; i < len - 1; ++i) {
+		buf[i] = gen_char(1, 127);
+	}
+
+	buf[len - 1] = 0;
 }

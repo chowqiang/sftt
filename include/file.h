@@ -19,6 +19,8 @@
 
 #include <stdbool.h>
 #include "common.h"
+#include "list.h"
+#include "md5.h"
 
 #define FILE_TYPE_UNKNOWN	0
 #define FILE_TYPE_FILE		1
@@ -35,6 +37,23 @@ struct path_entry {
 struct path_entry_list {
 	struct path_entry entry;
 	struct path_entry_list *next;
+};
+
+struct file_node {
+	char *abs_path;
+	char *name;
+	mode_t mode;
+	int type;
+	size_t size;
+	unsigned char md5[MD5_STR_LEN];
+	struct list_head list;
+};
+
+struct file_gen_attr {
+	const char *path;
+	int type;
+	size_t size;
+	mode_t mode;
 };
 
 #define IS_DIR(type)	(type == FILE_TYPE_DIR)
@@ -94,5 +113,9 @@ bool is_relative_path(char *path);
 char *get_basename(char *path);
 
 int write_new_line(FILE *fp);
+
+int dir_compare(char *path1, char *path2);
+
+int gen_files_by_template(struct file_gen_attr *attrs, int num, char *root);
 
 #endif

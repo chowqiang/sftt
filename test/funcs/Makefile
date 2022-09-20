@@ -1,14 +1,10 @@
 
-all: client_task progress_viewer get put fwd_get fwd_put
+all: client_task get put fwd_get fwd_put
+
+CFLAGS += -DSERVER_PATH=\"$(SERVER_PATH)\" -DCLIENT_PATH=\"$(CLIENT_PATH)\"
 
 client_task: client_task.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB) -lpthread
-
-progress_viewer: progress_viewer.c
-	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
-
-compress: compress.c
-	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)
 
 get: get.c
 	$(CC) -o $O/$@ $^ $(CFLAGS) -L$(LIB_DIR) -l$(LIB)

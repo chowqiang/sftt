@@ -57,7 +57,9 @@ int get_first_word(char *buf, char *word, int len);
 
 char *__strdup(const char *buf);
 
-int gen_random(int min, int max);
+int gen_random_num(int min, int max);
+
+void gen_random_str(char buf[], int len);
 
 double get_double_time(void);
 

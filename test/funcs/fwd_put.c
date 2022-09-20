@@ -20,20 +20,35 @@
 #include "test_common.h"
 #include "utils.h"
 
-#define TEST_NAME	"fwd_put"
+#define TEST_NAME			"fwd_put"
 
-#define SERVER_DIR	"server"
-#define CLIENT_DIR_1	"client_1"
-#define CLIENT_DIR_2	"client_2"
+#define SERVER_DIR			"server"
+#define CLIENT_DIR_1			"client_1"
+#define CLIENT_DIR_2			"client_2"
 
-#define TEST_CMD_FILE		"cmd_file"
-#define TEST_CMP_FILE		"cmp_file"
-#define TEST_FINISH_FILE	"done"
+#define TEST_STATE_FILE_SERVER		"server.st"
+#define TEST_STATE_FILE_CLIENT_1	"client1.st"
+#define TEST_STATE_FILE_CLIENT_2	"client2.st"
+
+#define TEST_CMD_FILE			"cmd_file"
+#define TEST_CMP_FILE			"cmp_file"
+#define TEST_FINISH_FILE		"done"
+
+#define SERVER_PROCESS			"server"
+#define CLIENT_PROCESS_1 		"client1"
+#define CLIENT_PROCESS_2 		"client2"
 
 const char *dirs[] = {
 	SERVER_DIR,
 	CLIENT_DIR_1,
 	CLIENT_DIR_2,
+};
+
+struct file_gen_attr attrs[] = {
+	{"a/e.txt", FILE_TYPE_FILE, 100000, 0666},
+	{"c/g.txt", FILE_TYPE_FILE, 200000, 0666},
+	{"a/d/h.txt", FILE_TYPE_FILE, 300000, 0666},
+	{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, 0666}
 };
 
 struct test_cmd cmds[] = {
@@ -54,9 +69,40 @@ struct test_cmd cmds[] = {
 	}
 };
 
+struct test_cmd cmds_2[] = {
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "put",
+		.args = {"0", CLIENT_DIR_2, CLIENT_DIR_1, NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
+	},
+	{
+		.cmd = "touch",
+		.args = {TEST_FINISH_FILE, NULL},
+		.chroot_flags = BIT32(0)
+	}
+};
+
 struct test_cmp_file_list cmp_file_list = {
 	.files = {CLIENT_DIR_1, CLIENT_DIR_2, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
+};
+
+static const char *client_args[] = {
+	"-h",
+	"127.0.0.1",
+	"-u",
+	"root",
+	"-p",
+	"root"
+};
+
+static const char *server_args[] = {
+	"-d"
 };
 
 /*
@@ -84,7 +130,25 @@ int test_fwd_put(int argc, char *argv[])
 
 	test_context_add_dirs(ctx, dirs, ARRAY_SIZE(dirs));
 
-	test_context_generate_cmd_file(ctx, TEST_CMD_FILE, cmds, ARRAY_SIZE(cmds));
+	test_context_gen_random_files(ctx, CLIENT_DIR_2, attrs, ARRAY_SIZE(attrs));
+
+	test_context_add_process(ctx, SERVER_PROCESS, SERVER_PATH,
+			TEST_PROCESS_PRIORITY_SERVER, TEST_STATE_FILE_SERVER,
+			is_started_default, server_args,
+			ARRAY_SIZE(server_args));
+
+	test_context_add_process(ctx, CLIENT_PROCESS_1, CLIENT_PATH,
+			TEST_PROCESS_PRIORITY_CLIENT_1, TEST_STATE_FILE_CLIENT_1,
+			is_started_default, client_args,
+			ARRAY_SIZE(client_args));
+
+	test_context_add_process(ctx, CLIENT_PROCESS_2, CLIENT_PATH,
+			TEST_PROCESS_PRIORITY_CLIENT_2, TEST_STATE_FILE_CLIENT_2,
+			is_started_default, client_args,
+			ARRAY_SIZE(client_args));
+
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE, cmds_2,
+			ARRAY_SIZE(cmds));
 
 	test_context_generate_cmp_file(ctx, TEST_CMP_FILE, &cmp_file_list);
 

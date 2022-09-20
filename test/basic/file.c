@@ -20,22 +20,23 @@
 #include <unistd.h>
 #include "dlist.h"
 #include "file.h"
+#include "utils.h"
 
 void test_path_ops(void)
 {
 	char *path = "../../var/sftt/root";
 	char *rp = realpath(path, NULL);
 	char pwd[128];
-	
+
 	getcwd(pwd, 127);
 
 	printf("%s\n", pwd);
-	
+
 	if (rp == NULL) {
 		printf("get realpath failed!\n");
 	} else {
 		printf("%s\n", realpath(rp, NULL));
-		printf("%s\n", basename(rp));	
+		printf("%s\n", basename(rp));
 	}
 }
 
@@ -69,10 +70,66 @@ void test_mode(void)
 	printf("0x%0x\n", mode);
 }
 
+void __test_get_path_entry_list(char *path)
+{
+	struct dlist *file_list;
+	struct dlist_node *node;
+	struct path_entry *entry;
+
+	file_list = get_path_entry_list(path, NULL);
+	if (file_list == NULL) {
+		printf("cannot get path entry list: %s\n", path);
+		return;
+	}
+
+	printf("path: %s\n", path);
+	dlist_for_each(file_list, node) {
+		entry = node->data;
+		printf("%s, %s\n", entry->abs_path, entry->rel_path);
+	}
+
+}
+
+void test_get_path_entry_list(void)
+{
+	char *path = "/home/zhoumin/tmp/1";
+	char *path2 = "/home/zhoumin/tmp/2";
+
+	__test_get_path_entry_list(path);
+	__test_get_path_entry_list(path2);
+}
+
+void test_dir_compare(void)
+{
+	char *path = "/home/zhoumin/tmp/1";
+	char *path2 = "/home/zhoumin/tmp/2";
+
+	if (dir_compare(path, path2) == 0) {
+		printf("%s is same to %s\n", path, path2);
+	} else {
+		printf("%s is not same to %s\n", path, path2);
+	}
+}
+
+void test_gen_random_files(void)
+{
+	struct file_gen_attr attrs[] = {
+		{"a/e.txt", FILE_TYPE_FILE, 100000, 0666},
+		{"c/g.txt", FILE_TYPE_FILE, 200000, 0666},
+		{"a/d/h.txt", FILE_TYPE_FILE, 300000, 0666},
+		{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, 0666}
+	};
+
+	gen_files_by_template(attrs, ARRAY_SIZE(attrs), "/home/zhoumin/tmp/tmo");
+}
+
 int main(void)
 {
-	test_get_all_file_list();
+	//test_get_all_file_list();
 	//test_mode();
+	//test_get_path_entry_list();
+	//test_dir_compare();
+	test_gen_random_files();
 
 	return 0;
 }

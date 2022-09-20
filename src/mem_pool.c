@@ -196,7 +196,7 @@ void *mp_update_stat_loop(void *arg)
 			mp->msg_queue = get_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
 
 		if (mp->msg_queue == NULL) {
-			num = gen_random(1, 1000);
+			num = gen_random_num(1, 1000);
 			usleep(num * 1000);
 		}
 

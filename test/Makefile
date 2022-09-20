@@ -1,7 +1,7 @@
 BASIC_DIR=$(TEST_DIR)/basic
 FUNCS_DIR=$(TEST_DIR)/funcs
 
-export LIB_DIR LIB CFLAGS TEST_DIR BASIC_DIR LIB_NAME
+export LIB_DIR LIB CFLAGS TEST_DIR BASIC_DIR LIB_NAME SERVER_PATH CLIENT_PATH
 
 all: BASIC FUNCS
 
@@ -29,7 +29,6 @@ help:
 	@echo " test        - build and run function tests"
 
 .PHONY: clean
-
-
+clean:
 	@rm -f $(TEST_DIR)/bin/*
 	@rm -f $(BASIC_DIR)/*.o

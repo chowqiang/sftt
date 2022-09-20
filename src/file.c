@@ -16,11 +16,13 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <dirent.h>
 #include "debug.h"
@@ -28,6 +30,7 @@
 #include "file.h"
 #include "md5.h"
 #include "mem_pool.h"
+#include "mkdirp.h"
 #include "utils.h"
 
 extern struct mem_pool *g_mp;
@@ -112,7 +115,8 @@ bool file_existed(char *path)
 int is_dir(char *file_name)
 {
 	struct stat file_stat;
-	stat(file_name, &file_stat);
+
+	lstat(file_name, &file_stat);
 
 	return S_ISDIR(file_stat.st_mode);
 }
@@ -514,7 +518,8 @@ struct path_entry *get_path_entry(char *path, char *pwd)
 mode_t file_mode(char *path)
 {
 	struct stat file_stat;
-	stat(path, &file_stat);
+
+	lstat(path, &file_stat);
 
 	return file_stat.st_mode;
 }
@@ -561,12 +566,18 @@ int create_new_file(char *fname, mode_t mode)
 	fp = fopen(fname, "w+");
 	if (fp == NULL) {
 		printf("%s:%d, fopen file failed: %s\n", __func__, __LINE__, fname);
+		perror("create file failed");
 		return -1;
 	}
 
 	fclose(fp);
 
        	return set_file_mode(fname, mode);
+}
+
+char *get_dirname(char *path)
+{
+	return dirname(__strdup(path));
 }
 
 char *get_basename(char *path)
@@ -586,3 +597,223 @@ int write_new_line(FILE *fp)
 	return 0;
 }
 
+void free_file_node_list(struct list_head *node_list)
+{
+	struct file_node *p, *q;
+
+	if (node_list == NULL || list_empty(node_list))
+		return;
+
+	list_for_each_entry_safe(p, q, node_list, list) {
+		list_del(&p->list);
+		mp_free(g_mp, p);
+	}
+}
+
+int get_file_node_list(char *path, struct list_head *node_list)
+{
+	DIR *dp;
+	struct dirent *item;
+	mode_t mode;
+	struct file_node *node = NULL;
+	int count = 0;
+
+	if (!file_existed(path) || !is_dir(path))
+		return -1;
+
+	if ((dp = opendir(path)) == NULL) {
+		return -1;
+	}
+
+	while ((item = readdir(dp)) != NULL) {
+		printf("path = %s, d_name = %s\n", path, item->d_name);
+		if (strcmp(item->d_name, ".") == 0 ||
+			strcmp(item->d_name, "..") == 0)
+			continue;
+
+		node = mp_malloc(g_mp, __func__, sizeof(struct file_node));
+		if (node == NULL) {
+			goto err;
+		}
+
+		node->abs_path = path_join(path, item->d_name);
+		node->name = __strdup(item->d_name);
+		node->mode = file_mode(node->abs_path);
+		node->type = S_ISDIR(node->mode) ? FILE_TYPE_DIR : FILE_TYPE_FILE;
+
+		if (IS_FILE(node->type)) {
+			node->size = file_size(node->abs_path);
+			md5_file(node->abs_path, node->md5);
+		}
+
+		list_add(&node->list, node_list);
+		++count;
+	}
+	closedir(dp);
+
+	return count;
+err:
+	closedir(dp);
+
+	return -1;
+}
+
+int dir_compare(char *path1, char *path2)
+{
+	struct list_head fn_list1, fn_list2;
+	struct file_node *p, *q;
+	bool found;
+	int ret = -1;
+	int fn_cnt1, fn_cnt2;
+
+	INIT_LIST_HEAD(&fn_list1);
+	INIT_LIST_HEAD(&fn_list2);
+
+	fn_cnt1 = get_file_node_list(path1, &fn_list1);
+	fn_cnt2 = get_file_node_list(path2, &fn_list2);
+	if (fn_cnt1 == -1 || fn_cnt2 == -1 || fn_cnt1 != fn_cnt2)
+		goto done;
+
+	list_for_each_entry(p, &fn_list1, list) {
+		found = false;
+		list_for_each_entry(q, &fn_list2, list) {
+			if (strcmp(p->name, q->name) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+			goto done;
+
+		if (p->mode != q->mode || p->type != q->type)
+			goto done;
+
+		if (IS_FILE(p->type) && (p->size != q->size ||
+			strcmp((const char *)p->md5, (const char *)q->md5)))
+			goto done;
+	}
+
+	list_for_each_entry(p, &fn_list1, list) {
+		list_for_each_entry(q, &fn_list2, list) {
+			if (strcmp(p->name, q->name) == 0)
+				break;
+		}
+		if (IS_DIR(p->type) && dir_compare(p->abs_path, q->abs_path))
+			goto done;
+	}
+
+	ret = 0;
+done:
+	free_file_node_list(&fn_list1);
+	free_file_node_list(&fn_list2);
+
+	return ret;
+}
+
+int make_or_update_dir(char *path, mode_t mode)
+{
+	int ret = 0;
+
+	if (!file_existed(path)) {
+		if (mkdirp(path, mode) == -1)
+			return -1;
+	}
+
+	return set_file_mode(path, mode);
+}
+
+int try_make_dir(char *path, mode_t mode)
+{
+	int ret = 0;
+
+	if (!file_existed(path)) {
+		if (mkdirp(path, mode) == -1)
+			return -1;
+		ret = set_file_mode(path, mode);
+	}
+
+	return ret;
+}
+
+int gen_random_file(char *path, size_t size, mode_t mode)
+{
+	int fd;
+	char buf[CONTENT_BLOCK_SIZE + 1];
+	int i, remain;
+
+	if (!file_existed(path))
+		if (create_new_file(path, mode) == -1)
+			return -1;
+
+	set_file_mode(path, mode);
+
+	fd = open(path, O_WRONLY);
+	if (fd == -1)
+		return -1;
+
+	if (ftruncate(fd, (off_t)size) == -1)
+		return -1;
+
+	for (i = 0; i < size / CONTENT_BLOCK_SIZE; ++i) {
+		gen_random_str(buf, sizeof(buf));
+		write(fd, buf, CONTENT_BLOCK_SIZE);
+	}
+
+	remain = size % CONTENT_BLOCK_SIZE;
+	if (remain) {
+		gen_random_str(buf, remain + 1);
+		write(fd, buf, remain);
+	}
+
+	return 0;
+}
+
+int gen_one_file(struct file_gen_attr *attr, char *root)
+{
+	char *real_path = NULL;
+	char *dir_name = NULL;
+	int ret = -1;
+
+	if (root) {
+		real_path = path_join(root, attr->path);
+	} else {
+		real_path = __strdup(attr->path);
+	}
+
+	if (IS_DIR(attr->type)) {
+		ret = make_or_update_dir(real_path, attr->mode);
+		goto done;
+	}
+
+	dir_name = get_dirname(real_path);
+	if (dir_name == NULL)
+		goto done;
+
+	if (try_make_dir(dir_name, attr->mode))
+		goto done;
+
+	ret = gen_random_file(real_path, attr->size, attr->mode);
+
+done:
+	mp_free(g_mp, real_path);
+	mp_free(g_mp, dir_name);
+
+	return ret;
+}
+
+int gen_files_by_template(struct file_gen_attr *attrs, int num, char *root)
+{
+	int i = 0;
+	int ret = 0;
+
+	if (attrs == NULL || num < 1)
+		return -1;
+
+	for (i = 0; i < num; ++i) {
+		ret = gen_one_file(&attrs[i], root);
+		if (ret)
+			break;
+	}
+
+	return ret;
+}
