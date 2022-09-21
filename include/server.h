@@ -56,6 +56,7 @@ struct sftt_server {
 	struct client_session sessions[MAX_CLIENT_NUM];
 	struct pthread_mutex *pm;
 	struct thread_pool *thread_pool;
+	char *state_file;
 };
 
 struct sftt_server_stat {
@@ -68,14 +69,22 @@ struct sftt_server_stat {
 };
 
 void server_init_func();
-int  server_consult_block_size(int connect_fd, unsigned char *buff, int server_block_size);
-void server_file_resv(int connect_fd, int consulted_block_size, struct sftt_server_config init_conf);
-FILE *server_creat_file(struct sftt_packet *sp, struct sftt_server_config init_conf, char * data_buff);
+
+int  server_consult_block_size(int connect_fd, unsigned char *buff,
+		int server_block_size);
+
+void server_file_resv(int connect_fd, int consulted_block_size,
+		struct sftt_server_config init_conf);
+
+FILE *server_creat_file(struct sftt_packet *sp,
+		struct sftt_server_config init_conf, char * data_buff);
+
 void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
+
 void is_exit(char * filepath);
 
-int sftt_server_start(char *store_path, bool background);
-int sftt_server_restart(char *store_path, bool background);
+int sftt_server_start(char *store_path, bool background, char *state_file);
+int sftt_server_restart(char *store_path, bool background, char *state_file);
 int sftt_server_stop(void);
 
 bool parse_store_path(char *optarg, char *store_path, int max_len);
@@ -84,4 +93,5 @@ void sftt_server_status(void);
 void sftt_server_db(void);
 void sftt_server_exit(int sig);
 void server_usage_help(int exitcode);
+
 #endif

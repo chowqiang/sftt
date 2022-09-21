@@ -51,24 +51,6 @@ struct file_gen_attr attrs[] = {
 	{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, 0666}
 };
 
-struct test_cmd cmds[] = {
-	{
-		.cmd = "w",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "put",
-		.args = {0, CLIENT_DIR_1, CLIENT_DIR_2, NULL},
-		.chroot_flags = BIT32(1) | BIT32(2)
-	},
-	{
-		.cmd = "touch",
-		.args = {TEST_FINISH_FILE, NULL},
-		.chroot_flags = BIT32(0)
-	}
-};
-
 struct test_cmd cmds_2[] = {
 	{
 		.cmd = "w",
@@ -147,8 +129,8 @@ int test_fwd_put(int argc, char *argv[])
 			is_started_default, client_args,
 			ARRAY_SIZE(client_args));
 
-	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE, cmds_2,
-			ARRAY_SIZE(cmds));
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE,
+			cmds_2, ARRAY_SIZE(cmds_2));
 
 	test_context_generate_cmp_file(ctx, TEST_CMP_FILE, &cmp_file_list);
 

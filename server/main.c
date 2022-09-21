@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 	char store_path[DIR_PATH_MAX_LEN];
 	bool background = false;
 	bool ret = false;
+	char *state_file = NULL;
 	char ch;
 
 	if (argc < 2) {
@@ -38,10 +39,13 @@ int main(int argc, char **argv)
 	}
 
 	memset(store_path, 0, sizeof(store_path));
-	while ((ch = getopt(argc, argv, "s:dv")) != -1) {
+	while ((ch = getopt(argc, argv, "r:s:dv")) != -1) {
 		switch (ch) {
-		case 's':
+		case 'r':
 			strncpy(store_path, optarg, sizeof(store_path) - 1);
+			break;
+		case 's':
+			state_file = __strdup(optarg);
 			break;
 		case 'd':
 			background = true;
@@ -70,9 +74,9 @@ int main(int argc, char **argv)
 #endif
 
 	if (strcmp(argv[optind], "start") == 0) {
-		sftt_server_start(store_path, background);
+		sftt_server_start(store_path, background, state_file);
 	} else if (strcmp(argv[optind], "restart") == 0) {
-		sftt_server_restart(store_path, background);
+		sftt_server_restart(store_path, background, state_file);
 	} else if (strcmp(argv[optind], "stop") == 0) {
 		sftt_server_stop();
 	} else if (strcmp(argv[optind], "status") == 0) {

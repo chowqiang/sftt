@@ -37,6 +37,8 @@ int main(int argc, char **argv)
 	char host[HOST_MAX_LEN];
 	char passwd_prompt[128];
 	char builtin[32];
+	char cmd_file[FILE_PATH_MAX_LEN];
+	char *state_file = NULL;
 	char ch;
 
 	bool has_passwd_opt = true;
@@ -57,17 +59,24 @@ int main(int argc, char **argv)
 	memset(host, 0, sizeof(host));
 	memset(builtin, 0, sizeof(builtin));
 
-	while ((ch = getopt(argc, argv, "b:u:p:h:v")) != -1) {
+	while ((ch = getopt(argc, argv, "b:f:u:p:s:h:v")) != -1) {
 		switch (ch) {
 		case 'b':
 			strncpy(builtin, optarg, sizeof(builtin) - 1);
 			mode = RUN_MODE_BUILTIN;
+			break;
+		case 'f':
+			strncpy(cmd_file, optarg, sizeof(cmd_file) - 1);
+			mode = RUN_MODE_CMD_FILE;
 			break;
 		case 'u':
 			strncpy(user_name, optarg, sizeof(user_name) - 1);
 			break;
 		case 'p':
 			port = atoi(optarg);
+			break;
+		case 's':
+			state_file = __strdup(optarg);
 			break;
 		case 'h':
 			strncpy(host, optarg, sizeof(host) - 1);
@@ -115,6 +124,14 @@ int main(int argc, char **argv)
 		client_usage_help(-1);
 	}
 
+	if (mode == RUN_MODE_CMD_FILE) {
+		if (!file_existed(cmd_file)) {
+			printf("command file not existed: %s\n", cmd_file);
+			return -1;
+		}
+		return do_cmd_file(&client, cmd_file);
+	}
+
 	if (mode == RUN_MODE_BUILTIN && strlen(builtin) == 0) {
 		printf("builtin is invalid!\n");
 		client_usage_help(-1);
@@ -139,7 +156,8 @@ int main(int argc, char **argv)
 	show_options(host, user_name, password);
 #endif
 
-	if (init_sftt_client(&client, host, port, user_name, password) == -1) {
+	if (init_sftt_client(&client, host, port, user_name, password,
+				state_file) == -1) {
 		printf("init sftt client failed!\n");
 		exit(-1);
 	}

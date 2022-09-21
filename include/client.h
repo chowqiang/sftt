@@ -58,6 +58,7 @@ enum run_mode {
 	RUN_MODE_LOGIN,
 	RUN_MODE_TRANS,
 	RUN_MODE_BUILTIN,
+	RUN_MODE_CMD_FILE,
 	RUN_MODE_UNKNOWN,
 };
 
@@ -108,6 +109,7 @@ struct sftt_client {
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
 	char pwd[DIR_PATH_MAX_LEN];
+	char *state_file;
     	struct sftt_client_config config;
 	struct list_head friends;
 };
@@ -225,7 +227,7 @@ void sftt_client_mps_usage(void);
 
 void client_usage_help(int exitcode);
 int init_sftt_client(struct sftt_client *client, char *host, int port,
-		char *user, char *passwd);
+		char *user, char *passwd, char *state_file);
 int show_options(char *host, char *user_name, char *password);
 
 /*
@@ -242,6 +244,7 @@ int try_fetch_trans_info(char *arg1, char *arg2, char *user_name, char *host,
 		struct trans_info *trans);
 int do_trans(struct sftt_client *client, struct trans_info *trans);
 int do_builtin(struct sftt_client *client, char *builtin);
+int do_cmd_file(struct sftt_client *client, char *cmd_file);
 
 int recv_one_file_by_get_resp(struct sftt_client *client,
 		struct sftt_packet *resp_packet, struct common_resp *com_resp,

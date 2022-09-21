@@ -80,8 +80,6 @@ const char *directcmds[] = {
 	NULL
 };
 
-struct dlist *his_cmds;
-
 int consult_block_size_with_server(int sock,
 	struct sftt_client_config *client_config);
 
@@ -1321,7 +1319,7 @@ int init_sftt_client_thread_pool(struct sftt_client *client)
 }
 
 int init_sftt_client(struct sftt_client *client, char *host, int port,
-	char *user, char *passwd)
+	char *user, char *passwd, char *state_file)
 {
 	/*
 	 * set client context globally
@@ -1338,6 +1336,8 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 
 	client->mp = get_singleton_mp();
 	strncpy(client->uinfo.name, user, USER_NAME_MAX_LEN - 1);
+
+	client->state_file = state_file;
 
 	if (get_sftt_client_config(&client->config) == -1) {
 		printf("get sftt client config failed!\n");
@@ -2149,16 +2149,10 @@ int reader_loop(struct sftt_client *client)
 	char prompt[PROMPT_MAX_LEN];
 	char *line;
 
-	his_cmds = dlist_create(FREE_MODE_MP_FREE);
-
 	DEBUG((DEBUG_INFO, "begin to read loop ...\n"));
 
 	for (;;) {
 		get_prompt(client, prompt, PROMPT_MAX_LEN - 1);
-#if 0
-		printf("%s", prompt);
-		fgets(cmd, CMD_MAX_LEN - 1, stdin);
-#endif
 		line = readline(prompt);
 		if (line == NULL) {
 			exit(0);
@@ -2179,10 +2173,9 @@ int reader_loop(struct sftt_client *client)
 		execute_cmd(client, line, -1);
 
 		add_history(line);
-#if 0
-		dlist_append(his_cmds, __strdup(cmd));
-#endif
 	}
+
+	return 0;
 }
 
 int try_fetch_login_info(char *input, char *user_name, char *host)
@@ -2375,4 +2368,40 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 void sftt_client_who_usage(void)
 {
 	printf("Usage: w\n");
+}
+
+void create_state_file(struct sftt_client *client)
+{
+	if (client->state_file)
+		create_new_file(client->state_file, 0666);
+}
+
+int do_cmd_file(struct sftt_client *client, char *cmd_file)
+{
+	char cmd[CMD_MAX_LEN];
+	FILE *fp = NULL;
+
+	fp = fopen(cmd_file, "r");
+	if (fp == NULL) {
+		printf("cannot open command file: %s\n", cmd_file);
+		perror("command file open failed");
+		return -1;
+	}
+
+	create_state_file(client);
+
+	DEBUG((DEBUG_INFO, "begin to read loop ...\n"));
+
+	while (!feof(fp)) {
+		fgets(cmd, CMD_MAX_LEN - 1, fp);
+
+		if (strlen(cmd) == 0)
+			continue;
+
+		cmd[strlen(cmd) - 1] = 0;
+
+		execute_cmd(client, cmd, -1);
+	}
+
+	return 0;
 }

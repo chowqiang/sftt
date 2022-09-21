@@ -1585,6 +1585,12 @@ void init_sessions(void)
 	}
 }
 
+void create_state_file(struct sftt_server *server)
+{
+	if (server->state_file)
+		create_new_file(server->state_file, 0666);
+}
+
 void main_loop(void)
 {
 	int connect_fd = 0;
@@ -1598,6 +1604,8 @@ void main_loop(void)
 
 	server->status = SERVERING;
 	init_sessions();
+
+	create_state_file(server);
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
@@ -1703,7 +1711,7 @@ int init_sftt_server_thread_pool(struct sftt_server *server)
 	return 0;
 }
 
-int init_sftt_server(char *store_path)
+int init_sftt_server(char *store_path, char *state_file)
 {
 	int port = 0;
 	int sockfd;
@@ -1713,6 +1721,8 @@ int init_sftt_server(char *store_path)
 
 	server = (struct sftt_server *)mp_malloc(g_mp, __func__, sizeof(struct sftt_server));
 	assert(server != NULL);
+
+	server->state_file = state_file;
 
 	if (get_version_info(&server->ver) == -1) {
 		printf("cannot get sfttd version info!\n");
@@ -1758,7 +1768,7 @@ int init_sftt_server(char *store_path)
 	return 0;
 }
 
-int sftt_server_start(char *store_path, bool background)
+int sftt_server_start(char *store_path, bool background, char *state_file)
 {
 	if (sftt_server_is_running()) {
 		printf("cannot start " PROC_NAME ", because it has been running.\n");
@@ -1777,7 +1787,7 @@ int sftt_server_start(char *store_path, bool background)
 		exit(-1);
 	}
 
-	if (init_sftt_server(store_path) == -1) {
+	if (init_sftt_server(store_path, state_file) == -1) {
 		printf(PROC_NAME " create server failed!\n");
 		exit(-1);
 	}
@@ -1791,7 +1801,7 @@ int sftt_server_start(char *store_path, bool background)
 	return 0;
 }
 
-int sftt_server_restart(char *store_path, bool background)
+int sftt_server_restart(char *store_path, bool background, char *state_file)
 {
 #if 0
 	if (!sftt_server_is_running()) {
@@ -1808,7 +1818,7 @@ int sftt_server_restart(char *store_path, bool background)
 	}
 
 	sftt_server_stop();
-	sftt_server_start(store_path, background);
+	sftt_server_start(store_path, background, state_file);
 
 	add_log(LOG_INFO, PROC_NAME " is going to restart ...");
 

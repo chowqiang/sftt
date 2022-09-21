@@ -144,6 +144,10 @@ int test_context_add_process(struct test_context *ctx, char *process_name,
 	}
 	proc->argv[i++] = "-s";
 	proc->argv[i++] = proc->state_file;
+	if (proc->cmd_file) {
+		proc->argv[i++] = "-f";
+		proc->argv[i++] = proc->cmd_file;
+	}
 	proc->argv[i] = NULL;
 
 	PRIORITY_INIT_LIST_HEAD(&proc->list, priority);
