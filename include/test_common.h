@@ -45,7 +45,6 @@ struct test_process {
 	char *state_file;
 	char *argv[TEST_PROCESS_MAX_ARGS_NUM + 2];
 	struct priority_list_head list;
-	bool need_random_files;
 	pid_t pid;
 	bool valid;
 	bool (*is_started)(struct test_process *proc);
@@ -85,7 +84,7 @@ int test_context_add_dirs(struct test_context *ctx, const char *dirs[], int num)
 int test_context_add_process(struct test_context *ctx, char *process_name,
 		char *exec_file, int priority, char *state_file,
 		bool (*is_started)(struct test_process *proc),
-		const char *argv[], int argc);
+		bool need_kill, const char *argv[], int argc);
 
 int test_context_generate_cmd_file(struct test_context *ctx, char *process_name,
 		const char *fname, struct test_cmd *cmds, int num);

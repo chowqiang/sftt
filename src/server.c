@@ -1588,7 +1588,7 @@ void init_sessions(void)
 void create_state_file(struct sftt_server *server)
 {
 	if (server->state_file)
-		create_new_file(server->state_file, 0666);
+		create_new_file(server->state_file, FILE_MODE_DEFAULT);
 }
 
 void main_loop(void)

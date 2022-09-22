@@ -1927,7 +1927,6 @@ void sftt_client_directcmd_usage(void)
 
 int sftt_client_directcmd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 {
-	int i = 0;
 	struct sftt_client *client = obj;
 
 	if (argc != 1) {
@@ -2037,11 +2036,27 @@ void sftt_client_write_usage(void)
 	printf("Usage: write user_no \"message\"\n");
 }
 
+int sftt_client_touch_handler(void *obj, int argc, char *argv[],
+		bool *argv_check)
+{
+	if (argc != 1) {
+		sftt_client_touch_usage();
+		return -1;
+	}
+
+	return create_new_file(argv[0], FILE_MODE_DEFAULT);
+}
+
+void sftt_client_touch_usage(void)
+{
+	printf("Usage: touch file\n");
+}
+
 struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no)
 {
-	struct friend_user *p;
 	int i = 0;
+	struct friend_user *p;
 
 	list_for_each_entry(p, &client->friends, list)
 		if (i++ == user_no)
@@ -2373,7 +2388,7 @@ void sftt_client_who_usage(void)
 void create_state_file(struct sftt_client *client)
 {
 	if (client->state_file)
-		create_new_file(client->state_file, 0666);
+		create_new_file(client->state_file, FILE_MODE_DEFAULT);
 }
 
 int do_cmd_file(struct sftt_client *client, char *cmd_file)

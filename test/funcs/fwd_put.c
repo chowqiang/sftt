@@ -116,17 +116,17 @@ int test_fwd_put(int argc, char *argv[])
 
 	test_context_add_process(ctx, SERVER_PROCESS, SERVER_PATH,
 			TEST_PROCESS_PRIORITY_SERVER, TEST_STATE_FILE_SERVER,
-			is_started_default, server_args,
+			is_started_default, true, server_args,
 			ARRAY_SIZE(server_args));
 
 	test_context_add_process(ctx, CLIENT_PROCESS_1, CLIENT_PATH,
 			TEST_PROCESS_PRIORITY_CLIENT_1, TEST_STATE_FILE_CLIENT_1,
-			is_started_default, client_args,
+			is_started_default, true, client_args,
 			ARRAY_SIZE(client_args));
 
 	test_context_add_process(ctx, CLIENT_PROCESS_2, CLIENT_PATH,
 			TEST_PROCESS_PRIORITY_CLIENT_2, TEST_STATE_FILE_CLIENT_2,
-			is_started_default, client_args,
+			is_started_default, true, client_args,
 			ARRAY_SIZE(client_args));
 
 	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE,

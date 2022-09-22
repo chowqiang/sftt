@@ -113,7 +113,7 @@ int test_context_gen_random_files(struct test_context *ctx, char *dir,
 int test_context_add_process(struct test_context *ctx, char *process_name,
 		char *exec_file, int priority, char *state_file,
 		bool (*is_started)(struct test_process *proc),
-		const char *argv[], int argc)
+		bool need_kill, const char *argv[], int argc)
 {
 	int i, j;
 	struct test_process *proc;
@@ -137,6 +137,7 @@ int test_context_add_process(struct test_context *ctx, char *process_name,
 	proc->cmd_file = NULL;
 	proc->state_file = path_join(ctx->root_dir, state_file);
 	proc->is_started = is_started;
+	proc->need_kill = need_kill;
 	proc->argv[0] = get_basename(exec_file);
 
 	for (i = 1, j = 0; j < argc; ++i, ++j) {

@@ -265,11 +265,18 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 void sftt_client_who_usage(void);
 
 /*
- * send a message to another user.
+ * Send a message to another user.
  */
 int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		bool *argv_check);
 void sftt_client_write_usage(void);
+
+/*
+ * Touch a local file.
+ */
+int sftt_client_touch_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
+void sftt_client_touch_usage(void);
 
 /*
  * Sftt client commands supported.
@@ -340,6 +347,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.fn = sftt_client_write_handler,
 		.help = "send a message to another user",
 		.usage = sftt_client_write_usage,
+	},
+	{
+		.name = "touch",
+		.fn = sftt_client_touch_handler,
+		.help = "touch a file",
+		.usage = sftt_client_touch_usage,
 	},
 	{
 		.name = NULL,
