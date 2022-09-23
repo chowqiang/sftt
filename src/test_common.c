@@ -55,6 +55,8 @@ struct test_context *test_context_create(const char *name)
 	snprintf(buf, DIR_PATH_MAX_LEN, TEST_ROOT_DIR, name, (int)getpid());
 	ctx->root_dir = __strdup(buf);
 
+	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
+
 	ret = mkdir(ctx->root_dir, S_IRUSR | S_IWUSR);
 	if (ret == -1) {
 		perror("create test root directory failed");
