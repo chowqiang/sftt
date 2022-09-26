@@ -57,7 +57,7 @@ struct test_context *test_context_create(const char *name)
 
 	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
 
-	ret = mkdir(ctx->root_dir, S_IRUSR | S_IWUSR);
+	ret = make_or_update_dir(ctx->root_dir, 0666);
 	if (ret == -1) {
 		perror("create test root directory failed");
 		goto test_context_free;
@@ -95,7 +95,7 @@ int test_context_add_dirs(struct test_context *ctx, const char *dirs[], int num)
 			return -1;
 		}
 
-		ret = mkdir(path, S_IRUSR | S_IWUSR);
+		ret = make_or_update_dir(path, 0666);
 		if (ret == -1)
 			return -1;
 	}
@@ -284,6 +284,7 @@ int test_context_add_finish_file(struct test_context *ctx, char *finish_file)
 int start_one_test_process(struct test_context *ctx, struct test_process *proc)
 {
 	pid_t pid;
+	int i = 0;
 
 	pid = fork();
 	if (pid < 0) {
@@ -291,6 +292,10 @@ int start_one_test_process(struct test_context *ctx, struct test_process *proc)
 		printf("run %s failed!\n", proc->name);
 		return -1;
 	} else if (pid == 0) {
+		printf("starting: %s", proc->exec_file);
+		for (i = 0; proc->argv[i]; ++i)
+			printf(" %s", proc->argv[i]);
+		printf("\n");
 		execv(proc->exec_file, proc->argv);
 	}
 

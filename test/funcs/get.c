@@ -87,7 +87,8 @@ static const char *client_args[] = {
 };
 
 static const char *server_args[] = {
-	"-d"
+	"-d",
+	"start"
 };
 
 /*
@@ -112,7 +113,10 @@ int test_get(int argc, char *argv[])
 	if (ctx == NULL)
 		return -1;
 
-	test_context_add_dirs(ctx, dirs, ARRAY_SIZE(dirs));
+	if (test_context_add_dirs(ctx, dirs, ARRAY_SIZE(dirs))) {
+		perror("create dirs failed");
+		return -1;
+	}
 
 	test_context_gen_random_files(ctx, SERVER_DIR, attrs, ARRAY_SIZE(attrs));
 

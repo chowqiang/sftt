@@ -120,4 +120,7 @@ int dir_compare(char *path1, char *path2);
 
 int gen_files_by_template(struct file_gen_attr *attrs, int num, char *root);
 
+int make_or_update_dir(char *path, mode_t mode);
+int try_make_dir(char *path, mode_t mode);
+
 #endif
