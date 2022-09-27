@@ -781,7 +781,7 @@ int gen_one_file(struct file_gen_attr *attr, char *root)
 	}
 
 	if (IS_DIR(attr->type)) {
-		ret = make_or_update_dir(real_path, attr->mode);
+		ret = make_or_update_dir(real_path, DEFAULT_DIR_MODE);
 		goto done;
 	}
 
@@ -789,7 +789,7 @@ int gen_one_file(struct file_gen_attr *attr, char *root)
 	if (dir_name == NULL)
 		goto done;
 
-	if (try_make_dir(dir_name, attr->mode))
+	if (try_make_dir(dir_name, DEFAULT_DIR_MODE))
 		goto done;
 
 	ret = gen_random_file(real_path, attr->size, attr->mode);

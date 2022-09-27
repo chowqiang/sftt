@@ -26,7 +26,9 @@
 #define FILE_TYPE_FILE		1
 #define FILE_TYPE_DIR		2
 
-#define FILE_MODE_DEFAULT	0644
+#define DEFAULT_FILE_MODE	0644
+#define DEFAULT_DIR_MODE	0755
+#define DEFAULT_UMASK		0022
 
 /*
  * Use absolute path and relative path to represent a path.

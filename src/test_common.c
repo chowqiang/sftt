@@ -57,7 +57,7 @@ struct test_context *test_context_create(const char *name)
 
 	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
 
-	ret = make_or_update_dir(ctx->root_dir, 0666);
+	ret = make_or_update_dir(ctx->root_dir, DEFAULT_DIR_MODE);
 	if (ret == -1) {
 		perror("create test root directory failed");
 		goto test_context_free;
@@ -95,7 +95,7 @@ int test_context_add_dirs(struct test_context *ctx, const char *dirs[], int num)
 			return -1;
 		}
 
-		ret = make_or_update_dir(path, 0666);
+		ret = make_or_update_dir(path, DEFAULT_DIR_MODE);
 		if (ret == -1)
 			return -1;
 	}

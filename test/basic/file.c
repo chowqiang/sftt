@@ -114,10 +114,10 @@ void test_dir_compare(void)
 void test_gen_random_files(void)
 {
 	struct file_gen_attr attrs[] = {
-		{"a/e.txt", FILE_TYPE_FILE, 100000, 0666},
-		{"c/g.txt", FILE_TYPE_FILE, 200000, 0666},
-		{"a/d/h.txt", FILE_TYPE_FILE, 300000, 0666},
-		{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, 0666}
+		{"a/e.txt", FILE_TYPE_FILE, 100000, DEFAULT_FILE_MODE},
+		{"c/g.txt", FILE_TYPE_FILE, 200000, DEFAULT_FILE_MODE},
+		{"a/d/h.txt", FILE_TYPE_FILE, 300000, DEFAULT_FILE_MODE},
+		{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, DEFAULT_FILE_MODE}
 	};
 
 	gen_files_by_template(attrs, ARRAY_SIZE(attrs), "/home/zhoumin/tmp/tmo");

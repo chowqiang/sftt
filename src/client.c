@@ -2044,7 +2044,7 @@ int sftt_client_touch_handler(void *obj, int argc, char *argv[],
 		return -1;
 	}
 
-	return create_new_file(argv[0], FILE_MODE_DEFAULT);
+	return create_new_file(argv[0], DEFAULT_FILE_MODE);
 }
 
 void sftt_client_touch_usage(void)
@@ -2388,7 +2388,7 @@ void sftt_client_who_usage(void)
 void create_state_file(struct sftt_client *client)
 {
 	if (client->state_file)
-		create_new_file(client->state_file, FILE_MODE_DEFAULT);
+		create_new_file(client->state_file, DEFAULT_FILE_MODE);
 }
 
 int do_cmd_file(struct sftt_client *client, char *cmd_file)
