@@ -45,7 +45,7 @@
 #define EXEC_NAME_MAX_LEN		32
 #define CMD_ARG_MAX_LEN			1024
 
-#define CLIENT_LOG_DIR			"/var/log/"PROC_NAME"/"
+#define CLIENT_LOG_DIR			"/tmp/log/"PROC_NAME"/"
 
 #define PROMPT_MAX_LEN			1024
 

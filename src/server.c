@@ -1442,6 +1442,21 @@ int handle_append_conn_req(struct client_session *client,
 	DBUG_RETURN(ret);
 }
 
+int install_child_sigactions(void)
+{
+	struct sigaction child_exit;
+	struct sigaction child_exception;
+	int ret;
+
+	child_exit.sa_handler = child_process_exit;
+	ret = sigaction(SIGINT, &child_exit, NULL);
+	if (ret == -1)
+		return ret;
+
+	child_exception.sa_handler = child_process_exception_handler;
+	return sigaction(SIGSEGV, &child_exception, NULL);
+}
+
 int handle_client_session(void *args)
 {
 	DBUG_ENTER(__func__);
@@ -1464,8 +1479,9 @@ int handle_client_session(void *args)
 		goto exit;
 	}
 
-	signal(SIGTERM, child_process_exit);
-	signal(SIGSEGV, child_process_exception_handler);
+	if (install_child_sigactions() == -1) {
+		DEBUG((DEBUG_ERROR, "set child sigactions failed!\n"));
+	}
 
 	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
@@ -1771,6 +1787,15 @@ int init_sftt_server(char *store_path, char *state_file)
 	return 0;
 }
 
+int install_server_sigactions(void)
+{
+	struct sigaction server_exit;
+
+	server_exit.sa_handler = sftt_server_exit;
+
+	return sigaction(SIGINT, &server_exit, NULL);
+}
+
 int sftt_server_start(char *store_path, bool background, char *state_file)
 {
 	if (sftt_server_is_running()) {
@@ -1797,7 +1822,7 @@ int sftt_server_start(char *store_path, bool background, char *state_file)
 
 	add_log(LOG_INFO, PROC_NAME " is going to start in the background ...");
 
-	signal(SIGTERM, sftt_server_exit);
+	install_server_sigactions();
 
 	main_loop();
 
@@ -1845,7 +1870,7 @@ int sftt_server_stop(void)
 		return -1;
 	}
 
-	logger_exit(SIGTERM);
+	logger_exit();
 
 	/**
 	*	All  of  these  system calls are used to wait for state changes
@@ -1868,7 +1893,7 @@ int sftt_server_stop(void)
 	**/
 	printf(PROC_NAME " pid is: %d\n", sss->main_pid);
 	printf(PROC_NAME " is going to stop ...\n");
-	kill(sss->main_pid, SIGTERM);
+	kill(sss->main_pid, SIGINT);
 	free_sftt_server_stat();
 
 	return 0;
@@ -1887,7 +1912,9 @@ void notify_all_child_to_exit(void)
 void sftt_server_exit(int sig)
 {
 	printf(PROC_NAME " is exit ...!\n");
+
 	notify_all_child_to_exit();
+	logger_exit();
 	free_sftt_server_stat();
 
 	exit(-1);

@@ -51,7 +51,7 @@ int logger_init(char *dir, char *prefix);
 
 int logger_daemon(void *args);
 
-void logger_exit(int sig);
+void logger_exit(void);
 
 int add_log(int level, const char *fmt, ...);
 

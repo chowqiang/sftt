@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "base.h"
 #include "config.h"
+#include "file.h"
 #include "log.h"
 #include "mem_pool.h"
 #include "msg_queue.h"
@@ -38,6 +39,7 @@ extern struct mem_pool *g_mp;
 
 static enum log_type type = UNKNOWN_LOG;
 int verbose_level = 0;
+bool logger_stopped = false;
 
 static char client_log_dir[DIR_PATH_MAX_LEN];
 static char client_log_prefix[32];
@@ -122,14 +124,19 @@ int logger_daemon(void *args)
 	}
 
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
+
+	if (!file_existed(file1))
+		create_new_file_no_fail(file1, DEFAULT_FILE_MODE);
+
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
 		printf("%d: open log file %s failed!\n", __LINE__, file1);
 		return -1;
 	}
 
+	logger_stopped = false;
 	printf("logger thread begin to work ...\n");
-	for (;;) {
+	while (!logger_stopped) {
 		memset(&msg, 0, sizeof(msg));
 		ret = msgrcv(msqid, &msg, MSG_MAX_LEN, MSG_TYPE_LOG, 0);
 		if (ret == -1) {
@@ -149,6 +156,10 @@ int logger_daemon(void *args)
 		get_log_file_name(dir, prefix, file2, FILE_NAME_MAX_LEN);
 		if (strcmp(file1, file2)) {
 			fclose(server_log_fp);
+
+			if (!file_existed(file2))
+				create_new_file_no_fail(file2, DEFAULT_FILE_MODE);
+
 			server_log_fp = fopen(file2, "a");
 			if (server_log_fp == NULL) {
 				printf("%d: open log file %s failed!\n", __LINE__, file2);
@@ -169,6 +180,9 @@ int get_log_msqid(int create_flag)
 	int msqid;
 	int msgflag;
 
+	if (!file_existed(SFTT_LOG_MSQKEY_FILE))
+		create_new_file_no_fail(SFTT_LOG_MSQKEY_FILE, DEFAULT_FILE_MODE);
+
 	if ((key = ftok(SFTT_LOG_MSQKEY_FILE, 'S')) == -1) {
 		printf("sfttd ftok failed!\n"
 			"\tFile \"" SFTT_LOG_MSQKEY_FILE "\" is existed?\n");
@@ -185,8 +199,9 @@ int get_log_msqid(int create_flag)
 	return msqid;
 }
 
-void logger_exit(int sig)
+void logger_exit(void)
 {
+	logger_stopped = true;
 	add_log(LOG_INFO, "log server is stop ...");
 
 	if (server_log_fp) {
@@ -220,6 +235,10 @@ int add_client_log(int level, const char *fmt, va_list args)
 
 	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
+
+	if (!file_existed(log_file))
+		create_new_file_no_fail(log_file, DEFAULT_FILE_MODE);
+
 	FILE *client_log_fp = fopen(log_file, "a");
 	if (client_log_fp == NULL) {
 		return -1;
@@ -343,6 +362,10 @@ int do_log(struct logger *log, struct trace_info *trace,
 
 	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
+
+	if (!file_existed(log_file))
+		create_new_file_no_fail(log_file, DEFAULT_FILE_MODE);
+
 	FILE *client_log_fp = fopen(log_file, "a");
 	if (client_log_fp == NULL) {
 		return -1;

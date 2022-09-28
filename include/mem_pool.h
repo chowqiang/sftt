@@ -25,8 +25,6 @@
 
 #define MEM_POOL_STAT "mem_pool_stat"
 
-#define MEM_POOL_STAT_MSGKEY "/tmp/lib/sftt/mps_msgkey"
-
 struct mem_node {
 	/* Memory size of this node */
 	size_t size;
