@@ -26,7 +26,7 @@
 #define LOG_WARN	3
 #define LOG_ERROR	4
 
-#define SFTT_LOG_MSQKEY_FILE	"/var/lib/sfttd/msgkey"
+#define SFTT_LOG_MSQKEY_FILE	"/tmp/lib/sfttd/msgkey"
 
 #define LOGGER_PREFIX_LEN	32
 

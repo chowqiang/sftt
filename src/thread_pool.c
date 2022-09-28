@@ -214,6 +214,7 @@ struct thread_pool *create_thread_pool(int size)
 	ret = init_thread_pool(tp);
 	if (ret < 0)
 		goto free_tp;
+	tp->initialized = true;
 
 	return tp;
 free_tp:

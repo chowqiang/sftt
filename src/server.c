@@ -316,6 +316,9 @@ int get_sftt_server_shmid(int create_flag)
 	key_t key;
 	int shmid;
 
+	if (!file_existed(SFTT_SERVER_SHMKEY_FILE))
+		create_new_file_no_fail(SFTT_SERVER_SHMKEY_FILE, DEFAULT_FILE_MODE);
+
 	if ((key = ftok(SFTT_SERVER_SHMKEY_FILE, 'S')) == -1) {
 		printf(PROC_NAME " ftok failed!\n"
 			"\tFile \"" SFTT_SERVER_SHMKEY_FILE "\" is existed?\n");

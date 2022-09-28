@@ -585,6 +585,20 @@ char *get_basename(char *path)
 	return basename(path);
 }
 
+void create_new_file_no_fail(char *fname, mode_t mode)
+{
+	char *dir_name;
+
+	dir_name = get_dirname(fname);
+	if (dir_name == NULL)
+		return;
+
+	if (try_make_dir(dir_name, DEFAULT_DIR_MODE))
+		return;
+
+	create_new_file(fname, mode);
+}
+
 int write_new_line(FILE *fp)
 {
 	int ret = 0;
