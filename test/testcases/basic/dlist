@@ -1,0 +1,3 @@
+# test dlist
+xxx dlist -a -f
+xxx dlist -n 10

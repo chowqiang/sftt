@@ -15,10 +15,12 @@ FUNCS:
 
 
 ifeq ("$(CASE)", "")
+	@echo ""
 	@echo "run all test cases ..."
 else ifneq ("$(CASE)", "NO")
+	@echo ""
 	@echo "run test case '$(CASE)'"
-	@./Run $(TEST_DIR)/testcases $(CASE)
+	@./Run $(TEST_DIR)/testcases \"$(CASE)\"
 else
 	@echo "don't run any test cases"
 endif
@@ -26,7 +28,15 @@ endif
 .PHONY: help
 help:
 	@echo "Running tests:"
-	@echo " test        - build and run function tests"
+	@echo ""
+	@echo " test                      - build and run all tests"
+	@echo " test CASE=<filter>        - filter the set of tests:"
+	@echo "           by wildcard     - wildcard filter is <test_class>.<test_case>, each can be replaced by '*'"
+	@echo "                             e.g. CASE='*' or CASE='*.*' is equivalent to run all tests"
+	@echo "                                  CASE='basic' or CASE='basic.*' select all tests from basic test class"
+	@echo "                                  CASE='*.get' selects a single test named get from all test class"
+	@echo ""
+
 
 .PHONY: clean
 clean:

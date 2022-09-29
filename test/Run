@@ -6,50 +6,26 @@ setup()
 	make -C ./basic O=../bin
 }
 
-do_multi_tests()
-{
-	bin=./bin
-	testcases=$1
-
-	for rule_file in $(ls $testcases)
-	do
-		total=0
-		success=0
-		failed=0
-		echo ">> $rule_file cases begin"
-		while read line
-		do
-			if [[ "$line" = "^#*" ]]; then
-				continue
-			fi
-
-			cmd=$bin/$line
-			eval $cmd
-			if [ $? -eq 0 ]; then
-				echo "successful: $line"
-				success=$((success+1))
-			else
-				echo "failed: $line"
-				failed=$((failed+1))
-			fi
-			total=$((total+1))
-		done < $testcases/$rule_file
-		echo ">> total: $total, success: $success, failed: $failed"
-	done
-}
-
 do_single_test()
 {
 	bin=./bin
 	rule_file=$1
+	case_name=$2
+	file_idx=$3
 
+	line_idx=0
+	case_idx=1
 	total=0
 	success=0
 	failed=0
 
-	echo ">> $rule_file cases begin"
+	echo "file $file_idx>> $case_name cases begin ..."
+	#echo ""
+	#line_count=`wc -l $rule_file |awk '{print $1}'`
+	#echo $line_count
 	while read line
 	do
+		line_idx=$((line_idx+1))
 		#echo $line
 		if [ "$line" == "" ]; then
 			continue
@@ -58,22 +34,28 @@ do_single_test()
 			continue
 		fi
 
-		cmd=$bin/$line
-		eval $cmd
+		test_desc=${line%%" "*}
+		test_cmd=${line#*" "}
+		echo "case $case_idx>> test case $case_idx: $test_desc"
+		eval $bin/$test_cmd
 		if [ $? -eq 0 ]; then
-			echo "successful: $line"
+			echo "result >> successful: $bin/$test_cmd"
 			success=$((success+1))
 		else
-			echo "failed: $line"
+			echo "result >> failed: $bin/$test_cmd"
 			failed=$((failed+1))
 		fi
+		case_idx=$((case_idx+1))
 		total=$((total+1))
+		#echo ""
 	done < $rule_file
-	echo ">> total: $total, success: $success, failed: $failed"
+	echo "conclusion >> total: $total, success: $success, failed: $failed"
+	echo ""
 }
 
 main()
 {
+	#echo $*
 	[ ! $# -eq 2 ] && echo "Usage: $0 case-dir case-name" && exit -1
 
 	case_dir=$1
@@ -83,17 +65,82 @@ main()
 		exit -1
 	fi
 
+	test_class="\*"
+	test_case="\*"
+
 	case_name=$2
-	case_file=$case_dir/$case_name
-	echo "do test for $case_name ..."
-	if [ ! -f $case_file ]; then
-	       echo "case file '$case_file' not exist!"
-	       exit -1
+	case_name=${case_name//\*/\\*}
+	#echo $case_name
+
+	case_name=`echo $case_name|sed s/\"//g`
+	#echo $case_name
+
+	array=(${case_name//./ })
+	#echo ${#array[*]}
+
+	if [ ${#array[*]} -eq 1 ]; then
+		test_class=${array[0]}
+	elif [ ${#array[*]} -eq 2 ]; then
+		test_class=${array[0]}
+		test_case=${array[1]}
+	else
+		echo "The format of test case is: class.case and support wildcard filter"
+		exit -1
 	fi
 
-	do_single_test $case_file
-	echo "test end"
+	if [ "$test_class" = "\*" ]; then
+		test_class='*'
+	fi
 
+	if [ "$test_case" = "\*" ]; then
+		test_case='*'
+	fi
+
+	echo "test class: $test_class, test case: $test_case"
+	echo ""
+
+	if [ "$test_class" != '*' ]; then
+		found=false
+		for class in $(ls $case_dir)
+		do
+			if [ $test_class = $class ]; then
+				found=true
+				break
+			fi
+		done
+		if [ ! $found ]; then
+			echo "Test class not found: $test_class"
+			exit -1
+		fi
+	fi
+
+	#if [ "$test_class" = '*' ]; then
+	#	echo "yes"
+	#else
+	#	echo "no"
+	#fi
+
+	file_idx=1
+	for class in $(ls $case_dir)
+	do
+		#echo $class
+		if [ "$test_class" != '*' -a "$test_class" != $class ]; then
+			continue
+		fi
+
+		#echo $case_dir/$class
+		for _case in $(ls $case_dir/$class)
+		do
+			#echo $_case
+			if [ "$test_case" != '*' -a "$test_case" != $_case ]; then
+				continue
+			fi
+			do_single_test $case_dir/$class/$_case $_case $file_idx
+			file_idx=$((file_idx))
+		done
+	done
+
+	echo "test end"
 }
 
 #setup
