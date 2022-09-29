@@ -407,10 +407,12 @@ bool sftt_server_is_running(void)
 void update_server(struct sftt_server *server)
 {
 	int sock = 0;
-	uint64_t current_ts = (uint64_t)time(NULL);
-	int port = get_random_port();
+	int port;
 	char buf[128];
+	uint64_t current_ts;
 
+	port = get_random_port();
+	current_ts = (uint64_t)time(NULL);
 	if (server->main_port != port) {
 		sock = create_non_block_sock(&port);
 		if (sock == -1) {
@@ -1628,7 +1630,9 @@ void main_loop(void)
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
+#ifdef CONFIG_UPDATE_CHANNEL
 		update_server(server);
+#endif
 		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
@@ -1664,8 +1668,16 @@ int create_non_block_sock(int *pport)
 {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
-	int rand_port = get_random_port();
-	add_log(LOG_INFO, "random port is %d", rand_port);
+	int port;
+
+
+#ifdef CONFIG_USE_RANDOM_PORT
+	port = get_random_port();
+#else
+	port = get_default_port();
+#endif
+
+	add_log(LOG_INFO, "port is %d", port);
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("create socket filed");
@@ -1680,7 +1692,7 @@ int create_non_block_sock(int *pport)
 	memset(&serveraddr, 0 ,sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(rand_port);
+	serveraddr.sin_port = htons(port);
 
 	if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
 		perror("bind socket error");
@@ -1693,7 +1705,7 @@ int create_non_block_sock(int *pport)
 	}
 
 	if (pport) {
-		*pport = rand_port;
+		*pport = port;
 	}
 
 	return sockfd;

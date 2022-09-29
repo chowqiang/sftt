@@ -25,6 +25,11 @@
 #include "endpoint.h"
 #include "utils.h"
 
+int get_default_port(void)
+{
+	return SFTT_DEFAULT_PORT;
+}
+
 int get_random_port(void)
 {
 	time_t t;

@@ -21,7 +21,7 @@
 #include "common.h"
 #include "list.h"
 
-#define CLIENT_MAX_TASK_CONN 5
+#define CLIENT_MAX_TASK_CONN 	5
 
 enum connect_result {
 	CONN_RET_CONNECT_FAILED,

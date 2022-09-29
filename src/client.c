@@ -644,7 +644,11 @@ void client_usage_help(int exitcode)
 static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 {
 	if (port == -1) {
+#ifdef CONFIG_USE_RANDOM_PORT
 		port = get_random_port();
+#else
+		port = get_default_port();
+#endif
 	}
 
 	DEBUG((DEBUG_DEBUG, "port of connecting: %d\n", port));
@@ -1185,7 +1189,11 @@ int add_task_connect(struct sftt_client *client)
 		return -1;
 	}
 
+#ifdef CONFIG_USE_RANDOM_PORT
 	port = get_random_port();
+#else
+	port = get_default_port();
+#endif
 	conn->sock = make_connect(client->host, port);
 	if (conn->sock == -1) {
 		printf("make client sock connect failed!\n");

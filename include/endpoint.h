@@ -18,6 +18,9 @@
 #define _END_POINT_H_
 
 #define UPDATE_THRESHOLD	100
+#define SFTT_DEFAULT_PORT	3009
+
+int get_default_port();
 
 int get_random_port();
 
