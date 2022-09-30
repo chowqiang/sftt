@@ -21,11 +21,11 @@
 
 void refill(char *prefix, char ch, int num)
 {
-    int i = 0;
-    //putchar('\r');
+	int i = 0;
+
 	printf("\r%s", prefix);
-    for (i = 0; i < num; ++i) {
-        putchar(ch);
+	for (i = 0; i < num; ++i) {
+		putchar(ch);
 	}
 }
 
@@ -45,12 +45,11 @@ int get_pass(char *prompt, char *passwd, int max_len)
 	}
 
 	int i = 0;
-    char ch = 0;
+	char ch = 0;
+	initscr();
+	noecho();
 
-    initscr();
-    noecho();
-
-    for (i = 0; i < max_len;) {
+	for (i = 0; i < max_len;) {
 		ch = getchar();
 		if (ch == 13) {
 			break;
@@ -65,42 +64,40 @@ int get_pass(char *prompt, char *passwd, int max_len)
 		}
 		passwd[i++] = ch;
 		putchar('*');
-    }
-    passwd[i] = 0;
-    endwin();
+	}
+	passwd[i] = 0;
+	endwin();
 	printf("\n");
 
-    return i;
+	return i;
 }
 
 void return_left(char *prefix, int num)
 {
-    int i = 0;
+	int i = 0;
 	char ch = ' ';
-    //putchar('\r');
-	//printf("\r%s", prefix);
+
 	putchar('\r');
-    for (i = 0; i < num; ++i) {
-        putchar(ch);
+	for (i = 0; i < num; ++i) {
+		putchar(ch);
 	}
 	putchar('\r');
-	//printf("\r%s", prefix);
 }
 
 int get_user_command(char *prompt, struct cmd_line *cmd, int start)
 {
 	int i = 0;
-    char ch = 0;
+	char ch = 0;
 
 	if (prompt) {
 		printf("%s", prompt);
 	}
 	printf("%s", cmd->buf);
 
-    initscr();
-    noecho();
+	initscr();
+	noecho();
 
-    for (i = start; i < CMD_MAX_LEN - start - 1;) {
+	for (i = start; i < CMD_MAX_LEN - start - 1;) {
 		ch = getchar();
 		if (ch == '\033') {
 			getchar();
@@ -132,11 +129,11 @@ int get_user_command(char *prompt, struct cmd_line *cmd, int start)
 		}
 		cmd->buf[i++] = ch;
 		putchar(ch);
-    }
-    cmd->buf[i] = 0;
+	}
+	cmd->buf[i] = 0;
 	cmd->type = CMD_LINE_NORMAL;
-    endwin();
+	endwin();
 	printf("\n");
 
-    return i;
+	return i;
 }

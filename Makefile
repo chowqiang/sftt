@@ -23,7 +23,8 @@ SERVER_PATH=$(SERVER_DIR)/$(SERVER_BIN)
 CLIENT_PATH=$(CLIENT_DIR)/$(CLIENT_BIN)
 
 OS_BIN_DIR=/usr/bin
-OS_LIB_DIR=/usr/lib64
+OS_LIB_DIR=/usr/lib
+OS_CONF_DIR=/etc
 
 CFLAGS=-g -Wall -Wno-unused-variable -I$(ROOT_DIR)/include -lpthread -lcurses -lsqlite3 -lreadline
 
@@ -82,6 +83,8 @@ install: all
 	@cp -f $(SERVER_DIR)/$(SERVER_BIN) $(OS_BIN_DIR)
 	@cp -f $(CLIENT_DIR)/$(CLIENT_BIN) $(OS_BIN_DIR)
 	@cp -f $(LIB_DIR)/$(LIB_NAME) $(OS_LIB_DIR)
+	@if [ ! -d $(OS_CONF_DIR)/sftt ]; then mkdir $(OS_CONF_DIR)/sftt; fi
+	@cp -f $(CONFIG_DIR)/*.conf $(OS_CONF_DIR)/sftt
 
 .PHONY: clean
 

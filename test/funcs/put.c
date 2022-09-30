@@ -82,7 +82,7 @@ static const char *client_args[] = {
 	"127.0.0.1",
 	"-u",
 	"root",
-	"-p",
+	"-P",
 	"root"
 };
 

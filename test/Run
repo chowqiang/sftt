@@ -13,7 +13,7 @@ do_single_test()
 	case_name=$2
 	file_idx=$3
 
-	line_idx=0
+	#line_idx=0
 	case_idx=1
 	total=0
 	success=0
@@ -21,12 +21,14 @@ do_single_test()
 
 	echo "file $file_idx>> $case_name cases begin ..."
 	#echo ""
+
 	#line_count=`wc -l $rule_file |awk '{print $1}'`
 	#echo $line_count
 	while read line
 	do
-		line_idx=$((line_idx+1))
+		#line_idx=$((line_idx+1))
 		#echo $line
+
 		if [ "$line" == "" ]; then
 			continue
 		fi
@@ -37,6 +39,7 @@ do_single_test()
 		test_desc=${line%%" "*}
 		test_cmd=${line#*" "}
 		echo "case $case_idx>> test case $case_idx: $test_desc"
+
 		eval $bin/$test_cmd
 		if [ $? -eq 0 ]; then
 			echo "result >> successful: $bin/$test_cmd"
@@ -45,11 +48,14 @@ do_single_test()
 			echo "result >> failed: $bin/$test_cmd"
 			failed=$((failed+1))
 		fi
+
 		case_idx=$((case_idx+1))
 		total=$((total+1))
 		#echo ""
+
 	done < $rule_file
-	echo "conclusion >> total: $total, success: $success, failed: $failed"
+
+	echo "conclusion $file_idx>> total: $total, success: $success, failed: $failed"
 	echo ""
 }
 
@@ -136,7 +142,7 @@ main()
 				continue
 			fi
 			do_single_test $case_dir/$class/$_case $_case $file_idx
-			file_idx=$((file_idx))
+			file_idx=$((file_idx+1))
 		done
 	done
 

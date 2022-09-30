@@ -40,18 +40,13 @@ int main(int argc, char **argv)
 	char cmd_file[FILE_PATH_MAX_LEN];
 	char *state_file = NULL;
 	char ch;
-
-	bool has_passwd_opt = true;
-	bool has_opt = false;
-
-	enum run_mode mode = RUN_MODE_LOGIN;
-
 	int port = -1;
-	int passwd_len = 0;
 	int ret;
 
-	struct trans_info trans;
+	bool has_opt = false;
+	enum run_mode mode = RUN_MODE_LOGIN;
 
+	struct trans_info trans;
 	struct sftt_client client;
 
 	memset(user_name, 0, sizeof(user_name));
@@ -59,7 +54,7 @@ int main(int argc, char **argv)
 	memset(host, 0, sizeof(host));
 	memset(builtin, 0, sizeof(builtin));
 
-	while ((ch = getopt(argc, argv, "b:f:u:p:s:h:v")) != -1) {
+	while ((ch = getopt(argc, argv, "b:f:u:p:P:s:h:v")) != -1) {
 		switch (ch) {
 		case 'b':
 			strncpy(builtin, optarg, sizeof(builtin) - 1);
@@ -74,6 +69,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			port = atoi(optarg);
+			break;
+		case 'P':
+			strncpy(password, optarg, sizeof(password) - 1);
 			break;
 		case 's':
 			state_file = __strdup(optarg);
@@ -129,7 +127,6 @@ int main(int argc, char **argv)
 			printf("command file not existed: %s\n", cmd_file);
 			return -1;
 		}
-		return do_cmd_file(&client, cmd_file);
 	}
 
 	if (mode == RUN_MODE_BUILTIN && strlen(builtin) == 0) {
@@ -145,11 +142,12 @@ int main(int argc, char **argv)
 	set_client_debug_level(verbose_level, "warn");
 #endif
 
-	snprintf(passwd_prompt, 127, "%s@%s's password: ", user_name, host);
-	passwd_len = get_pass(passwd_prompt, password, sizeof(password));
-	if (passwd_len <= 0) {
-		printf("password is invalid!\n");
-		client_usage_help(-1);
+	if (strlen(password) == 0) {
+		snprintf(passwd_prompt, 127, "%s@%s's password: ", user_name, host);
+		if (get_pass(passwd_prompt, password, sizeof(password)) <= 0) {
+			printf("password is invalid!\n");
+			client_usage_help(-1);
+		}
 	}
 
 #ifdef CONFIG_DEBUG
@@ -170,6 +168,8 @@ int main(int argc, char **argv)
 		return do_builtin(&client, builtin);
 	} else if (mode == RUN_MODE_TRANS) {
 		return do_trans(&client, &trans);
+	} else if (mode == RUN_MODE_CMD_FILE) {
+		return do_cmd_file(&client, cmd_file);
 	} else {
 		printf("unknown run mode!\n");
 	}
