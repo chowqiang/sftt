@@ -73,7 +73,7 @@ static struct test_cmd cmds[] = {
 };
 
 static struct test_cmp_file_list cmp_file_list = {
-	.files = {CLIENT_DIR, SERVER_DIR, NULL},
+	.files = {CLIENT_DIR"/"SERVER_DIR, SERVER_DIR, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
 };
 

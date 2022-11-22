@@ -477,7 +477,7 @@ static int validate_user_info(struct client_session *client,
 		return send_validate_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_UVS_INVALID, 0);
 	} else if (!file_existed(user_base->home_dir)) {
-		DEBUG((DEBUG_INFO, "cannot find user's home dir!\n"));
+		DEBUG((DEBUG_INFO, "cannot find user's home dir: %s\n", user_base->home_dir));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
 		return send_validate_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_UVS_MISSHOME, 0);
