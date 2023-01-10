@@ -68,7 +68,6 @@ int run_client(int port, char *user_name)
 	req_info->name_len = strlen(req_info->name);
 
 	req_packet->obj = (void *)req_info;
-	//req_packet->block_size = VALIDATE_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(sock, req_packet);
 	if (ret == -1) {

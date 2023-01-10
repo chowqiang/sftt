@@ -301,7 +301,6 @@ int send_trans_entry_by_put_req(int fd,
 	req_packet->type = PACKET_TYPE_PUT_REQ;
 
 	req_packet->obj = req;
-	//req_packet->block_size = PUT_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(fd, req_packet);
 	if (ret == -1) {

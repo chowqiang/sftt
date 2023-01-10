@@ -26,8 +26,6 @@
 #define PACKET_TYPE_SIZE		(sizeof(int))
 #define PACKET_LEN_SIZE			(sizeof(int))	
 
-#define REQ_PACKET_MIN_LEN		51200
-
 #define EXTERN_REQ_PACKET_MIN_LEN(type) \
 	extern int type##_REQ_PACKET_MIN_LEN;
 

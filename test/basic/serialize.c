@@ -141,12 +141,84 @@ void test_ll_req(void)
 	printf("ll req decode: ret=%d, path=%s\n", ret, _req->path);
 }
 
+void test_get_resp(void) {
+	struct get_resp resp = {
+		.status = 1,
+		.flags = 0x1,
+		.message = "ok",
+		.data = {
+			.total_files = 1,
+			.file_idx = 0,
+			.entry = {
+				.type = 1,
+				.total_size = 100,
+				.this_size = 100,
+				.mode = 0x111,
+				.content = "ABCDEFG",
+			}
+		},
+		.need_reply = 0,
+	};
+
+	struct get_resp *_resp = NULL;
+	unsigned char *buf = NULL;
+	bool ret = 0;
+	int len = 0;
+
+	printf("message: %s\n", resp.message);
+	printf("content: %s\n", resp.data.entry.content);
+	ret = get_resp_encode(&resp, &buf, &len);
+	printf("get resp encode: ret=%d, len=%d\n", ret, len);
+
+	ret = get_resp_decode(buf, len, (void **)&_resp);
+	printf("get resp decode: ret=%d, len=%d\n", ret, len);
+	printf("message: %s\n", _resp->message);
+	printf("content: %s\n", _resp->data.entry.content);
+}
+
+void test_get_req(void)
+{
+	struct get_req req = {
+		.session_id = "abcdefg1234",
+		.path = "/root/sftt",
+		.to_peer = 1,
+		.user = {
+			.session_id = "1234abcdefg",
+			.name = "zhoumin",
+			.ip = "192.168.1.81",
+			.port = 1024
+		}
+	};
+
+	struct get_req *_req = NULL;
+	unsigned char *buf = NULL;
+	bool ret = 0;
+	int len = 0;
+
+	printf("session_id: %s\n", req.session_id);
+	printf("user.session_id: %s\n", req.user.session_id);
+	ret = get_req_encode(&req, &buf, &len);
+	printf("get req encode: ret=%d, len=%d\n", ret, len);
+
+	ret = get_req_decode(buf, len, (void **)&_req);
+	printf("get req decode: ret=%d, len=%d\n", ret, len);
+	printf("session_id: %s\n", _req->session_id);
+	printf("user.session_id: %s\n", _req->user.session_id);
+}
+
 int main(void)
 {
+	int i = 0;
+
 	test_validate_req();
 	test_validate_resp();
 	test_ll_req();
 	test_ll_resp();
+
+	for (i = 0; i < 10; ++i) {
+		test_get_resp();
+		test_get_req();
+	}
 
 	return 0;
 }

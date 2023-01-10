@@ -1218,7 +1218,6 @@ int add_task_connect(struct sftt_client *client)
 	req_info->type = CONN_TYPE_TASK;
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = APPEND_CONN_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
@@ -1463,7 +1462,6 @@ int sftt_client_ll_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	strncpy(req_info->path, path, DIR_PATH_MAX_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = LL_REQ_PACKET_MIN_LEN;
 
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -1617,7 +1615,6 @@ int sftt_client_cd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	req_packet->type = PACKET_TYPE_CD_REQ;
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = CD_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -1683,7 +1680,6 @@ int sftt_client_pwd_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = PWD_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -1996,7 +1992,6 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	strncpy(req_info->session_id, client->session_id, SESSION_ID_LEN - 1);
 
 	req_packet->obj = req_info;
-	//req_packet->block_size = MP_STAT_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
@@ -2120,7 +2115,6 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	printf("req_info->user->name=%s\n", req_info->user.name);
 #endif
 	req_packet->obj = req_info;
-	//req_packet->block_size = WRITE_REQ_PACKET_MIN_LEN;
 
 	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {

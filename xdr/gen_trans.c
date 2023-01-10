@@ -255,19 +255,6 @@ int gen_h_file(struct st_list *head, char *h_file)
 	return 0;
 }
 
-char *get_packet_block_size(char *block_size, char *name)
-{
-	int i;
-
-	for (i = 0; name[i]; ++i) {
-		block_size[i] = toupper(name[i]);
-	}
-	block_size[i] = 0;
-	strcat(block_size, "_PACKET_MIN_LEN");
-
-	return block_size;
-}
-
 char *get_packet_type(char *packet_type, char *name)
 {
 	int i, j, count;
@@ -284,7 +271,6 @@ char *get_packet_type(char *packet_type, char *name)
 void output_send_resp(FILE *fp, char *struct_name)
 {
 	char packet_type[128];
-	char block_size[128];
 
 	fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,\n"
 		"\tstruct %s *resp, int code, int flags)\n", struct_name,
@@ -297,10 +283,6 @@ void output_send_resp(FILE *fp, char *struct_name)
 	fprintf(fp, "\tresp_packet->obj = resp;\n");
 	fprintf(fp, "\tresp_packet->type = %s;\n",
 		get_packet_type(packet_type, struct_name));
-#if 0
-	fprintf(fp, "\tresp_packet->block_size = %s;\n\n",
-		get_packet_block_size(block_size, struct_name));
-#endif
 
 	fprintf(fp, "\treturn send_sftt_packet(fd, resp_packet);\n");
 	fprintf(fp, "}\n");
