@@ -274,7 +274,7 @@ void output_encode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tFILE *fp = open_memstream((char **)buf, &size);\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_ENCODE);\n\n");
-	fprintf(fp, "\tint ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
+	fprintf(fp, "\tbool ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
 	fprintf(fp, "\tfclose(fp);\n");
 	fprintf(fp, "\t*len = size;\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encode ret=%%d, encode_len=%%d\",\n"
@@ -296,7 +296,7 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tFILE *fp = fmemopen(buf, len, \"r\");\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_DECODE);\n\n");
-	fprintf(fp, "\tint ret = xdr_%s(&xdr, _req);\n", struct_name);
+	fprintf(fp, "\tbool ret = xdr_%s(&xdr, _req);\n", struct_name);
 	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*req = _req;\n");
 	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: decode ret=%%d\", __func__, ret);\n");

@@ -22,7 +22,7 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_validate_req(&xdr, (struct validate_req *)req);
+	bool ret = xdr_validate_req(&xdr, (struct validate_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -44,7 +44,7 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_validate_req(&xdr, _req);
+	bool ret = xdr_validate_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -63,7 +63,7 @@ bool validate_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_validate_resp(&xdr, (struct validate_resp *)req);
+	bool ret = xdr_validate_resp(&xdr, (struct validate_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -85,7 +85,7 @@ bool validate_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_validate_resp(&xdr, _req);
+	bool ret = xdr_validate_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -104,7 +104,7 @@ bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_append_conn_req(&xdr, (struct append_conn_req *)req);
+	bool ret = xdr_append_conn_req(&xdr, (struct append_conn_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -126,7 +126,7 @@ bool append_conn_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_append_conn_req(&xdr, _req);
+	bool ret = xdr_append_conn_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -145,7 +145,7 @@ bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_append_conn_resp(&xdr, (struct append_conn_resp *)req);
+	bool ret = xdr_append_conn_resp(&xdr, (struct append_conn_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -167,7 +167,7 @@ bool append_conn_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_append_conn_resp(&xdr, _req);
+	bool ret = xdr_append_conn_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -186,7 +186,7 @@ bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_pwd_req(&xdr, (struct pwd_req *)req);
+	bool ret = xdr_pwd_req(&xdr, (struct pwd_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -208,7 +208,7 @@ bool pwd_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_pwd_req(&xdr, _req);
+	bool ret = xdr_pwd_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -227,7 +227,7 @@ bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_pwd_resp(&xdr, (struct pwd_resp *)req);
+	bool ret = xdr_pwd_resp(&xdr, (struct pwd_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -249,7 +249,7 @@ bool pwd_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_pwd_resp(&xdr, _req);
+	bool ret = xdr_pwd_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -268,7 +268,7 @@ bool ll_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_ll_req(&xdr, (struct ll_req *)req);
+	bool ret = xdr_ll_req(&xdr, (struct ll_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -290,7 +290,7 @@ bool ll_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_ll_req(&xdr, _req);
+	bool ret = xdr_ll_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -309,7 +309,7 @@ bool ll_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_ll_resp(&xdr, (struct ll_resp *)req);
+	bool ret = xdr_ll_resp(&xdr, (struct ll_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -331,7 +331,7 @@ bool ll_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_ll_resp(&xdr, _req);
+	bool ret = xdr_ll_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -350,7 +350,7 @@ bool cd_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_cd_req(&xdr, (struct cd_req *)req);
+	bool ret = xdr_cd_req(&xdr, (struct cd_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -372,7 +372,7 @@ bool cd_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_cd_req(&xdr, _req);
+	bool ret = xdr_cd_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -391,7 +391,7 @@ bool cd_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_cd_resp(&xdr, (struct cd_resp *)req);
+	bool ret = xdr_cd_resp(&xdr, (struct cd_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -413,7 +413,7 @@ bool cd_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_cd_resp(&xdr, _req);
+	bool ret = xdr_cd_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -432,7 +432,7 @@ bool get_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_get_req(&xdr, (struct get_req *)req);
+	bool ret = xdr_get_req(&xdr, (struct get_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -454,7 +454,7 @@ bool get_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_get_req(&xdr, _req);
+	bool ret = xdr_get_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -473,7 +473,7 @@ bool get_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_get_resp(&xdr, (struct get_resp *)req);
+	bool ret = xdr_get_resp(&xdr, (struct get_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -495,7 +495,7 @@ bool get_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_get_resp(&xdr, _req);
+	bool ret = xdr_get_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -514,7 +514,7 @@ bool put_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_put_req(&xdr, (struct put_req *)req);
+	bool ret = xdr_put_req(&xdr, (struct put_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -536,7 +536,7 @@ bool put_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_put_req(&xdr, _req);
+	bool ret = xdr_put_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -555,7 +555,7 @@ bool put_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_put_resp(&xdr, (struct put_resp *)req);
+	bool ret = xdr_put_resp(&xdr, (struct put_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -577,7 +577,7 @@ bool put_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_put_resp(&xdr, _req);
+	bool ret = xdr_put_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -596,7 +596,7 @@ bool common_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_common_resp(&xdr, (struct common_resp *)req);
+	bool ret = xdr_common_resp(&xdr, (struct common_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -618,7 +618,7 @@ bool common_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_common_resp(&xdr, _req);
+	bool ret = xdr_common_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -637,7 +637,7 @@ bool write_msg_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_write_msg_req(&xdr, (struct write_msg_req *)req);
+	bool ret = xdr_write_msg_req(&xdr, (struct write_msg_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -659,7 +659,7 @@ bool write_msg_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_write_msg_req(&xdr, _req);
+	bool ret = xdr_write_msg_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -678,7 +678,7 @@ bool read_msg_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_read_msg_req(&xdr, (struct read_msg_req *)req);
+	bool ret = xdr_read_msg_req(&xdr, (struct read_msg_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -700,7 +700,7 @@ bool read_msg_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_read_msg_req(&xdr, _req);
+	bool ret = xdr_read_msg_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -719,7 +719,7 @@ bool read_msg_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_read_msg_resp(&xdr, (struct read_msg_resp *)req);
+	bool ret = xdr_read_msg_resp(&xdr, (struct read_msg_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -741,7 +741,7 @@ bool read_msg_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_read_msg_resp(&xdr, _req);
+	bool ret = xdr_read_msg_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -760,7 +760,7 @@ bool mp_stat_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_mp_stat_req(&xdr, (struct mp_stat_req *)req);
+	bool ret = xdr_mp_stat_req(&xdr, (struct mp_stat_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -782,7 +782,7 @@ bool mp_stat_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_mp_stat_req(&xdr, _req);
+	bool ret = xdr_mp_stat_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -801,7 +801,7 @@ bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_mp_stat_resp(&xdr, (struct mp_stat_resp *)req);
+	bool ret = xdr_mp_stat_resp(&xdr, (struct mp_stat_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -823,7 +823,7 @@ bool mp_stat_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_mp_stat_resp(&xdr, _req);
+	bool ret = xdr_mp_stat_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -842,7 +842,7 @@ bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_directcmd_req(&xdr, (struct directcmd_req *)req);
+	bool ret = xdr_directcmd_req(&xdr, (struct directcmd_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -864,7 +864,7 @@ bool directcmd_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_directcmd_req(&xdr, _req);
+	bool ret = xdr_directcmd_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -883,7 +883,7 @@ bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_directcmd_resp(&xdr, (struct directcmd_resp *)req);
+	bool ret = xdr_directcmd_resp(&xdr, (struct directcmd_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -905,7 +905,7 @@ bool directcmd_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_directcmd_resp(&xdr, _req);
+	bool ret = xdr_directcmd_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -924,7 +924,7 @@ bool who_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_who_req(&xdr, (struct who_req *)req);
+	bool ret = xdr_who_req(&xdr, (struct who_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -946,7 +946,7 @@ bool who_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_who_req(&xdr, _req);
+	bool ret = xdr_who_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -965,7 +965,7 @@ bool who_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_who_resp(&xdr, (struct who_resp *)req);
+	bool ret = xdr_who_resp(&xdr, (struct who_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -987,7 +987,7 @@ bool who_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_who_resp(&xdr, _req);
+	bool ret = xdr_who_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -1006,7 +1006,7 @@ bool write_req_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_write_req(&xdr, (struct write_req *)req);
+	bool ret = xdr_write_req(&xdr, (struct write_req *)req);
 
 	fclose(fp);
 	*len = size;
@@ -1028,7 +1028,7 @@ bool write_req_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_write_req(&xdr, _req);
+	bool ret = xdr_write_req(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;
@@ -1047,7 +1047,7 @@ bool write_resp_encode(void *req, unsigned char **buf, int *len)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_ENCODE);
 
-	int ret = xdr_write_resp(&xdr, (struct write_resp *)req);
+	bool ret = xdr_write_resp(&xdr, (struct write_resp *)req);
 
 	fclose(fp);
 	*len = size;
@@ -1069,7 +1069,7 @@ bool write_resp_decode(unsigned char *buf, int len, void **req)
 	XDR xdr;
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
-	int ret = xdr_write_resp(&xdr, _req);
+	bool ret = xdr_write_resp(&xdr, _req);
 	fclose(fp);
 
 	*req = _req;

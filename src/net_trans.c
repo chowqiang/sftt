@@ -130,6 +130,7 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 	for (i = 0; serializables[i].packet_type != -1; ++i) {
 		if (sp->type == serializables[i].packet_type) {
 			ret = serializables[i].serialize(sp->obj, &buf, &len);
+			DEBUG((DEBUG_INFO, "sp->type=%d, ret=%d, buf=%p, len=%d\n", sp->type, ret, buf, len));
 			if (ret && buf) {
 				sp->content = mp_malloc(g_mp, __func__,
 						len * sizeof(unsigned char));
@@ -142,6 +143,7 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 			DBUG_RETURN(ret);
 		}
 	}
+	DEBUG((DEBUG_INFO, "unknown packet type: %d\n", sp->type));
 	add_log(LOG_INFO, "%s: out, ret=%d", __func__, ret);
 
 	DBUG_RETURN(false);
