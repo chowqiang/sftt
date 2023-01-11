@@ -108,6 +108,7 @@ int test_get(int argc, char *argv[])
 	char *root = NULL;
 	char res_msg[1024];
 	bool test_result;
+	int ret = 0;
 
 	ctx = test_context_create(TEST_NAME);
 	if (ctx == NULL)
@@ -139,13 +140,19 @@ int test_get(int argc, char *argv[])
 
 	test_context_run_test(ctx);
 
-	test_context_get_result(ctx, &test_result, res_msg, sizeof(res_msg));
+	ret = test_context_get_result(ctx, &test_result, res_msg, sizeof(res_msg));
+	if (ret) {
+		printf("get test result failed!\n");
+		goto done;
+	}
+
 	if (test_result) {
 		printf("test successfully!\n");
 	} else {
 		printf("test failed: %s\n", res_msg);
 	}
 
+done:
 	test_context_destroy(ctx);
 
 	return 0;

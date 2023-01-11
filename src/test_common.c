@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -354,6 +355,10 @@ int test_context_run_test(struct test_context *ctx)
 
 	if (!file_existed(ctx->finish_file)) {
 		ctx->success = false;
+		ctx->test_error = ETIME;
+	} else {
+		ctx->success = true;
+		ctx->test_error = 0;
 	}
 
 	priority_list_for_each_entry(process, &ctx->proc_list, list)
@@ -368,14 +373,60 @@ int test_context_run_test(struct test_context *ctx)
 int test_context_get_result(struct test_context *ctx, bool *result,
 		char *message, int len)
 {
-	*result = ctx->success;
-	if (*result) {
-		snprintf(message, len, "test ok!\n");
-	} else {
+	int ret = -1;
+	char path1[256];
+	char path2[256];
+	FILE *fp = NULL;
+
+	if (!ctx->success) {
+		*result = false;
 		snprintf(message, len, "%s", strerror(ctx->test_error));
+		ret = 0;
+		goto done;
 	}
 
-	return 0;
+	if (!ctx->cmp_file) {
+		printf("cannot compare files for missing cmp_file\n");
+		goto done;
+	}
+
+	fp = fopen(ctx->cmp_file, "r");
+	if (fp == NULL) {
+		printf("cannot compare files for failure to open %s\n", ctx->cmp_file);
+		goto done;
+	}
+
+	if (fgets(path1, sizeof(path1), fp) == NULL) {
+		printf("cannot compare files for failure to read the first line\n");
+		goto done;
+	}
+	if (path1[strlen(path1) - 1] == '\n') {
+		path1[strlen(path1) - 1] = 0;
+	}
+
+	if (fgets(path2, sizeof(path2), fp) == NULL) {
+		printf("cannot compare files for failure to read the second line\n");
+		goto done;
+	}
+	if (path2[strlen(path2) - 1] == '\n') {
+		path2[strlen(path2) - 1] = 0;
+	}
+
+	if (dir_compare(path1, path2) == 0) {
+		*result = true;
+		snprintf(message, len, "test successfully!");
+	} else {
+		*result = false;
+		snprintf(message, len, "dir compare failed: %s, %s\n", path1, path2);
+	}
+
+	ret = 0;
+
+done:
+	if (fp)
+		fclose(fp);
+
+	return ret;
 }
 
 int test_context_destroy(struct test_context *ctx)
