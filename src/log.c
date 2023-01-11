@@ -94,7 +94,7 @@ int logger_init(char *dir, char *prefix)
 	strcpy(client_log_dir, dir);
 	strcpy(client_log_prefix, prefix);
 
-	client_limit = new(ratelimit_state, 10, 1000);
+	client_limit = new(ratelimit_state, 10, 10000);
 	assert(client_limit != NULL);
 
 	return 0;
@@ -111,7 +111,7 @@ int logger_daemon(void *args)
 	int ret = 0;
 	struct logger_init_ctx *ctx = args;
 
-	server_limit = new(ratelimit_state, 10, 1000);
+	server_limit = new(ratelimit_state, 10, 10000);
 	assert(server_limit != NULL);
 
 	dir = ctx->dir;

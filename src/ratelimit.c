@@ -60,7 +60,7 @@ bool ratelimit_try_inc(struct ratelimit_state *rs)
 	time_t now = get_ts();	
 	bool ret = true;
 
-	if ((now - rs->last) >= rs->interval) {
+	if ((now - rs->last) > rs->interval) {
 		rs->used *= (rs->interval * 1.0 / (now - rs->last));
 		rs->last = now - rs->interval;
 	}
