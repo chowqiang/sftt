@@ -244,7 +244,7 @@ int gen_h_file(struct st_list *head, char *h_file)
 	fprintf(fp, "#include \"packet.h\"\n\n");
 	while (p) {
 		fprintf(fp, "int send_%s(int fd, struct sftt_packet *resp_packet,\n"
-			"\tstruct %s *resp, int code, int next);\n\n",
+			"\tstruct %s *resp, int code, int flags);\n\n",
 			p->struct_name, p->struct_name);
 		p = p->next;
 	}
