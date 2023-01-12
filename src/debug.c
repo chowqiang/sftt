@@ -37,7 +37,7 @@ void set_default_debug_level(char *debug_level)
 	 } else if (strcmp("warn", debug_level) == 0) {
 		default_debug_level = DEBUG_WARN;
 
-	 } else if (strcmp("info", debug_level) == 0) {
+	 } else if (strcmp("error", debug_level) == 0) {
 		default_debug_level = DEBUG_ERROR;
 	 }
 }
@@ -51,9 +51,7 @@ void set_client_debug_level(int verbose, char *debug_level)
 
 	if (verbose == 1) {
 		default_debug_level = DEBUG_INFO;
-	} else if (verbose == 2) {
-		default_debug_level = DEBUG_DEBUG;
-	} else if (verbose > 2) {
+	} else if (verbose > 1) {
 		default_debug_level = DEBUG_DEBUG;
 	}
 }
@@ -66,7 +64,7 @@ void set_server_debug_level(int verbose, char *debug_level)
 	}
 
 	if (verbose == 1) {
-		default_debug_level = DEBUG_DEBUG;
+		default_debug_level = DEBUG_INFO;
 	} else if (verbose > 1) {
 		default_debug_level = DEBUG_DEBUG;
 	}
