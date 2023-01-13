@@ -565,8 +565,7 @@ int create_new_file(char *fname, mode_t mode)
 
 	fp = fopen(fname, "w+");
 	if (fp == NULL) {
-		printf("%s:%d, fopen file failed: %s\n", __func__, __LINE__, fname);
-		perror("create file failed");
+		DEBUG((DEBUG_WARN, "fopen file failed|fname=%s|err=%s\n", fname, strerror(errno)));
 		return -1;
 	}
 
@@ -585,18 +584,18 @@ char *get_basename(char *path)
 	return basename(path);
 }
 
-void create_new_file_no_fail(char *fname, mode_t mode)
+int create_new_file_with_parent(char *fname, mode_t mode)
 {
 	char *dir_name;
 
 	dir_name = get_dirname(fname);
 	if (dir_name == NULL)
-		return;
+		return -1;
 
 	if (try_make_dir(dir_name, DEFAULT_DIR_MODE))
-		return;
+		return -1;
 
-	create_new_file(fname, mode);
+	return create_new_file(fname, mode);
 }
 
 int write_new_line(FILE *fp)
@@ -640,7 +639,7 @@ int get_file_node_list(char *path, struct list_head *node_list)
 	}
 
 	while ((item = readdir(dp)) != NULL) {
-		printf("path = %s, d_name = %s\n", path, item->d_name);
+		//printf("path = %s, d_name = %s\n", path, item->d_name);
 		if (strcmp(item->d_name, ".") == 0 ||
 			strcmp(item->d_name, "..") == 0)
 			continue;

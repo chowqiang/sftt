@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <libgen.h>
 #include <stdio.h>
 #include "autoconf.h"
@@ -86,7 +87,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		DEBUG((DEBUG_INFO, "get a file|file=%s\n", rp));
 
 		if (!file_existed(rp)) {
-			ret = create_new_file(rp, mode);
+			ret = create_new_file_with_parent(rp, mode);
 			if (ret == -1) {
 				DEBUG((DEBUG_INFO, "create file failed: %s\n", rp));
 				send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
@@ -135,7 +136,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		progress = total_size ? recv_size / total_size : 1;
+		progress = total_size ? (recv_size * 1.0) / total_size : 1.0;
 		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(rp),
 				(int)(progress * 100), recv_size_info, speed_info,
 				left_time_info);
@@ -186,7 +187,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(recv_size, recv_size_info, sizeof(recv_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		progress = total_size ? recv_size / total_size : 1;
+		progress = total_size ? (recv_size * 1.0) / total_size : 1.0;
 		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(rp),
 				(int)(progress * 100), recv_size_info, speed_info,
 				left_time_info);
@@ -361,11 +362,10 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 			}
 
 			/* create new file */
-			ret = create_new_file(rp, req->data.entry.mode);
+			ret = create_new_file_with_parent(rp, req->data.entry.mode);
 			if (ret == -1) {
-				perror("create_new_file failed");
-				printf("%s:%d, create file failed when recv file, file=%s\n",
-						__func__, __LINE__, rp);
+				DEBUG((DEBUG_WARN, "create file failed when recv file|file=%s|err=%s\n",
+						rp, strerror(errno)));
 				/* send resp */
 				resp->status = RESP_INTERNAL_ERR;
 				resp_packet->obj = resp;
@@ -396,7 +396,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	DEBUG((DEBUG_INFO, "begin receive file md5 ...\n"));
 	ret = recv_sftt_packet(fd, req_packet);
 	if (ret == -1) {
-		printf("recv encountered unrecoverable error ...\n");
+		DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error ...\n"));
 		DBUG_RETURN(-1);
 	}
 	req = req_packet->obj;
@@ -455,7 +455,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	do {
 		ret = recv_sftt_packet(fd, req_packet);
 		if (!(ret > 0)) {
-			printf("recv encountered unrecoverable error ...\n");
+			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error ...\n"));
 			break;
 		}
 		req = req_packet->obj;
@@ -536,7 +536,7 @@ int recv_files_from_put_req(int fd, struct sftt_packet *req_packet)
 
 		ret = recv_sftt_packet(fd, req_packet);
 		if (ret == -1) {
-			printf("recv encountered unrecoverable error ...\n");
+			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error ...\n"));
 			break;
 		}
 		++i;

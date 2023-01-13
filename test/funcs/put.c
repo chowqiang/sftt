@@ -62,7 +62,7 @@ struct test_cmd cmds[] = {
 	},
 	{
 		.cmd = "put",
-		.args = {SERVER_DIR, CLIENT_DIR, NULL},
+		.args = {CLIENT_DIR, SERVER_DIR, NULL},
 		.chroot_flags = BIT32(0) | BIT32(1)
 	},
 	{
@@ -73,7 +73,7 @@ struct test_cmd cmds[] = {
 };
 
 struct test_cmp_file_list cmp_file_list = {
-	.files = {CLIENT_DIR, SERVER_DIR, NULL},
+	.files = {CLIENT_DIR, SERVER_DIR"/"CLIENT_DIR, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
 };
 
@@ -87,7 +87,8 @@ static const char *client_args[] = {
 };
 
 static const char *server_args[] = {
-	"-d"
+	"-d",
+	"start"
 };
 
 /*

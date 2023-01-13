@@ -1126,7 +1126,7 @@ int do_task_handler(void *arg)
 		ret = recv_sftt_packet(sock, req);
 		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
-			printf("recv encountered unrecoverable error, child process is exiting ...\n");
+			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error, child process is exiting ...\n"));
 			goto exit;
 		}
 		if (ret == 0) {
@@ -2410,12 +2410,15 @@ int do_cmd_file(struct sftt_client *client, char *cmd_file)
 	DEBUG((DEBUG_INFO, "begin to read loop ...\n"));
 
 	while (!feof(fp)) {
+		cmd[0] = 0;
+
 		fgets(cmd, CMD_MAX_LEN - 1, fp);
 
 		if (strlen(cmd) == 0)
 			continue;
 
-		cmd[strlen(cmd) - 1] = 0;
+		if (cmd[strlen(cmd) - 1] == '\n')
+			cmd[strlen(cmd) - 1] = 0;
 
 		execute_cmd(client, cmd, -1);
 	}

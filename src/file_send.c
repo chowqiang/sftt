@@ -458,7 +458,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		progress = total_size ? send_size / total_size : 1;
+		progress = total_size ? (send_size * 1.0) / total_size : 1.0;
 		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(file),
 				(int)(progress * 100), send_size_info, speed_info, left_time_info);
 
@@ -510,7 +510,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 		format_trans_speed(speed, speed_info, sizeof(speed_info));
 		format_trans_size(send_size, send_size_info, sizeof(send_size_info));
 		format_left_time(left_time, left_time_info, sizeof(left_time_info));
-		progress = total_size ? send_size / total_size : 1;
+		progress = total_size ? (send_size * 1.0) / total_size : 1.0;
 		snprintf(progress_info, 128, "%s    %d%% %s %s %s", basename(file),
 				(int)(progress * 100), send_size_info, speed_info,
 				left_time_info);

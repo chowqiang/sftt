@@ -123,15 +123,15 @@ void test_gen_random_files(void)
 	gen_files_by_template(attrs, ARRAY_SIZE(attrs), "/home/zhoumin/tmp/tmo");
 }
 
-void test_create_new_file_no_fail(void)
+void test_create_new_file_with_parent(void)
 {
 	char *fname = "/tmp/test/sfttd/a.txt";
 
-	create_new_file_no_fail(fname, DEFAULT_FILE_MODE);
+	create_new_file_with_parent(fname, DEFAULT_FILE_MODE);
 	if (!file_existed(fname)) {
-		printf("create_new_file_no_fail not successed!\n");
+		printf("create_new_file_with_parent not successed!\n");
 	} else {
-		printf("create_new_file_no_fail successed!\n");
+		printf("create_new_file_with_parent successed!\n");
 	}
 }
 
@@ -142,7 +142,7 @@ int main(void)
 	//test_get_path_entry_list();
 	//test_dir_compare();
 	//test_gen_random_files();
-	test_create_new_file_no_fail();
+	test_create_new_file_with_parent();
 
 	return 0;
 }

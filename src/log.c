@@ -126,7 +126,7 @@ int logger_daemon(void *args)
 	get_log_file_name(dir, prefix, file1, FILE_NAME_MAX_LEN);
 
 	if (!file_existed(file1))
-		create_new_file_no_fail(file1, DEFAULT_FILE_MODE);
+		create_new_file_with_parent(file1, DEFAULT_FILE_MODE);
 
 	server_log_fp = fopen(file1, "a");
 	if (server_log_fp == NULL) {
@@ -158,7 +158,7 @@ int logger_daemon(void *args)
 			fclose(server_log_fp);
 
 			if (!file_existed(file2))
-				create_new_file_no_fail(file2, DEFAULT_FILE_MODE);
+				create_new_file_with_parent(file2, DEFAULT_FILE_MODE);
 
 			server_log_fp = fopen(file2, "a");
 			if (server_log_fp == NULL) {
@@ -181,7 +181,7 @@ int get_log_msqid(int create_flag)
 	int msgflag;
 
 	if (!file_existed(SFTT_LOG_MSQKEY_FILE))
-		create_new_file_no_fail(SFTT_LOG_MSQKEY_FILE, DEFAULT_FILE_MODE);
+		create_new_file_with_parent(SFTT_LOG_MSQKEY_FILE, DEFAULT_FILE_MODE);
 
 	if ((key = ftok(SFTT_LOG_MSQKEY_FILE, 'S')) == -1) {
 		printf("sfttd ftok failed!\n"
@@ -237,7 +237,7 @@ int add_client_log(int level, const char *fmt, va_list args)
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
 
 	if (!file_existed(log_file))
-		create_new_file_no_fail(log_file, DEFAULT_FILE_MODE);
+		create_new_file_with_parent(log_file, DEFAULT_FILE_MODE);
 
 	FILE *client_log_fp = fopen(log_file, "a");
 	if (client_log_fp == NULL) {
@@ -364,7 +364,7 @@ int do_log(struct logger *log, struct trace_info *trace,
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
 
 	if (!file_existed(log_file))
-		create_new_file_no_fail(log_file, DEFAULT_FILE_MODE);
+		create_new_file_with_parent(log_file, DEFAULT_FILE_MODE);
 
 	FILE *client_log_fp = fopen(log_file, "a");
 	if (client_log_fp == NULL) {

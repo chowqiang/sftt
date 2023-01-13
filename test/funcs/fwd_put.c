@@ -84,7 +84,8 @@ static const char *client_args[] = {
 };
 
 static const char *server_args[] = {
-	"-d"
+	"-d",
+	"start"
 };
 
 /*

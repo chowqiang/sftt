@@ -125,6 +125,6 @@ int gen_files_by_template(struct file_gen_attr *attrs, int num, char *root);
 int make_or_update_dir(char *path, mode_t mode);
 int try_make_dir(char *path, mode_t mode);
 
-void create_new_file_no_fail(char *fname, mode_t mode);
+int create_new_file_with_parent(char *fname, mode_t mode);
 
 #endif

@@ -317,7 +317,7 @@ int get_sftt_server_shmid(int create_flag)
 	int shmid;
 
 	if (!file_existed(SFTT_SERVER_SHMKEY_FILE))
-		create_new_file_no_fail(SFTT_SERVER_SHMKEY_FILE, DEFAULT_FILE_MODE);
+		create_new_file_with_parent(SFTT_SERVER_SHMKEY_FILE, DEFAULT_FILE_MODE);
 
 	if ((key = ftok(SFTT_SERVER_SHMKEY_FILE, 'S')) == -1) {
 		printf(PROC_NAME " ftok failed!\n"
@@ -1490,7 +1490,8 @@ int handle_client_session(void *args)
 		ret = recv_sftt_packet(sock, req);
 		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
-			printf("recv encountered unrecoverable error, child process is exiting ...\n");
+			add_log(LOG_ERROR, "recv encountered unrecoverable error, child process is exiting ...");
+			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error, child process is exiting ...\n"));
 			goto exit;
 		}
 		if (ret == 0) {
@@ -1936,8 +1937,8 @@ void server_usage_help(int exitcode)
 {
 	show_version();
 	printf("usage:\t" PROC_NAME " options\n"
-		"\t" PROC_NAME " start [-v] [-d] [-s dir]\n"
-		"\t" PROC_NAME " restart [-v] [-d] [-s dir]\n"
+		"\t" PROC_NAME " start [-v] [-d] [-s state_file]\n"
+		"\t" PROC_NAME " restart [-v] [-d] [-s state_file]\n"
 		"\t" PROC_NAME " stop [-v]\n"
 		"\t" PROC_NAME " status [-v]\n");
 	exit(exitcode);
