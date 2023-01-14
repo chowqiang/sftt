@@ -70,7 +70,7 @@ struct test_cmd cmds_2[] = {
 };
 
 struct test_cmp_file_list cmp_file_list = {
-	.files = {CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+	.files = {CLIENT_DIR_1"/"CLIENT_DIR_2, CLIENT_DIR_2, NULL},
 	.chroot_flags = BIT32(0) | BIT32(1)
 };
 

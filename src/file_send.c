@@ -72,13 +72,13 @@ int send_file_name_by_get_resp(int fd, char *path, char *fname,
 
 	ret = recv_sftt_packet(fd, resp_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "%s: recv sftt packet failed!\n", __func__));
+		DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
 	com_resp = resp_packet->obj;
 	if (com_resp->status != RESP_OK) {
-		DEBUG((DEBUG_INFO, "recv response failed!\n"));
+		DEBUG((DEBUG_ERROR, "recv response failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -102,8 +102,10 @@ int send_file_md5_by_get_resp(int fd, char *path, struct sftt_packet *resp_packe
 	data->entry.total_size = file_size(path);
 
 	ret = md5_file(path, data->entry.content);
-	if (ret == -1)
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "get file md5 failed|path=%s\n", path));
 		DBUG_RETURN(-1);
+	}
 
 	data->entry.this_size = strlen((char *)data->entry.content);
 
@@ -136,14 +138,18 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 	DEBUG((DEBUG_INFO, "send file name|path=%s|fname=%s\n", path, fname));
 
 	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, 1);
-	if (ret == -1)
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "send file name failed|path=%s\n", path));
 		DBUG_RETURN(-1);
+	}
 
 	DEBUG((DEBUG_INFO, "send file md5|path=%s|fname=%s\n", path, fname));
 
 	ret = send_file_md5_by_get_resp(fd, path, resp_packet, resp);
-	if (ret == -1)
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "send file md5 failed|path=%s\n", path));
 		DBUG_RETURN(-1);
+	}
 
 	DEBUG((DEBUG_INFO, "recv md5 resp|path=%s|fname=%s\n", path, fname));
 
@@ -155,13 +161,15 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 	com_resp = resp_packet->obj;
 	if (com_resp->status == RESP_OK) {
-		DEBUG((DEBUG_INFO, "file not changed|path=%s|skip ...\n", path));
+		DEBUG((DEBUG_WARN, "file not changed and skip it|path=%s\n", path));
 		DBUG_RETURN(0);
 	}
 
 	fp = fopen(path, "r");
-	if (fp == NULL)
+	if (fp == NULL) {
+		DEBUG((DEBUG_ERROR, "cannot open file|path=%s\n", path));
 		DBUG_RETURN(-1);
+	}
 
 	data = &resp->data;
 	data->entry.total_size = file_size(path);

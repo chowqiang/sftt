@@ -1537,7 +1537,7 @@ int handle_client_session(void *args)
 			handle_write_req(client, req, resp);
 			break;
 		default:
-			printf("%s: cannot recognize packet type!\n", __func__);
+			DEBUG((DEBUG_WARN, "cannot recognize packet type|type=%d\n", req->type));
 			break;
 		}
 		//free_sftt_packet(&resp);

@@ -1325,6 +1325,16 @@ int init_sftt_client_thread_pool(struct sftt_client *client)
 	return 0;
 }
 
+int create_state_file(struct sftt_client *client)
+{
+	int ret = 0;
+
+	if (client->state_file)
+		ret = create_new_file(client->state_file, DEFAULT_FILE_MODE);
+
+	return ret;
+}
+
 int init_sftt_client(struct sftt_client *client, char *host, int port,
 	char *user, char *passwd, char *state_file)
 {
@@ -1386,6 +1396,11 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 
 	if (get_friend_list(client) == -1) {
 		printf("cannot get friend list!\n");
+		return -1;
+	}
+
+	if (create_state_file(client) == -1) {
+		DEBUG((DEBUG_ERROR, "cannot create state file!\n"));
 		return -1;
 	}
 
@@ -2387,12 +2402,6 @@ void sftt_client_who_usage(void)
 	printf("Usage: w\n");
 }
 
-void create_state_file(struct sftt_client *client)
-{
-	if (client->state_file)
-		create_new_file(client->state_file, DEFAULT_FILE_MODE);
-}
-
 int do_cmd_file(struct sftt_client *client, char *cmd_file)
 {
 	char cmd[CMD_MAX_LEN];
@@ -2404,8 +2413,6 @@ int do_cmd_file(struct sftt_client *client, char *cmd_file)
 		perror("command file open failed");
 		return -1;
 	}
-
-	create_state_file(client);
 
 	DEBUG((DEBUG_INFO, "begin to read loop ...\n"));
 
@@ -2422,6 +2429,8 @@ int do_cmd_file(struct sftt_client *client, char *cmd_file)
 
 		execute_cmd(client, cmd, -1);
 	}
+
+	fclose(fp);
 
 	return 0;
 }

@@ -73,7 +73,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		if (!file_existed(rp)) {
 			ret = mkdirp(rp, mode);
 			if (ret == -1) {
-				DEBUG((DEBUG_INFO, "create dir failed: %s\n", rp));
+				DEBUG((DEBUG_WARN, "create dir failed|rp=%s\n", rp));
 				send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 				goto done;
 			}
@@ -89,7 +89,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		if (!file_existed(rp)) {
 			ret = create_new_file_with_parent(rp, mode);
 			if (ret == -1) {
-				DEBUG((DEBUG_INFO, "create file failed: %s\n", rp));
+				DEBUG((DEBUG_WARN, "create file failed|rp=%s\n", rp));
 				send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 				goto done;
 			}
@@ -98,7 +98,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 
 	} else {
-		DEBUG((DEBUG_INFO, "unknown file type!\n"));
+		DEBUG((DEBUG_WARN, "unknown file type|type=%d\n", type));
 		send_common_resp(fd, resp_packet, com_resp, RESP_UNKNOWN_FILE_TYPE, 0);
 		ret = -1;
 		goto done;
@@ -113,7 +113,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	/* Receive file md5, need reply */
 	ret = recv_sftt_packet(fd, resp_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "recv file md5 packet failed!\n"));
+		DEBUG((DEBUG_WARN, "recv file md5 packet failed!\n"));
 		goto done;
 	}
 	resp = resp_packet->obj;
@@ -152,7 +152,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 
 	fp = fopen(rp, "w+");
 	if (fp == NULL) {
-		DEBUG((DEBUG_INFO, "open file for write failed! file: %s\n", rp));
+		DEBUG((DEBUG_WARN, "open file for write failed|file=%s\n", rp));
 		send_common_resp(fd, resp_packet, com_resp, RESP_INTERNAL_ERR, 0);
 		ret = -1;
 		goto done;
@@ -165,7 +165,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 		/* recv content */
 		ret = recv_sftt_packet(fd, resp_packet);
 		if (ret == -1) {
-			printf("%s: recv sftt packet failed!\n", __func__);
+			DEBUG((DEBUG_WARN, "recv sftt packet failed\n"));
 			break;
 		}
 		resp = resp_packet->obj;
@@ -202,20 +202,19 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 	fclose(fp);
 
 	if (recv_size < total_size) {
-		printf("%s: recv one file failed: %s\n", __func__, rp);
+		DEBUG((DEBUG_WARN, "recv one file failed|rp=%s\n", rp));
 		ret = -1;
 		goto done;
 	}
 
 	if (!same_file(rp, md5)) {
-		DEBUG((DEBUG_INFO, "recv one file failed: %s, "
-			"md5 not correct!\n", rp));
+		DEBUG((DEBUG_WARN, "recv one file failed for md5 error|rp=%s\n", rp));
 		ret = -1;
 		goto done;
 	}
 
 	set_file_mode(rp, data->entry.mode);
-	DEBUG((DEBUG_INFO, "recv %s done\n", rp));
+	DEBUG((DEBUG_INFO, "recv file done|rp=%s\n", rp));
 
 done:
 	if (com_resp)

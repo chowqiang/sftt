@@ -133,14 +133,22 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 			add_log(LOG_INFO, "%s: serialization done|"
 					"sp->type=%d|ret=%d|buf=%p|len=%d",
 					__func__, sp->type, ret, buf, len);
-			if (ret && buf) {
+			if (ret) {
+				assert(buf != NULL);
 				sp->content = mp_malloc(g_mp, __func__,
 						len * sizeof(unsigned char));
 				memcpy(sp->content, buf, len);
 				sp->data_len = len;
-
-				free(buf);
+			} else {
+				DEBUG((DEBUG_WARN, "serialization failed|sp->type=%d|"
+						"ret=%d|buf=%p|len=%d\n",
+						sp->type, ret, buf, len));
+				add_log(LOG_WARN, "%s: serialization failed|sp->type=%d|"
+						"ret=%d|buf=%p|len=%d",
+						__func__, sp->type, ret, buf, len);
 			}
+			if (buf)
+				free(buf);
 			add_log(LOG_INFO, "%s: out|ret=%d", __func__, ret);
 			DBUG_RETURN(ret);
 		}
@@ -162,7 +170,18 @@ int sftt_packet_deserialize(struct sftt_packet *sp)
 		if (sp->type == serializables[i].packet_type) {
 			ret = serializables[i].deserialize(sp->content,
 				sp->data_len, &(sp->obj));
+			add_log(LOG_INFO, "%s: deserialization done|"
+					"sp->type=%d|ret=%d|sp->data_len=%d|sp->obj=%p",
+					__func__, sp->type, ret, sp->data_len, sp->obj);
 			add_log(LOG_INFO, "%s: out|ret=%d", __func__, ret);
+			if (!ret) {
+				DEBUG((DEBUG_WARN, "deserialization failed|sp->type=%d|"
+						"ret=%d|sp->data_len=%d|sp->obj=%p\n",
+						sp->type, ret, sp->data_len, sp->obj));
+				add_log(LOG_WARN, "%s: deserialization failed|sp->type=%d|"
+						"ret=%d|sp->data_len=%d|sp->obj=%p",
+						__func__, sp->type, ret, sp->data_len, sp->obj);
+			}
 			DBUG_RETURN(ret);
 		}
 	}
@@ -342,7 +361,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {
-		DEBUG((DEBUG_INFO, "%s: recv deserialize failed!\n", __func__));
+		DEBUG((DEBUG_ERROR, "%s: recv deserialize failed!\n", __func__));
 	}
 
 	free_sftt_packet(&_sp);
