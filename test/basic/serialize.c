@@ -82,7 +82,7 @@ void test_validate_resp(void)
 	ret = validate_resp_decode(buf, len, (void *)&resp_info2);
 	printf("decode ret = %d\n", ret);
 	data2 = &resp_info2->data;
-	printf("name: %s, uid: %ld\n", data2->name, data2->uid);
+	printf("name: %s, uid: %d\n", data2->name, data2->uid);
 	printf("status: %d, session_id: %s\n", resp_info2->status, data2->session_id);
 
 	mp_stat(g_mp);

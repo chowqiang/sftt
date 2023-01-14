@@ -3,6 +3,7 @@
  * It was generated using rpcgen.
  */
 
+#include <stdio.h>
 #include "req_resp.h"
 
 bool_t

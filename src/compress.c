@@ -187,6 +187,11 @@ struct btree *generate_huffman_tree(int *char_freq)
 		dlist_append(list, (void *)t_node);
 	}
 
+	if (dlist_empty(list)) {
+		DEBUG((DEBUG_ERROR, "btree node list is empty!\n"));
+		DBUG_RETURN(NULL);
+	}
+
 	int ch1 = 0, ch2 = 0;
 	int freq1 = 0, freq2 = 0;
 	for (;;) {
@@ -508,6 +513,7 @@ int huffman_compress(unsigned char *input, int input_len,
 	 */
 	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
+		DEBUG((DEBUG_ERROR, "generate huffman tree failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -543,11 +549,10 @@ int huffman_compress(unsigned char *input, int input_len,
 	DBUG_RETURN(output_len);
 }
 
-unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos)
+unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos, int *char_cnt)
 {
 	int i = 0;
 	unsigned char ch = 0;
-	int char_cnt = 0;
 
 	if (char_freq == NULL || pos == NULL) {
 		printf("get_char_freq params error!\n");
@@ -555,9 +560,9 @@ unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos)
 	}
 	memset(char_freq, 0, CHARSET_SIZE * sizeof(int));
 
-	char_cnt = (int)(*pos++);
+	*char_cnt = (int)(*pos++);
 
-	for (i = 0; i < char_cnt; ++i) {
+	for (i = 0; i < *char_cnt; ++i) {
 		ch = *pos++;
 		memcpy(&char_freq[ch], pos, sizeof(int));
 		pos += sizeof(int);
@@ -614,6 +619,7 @@ int huffman_decompress(unsigned char *input, unsigned char **output)
 	unsigned char *pos = input;
 	struct btree *tree;
 	int input_len, output_len;
+	int char_cnt = 0;
 
 	if (input == NULL || output == NULL) {
 		printf("decompress: input and output cannot be NULL!\n");
@@ -623,17 +629,21 @@ int huffman_decompress(unsigned char *input, unsigned char **output)
 	/*
 	 * Get the frequency of chars from encoded bytes.
 	 */
-	pos = get_char_freq(char_freq, pos);
+	pos = get_char_freq(char_freq, pos, &char_cnt);
 #ifdef CONFIG_HUFFMAN_DECOMPRESS_DEBUG
 	show_char_freq(char_freq);
 #endif
+	if (char_cnt == 0) {
+		DEBUG((DEBUG_ERROR, "get char freq failed!\n"));
+		DBUG_RETURN(-1);
+	}
 
 	/*
 	 * Generate the huffman tree by the frequency of chars.
 	 */
 	tree = generate_huffman_tree(char_freq);
 	if (tree == NULL) {
-		printf("decompress: generate_huffman_tree failed!\n");
+		DEBUG((DEBUG_ERROR, "generate huffman tree failed!\n"));
 		DBUG_RETURN(-1);
 	}
 

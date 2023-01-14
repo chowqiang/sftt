@@ -968,7 +968,7 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 		goto done;
 	}
 
-	DEBUG((DEBUG_INFO, "begin to send files by get resp"));
+	DEBUG((DEBUG_INFO, "begin to send files by get resp\n"));
 
 	ret = send_files_by_get_resp(conn->sock, path, resp_packet,
 			resp);
@@ -2034,7 +2034,7 @@ int sftt_client_mps_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
 	printf("client\t%ld\t\t%d\t\t%d\t\t%d\n", stat.total_size,
 		stat.total_nodes, stat.using_nodes, stat.free_nodes);
-	printf("server\t%ld\t\t%d\t\t%d\t\t%d\n", data->total_size,
+	printf("server\t%d\t\t%d\t\t%d\t\t%d\n", data->total_size,
 		data->total_nodes, data->using_nodes, data->free_nodes);
 
 	free_sftt_packet(&req_packet);

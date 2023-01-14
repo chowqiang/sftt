@@ -34,7 +34,7 @@
 extern struct mem_pool *g_mp;
 
 int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
-	struct get_resp *resp, int next)
+	struct get_resp *resp, int flags)
 {
 	DBUG_ENTER(__func__);
 
@@ -44,11 +44,11 @@ int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 	resp->need_reply = 0;
 #endif
 
-	DBUG_RETURN(send_get_resp(fd, resp_packet, resp, RESP_OK, next));
+	DBUG_RETURN(send_get_resp(fd, resp_packet, resp, RESP_OK, flags));
 }
 
 int send_file_name_by_get_resp(int fd, char *path, char *fname,
-	struct sftt_packet *resp_packet, struct get_resp *resp, int next)
+	struct sftt_packet *resp_packet, struct get_resp *resp, int flags)
 {
 	DBUG_ENTER(__func__);
 
@@ -68,7 +68,7 @@ int send_file_name_by_get_resp(int fd, char *path, char *fname,
 	data->entry.this_size = strlen(fname);
 
 	resp->need_reply = 1;
-	send_get_resp(fd, resp_packet, resp, RESP_OK, next);
+	send_get_resp(fd, resp_packet, resp, RESP_OK, flags);
 
 	ret = recv_sftt_packet(fd, resp_packet);
 	if (ret == -1) {
@@ -112,7 +112,7 @@ int send_file_md5_by_get_resp(int fd, char *path, struct sftt_packet *resp_packe
 	DEBUG((DEBUG_INFO, "file=%s|md5=%s\n", path, data->entry.content));
 	resp->need_reply = 1;
 
-	DBUG_RETURN(send_get_resp(fd, resp_packet, resp, RESP_OK, 1));
+	DBUG_RETURN(send_get_resp(fd, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE));
 }
 
 int send_file_by_get_resp(int fd, char *path, char *fname,
@@ -122,22 +122,25 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 
 	struct get_resp_data *data;
 	struct common_resp *com_resp;
-	int ret, is_last, next;
+	int ret, is_last, flags;
 	long read_size;
 	FILE *fp;
 
 	is_last = resp->data.file_idx == resp->data.total_files - 1;
 
 	if (is_dir(path)) {
-		next = is_last ? 0 : 1;
+		if (is_last)
+			flags = REQ_RESP_FLAG_STOP;
+		else
+			flags = REQ_RESP_FLAG_NONE;
 		DEBUG((DEBUG_INFO, "send dir name|path=%s|fname=%s\n", path, fname));
 
-		DBUG_RETURN(send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, next));
+		DBUG_RETURN(send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, flags));
 	}
 
 	DEBUG((DEBUG_INFO, "send file name|path=%s|fname=%s\n", path, fname));
 
-	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, 1);
+	ret = send_file_name_by_get_resp(fd, path, fname, resp_packet, resp, REQ_RESP_FLAG_NONE);
 	if (ret == -1) {
 		DEBUG((DEBUG_ERROR, "send file name failed|path=%s\n", path));
 		DBUG_RETURN(-1);
@@ -183,11 +186,13 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 		data->entry.this_size = ret;
 		read_size += ret;
 
-		next = is_last ? (read_size < data->entry.total_size ? 1 : 0) : 1;
+		flags = REQ_RESP_FLAG_NONE;
+		if (is_last && read_size == data->entry.total_size)
+			flags = REQ_RESP_FLAG_NONE;
 
-		DEBUG((DEBUG_INFO, "send file block|len=%d|next=%d\n", ret, next));
+		DEBUG((DEBUG_INFO, "send file block|len=%d|flags=%d\n", ret, flags));
 
-		ret = send_file_content_by_get_resp(fd, resp_packet, resp, next);
+		ret = send_file_content_by_get_resp(fd, resp_packet, resp, flags);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			break;

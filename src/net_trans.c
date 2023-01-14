@@ -60,7 +60,7 @@ int sftt_packet_encode_content(struct sftt_packet *src, struct sftt_packet *dst)
 		&dst->content, true, true);
 	add_log(LOG_INFO, "%s: out|data_len=%d", __func__, dst->data_len);
 
-	DBUG_RETURN(0);
+	DBUG_RETURN(dst->data_len);
 }
 
 
@@ -88,7 +88,7 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 
 	ret = send(sock, buffer, encoded_len, 0);
 	if (ret != encoded_len) {
-		DEBUG((DEBUG_INFO, "send header failed|err=%s\n", strerror(errno)));
+		DEBUG((DEBUG_ERROR, "send header failed|err=%s\n", strerror(errno)));
 	}
 	assert(ret == encoded_len);
 
@@ -193,6 +193,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 {
 	DBUG_ENTER(__func__);
 
+	int ret = 0;
 	struct sftt_packet *_sp;
 
 	add_log(LOG_INFO, "%s: in", __func__);
@@ -216,7 +217,12 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 		sp->data_len);
 
 	_sp->type = sp->type;
-	sftt_packet_encode_content(sp, _sp);
+	ret = sftt_packet_encode_content(sp, _sp);
+	if (!(ret > 0)) {
+		DEBUG((DEBUG_ERROR, "encode content failed|ret=%d|sp->type=%d\n",
+				ret, sp->type));
+		DBUG_RETURN(-1);
+	}
 
 	add_log(LOG_INFO, "%s: before send|sp->data_len=%d", __func__, _sp->data_len);
 	sftt_packet_send_header(sock, _sp);
@@ -243,7 +249,7 @@ int sftt_packet_decode_content(struct sftt_packet *src, struct sftt_packet *dst)
 	add_log(LOG_INFO, "%s: after decode|dst->data_len=%d", __func__, dst->data_len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
-	DBUG_RETURN(0);
+	DBUG_RETURN(dst->data_len);
 }
 
 int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
@@ -306,8 +312,8 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 
 	ret = recv(sock, sp->content, sp->data_len, 0 | MSG_WAITALL);
 	if (ret != sp->data_len) {
-		DEBUG((DEBUG_INFO, "%s: receive result not equal to data len|ret=%d|data_len=%d\n",
-			__func__, ret, sp->data_len));
+		DEBUG((DEBUG_ERROR, "receive result not equal to data len|ret=%d|data_len=%d\n",
+				ret, sp->data_len));
 		if (ret == 0) {
 			DBUG_RETURN(ret);
 		}
@@ -337,7 +343,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	ret = sftt_packet_recv_header(sock, _sp);
 	if (!(ret > 0)) {
-		DEBUG((DEBUG_ERROR, "%s: recv header failed!\n", __func__));
+		DEBUG((DEBUG_ERROR, "recv header failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -346,7 +352,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: before receive content", __func__);
 	ret = sftt_packet_recv_content(sock, _sp);
 	if (!(ret > 0)) {
-		DEBUG((DEBUG_ERROR, "%s: recv header failed!\n", __func__));
+		DEBUG((DEBUG_ERROR, "recv header failed!|ret=%d\n", ret));
 		DBUG_RETURN(-1);
 	}
 
@@ -356,12 +362,17 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 	add_log(LOG_INFO, "%s: receive packet|type=%d", __func__, sp->type);
 	add_log(LOG_INFO, "%s: before decode content", __func__);
 
-	sftt_packet_decode_content(_sp, sp);
+	ret = sftt_packet_decode_content(_sp, sp);
+	if (!(ret > 0)) {
+		DEBUG((DEBUG_ERROR, "decode content failed|ret=%d|sp->type=%d|"
+				"recv_len=%d\n", ret, sp->type, recv_len));
+		DBUG_RETURN(-1);
+	}
 	DEBUG((DEBUG_INFO, "after decode|sp->data_len=%d\n", sp->data_len));
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {
-		DEBUG((DEBUG_ERROR, "%s: recv deserialize failed!\n", __func__));
+		DEBUG((DEBUG_ERROR, "recv deserialize failed!\n"));
 	}
 
 	free_sftt_packet(&_sp);

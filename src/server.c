@@ -857,7 +857,7 @@ int handle_fwd_get_req(struct client_session *client,
 	// send get req packet to peer task conn
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "send get req to peer failed!\n"));
+		DEBUG((DEBUG_WARN, "send get req to peer failed!\n"));
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_SEND_PEER_ERR, 0);
 		goto done;
@@ -872,7 +872,7 @@ int handle_fwd_get_req(struct client_session *client,
 		// recv get resp packet from peer
 		ret = recv_sftt_packet(conn->sock, resp_packet);
 		if (ret == -1) {
-			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 			goto done;
 		}
 		resp = (struct get_resp *)resp_packet->obj;
@@ -891,7 +891,7 @@ int handle_fwd_get_req(struct client_session *client,
 
 			ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 			if (ret == -1) {
-				DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+				DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 				goto done;
 			}
 
@@ -903,7 +903,10 @@ int handle_fwd_get_req(struct client_session *client,
 			DEBUG((DEBUG_INFO, "send this common resp to getee\n"));
 
 			ret = send_common_resp(conn->sock, resp_packet, com_resp, com_resp->status, 0);
-			stop = com_resp->flags & REQ_RESP_FLAG_STOP;
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "fwd common resp failed!\n"));
+			}
+			//stop = com_resp->flags & REQ_RESP_FLAG_STOP;
 		}
 
 		DEBUG((DEBUG_INFO, "need stop?|stop=%d\n", stop));

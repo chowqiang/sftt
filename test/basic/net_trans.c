@@ -97,7 +97,7 @@ int run_client(int port, char *user_name)
 	printf("pass the validate\n"
 		"status: %d\n"
 		"user_name: %s\n"
-		"uid: %ld\n"
+		"uid: %d\n"
 		"session_id: %s\n",
 		resp_info->status, data->name,
 		data->uid, data->session_id);

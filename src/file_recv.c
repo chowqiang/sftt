@@ -79,7 +79,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 			}
 		}
 
-		DEBUG((DEBUG_INFO, "recv %s done!\n", rp));
+		DEBUG((DEBUG_INFO, "recv dir done!|rp=%s\n", rp));
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 		goto done;
 
@@ -95,6 +95,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, u_long mode, struct sf
 			}
 		}
 
+		DEBUG((DEBUG_INFO, "recv file name done!|rp=%s\n", rp));
 		send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
 
 	} else {
@@ -268,13 +269,16 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet
 
 	recv_count = 0;
 	do {
-		DEBUG((DEBUG_INFO, "begin recv %d-th file\n", recv_count));
+		DEBUG((DEBUG_INFO, "begin recv file|idx=%d\n", recv_count));
 
 		rp = path_join(path, (char *)data->entry.content);
-		recv_file_from_get_resp(fd, rp, data->entry.type,
+		ret = recv_file_from_get_resp(fd, rp, data->entry.type,
 				data->entry.mode, resp_packet);
+		if (ret == -1) {
+			DEBUG((DEBUG_ERROR, "recv file failed|idx=%d\n", recv_count));
+		}
 
-		DEBUG((DEBUG_INFO, "end recv %d-th file\n", recv_count));
+		DEBUG((DEBUG_INFO, "end recv file|idx=%d\n", recv_count));
 
 		recv_count++;
 		if (recv_count == data->total_files)
@@ -400,7 +404,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	}
 	req = req_packet->obj;
 
-	DEBUG((DEBUG_INFO, "file total size: %ld\n", req->data.entry.total_size));
+	DEBUG((DEBUG_INFO, "file total size: %d\n", req->data.entry.total_size));
 
 	/* save md5 */
 	strncpy(md5, (char *)req->data.entry.content, MD5_STR_LEN);

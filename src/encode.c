@@ -35,6 +35,13 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 
 	int output_len = len;
 
+	DEBUG((DEBUG_INFO, "len=%d\n", len));
+
+	if (len == 0) {
+		DEBUG((DEBUG_WARN, "the input len is zero|len=%d\n", len));
+		DBUG_RETURN(0);
+	}
+
 	if (zip) {
 		output_len = huffman_compress(input, len, output);
 
@@ -42,6 +49,7 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 			sftt_encrypt_func(*output, output_len);
 		}
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 
 	} else if (crypt) {
@@ -49,11 +57,13 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 
 		sftt_encrypt_func(*output, output_len);
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 	} else {
 		*output = mp_malloc(g_mp, __func__, output_len * sizeof(unsigned char));
 		memcpy(*output, input, output_len);
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 	}
 }
@@ -69,6 +79,12 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 	int output_len = len;
 	unsigned char *tmp;
 
+	DEBUG((DEBUG_INFO, "len=%d\n", len));
+	if (len == 0) {
+		DEBUG((DEBUG_WARN, "the input len is zero|len=%d\n", len));
+		DBUG_RETURN(0);
+	}
+
 	if (decrypt) {
 		tmp = mp_malloc(g_mp, __func__, len * sizeof(unsigned char));
 		memcpy(tmp, input, len);
@@ -83,16 +99,19 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 
 		mp_free(g_mp, tmp);
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 
 	} else if (unzip) {
 		output_len = huffman_decompress(input, output);
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 	} else {
 		*output = mp_malloc(g_mp, __func__, output_len * sizeof(unsigned char));
 		memcpy(*output, input, output_len);
 
+		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));
 		DBUG_RETURN(output_len);
 	}
 }
