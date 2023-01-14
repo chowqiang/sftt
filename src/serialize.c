@@ -26,7 +26,7 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -48,7 +48,7 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -67,7 +67,7 @@ bool validate_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -89,7 +89,7 @@ bool validate_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -108,7 +108,7 @@ bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -130,7 +130,7 @@ bool append_conn_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -149,7 +149,7 @@ bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -171,7 +171,7 @@ bool append_conn_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -190,7 +190,7 @@ bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -212,7 +212,7 @@ bool pwd_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -231,7 +231,7 @@ bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -253,7 +253,7 @@ bool pwd_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -272,7 +272,7 @@ bool ll_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -294,7 +294,7 @@ bool ll_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -313,7 +313,7 @@ bool ll_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -335,7 +335,7 @@ bool ll_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -354,7 +354,7 @@ bool cd_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -376,7 +376,7 @@ bool cd_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -395,7 +395,7 @@ bool cd_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -417,7 +417,7 @@ bool cd_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -436,7 +436,7 @@ bool get_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -458,7 +458,7 @@ bool get_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -477,7 +477,7 @@ bool get_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -499,7 +499,7 @@ bool get_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -518,7 +518,7 @@ bool put_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -540,7 +540,7 @@ bool put_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -559,7 +559,7 @@ bool put_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -581,7 +581,7 @@ bool put_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -600,7 +600,7 @@ bool common_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -622,7 +622,7 @@ bool common_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -641,7 +641,7 @@ bool write_msg_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -663,7 +663,7 @@ bool write_msg_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -682,7 +682,7 @@ bool read_msg_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -704,7 +704,7 @@ bool read_msg_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -723,7 +723,7 @@ bool read_msg_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -745,7 +745,7 @@ bool read_msg_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -764,7 +764,7 @@ bool mp_stat_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -786,7 +786,7 @@ bool mp_stat_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -805,7 +805,7 @@ bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -827,7 +827,7 @@ bool mp_stat_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -846,7 +846,7 @@ bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -868,7 +868,7 @@ bool directcmd_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -887,7 +887,7 @@ bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -909,7 +909,7 @@ bool directcmd_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -928,7 +928,7 @@ bool who_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -950,7 +950,7 @@ bool who_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -969,7 +969,7 @@ bool who_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -991,7 +991,7 @@ bool who_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -1010,7 +1010,7 @@ bool write_req_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -1032,7 +1032,7 @@ bool write_req_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;
@@ -1051,7 +1051,7 @@ bool write_resp_encode(void *req, unsigned char **buf, int *len)
 
 	fflush(fp);
 	*len = size;
-	add_log(LOG_INFO, "%s: encode ret=%d, encode_len=%d",
+	add_log(LOG_INFO, "%s: encoded|ret=%d|encode_len=%d",
 		__func__, ret, *len);
 	add_log(LOG_INFO, "%s: out", __func__);
 
@@ -1073,7 +1073,7 @@ bool write_resp_decode(unsigned char *buf, int len, void **req)
 	fflush(fp);
 
 	*req = _req;
-	add_log(LOG_INFO, "%s: decode ret=%d", __func__, ret);
+	add_log(LOG_INFO, "%s: decoded|ret=%d", __func__, ret);
 	add_log(LOG_INFO, "%s: out", __func__);
 
 	return ret;

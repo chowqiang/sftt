@@ -206,19 +206,41 @@ void test_get_req(void)
 	printf("user.session_id: %s\n", _req->user.session_id);
 }
 
-int main(void)
+void *thread_foo(void *arg)
 {
 	int i = 0;
 
+	for (i = 0; i < 1000; ++i) {
+		test_get_resp();
+	}
+
+	return NULL;
+}
+
+void test_get_resp_multi_thread(void)
+{
+	int i = 0;
+	pthread_t thread_ids[2];
+	void *res = NULL;
+
+	for (i = 0; i < 2; ++i) {
+		pthread_create(&thread_ids[i], NULL, thread_foo, NULL);
+	}
+
+	for (i = 0; i < 2; ++i) {
+		pthread_join(thread_ids[i], &res);
+
+	}
+}
+
+int main(void)
+{
 	test_validate_req();
 	test_validate_resp();
 	test_ll_req();
 	test_ll_resp();
 
-	for (i = 0; i < 10; ++i) {
-		test_get_resp();
-		test_get_req();
-	}
+	test_get_resp_multi_thread();
 
 	return 0;
 }
