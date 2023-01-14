@@ -52,7 +52,7 @@ struct validate_req {
 typedef struct validate_req validate_req;
 
 struct validate_resp_data {
-	long uid;
+	u_int uid;
 	char name[XDR_USER_NAME_MAX_LEN];
 	char session_id[XDR_SESSION_ID_LEN];
 	char connect_id[XDR_CONNECT_ID_LEN];
@@ -123,12 +123,12 @@ typedef struct ll_req ll_req;
 
 struct file_entry {
 	char name[XDR_FILE_NAME_MAX_LEN];
-	u_long mode;
-	long type;
-	long size;
-	long c_time;
-	long a_time;
-	long m_time;
+	u_int type;
+	u_int size;
+	u_int c_time;
+	u_int a_time;
+	u_int m_time;
+	u_int mode;
 };
 typedef struct file_entry file_entry;
 
@@ -176,9 +176,9 @@ typedef struct get_req get_req;
 
 struct trans_entry {
 	int type;
-	long total_size;
 	int this_size;
-	u_long mode;
+	u_int mode;
+	u_int total_size;
 	u_char content[XDR_CONTENT_BLOCK_SIZE];
 };
 typedef struct trans_entry trans_entry;
@@ -267,7 +267,7 @@ struct mp_stat_req {
 typedef struct mp_stat_req mp_stat_req;
 
 struct mp_stat_resp_data {
-	long total_size;
+	u_int total_size;
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;

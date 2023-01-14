@@ -269,17 +269,18 @@ void output_encode(FILE *fp, char *struct_name)
 {
 	fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len)\n", struct_name);
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: in\", __func__);\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n");
 	fprintf(fp, "\tsize_t size = 0;\n");
 	fprintf(fp, "\tFILE *fp = open_memstream((char **)buf, &size);\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_ENCODE);\n\n");
 	fprintf(fp, "\tbool ret = xdr_%s(&xdr, (struct %s *)req);\n\n", struct_name, struct_name);
 	fprintf(fp, "\tfflush(fp);\n");
+	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*len = size;\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: encoded|ret=%%d|encode_len=%%d\",\n"
-			"\t\t__func__, ret, *len);\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"encode done|ret=%%d|encode_len=%%d\\n\",\n"
+			"\t\tret, *len));\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
 	fprintf(fp, "\treturn ret;\n");
 
 	fprintf(fp, "}\n\n");
@@ -289,7 +290,7 @@ void output_decode(FILE *fp, char *struct_name)
 {
 	fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req)\n", struct_name);
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: in\", __func__);\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n");
 	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp,\n"
 			"\t\t__func__, sizeof(struct %s));\n\n",
 			struct_name, struct_name, struct_name);
@@ -297,10 +298,11 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tXDR xdr;\n");
 	fprintf(fp, "\txdrstdio_create(&xdr, fp, XDR_DECODE);\n\n");
 	fprintf(fp, "\tbool ret = xdr_%s(&xdr, _req);\n", struct_name);
-	fprintf(fp, "\tfflush(fp);\n\n");
+	fprintf(fp, "\tfflush(fp);\n");
+	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*req = _req;\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: decoded|ret=%%d\", __func__, ret);\n");
-	fprintf(fp, "\tadd_log(LOG_INFO, \"%%s: out\", __func__);\n\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"decode done|ret=%%d\\n\", ret));\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
 	fprintf(fp, "\treturn ret;\n");
 	fprintf(fp, "}\n");
 }
@@ -323,6 +325,7 @@ int gen_c_file(struct st_list *head, char *c_file)
 	fprintf(fp, "#include <rpc/types.h>\n");
 	fprintf(fp, "#include <rpc/xdr.h>\n");
 	fprintf(fp, "#include \"common.h\"\n");
+	fprintf(fp, "#include \"debug.h\"\n");
 	fprintf(fp, "#include \"log.h\"\n");
 	fprintf(fp, "#include \"mem_pool.h\"\n");
 	fprintf(fp, "#include \"serialize.h\"\n\n");

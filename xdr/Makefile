@@ -8,6 +8,7 @@ req_resp.h: req_resp.x
 req_resp.c: req_resp.x
 	rm -f $(ROOT_DIR)/src/$@
 	rpcgen -C -c $^ -o $(ROOT_DIR)/src/$@
+	sed -i $(ROOT_DIR)/src/$@ -e 's/return FALSE;/{printf("%s:%d\\n", __func__, __LINE__); return FALSE;}/g'
 
 gen_serialize: gen_serialize.c req_resp.x
 	gcc -o $@ $<

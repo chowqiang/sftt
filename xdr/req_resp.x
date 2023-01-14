@@ -35,7 +35,7 @@ struct validate_req {
 };
 
 struct validate_resp_data {
-	long uid;
+	unsigned int uid;
 	char name[XDR_USER_NAME_MAX_LEN];
 	char session_id[XDR_SESSION_ID_LEN];
 	char connect_id[XDR_CONNECT_ID_LEN];
@@ -96,12 +96,12 @@ struct ll_req {
 
 struct file_entry {
 	char name[XDR_FILE_NAME_MAX_LEN];
-	unsigned long mode;
-	long type;
-	long size;
-	long c_time;
-	long a_time;
-	long m_time;
+	unsigned int type;
+	unsigned int size;
+	unsigned int c_time;
+	unsigned int a_time;
+	unsigned int m_time;
+	unsigned int mode;
 };
 
 struct ll_resp_data {
@@ -142,9 +142,9 @@ struct get_req {
 
 struct trans_entry {
 	int type;
-	long total_size;
 	int this_size;
-	unsigned long mode;
+	unsigned int mode;
+	unsigned int total_size;
 	unsigned char content[XDR_CONTENT_BLOCK_SIZE];
 };
 
@@ -221,7 +221,7 @@ struct mp_stat_req {
 };
 
 struct mp_stat_resp_data {
-	long total_size;
+	unsigned int total_size;
 	int total_nodes;
 	int using_nodes;
 	int free_nodes;

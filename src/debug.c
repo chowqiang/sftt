@@ -54,6 +54,8 @@ void set_client_debug_level(int verbose, char *debug_level)
 	} else if (verbose > 1) {
 		default_debug_level = DEBUG_DEBUG;
 	}
+
+	printf("client debug level: %s\n", get_debug_level_desc(default_debug_level));
 }
 
 void set_server_debug_level(int verbose, char *debug_level)
@@ -68,6 +70,8 @@ void set_server_debug_level(int verbose, char *debug_level)
 	} else if (verbose > 1) {
 		default_debug_level = DEBUG_DEBUG;
 	}
+
+	printf("server debug level: %s\n", get_debug_level_desc(default_debug_level));
 }
 
 static void _dbug_init_key(void)

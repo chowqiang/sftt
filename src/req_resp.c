@@ -11,11 +11,11 @@ xdr_version_info (XDR *xdrs, version_info *objp)
 	register int32_t *buf;
 
 	 if (!xdr_short (xdrs, &objp->major))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_short (xdrs, &objp->minor))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_short (xdrs, &objp->revision))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -26,17 +26,17 @@ xdr_validate_req (XDR *xdrs, validate_req *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->name_len))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->passwd_len))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->name, XDR_USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->passwd_md5, XDR_PASSWD_MD5_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_version_info (xdrs, &objp->ver))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -46,20 +46,20 @@ xdr_validate_resp_data (XDR *xdrs, validate_resp_data *objp)
 	register int32_t *buf;
 
 	int i;
-	 if (!xdr_long (xdrs, &objp->uid))
-		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->uid))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->name, XDR_USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->connect_id, XDR_CONNECT_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -70,14 +70,14 @@ xdr_validate_resp (XDR *xdrs, validate_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_validate_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -89,9 +89,9 @@ xdr_append_conn_req (XDR *xdrs, append_conn_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->type))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -103,7 +103,7 @@ xdr_append_conn_resp_data (XDR *xdrs, append_conn_resp_data *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->connect_id, XDR_CONNECT_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -114,14 +114,14 @@ xdr_append_conn_resp (XDR *xdrs, append_conn_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_append_conn_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -133,15 +133,15 @@ xdr_logged_in_user (XDR *xdrs, logged_in_user *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->name, XDR_USER_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->ip, XDR_IPV4_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->port))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -153,7 +153,7 @@ xdr_pwd_req (XDR *xdrs, pwd_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -165,7 +165,7 @@ xdr_pwd_resp_data (XDR *xdrs, pwd_resp_data *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -176,14 +176,14 @@ xdr_pwd_resp (XDR *xdrs, pwd_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_pwd_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -195,14 +195,14 @@ xdr_ll_req (XDR *xdrs, ll_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->path, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->to_peer))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_logged_in_user (xdrs, &objp->user))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -216,74 +216,74 @@ xdr_file_entry (XDR *xdrs, file_entry *objp)
 	if (xdrs->x_op == XDR_ENCODE) {
 		 if (!xdr_vector (xdrs, (char *)objp->name, XDR_FILE_NAME_MAX_LEN,
 			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
+			 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		buf = XDR_INLINE (xdrs, 6 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_u_long (xdrs, &objp->mode))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->type))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->size))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->c_time))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->a_time))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->m_time))
-				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->type))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->c_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->a_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->m_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		} else {
+			IXDR_PUT_U_LONG(buf, objp->type);
+			IXDR_PUT_U_LONG(buf, objp->size);
+			IXDR_PUT_U_LONG(buf, objp->c_time);
+			IXDR_PUT_U_LONG(buf, objp->a_time);
+			IXDR_PUT_U_LONG(buf, objp->m_time);
 			IXDR_PUT_U_LONG(buf, objp->mode);
-			IXDR_PUT_LONG(buf, objp->type);
-			IXDR_PUT_LONG(buf, objp->size);
-			IXDR_PUT_LONG(buf, objp->c_time);
-			IXDR_PUT_LONG(buf, objp->a_time);
-			IXDR_PUT_LONG(buf, objp->m_time);
 		}
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
 		 if (!xdr_vector (xdrs, (char *)objp->name, XDR_FILE_NAME_MAX_LEN,
 			sizeof (char), (xdrproc_t) xdr_char))
-			 return FALSE;
+			 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		buf = XDR_INLINE (xdrs, 6 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_u_long (xdrs, &objp->mode))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->type))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->size))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->c_time))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->a_time))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->m_time))
-				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->type))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->c_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->a_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->m_time))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		} else {
+			objp->type = IXDR_GET_U_LONG(buf);
+			objp->size = IXDR_GET_U_LONG(buf);
+			objp->c_time = IXDR_GET_U_LONG(buf);
+			objp->a_time = IXDR_GET_U_LONG(buf);
+			objp->m_time = IXDR_GET_U_LONG(buf);
 			objp->mode = IXDR_GET_U_LONG(buf);
-			objp->type = IXDR_GET_LONG(buf);
-			objp->size = IXDR_GET_LONG(buf);
-			objp->c_time = IXDR_GET_LONG(buf);
-			objp->a_time = IXDR_GET_LONG(buf);
-			objp->m_time = IXDR_GET_LONG(buf);
 		}
 	 return TRUE;
 	}
 
 	 if (!xdr_vector (xdrs, (char *)objp->name, XDR_FILE_NAME_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
-	 if (!xdr_u_long (xdrs, &objp->mode))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->type))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->size))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->c_time))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->a_time))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->m_time))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->type))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->size))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->c_time))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->a_time))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->m_time))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->mode))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -294,12 +294,12 @@ xdr_ll_resp_data (XDR *xdrs, ll_resp_data *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->total))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->this_nr))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->entries, XDR_FILE_ENTRY_MAX_CNT,
 		sizeof (file_entry), (xdrproc_t) xdr_file_entry))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -310,14 +310,14 @@ xdr_ll_resp (XDR *xdrs, ll_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_ll_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -329,10 +329,10 @@ xdr_cd_req (XDR *xdrs, cd_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->path, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -344,7 +344,7 @@ xdr_cd_resp_data (XDR *xdrs, cd_resp_data *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->pwd, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -355,14 +355,14 @@ xdr_cd_resp (XDR *xdrs, cd_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_cd_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -374,14 +374,14 @@ xdr_get_req (XDR *xdrs, get_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->path, XDR_DIR_PATH_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->to_peer))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_logged_in_user (xdrs, &objp->user))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -396,59 +396,59 @@ xdr_trans_entry (XDR *xdrs, trans_entry *objp)
 		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->type))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->total_size))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->this_size))
-				 return FALSE;
-			 if (!xdr_u_long (xdrs, &objp->mode))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->total_size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 
 		} else {
 		IXDR_PUT_LONG(buf, objp->type);
-		IXDR_PUT_LONG(buf, objp->total_size);
 		IXDR_PUT_LONG(buf, objp->this_size);
 		IXDR_PUT_U_LONG(buf, objp->mode);
+		IXDR_PUT_U_LONG(buf, objp->total_size);
 		}
 		 if (!xdr_vector (xdrs, (char *)objp->content, XDR_CONTENT_BLOCK_SIZE,
 			sizeof (u_char), (xdrproc_t) xdr_u_char))
-			 return FALSE;
+			 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
 		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->type))
-				 return FALSE;
-			 if (!xdr_long (xdrs, &objp->total_size))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->this_size))
-				 return FALSE;
-			 if (!xdr_u_long (xdrs, &objp->mode))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+			 if (!xdr_u_int (xdrs, &objp->total_size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 
 		} else {
 		objp->type = IXDR_GET_LONG(buf);
-		objp->total_size = IXDR_GET_LONG(buf);
 		objp->this_size = IXDR_GET_LONG(buf);
 		objp->mode = IXDR_GET_U_LONG(buf);
+		objp->total_size = IXDR_GET_U_LONG(buf);
 		}
 		 if (!xdr_vector (xdrs, (char *)objp->content, XDR_CONTENT_BLOCK_SIZE,
 			sizeof (u_char), (xdrproc_t) xdr_u_char))
-			 return FALSE;
+			 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 return TRUE;
 	}
 
 	 if (!xdr_int (xdrs, &objp->type))
-		 return FALSE;
-	 if (!xdr_long (xdrs, &objp->total_size))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->this_size))
-		 return FALSE;
-	 if (!xdr_u_long (xdrs, &objp->mode))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->mode))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_u_int (xdrs, &objp->total_size))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->content, XDR_CONTENT_BLOCK_SIZE,
 		sizeof (u_char), (xdrproc_t) xdr_u_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -458,11 +458,11 @@ xdr_get_resp_data (XDR *xdrs, get_resp_data *objp)
 	register int32_t *buf;
 
 	 if (!xdr_int (xdrs, &objp->total_files))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->file_idx))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_trans_entry (xdrs, &objp->entry))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -473,16 +473,16 @@ xdr_get_resp (XDR *xdrs, get_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_get_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->need_reply))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -492,11 +492,11 @@ xdr_put_req_data (XDR *xdrs, put_req_data *objp)
 	register int32_t *buf;
 
 	 if (!xdr_int (xdrs, &objp->total_files))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->file_idx))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_trans_entry (xdrs, &objp->entry))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -508,17 +508,17 @@ xdr_put_req (XDR *xdrs, put_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->to_peer))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_logged_in_user (xdrs, &objp->user))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_put_req_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->need_reply))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -529,12 +529,12 @@ xdr_put_resp (XDR *xdrs, put_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -545,12 +545,12 @@ xdr_common_resp (XDR *xdrs, common_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -561,17 +561,17 @@ xdr_write_msg_req (XDR *xdrs, write_msg_req *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->mtype))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->name, 16,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->pid))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->length))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->mtext, XDR_NET_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -581,7 +581,7 @@ xdr_read_msg_req (XDR *xdrs, read_msg_req *objp)
 	register int32_t *buf;
 
 	 if (!xdr_int (xdrs, &objp->mtype))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -592,17 +592,17 @@ xdr_read_msg_resp_data (XDR *xdrs, read_msg_resp_data *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->mtype))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->name, 16,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->pid))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->length))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->mtext, XDR_NET_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -613,14 +613,14 @@ xdr_read_msg_resp (XDR *xdrs, read_msg_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_read_msg_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -632,7 +632,7 @@ xdr_mp_stat_req (XDR *xdrs, mp_stat_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -645,16 +645,16 @@ xdr_mp_stat_resp_data (XDR *xdrs, mp_stat_resp_data *objp)
 	if (xdrs->x_op == XDR_ENCODE) {
 		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_long (xdrs, &objp->total_size))
-				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->total_size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->total_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->using_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->free_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		} else {
-			IXDR_PUT_LONG(buf, objp->total_size);
+			IXDR_PUT_U_LONG(buf, objp->total_size);
 			IXDR_PUT_LONG(buf, objp->total_nodes);
 			IXDR_PUT_LONG(buf, objp->using_nodes);
 			IXDR_PUT_LONG(buf, objp->free_nodes);
@@ -663,16 +663,16 @@ xdr_mp_stat_resp_data (XDR *xdrs, mp_stat_resp_data *objp)
 	} else if (xdrs->x_op == XDR_DECODE) {
 		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
-			 if (!xdr_long (xdrs, &objp->total_size))
-				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->total_size))
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->total_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->using_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 			 if (!xdr_int (xdrs, &objp->free_nodes))
-				 return FALSE;
+				 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 		} else {
-			objp->total_size = IXDR_GET_LONG(buf);
+			objp->total_size = IXDR_GET_U_LONG(buf);
 			objp->total_nodes = IXDR_GET_LONG(buf);
 			objp->using_nodes = IXDR_GET_LONG(buf);
 			objp->free_nodes = IXDR_GET_LONG(buf);
@@ -680,14 +680,14 @@ xdr_mp_stat_resp_data (XDR *xdrs, mp_stat_resp_data *objp)
 	 return TRUE;
 	}
 
-	 if (!xdr_long (xdrs, &objp->total_size))
-		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->total_size))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->total_nodes))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->using_nodes))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->free_nodes))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -698,14 +698,14 @@ xdr_mp_stat_resp (XDR *xdrs, mp_stat_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_mp_stat_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -717,10 +717,10 @@ xdr_directcmd_req (XDR *xdrs, directcmd_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->cmd, XDR_CMD_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -731,12 +731,12 @@ xdr_directcmd_resp_data (XDR *xdrs, directcmd_resp_data *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->total_len))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->this_len))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->content, XDR_DIRECT_CMD_RESP_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -747,14 +747,14 @@ xdr_directcmd_resp (XDR *xdrs, directcmd_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_directcmd_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -766,7 +766,7 @@ xdr_who_req (XDR *xdrs, who_req *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -777,12 +777,12 @@ xdr_who_resp_data (XDR *xdrs, who_resp_data *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->total))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->this_nr))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->users, XDR_LOGGED_IN_USER_MAX_CNT,
 		sizeof (logged_in_user), (xdrproc_t) xdr_logged_in_user))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -793,14 +793,14 @@ xdr_who_resp (XDR *xdrs, who_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_who_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -811,12 +811,12 @@ xdr_write_req (XDR *xdrs, write_req *objp)
 
 	int i;
 	 if (!xdr_logged_in_user (xdrs, &objp->user))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->len))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_WRITE_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -828,7 +828,7 @@ xdr_write_resp_data (XDR *xdrs, write_resp_data *objp)
 	int i;
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_WRITE_MSG_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
 
@@ -839,13 +839,13 @@ xdr_write_resp (XDR *xdrs, write_resp *objp)
 
 	int i;
 	 if (!xdr_int (xdrs, &objp->status))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_int (xdrs, &objp->flags))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
 		sizeof (char), (xdrproc_t) xdr_char))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	 if (!xdr_write_resp_data (xdrs, &objp->data))
-		 return FALSE;
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
