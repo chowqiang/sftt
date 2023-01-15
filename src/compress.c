@@ -82,18 +82,23 @@ void free_char_stata_node(struct char_stat_node *node)
 
 int calc_char_freq(unsigned char *input, int input_len, int *char_freq)
 {
+	int cnt = 0, i = 0;
 	if (input == NULL || input_len < 1) {
 		printf("params error! func: %s, line: %d\n", __func__, __LINE__);
 		return -1;
 	}
 	memset(char_freq, 0, sizeof(int) * CHARSET_SIZE);
 
-	int i = 0;
 	for (i = 0; i < input_len; ++i) {
 		char_freq[input[i]]++;
 	}
 
-	return 0;
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		if (char_freq[i])
+			++cnt;
+	}
+
+	return cnt;
 }
 
 void show_char_freq(int *char_freq)
@@ -366,9 +371,10 @@ void free_char_codes(char *char_codes[CHARSET_SIZE])
 int copy_char_freq(unsigned char *pos, int *char_freq)
 {
 	int i = 0;
-	int cnt = 0;
-	unsigned char *head = pos++;
+	short cnt = 0;
+	short *head = (short *)pos;
 
+	pos += sizeof(short);
 	for (i = 0; i < CHARSET_SIZE; ++i) {
 		if (char_freq[i]) {
 			*(pos++) = (unsigned char)i;
@@ -377,9 +383,12 @@ int copy_char_freq(unsigned char *pos, int *char_freq)
 			++cnt;
 		}
 	}
-	*head = (unsigned char)cnt;
+	DEBUG((DEBUG_INFO, "char count|cnt=%d\n", cnt));
+	assert(cnt != 0);
+	*head = cnt;
+	assert(*head != 0);
 
-	return (pos - head);
+	return (pos - (unsigned char *)head);
 }
 
 /*
@@ -442,8 +451,8 @@ int get_compress_output_len(unsigned char *input, int input_len,
 	int i, tmp_len, output_len;
 	char *tmp_ptr;
 
-	/* char number cost 1 byte */
-	output_len = 1;
+	/* char number cost 2 byte */
+	output_len = sizeof(short);
 
 	for (i = 0; i < CHARSET_SIZE; ++i) {
 		/* pair of <char, freq> cost 5 byte */
@@ -499,9 +508,10 @@ int huffman_compress(unsigned char *input, int input_len,
 	 */
 	ret = calc_char_freq(input, input_len, char_freq);
 	if (ret == -1) {
-		printf("calc char freq failed!\n");
+		DEBUG((DEBUG_ERROR, "calc char freq failed!|ret=%d\n", ret));
 		DBUG_RETURN(-1);
 	}
+	DEBUG((DEBUG_INFO, "calc char freq|ret=%d\n", ret));
 
 #ifdef CONFIG_HUFFMAN_COMPRESS_DEBUG
 	show_char_freq(char_freq);
@@ -549,7 +559,7 @@ int huffman_compress(unsigned char *input, int input_len,
 	DBUG_RETURN(output_len);
 }
 
-unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos, int *char_cnt)
+unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos, short *char_cnt)
 {
 	int i = 0;
 	unsigned char ch = 0;
@@ -560,7 +570,8 @@ unsigned char *get_char_freq(int char_freq[CHARSET_SIZE], unsigned char *pos, in
 	}
 	memset(char_freq, 0, CHARSET_SIZE * sizeof(int));
 
-	*char_cnt = (int)(*pos++);
+	*char_cnt = *(short *)pos;
+	pos += sizeof(short);
 
 	for (i = 0; i < *char_cnt; ++i) {
 		ch = *pos++;
@@ -619,7 +630,7 @@ int huffman_decompress(unsigned char *input, unsigned char **output)
 	unsigned char *pos = input;
 	struct btree *tree;
 	int input_len, output_len;
-	int char_cnt = 0;
+	short char_cnt = 0;
 
 	if (input == NULL || output == NULL) {
 		printf("decompress: input and output cannot be NULL!\n");

@@ -94,9 +94,11 @@ void test_get_path_entry_list(void)
 {
 	char *path = "/home/zhoumin/tmp/1";
 	char *path2 = "/home/zhoumin/tmp/2";
+	char *path3 = "/tmp/sftt_test_fwd_get_2124247";
 
 	__test_get_path_entry_list(path);
 	__test_get_path_entry_list(path2);
+	__test_get_path_entry_list(path3);
 }
 
 void test_dir_compare(void)
@@ -139,10 +141,10 @@ int main(void)
 {
 	//test_get_all_file_list();
 	//test_mode();
-	//test_get_path_entry_list();
+	test_get_path_entry_list();
 	//test_dir_compare();
 	//test_gen_random_files();
-	test_create_new_file_with_parent();
+	//test_create_new_file_with_parent();
 
 	return 0;
 }

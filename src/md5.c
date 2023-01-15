@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "debug.h"
 #include "md5.h"
 #include "mem_pool.h"
 
@@ -187,23 +188,29 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
 int md5_file(char *file, unsigned char *digest) {
 	MD5_CTX context;
 	MD5Init(&context);
-	FILE *fp = fopen(file, "r");
+
+	FILE *fp = NULL;
 	unsigned char *data = NULL;
 	char *tmp = NULL;
 	int ret = 0;
 	unsigned char md5[MD5_LEN];
-	
-	if(!fp)
-	{
-		perror("fopen failed");
+	int i = 0;
+
+	fp = fopen(file, "r");
+	if(fp == NULL) {
+		DEBUG((DEBUG_ERROR, "fopen failed|file=%s\n", file));
 		return -1;
 	}
+
 	data = mp_malloc(g_mp, __func__, BLOCK_SIZE);
-	int i = 0;
+	if (data == NULL) {
+		DEBUG((DEBUG_ERROR, "malloc space for read failed!\n"));
+		return -1;
+	}
+
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
-		//printf("update %d-th block, block size: %d\n", (i + 1), ret);
-		//printf("data: %s\n", data);
+		//DEBUG((DEBUG_INFO, "update block|idx=%d|block_size=%d\n", (i + 1), ret));
 		MD5Update(&context, data, ret);
 		if (ret < BLOCK_SIZE) {
 			break;
@@ -211,15 +218,21 @@ int md5_file(char *file, unsigned char *digest) {
 		i++;
 	}
 	MD5Final(&context, md5);
+	DEBUG((DEBUG_DEBUG, "MD5Final\n"));
 
 	fclose(fp);
 	mp_free(g_mp, data);
+	DEBUG((DEBUG_DEBUG, "free data\n"));
 
 	tmp = md5_printable_str(md5);
+	DEBUG((DEBUG_DEBUG, "print md5 to str|tmp=%s\n", tmp));
 	assert(tmp != NULL);
 
 	strcpy((char *)digest, tmp);
+	DEBUG((DEBUG_DEBUG, "copy md5 str|digest=%s\n", digest));
+
 	mp_free(g_mp, tmp);
+	DEBUG((DEBUG_DEBUG, "free tmp\n"));
 
 	return 0;
 }

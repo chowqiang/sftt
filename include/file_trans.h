@@ -19,14 +19,17 @@
 
 #include "packet.h"
 
-int send_files_by_get_resp(int fd, char *path, struct sftt_packet *resp_pacekt,
-		struct get_resp *resp);
+int send_files_by_get_resp(int fd, char *path, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet, struct get_resp *resp);
 
 int send_files_by_put_req(int fd, char *path, char *target,
-		struct sftt_packet *req_packet, struct put_req *req);
+		struct sftt_packet *req_packet, struct put_req *req,
+		struct sftt_packet *resp_packet);
 
-int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *resp_packet);
+int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet);
 
-int recv_files_from_put_req(int fd, struct sftt_packet *req_packet);
+int recv_files_from_put_req(int fd, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet);
 
 #endif

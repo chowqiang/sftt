@@ -14,11 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <arpa/inet.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -953,17 +954,17 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	}
 
 	if (!is_absolute_path(path)) {
-		DEBUG((DEBUG_INFO, "path not absolute!\n"));
+		DEBUG((DEBUG_WARN, "path not absolute!|path=%s\n", path));
 		send_get_resp(conn->sock, resp_packet, resp,
-				RESP_PATH_NOT_ABS, 0);
+				RESP_PATH_NOT_ABS, REQ_RESP_FLAG_STOP);
 		ret = -1;
 		goto done;
 	}
 
 	if (!file_existed(path)) {
-		DEBUG((DEBUG_INFO, "file not existed!\n"));
+		DEBUG((DEBUG_WARN, "file not existed!|path=%s\n", path));
 		send_get_resp(conn->sock, resp_packet, resp,
-				RESP_FILE_NTFD, 0);
+				RESP_FILE_NTFD, REQ_RESP_FLAG_STOP);
 		ret = -1;
 		goto done;
 	}
@@ -1124,13 +1125,13 @@ int do_task_handler(void *arg)
 		conn->is_using = false;
 
 		ret = recv_sftt_packet(sock, req);
-		add_log(LOG_INFO, "recv ret: %d", ret);
+		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
 		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error, child process is exiting ...\n"));
+			DEBUG((DEBUG_ERROR, "recv return -1 and task handler is exiting ...\n"));
 			goto exit;
 		}
 		if (ret == 0) {
-			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
+			DEBUG((DEBUG_WARN, "recv return 0 and task handler is exiting ...\n"));
 			goto exit;
 		}
 
@@ -1154,6 +1155,7 @@ int do_task_handler(void *arg)
 	}
 
 exit:
+	conn->is_using = false;
 	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
@@ -1335,6 +1337,33 @@ int create_state_file(struct sftt_client *client)
 	return ret;
 }
 
+void sftt_client_exception_handler(int sig)
+{
+	DEBUG((DEBUG_ERROR, "sftt client encounter exception|sig=%d\n", sig));
+	exit(-1);
+}
+
+int init_sftt_client_sigaction(void)
+{
+	struct sigaction exception;
+	int ret = 0;
+
+	exception.sa_handler = sftt_client_exception_handler;
+	ret = sigaction(SIGINT, &exception, NULL);
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "init sftt client sigaction failed!\n"));
+		return -1;
+	}
+
+	ret = sigaction(SIGSEGV, &exception, NULL);
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "init sftt client sigaction failed!\n"));
+		return -1;
+	}
+
+	return 0;
+}
+
 int init_sftt_client(struct sftt_client *client, char *host, int port,
 	char *user, char *passwd, char *state_file)
 {
@@ -1364,6 +1393,13 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 	if (logger_init(client->config.log_dir, PROC_NAME) == -1) {
 		printf("init logger failed!\n");
 	}
+
+#if 0
+	if (init_sftt_client_sigaction() == -1) {
+		DEBUG((DEBUG_ERROR, "init sftt client sigaction failed!\n"));
+		return -1;
+	}
+#endif
 
 	if (init_sftt_client_thread_pool(client) == -1) {
 		printf("init sftt client thread pool failed!\n");

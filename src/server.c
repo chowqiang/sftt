@@ -885,7 +885,6 @@ int handle_fwd_get_req(struct client_session *client,
 		ret = send_get_resp(client->main_conn.sock, resp_packet,
 			resp, RESP_OK, resp->flags);
 
-		stop = resp->flags & REQ_RESP_FLAG_STOP;
 		if (resp->need_reply) {
 			DEBUG((DEBUG_INFO, "this packet need reply\n"));
 
@@ -905,13 +904,12 @@ int handle_fwd_get_req(struct client_session *client,
 			ret = send_common_resp(conn->sock, resp_packet, com_resp, com_resp->status, 0);
 			if (ret == -1) {
 				DEBUG((DEBUG_ERROR, "fwd common resp failed!\n"));
+				break;
 			}
-			//stop = com_resp->flags & REQ_RESP_FLAG_STOP;
 		}
 
-		DEBUG((DEBUG_INFO, "need stop?|stop=%d\n", stop));
-
-	} while (!stop);
+		DEBUG((DEBUG_INFO, "need stop?|stop=%d\n", (resp->flags & REQ_RESP_FLAG_STOP)));
+	} while (!(resp->flags & REQ_RESP_FLAG_STOP));
 
 	DEBUG((DEBUG_INFO, "handle get fwd req done!\n"));
 done:

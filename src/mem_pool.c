@@ -421,7 +421,7 @@ void mp_free(struct mem_pool *mp, void *p)
 	}
 
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
-		perror("mp_free failed: cannot lock mem pool. ");
+		DEBUG((DEBUG_WARN, "cannot lock mem pool\n"));
 		return ;
 	}
 
@@ -431,8 +431,8 @@ void mp_free(struct mem_pool *mp, void *p)
 			found = true;
 #endif
 			if (!m_node->is_using) {
-				printf("warning: double free! purpose: %s\n",
-					m_node->purpose);
+				DEBUG((DEBUG_WARN, "double free!|purpose=%s\n",
+					m_node->purpose));
 				break;
 			}
 			m_node->is_using = 0;
@@ -446,7 +446,7 @@ void mp_free(struct mem_pool *mp, void *p)
 
 #ifdef CONFIG_MP_FREE_DEBUG
 	if (!found) {
-		printf("mp_free failed, illegal address!\n");
+		DEBUG((DEBUG_WARN, "illegal address!|p=%p\n", p));
 	}
 #endif
 

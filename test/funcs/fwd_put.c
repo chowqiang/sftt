@@ -80,12 +80,14 @@ static const char *client_args[] = {
 	"-u",
 	"root",
 	"-P",
-	"root"
+	"root",
+	"-v"
 };
 
 static const char *server_args[] = {
 	"-d",
-	"start"
+	"start",
+	"-v"
 };
 
 /*

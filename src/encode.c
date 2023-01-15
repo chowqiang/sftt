@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -44,6 +45,8 @@ int sftt_buffer_encode(unsigned char *input, int len, unsigned char **output,
 
 	if (zip) {
 		output_len = huffman_compress(input, len, output);
+		// The first byte stores the char count
+		assert(((short *)(*output))[0] != 0);
 
 		if (crypt) {
 			sftt_encrypt_func(*output, output_len);
@@ -91,6 +94,8 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 		sftt_decrypt_func(tmp, len);
 
 		if (unzip) {
+			// The first byte stores the char count
+			assert(((short *)tmp)[0] != 0);
 			output_len = huffman_decompress(tmp, output);
 		} else {
 			*output = mp_malloc(g_mp, "output_bufffer", output_len * sizeof(unsigned char));
@@ -103,6 +108,8 @@ int sftt_buffer_decode(unsigned char *input, int len, unsigned char **output,
 		DBUG_RETURN(output_len);
 
 	} else if (unzip) {
+		// The first byte stores the char count
+		assert(((short *)input)[0] != 0);
 		output_len = huffman_decompress(input, output);
 
 		DEBUG((DEBUG_INFO, "output_len=%d\n", output_len));

@@ -437,12 +437,12 @@ struct dlist *__get_path_entry_list(struct path_entry *root)
 		path_append(entry->abs_path, item->d_name, FILE_NAME_MAX_LEN - 1);
 		path_append(entry->rel_path, item->d_name, FILE_NAME_MAX_LEN - 1);
 
-		dlist_append(list, entry);
-
 		if (is_dir(entry->abs_path)) {
 			sub_list = __get_path_entry_list(entry);
 			if (sub_list && !dlist_empty(sub_list))
 				dlist_merge(list, sub_list);
+		} else {
+			dlist_append(list, entry);
 		}
 	}
 
