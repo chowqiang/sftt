@@ -971,7 +971,7 @@ int handle_peer_get_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 
 	DEBUG((DEBUG_INFO, "begin to send files by get resp\n"));
 
-	ret = send_files_by_get_resp(conn->sock, path, resp_packet,
+	ret = send_files_by_get_resp(conn->sock, path, req_packet, resp_packet,
 			resp);
 
 	DEBUG((DEBUG_INFO, "handle get req out\n"));
@@ -989,7 +989,7 @@ int handle_peer_put_req(struct client_sock_conn *conn, struct sftt_packet *req_p
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle put req in ...\n"));
-	ret = recv_files_from_put_req(conn->sock, req_packet);
+	ret = recv_files_from_put_req(conn->sock, req_packet, resp_packet);
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
 	return ret;
@@ -1843,7 +1843,7 @@ int sftt_client_get_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	DEBUG((DEBUG_INFO, "begin to recv files from server\n"));
 
-	ret = recv_files_from_get_resp(client->main_conn.sock, target, resp_packet);
+	ret = recv_files_from_get_resp(client->main_conn.sock, target, req_packet, resp_packet);
 
 	DEBUG((DEBUG_INFO, "end to recv files from server\n"));
 
@@ -1871,8 +1871,9 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	char target[FILE_PATH_MAX_LEN + 1];
 	struct path_entry *entry;
 	struct sftt_packet *req_packet;
-	struct logged_in_user *user;
 	struct put_req *req;
+	struct sftt_packet *resp_packet;
+	struct logged_in_user *user;
 	int user_no;
 
 	if (!(argc == 2 || argc == 3)) {
@@ -1920,6 +1921,12 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 		return -1;
 	}
 
+	resp_packet = malloc_sftt_packet();
+	if (resp_packet == NULL) {
+		printf("%s:%d, alloc req packet failed!\n", __func__, __LINE__);
+		return -1;
+	}
+
 	req = mp_malloc(g_mp, __func__, sizeof(struct put_req));
 	if (req == NULL) {
 		printf("%s:%d, alloc put_req failed!\n", __func__, __LINE__);
@@ -1930,7 +1937,7 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 	if (req->to_peer)
 		req->user = *user;
 
-	ret = send_files_by_put_req(client->main_conn.sock, file, target, req_packet, req);
+	ret = send_files_by_put_req(client->main_conn.sock, file, target, req_packet, req, resp_packet);
 	if (ret == -1) {
 		printf("%s:%d, handle put req failed!\n", __func__, __LINE__);
 	}

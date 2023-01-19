@@ -955,8 +955,8 @@ int handle_get_req(struct client_session *client,
 				RESP_FILE_NTFD, 0));
 	}
 
-	ret = send_files_by_get_resp(client->main_conn.sock, path, resp_packet,
-			resp);
+	ret = send_files_by_get_resp(client->main_conn.sock, path, req_packet,
+			resp_packet, resp);
 
 	DEBUG((DEBUG_INFO, "handle get req out\n"));
 
@@ -1056,7 +1056,7 @@ int handle_put_req(struct client_session *client,
 	if (req->to_peer)
 		DBUG_RETURN(handle_fwd_put_req(client, req_packet, resp_packet));
 
-	ret = recv_files_from_put_req(client->main_conn.sock, req_packet);
+	ret = recv_files_from_put_req(client->main_conn.sock, req_packet, resp_packet);
 
 	DEBUG((DEBUG_INFO, "handle put req out\n"));
 
