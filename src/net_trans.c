@@ -209,7 +209,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 
 	_sp = malloc_sftt_packet();
 	if (_sp == NULL) {
-		DEBUG((DEBUG_INFO, "malloc sftt packet failed\n"));
+		DEBUG((DEBUG_ERROR, "malloc sftt packet failed\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -368,7 +368,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 				"recv_len=%d\n", ret, sp->type, recv_len));
 		DBUG_RETURN(-1);
 	}
-	DEBUG((DEBUG_INFO, "after decode|sp->data_len=%d\n", sp->data_len));
+	DEBUG((DEBUG_DEBUG, "after decode|sp->data_len=%d\n", sp->data_len));
 
 	add_log(LOG_INFO, "%s: before deserialize", __func__);
 	if (!sftt_packet_deserialize(sp)) {

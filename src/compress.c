@@ -383,7 +383,7 @@ int copy_char_freq(unsigned char *pos, int *char_freq)
 			++cnt;
 		}
 	}
-	DEBUG((DEBUG_INFO, "char count|cnt=%d\n", cnt));
+	DEBUG((DEBUG_DEBUG, "char count|cnt=%d\n", cnt));
 	assert(cnt != 0);
 	*head = cnt;
 	assert(*head != 0);
@@ -511,7 +511,7 @@ int huffman_compress(unsigned char *input, int input_len,
 		DEBUG((DEBUG_ERROR, "calc char freq failed!|ret=%d\n", ret));
 		DBUG_RETURN(-1);
 	}
-	DEBUG((DEBUG_INFO, "calc char freq|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "calc char freq|ret=%d\n", ret));
 
 #ifdef CONFIG_HUFFMAN_COMPRESS_DEBUG
 	show_char_freq(char_freq);

@@ -313,7 +313,7 @@ int send_trans_entry_by_put_req(int fd,
 
 	int ret = send_sftt_packet(fd, req_packet);
 	if (ret == -1) {
-		printf("%s: send sftt packet failed!\n", __func__);
+		DEBUG((DEBUG_WARN, "send sftt packet failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -406,10 +406,13 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	else
 		req->flags = REQ_RESP_FLAG_NONE;
 
+	total_size = file_size(file);
+	req->data.entry.total_size = total_size;
+
 	// Send file name
 	ret = send_file_name_by_put_req(fd, req_packet, file, target, req);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "send file name failed!\n"));
+		DEBUG((DEBUG_WARN, "send file name failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -434,7 +437,6 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	start = get_double_time();
 	start_progress_viewer(&pv, 1000 * 1000);
 
-	total_size = file_size(file);
 	// send md5 of file
 	ret = send_file_md5_by_put_req(fd, req_packet, file, req);
 	if (ret == -1) {
@@ -471,7 +473,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	}
 	mp_free(g_mp, resp);
 
-	DEBUG((DEBUG_DEBUG, "open file: %s\n", file));
+	DEBUG((DEBUG_DEBUG, "open file to read|file=%s\n", file));
 	// open file for reading
 	fp = fopen(file, "r");
 	if (fp == NULL) {
@@ -530,7 +532,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	}
 
 	if (!feof(fp)) {
-		printf("%s:%d, read file failed!\n", __func__, __LINE__);
+		DEBUG((DEBUG_ERROR, "read file failed!|file=%s\n", file));
 		ret = -1;
 	}
 
@@ -567,7 +569,7 @@ int send_dir_by_put_req(int fd, char *path, char *target,
 		snprintf(tmp, sizeof(tmp), "%s/%s", target, entry->rel_path);
 		ret = send_file_by_put_req(fd, entry->abs_path, tmp, req_packet, req, resp_packet);
 		if (ret == -1) {
-			printf("send file failed: %s\n", entry->abs_path);
+			DEBUG((DEBUG_ERROR, "send file failed!|file=%s\n", entry->abs_path));
 			break;
 		}
 		req->data.file_idx++;

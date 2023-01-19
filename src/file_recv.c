@@ -312,7 +312,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 {
 	DBUG_ENTER(__func__);
 
-	char *rp = NULL, *parent = NULL;
+	char *parent = NULL;
 	char md5[MD5_STR_LEN];
 	FILE *fp = NULL;
 	int i = 0, ret = 0;
@@ -320,20 +320,19 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	int recv_size = 0, total_size = 0;
 	struct put_req *req = NULL;
 	char tmp[FILE_NAME_MAX_LEN];
+	char rp[FILE_NAME_MAX_LEN];
 
 	*has_more = true;
 
 	req = (struct put_req *)req_packet->obj;
 	assert(req != NULL);
 
-	DEBUG((DEBUG_INFO, "file_name=%s\n", (char *)req->data.entry.content));
-	DEBUG((DEBUG_INFO, "req_data->total_files=%d|req_data->file_idx=%d\n",
-		req->data.total_files, req->data.file_idx));
-
 	total_files = req->data.total_files;
 	file_idx = req->data.file_idx;
+	DEBUG((DEBUG_INFO, "total_files=%d|file_idx=%d\n",
+		total_files, file_idx));
 
-	rp = (char *)req->data.entry.content;
+	strncpy(rp, (char *)req->data.entry.content, FILE_NAME_MAX_LEN - 1);
 	DEBUG((DEBUG_INFO, "received put req|file=%s\n", rp));
 	if (req->data.entry.type == FILE_TYPE_DIR) {
 		if (!file_existed(rp)) {
@@ -359,12 +358,11 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 				ret = mkdirp(parent, req->data.entry.mode);
 			}
 			if (ret == -1) {
-				printf("%s:%d, create parent dir failed when recv file\n",
-						__func__, __LINE__);
+				DEBUG((DEBUG_ERROR, "create parent dir failed when recv file|parent=%s\n", parent));
 				/* send resp */
 				ret = send_put_resp(fd, resp_packet, resp, RESP_INTERNAL_ERR, REQ_RESP_FLAG_NONE);
 				if (ret == -1) {
-					printf("%s: send resp failed!\n", __func__);
+					DEBUG((DEBUG_WARN, "send resp failed!\n"));
 				}
 
 				DBUG_RETURN(-1);
@@ -378,7 +376,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 				/* send resp */
 				ret = send_put_resp(fd, resp_packet, resp, RESP_INTERNAL_ERR, REQ_RESP_FLAG_NONE);
 				if (ret == -1) {
-					printf("%s: send resp failed!\n", __func__);
+					DEBUG((DEBUG_WARN, "send resp failed!\n"));
 				}
 
 				DBUG_RETURN(-1);
@@ -386,9 +384,9 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 		}
 
 		/* send resp */
-		ret = send_put_resp(fd, resp_packet, resp, RESP_INTERNAL_ERR, REQ_RESP_FLAG_NONE);
+		ret = send_put_resp(fd, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE);
 		if (ret == -1) {
-			printf("%s: send resp failed!\n", __func__);
+			DEBUG((DEBUG_WARN, "send resp failed!\n"));
 			DBUG_RETURN(-1);
 		}
 	}
@@ -398,7 +396,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	DEBUG((DEBUG_INFO, "begin receive file md5 ...\n"));
 	ret = recv_sftt_packet(fd, req_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error ...\n"));
+		DEBUG((DEBUG_ERROR, "recv file md5 failed!|rep\n"));
 		DBUG_RETURN(-1);
 	}
 	req = req_packet->obj;
@@ -413,7 +411,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 		/* send resp */
 		ret = send_put_resp(fd, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE);
 		if (ret == -1) {
-			printf("%s: send resp failed!\n", __func__);
+			DEBUG((DEBUG_WARN, "send md5 resp failed|\n"));
 			DBUG_RETURN(-1);
 		}
 
@@ -423,7 +421,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 		/* send resp */
 		ret = send_put_resp(fd, resp_packet, resp, RESP_CONTINUE, REQ_RESP_FLAG_NONE);
 		if (ret == -1) {
-			printf("%s: send resp failed!\n", __func__);
+			DEBUG((DEBUG_WARN, "send md5 resp failed!\n"));
 			DBUG_RETURN(-1);
 		}
 	}
@@ -441,7 +439,7 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 
 		fp = fopen(rp, "w+");
 		if (fp == NULL) {
-			printf("create file failed: %s\n", rp);
+			DEBUG((DEBUG_ERROR, "create file failed|rp=%s\n", rp));
 			DBUG_RETURN(-1);
 		}
 	}
@@ -477,7 +475,8 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	fclose(fp);
 
 	if (recv_size != total_size) {
-		DEBUG((DEBUG_INFO, "recv one file failed for len error|rp=%s\n", rp));
+		DEBUG((DEBUG_WARN, "recv one file failed for len error|rp=%s|recv_size=%d|"
+					"total_size=%d\n", rp, recv_size, total_size));
 		DBUG_RETURN(-1);
 	}
 
@@ -528,9 +527,6 @@ int recv_files_from_put_req(int fd, struct sftt_packet *req_packet, struct sftt_
 
 	if (resp)
 		mp_free(g_mp, resp);
-
-	if (resp_packet)
-		free_sftt_packet(&resp_packet);
 
 	DBUG_RETURN(ret);
 }

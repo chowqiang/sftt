@@ -1939,7 +1939,7 @@ int sftt_client_put_handler(void *obj, int argc, char *argv[], bool *argv_check)
 
 	ret = send_files_by_put_req(client->main_conn.sock, file, target, req_packet, req, resp_packet);
 	if (ret == -1) {
-		printf("%s:%d, handle put req failed!\n", __func__, __LINE__);
+		DEBUG((DEBUG_WARN, "handle put req failed!\n"));
 	}
 
 	free_sftt_packet(&req_packet);
