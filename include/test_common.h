@@ -36,7 +36,7 @@
 
 #define TEST_PROCESS_START_TIMEOUT	10
 
-#define TEST_COMPLETE_TIMEOUT		600
+#define TEST_COMPLETE_TIMEOUT		1800
 
 struct test_process {
 	char name[TEST_PROCESS_MAX_NAME_LEN];

@@ -49,6 +49,8 @@
 
 #define PROMPT_MAX_LEN			1024
 
+#define DEFAULT_USER_HOME		"/tmp/sftt"
+
 enum trans_type {
 	TRANS_GET,
 	TRANS_PUT,

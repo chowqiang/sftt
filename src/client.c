@@ -671,7 +671,6 @@ static int validate_user_base_info(struct sftt_client *client, char *passwd)
 	struct sftt_packet *resp_packet = NULL;
 	struct validate_req *req_info = NULL;
 	struct validate_resp *resp_info = NULL;
-	struct validate_resp_data *data = NULL;
 	int ret = 0;
 
 	req_packet = malloc_sftt_packet();
@@ -721,39 +720,42 @@ static int validate_user_base_info(struct sftt_client *client, char *passwd)
 	}
 
 	resp_info = (validate_resp *)resp_packet->obj;
-	data = &resp_info->data;
 	if (resp_info->status != RESP_UVS_PASS) {
-		printf("%s: validate status is not pass! status: 0x%0x\n",
-			__func__, resp_info->status);
+		ret = -1;
+		DEBUG((DEBUG_WARN, "validate status is not pass!|status=%d\n",
+				resp_info->status));
 		switch (resp_info->status) {
 		case RESP_UVS_NTFD:
-			printf("user %s not found!\n", data->name);
+			DEBUG((DEBUG_ERROR, "user not found!|name=%s\n", client->uinfo.name));
 			break;
 		case RESP_UVS_INVALID:
-			printf("user name and passwd not match!\n");
+			DEBUG((DEBUG_ERROR, "user name and passwd not match!\n"));
 			break;
 		case RESP_UVS_MISSHOME:
-			printf("user %s's home dir cannot access!\n",
-				data->name);
+			ret = 0;
+			DEBUG((DEBUG_WARN, "user's home dir cannot access!|name=%s\n",
+				client->uinfo.name));
+			strncpy(resp_info->data.pwd, DEFAULT_USER_HOME, strlen(DEFAULT_USER_HOME) + 1);
 			break;
 		case RESP_UVS_BLOCK:
-			printf("user %s blocked!\n", data->name);
+			DEBUG((DEBUG_WARN, "user was blocked!|name=%s\n", client->uinfo.name));
 			break;
 		case RESP_UVS_BAD_VER:
-			printf("%s\n", resp_info->message);
+			DEBUG((DEBUG_WARN, "%s\n", resp_info->message));
 			break;
 		default:
-			printf("validate exception!\n");
+			DEBUG((DEBUG_WARN, "validate exception!\n"));
 			break;
 		}
-		goto done;
+		if (resp_info->status != RESP_UVS_MISSHOME)
+			goto done;
 	}
 
-	client->uinfo.uid = data->uid;
+	client->uinfo.uid = resp_info->data.uid;
 	add_log(LOG_INFO, "uid: %d", client->uinfo.uid);
 
-	strncpy(client->session_id, data->session_id, SESSION_ID_LEN - 1);
-	strncpy(client->pwd, data->pwd, DIR_PATH_MAX_LEN - 1);
+	strncpy(client->session_id, resp_info->data.session_id, SESSION_ID_LEN - 1);
+	strncpy(client->pwd, resp_info->data.pwd, DIR_PATH_MAX_LEN - 1);
 
 done:
 

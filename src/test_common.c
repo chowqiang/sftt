@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include "bits.h"
 #include "common.h"
+#include "debug.h"
 #include "file.h"
 #include "mem_pool.h"
 #include "test_common.h"
@@ -291,11 +292,12 @@ int start_one_test_process(struct test_context *ctx, struct test_process *proc)
 
 	pid = fork();
 	if (pid < 0) {
-		perror("fork failed");
-		printf("run %s failed!\n", proc->name);
+		ctx->test_error = errno;
+		DEBUG((DEBUG_ERROR, "fork failed|err=%s\n", strerror(errno)));
+		DEBUG((DEBUG_ERROR, "run test process failed!|name=%s\n", proc->name));
 		return -1;
 	} else if (pid == 0) {
-		printf("starting: %s", proc->exec_file);
+		printf("\npid=%d|starting: %s", getpid(), proc->exec_file);
 		for (i = 0; proc->argv[i]; ++i)
 			printf(" %s", proc->argv[i]);
 		printf("\n");
@@ -304,10 +306,13 @@ int start_one_test_process(struct test_context *ctx, struct test_process *proc)
 
 	proc->pid = pid;
 
+
 	if (!proc->is_started(proc)) {
 		proc->valid = false;
+		DEBUG((DEBUG_ERROR, "%s started failed!\n", proc->name));
 		return -1;
 	}
+	DEBUG((DEBUG_INFO, "%s started successfully!\n", proc->name));
 
 	proc->valid = true;
 	return 0;
@@ -333,14 +338,14 @@ int test_context_run_test(struct test_context *ctx)
 	struct test_process *process;
 	time_t start;
 	bool timeout = false;
+	int ret;
 
-	printf("begin to test ...\n");
-
-	printf("testing ...\n");
+	DEBUG((DEBUG_WARN, "begin to test ...\n"));
 
 	priority_list_for_each_entry(process, &ctx->proc_list, list)
 		if (start_one_test_process(ctx, process) == -1) {
-			printf("start test process failed: %s\n", process->name);
+			DEBUG((DEBUG_ERROR, "start test process failed|name=%s\n",
+						process->name));
 			break;
 		}
 
@@ -362,10 +367,16 @@ int test_context_run_test(struct test_context *ctx)
 	}
 
 	priority_list_for_each_entry(process, &ctx->proc_list, list)
-		if (process->need_kill)
-			kill(process->pid, SIGTERM);
+		if (process->need_kill) {
+			DEBUG((DEBUG_WARN, "kill process ...|name=%s"
+					"|proc_pid=%d\n", process->name, process->pid));
+			ret = kill(process->pid, SIGTERM);
+			DEBUG((DEBUG_WARN, "kill process done|name=%s"
+					"|proc_pid=%d|ret=%d\n", process->name,
+					process->pid, ret));
+		}
 
-	printf("end test\n");
+	DEBUG((DEBUG_WARN, "end test\n"));
 
 	return 0;
 }
@@ -386,18 +397,19 @@ int test_context_get_result(struct test_context *ctx, bool *result,
 	}
 
 	if (!ctx->cmp_file) {
-		printf("cannot compare files for missing cmp_file\n");
+		DEBUG((DEBUG_ERROR, "cannot compare files for missing cmp_file\n"));
 		goto done;
 	}
 
 	fp = fopen(ctx->cmp_file, "r");
 	if (fp == NULL) {
-		printf("cannot compare files for failure to open %s\n", ctx->cmp_file);
+		DEBUG((DEBUG_ERROR, "cannot compare files for failure to open|file=%s\n",
+					ctx->cmp_file));
 		goto done;
 	}
 
 	if (fgets(path1, sizeof(path1), fp) == NULL) {
-		printf("cannot compare files for failure to read the first line\n");
+		DEBUG((DEBUG_ERROR, "cannot compare files for failure to read the first line\n"));
 		goto done;
 	}
 	if (path1[strlen(path1) - 1] == '\n') {
@@ -405,7 +417,7 @@ int test_context_get_result(struct test_context *ctx, bool *result,
 	}
 
 	if (fgets(path2, sizeof(path2), fp) == NULL) {
-		printf("cannot compare files for failure to read the second line\n");
+		DEBUG((DEBUG_ERROR, "cannot compare files for failure to read the second line\n"));
 		goto done;
 	}
 	if (path2[strlen(path2) - 1] == '\n') {
