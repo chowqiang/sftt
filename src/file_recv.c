@@ -173,15 +173,16 @@ int recv_file_from_get_resp(int fd, char *path, int type, unsigned int mode, str
 		fwrite(resp->data.entry.content, resp->data.entry.this_size, 1, fp);
 		mp_free(g_mp, resp);
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-		/* send response */
-		DEBUG((DEBUG_INFO, "send file block common resp\n"));
-		ret = send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "send put response failed!\n"));
-			break;
+		if (resp->need_reply) {
+			/* send response */
+			DEBUG((DEBUG_INFO, "send file block common resp\n"));
+			ret = send_common_resp(fd, resp_packet, com_resp, RESP_OK, 0);
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "send put response failed!\n"));
+				break;
+			}
 		}
-#endif
+
 		recv_size += resp->data.entry.this_size;
 		now = get_double_time();
 		speed = recv_size * 1.0 / (now - start);
@@ -426,9 +427,8 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 		}
 	}
 
-	DEBUG((DEBUG_INFO, "begin receive file content ...\n"));
-
 	total_size = req->data.entry.total_size;
+	DEBUG((DEBUG_INFO, "begin receive file content ...|total_size=%d\n", total_size));
 	fp = fopen(rp, "w+");
 	if (fp == NULL) {
 		strncpy(tmp, rp, FILE_NAME_MAX_LEN - 1);
@@ -449,7 +449,8 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 	do {
 		ret = recv_sftt_packet(fd, req_packet);
 		if (!(ret > 0)) {
-			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error ...\n"));
+			DEBUG((DEBUG_ERROR, "recv file block failed!|rp=%s|idx=%d\n",
+				rp, i));
 			break;
 		}
 		req = req_packet->obj;
@@ -458,15 +459,15 @@ int recv_file_from_put_req(int fd, struct sftt_packet *req_packet,
 
 		fwrite(req->data.entry.content, req->data.entry.this_size, 1, fp);
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-		/* send response */
-		DEBUG((DEBUG_INFO, "send file block put resp\n"));
-		ret = send_put_resp(fd, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "send put response failed!\n"));
-			break;
+		if (req->need_reply) {
+			/* send response */
+			DEBUG((DEBUG_INFO, "send file block put resp\n"));
+			ret = send_put_resp(fd, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE);
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "send put response failed!\n"));
+				break;
+			}
 		}
-#endif
 		recv_size += req->data.entry.this_size;
 		i += 1;
 		mp_free(g_mp, req);

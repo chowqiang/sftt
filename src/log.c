@@ -111,7 +111,7 @@ int logger_daemon(void *args)
 	int ret = 0;
 	struct logger_init_ctx *ctx = args;
 
-	server_limit = new(ratelimit_state, 10, 10000);
+	server_limit = new(ratelimit_state, 10, 100000);
 	assert(server_limit != NULL);
 
 	dir = ctx->dir;
@@ -151,6 +151,9 @@ int logger_daemon(void *args)
 		}
 		if (ratelimit_try_inc(server_limit) == false) {
 			printf("hit ratelimit ...\n");
+			ratelimit_stat_dump(server_limit);
+			printf("log message: %s\n", msg.buf);
+			sleep(server_limit->interval);
 			continue;
 		}
 		get_log_file_name(dir, prefix, file2, FILE_NAME_MAX_LEN);

@@ -34,5 +34,6 @@ struct ratelimit_state *ratelimit_state_construct(int interval,
 	int burst);
 void ratelimit_state_destruct(struct ratelimit_state *ptr);
 bool ratelimit_try_inc(struct ratelimit_state *rs);
+void ratelimit_stat_dump(struct ratelimit_state *rs);
 
 #endif

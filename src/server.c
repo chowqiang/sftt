@@ -1030,7 +1030,7 @@ int handle_fwd_put_req(struct client_session *client,
 		// recv put req packet
 		ret = recv_sftt_packet(client->main_conn.sock, req_packet);
 		if (ret == -1) {
-			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+			DEBUG((DEBUG_WARN, "recv sftt packet failed!\n"));
 			goto done;
 		}
 	} while (!(req->flags & REQ_RESP_FLAG_STOP));

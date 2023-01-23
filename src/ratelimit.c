@@ -78,3 +78,8 @@ bool ratelimit_try_inc(struct ratelimit_state *rs)
 
 	return ret;
 }
+
+void ratelimit_stat_dump(struct ratelimit_state *rs)
+{
+	printf("used: %d, missed: %d\n", rs->used, rs->missed);
+}

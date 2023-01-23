@@ -38,12 +38,6 @@ int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 {
 	DBUG_ENTER(__func__);
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-	resp->need_reply = 1;
-#else
-	resp->need_reply = 0;
-#endif
-
 	DBUG_RETURN(send_get_resp(fd, resp_packet, resp, RESP_OK, flags));
 }
 
@@ -186,29 +180,33 @@ int send_file_by_get_resp(int fd, char *path, char *fname,
 		else
 			flags = REQ_RESP_FLAG_NONE;
 
+#ifdef CONFIG_RESP_PER_FILE_BLOCK
+		resp->need_reply = 1;
+#else
+		resp->need_reply = 0;
+#endif
 		DEBUG((DEBUG_INFO, "send file block|len=%d|flags=%d\n", ret, flags));
-
 		ret = send_file_content_by_get_resp(fd, resp_packet, resp, flags);
 		if (ret == -1) {
 			printf("%s: recv sftt packet failed!\n", __func__);
 			break;
 		}
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-		DEBUG((DEBUG_INFO, "recv common resp\n"));
-		ret = recv_sftt_packet(fd, req_packet);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
-			break;
-		}
-		com_resp = req_packet->obj;
-		if (com_resp->status != RESP_OK) {
-			DEBUG((DEBUG_ERROR, "recv response failed!\n"));
+		if (resp->need_reply) {
+			DEBUG((DEBUG_INFO, "recv common resp\n"));
+			ret = recv_sftt_packet(fd, req_packet);
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
+				break;
+			}
+			com_resp = req_packet->obj;
+			if (com_resp->status != RESP_OK) {
+				DEBUG((DEBUG_ERROR, "recv response failed!\n"));
+				mp_free(g_mp, com_resp);
+				break;
+			}
 			mp_free(g_mp, com_resp);
-			break;
 		}
-		mp_free(g_mp, com_resp);
-#endif
 	} while (read_size < resp->data.entry.total_size);
 
 	if (!feof(fp))
@@ -368,12 +366,6 @@ int send_file_content_by_put_req(int fd,
 {
 	DBUG_ENTER(__func__);
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-	req->need_reply = 1;
-#else
-	req->need_reply = 0;
-#endif
-
 	DBUG_RETURN(send_trans_entry_by_put_req(fd, req_packet, req));
 }
 
@@ -397,6 +389,7 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 	char left_time_info[16];
 	char send_size_info[16];
 	bool need_stop;
+	int i = 0;
 
 	// If it is the last file?
 	is_last = req->data.file_idx == (req->data.total_files - 1);
@@ -491,27 +484,37 @@ int send_file_by_put_req(int fd, char *file, char *target, struct sftt_packet *r
 			req->flags = REQ_RESP_FLAG_STOP;
 		else
 			req->flags = REQ_RESP_FLAG_NONE;
+
+#ifdef CONFIG_RESP_PER_FILE_BLOCK
+		req->need_reply = 1;
+#else
+		req->need_reply = 0;
+#endif
+		if (need_stop)
+			req->need_reply = 1;
 		ret = send_file_content_by_put_req(fd, req_packet, req);
 		if (ret == -1) {
 			DEBUG((DEBUG_WARN, "send file content failed|file=%s\n", file));
 			break;
 		}
+		DEBUG((DEBUG_INFO, "send file block|file=%s|idx=%d\n", file, i++));
 
-#ifdef CONFIG_RESP_PER_FILE_BLOCK
-		DEBUG((DEBUG_INFO, "recv common resp\n"));
-		ret = recv_sftt_packet(fd, resp_packet);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
-			break;
-		}
-		resp = resp_packet->obj;
-		if (resp->status != RESP_OK) {
-			DEBUG((DEBUG_ERROR, "recv response failed!\n"));
+		if (req->need_reply) {
+			DEBUG((DEBUG_INFO, "recv common resp\n"));
+			ret = recv_sftt_packet(fd, resp_packet);
+			if (ret == -1) {
+				DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
+				break;
+			}
+			resp = resp_packet->obj;
+			if (resp->status != RESP_OK) {
+				DEBUG((DEBUG_ERROR, "recv response failed!\n"));
+				mp_free(g_mp, resp);
+				break;
+			}
 			mp_free(g_mp, resp);
-			break;
 		}
-		mp_free(g_mp, resp);
-#endif
+
 		send_size += req->data.entry.this_size;
 		now = get_double_time();
 		speed = send_size * 1.0 / (now - start);
