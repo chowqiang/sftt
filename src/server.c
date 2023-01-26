@@ -61,6 +61,12 @@
 
 #define MODE (S_IRWXU | S_IRWXG | S_IRWXO)
 
+struct batch_reserved reserveds[3] = {
+	{"get_resp", sizeof(struct get_resp), 1000},
+	{"put_req", sizeof(struct put_req), 1000},
+	{"common_resp", sizeof(struct common_resp), 1000},
+};
+
 struct sftt_option sftt_server_opts[] = {
 	{"start", START, NO_ARG},
 	{"restart", RESTART, NO_ARG},
@@ -1608,10 +1614,14 @@ void init_sessions(void)
 	}
 }
 
-void create_state_file(struct sftt_server *server)
+static int create_state_file(struct sftt_server *server)
 {
+	int ret = 0;
+
 	if (server->state_file)
-		create_new_file(server->state_file, DEFAULT_FILE_MODE);
+		ret = create_new_file(server->state_file, DEFAULT_FILE_MODE);
+
+	return ret;
 }
 
 void main_loop(void)

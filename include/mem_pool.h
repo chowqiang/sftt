@@ -25,6 +25,12 @@
 
 #define MEM_POOL_STAT "mem_pool_stat"
 
+struct batch_reserved {
+	const char *purpose;
+	int size;
+	int count;
+};
+
 struct mem_node {
 	/* Memory size of this node */
 	size_t size;

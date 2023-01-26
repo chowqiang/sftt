@@ -31,6 +31,8 @@
 void *mp_update_stat_loop(void *arg);
 #endif
 
+extern struct batch_reserved reserveds[3];
+
 /*
  * The global mem pool pointer
  */
@@ -52,7 +54,7 @@ void sub_purpose(struct mem_pool *mp, const char *purpose);
  */
 static void __attribute__((constructor)) mem_pool_init(void)
 {
-	get_singleton_mp();	
+	get_singleton_mp();
 }
 
 /*
@@ -61,6 +63,9 @@ static void __attribute__((destructor)) mem_pool_del(void)
 {
 	if (g_mp == NULL)
 		return;
+
+	mem_pool_destruct(g_mp);
+	g_mp = NULL;
 }
 
 /*
@@ -139,6 +144,27 @@ void mem_node_free(void *data)
 	}
 }
 
+void do_reserve(void)
+{
+	int i = 0, j = 0;
+	void *p = NULL;
+	bool cont = true;
+
+	if (g_mp == NULL)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(reserveds) && cont; ++i) {
+		for (j = 0; j < reserveds[i].count; ++j) {
+			p = mp_malloc(g_mp, reserveds[i].purpose, reserveds[i].size);
+			if (!p) {
+				cont = false;
+				break;
+			}
+			mp_free(g_mp, p);
+		}
+	}
+}
+
 /*
  * Create a mem pool
  *
@@ -170,6 +196,8 @@ struct mem_pool *mp_create(void)
 		printf("create thread for mem_pool failed\n");
 	}
 #endif
+
+	do_reserve();
 
 	return mp;
 }

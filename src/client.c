@@ -64,6 +64,12 @@ extern struct mem_pool *g_mp;
 bool directcmd = false;
 bool force_quit = false;
 
+struct batch_reserved reserveds[3] = {
+	{"get_resp", sizeof(struct get_resp), 1000},
+	{"put_req", sizeof(struct put_req), 1000},
+	{"common_resp", sizeof(struct common_resp), 1000},
+};
+
 struct sftt_option sftt_client_opts[] = {
 	{"-u", USER, HAS_ARG},
 	{"-h", HOST, HAS_ARG},
@@ -1329,7 +1335,7 @@ int init_sftt_client_thread_pool(struct sftt_client *client)
 	return 0;
 }
 
-int create_state_file(struct sftt_client *client)
+static int create_state_file(struct sftt_client *client)
 {
 	int ret = 0;
 
