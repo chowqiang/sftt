@@ -134,6 +134,9 @@ void _db_return_(struct _db_stack_frame_ *_stack_frame_)
 	assert(cs->framep != NULL);
 
 	cs->framep = cs->framep->prev;
+	if (cs->level > 0)
+		--cs->level;
+
 }
 
 void _db_dump_(void)
@@ -156,5 +159,6 @@ void _db_dump_(void)
 static void __attribute__((constructor)) dbug_key_init(void)
 {
 	_dbug_make_key();
-	DEBUG((DEBUG_INFO, "dbug key init done!\n"));
+	DEBUG((DEBUG_WARN, "dbug key init done!|pid=%d|thread_id=%d\n",
+			getpid(), pthread_self()));
 }
