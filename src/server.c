@@ -1491,8 +1491,8 @@ int handle_client_session(void *args)
 		ret = recv_sftt_packet(sock, req);
 		add_log(LOG_INFO, "recv ret: %d", ret);
 		if (ret == -1) {
-			add_log(LOG_ERROR, "recv encountered unrecoverable error, child process is exiting ...");
-			DEBUG((DEBUG_ERROR, "recv encountered unrecoverable error, child process is exiting ...\n"));
+			add_log(LOG_ERROR, "recv from client failed, child process is exiting ...");
+			DEBUG((DEBUG_ERROR, "recv from client failed, child process is exiting ...\n"));
 			goto exit;
 		}
 		if (ret == 0) {
