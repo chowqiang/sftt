@@ -171,7 +171,6 @@ int recv_file_from_get_resp(int fd, char *path, int type, unsigned int mode, str
 		DEBUG((DEBUG_INFO, "received a block|len=%d\n", resp->data.entry.this_size));
 
 		fwrite(resp->data.entry.content, resp->data.entry.this_size, 1, fp);
-		mp_free(g_mp, resp);
 
 		if (resp->need_reply) {
 			/* send response */
@@ -201,6 +200,7 @@ int recv_file_from_get_resp(int fd, char *path, int type, unsigned int mode, str
 		if (recv_size == total_size)
 			stop_progress_viewer(&pv, progress_info);
 
+		mp_free(g_mp, resp);
 	} while (recv_size < total_size);
 
 	fclose(fp);
@@ -264,10 +264,12 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 
 		type = resp->data.entry.type;
 		mode = resp->data.entry.mode;
+		mp_free(g_mp, resp);
 		DBUG_RETURN(recv_file_from_get_resp(fd, rp, type,
 				mode, resp_packet));
 	}
-	mp_free(g_mp, resp);
+	/* Free resp in while loop below */
+	//mp_free(g_mp, resp);
 
 	if (!is_dir(path)) {
 		DEBUG((DEBUG_ERROR, "when you recv dir or multi files you"

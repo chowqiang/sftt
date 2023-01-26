@@ -433,6 +433,7 @@ void mp_free(struct mem_pool *mp, void *p)
 			if (!m_node->is_using) {
 				DEBUG((DEBUG_WARN, "double free!|purpose=%s\n",
 					m_node->purpose));
+				DBUG_DUMP();
 				break;
 			}
 			m_node->is_using = 0;

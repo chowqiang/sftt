@@ -390,14 +390,12 @@ void free_sftt_packet(struct sftt_packet **sp)
 			mp_free(g_mp, (*sp)->content);
 			(*sp)->content = NULL;
 		}
-#if 0
-		mp_free(g_mp, (*sp)->content);
-#endif
-		mp_free(g_mp, *sp);
+	/* Let user free the sftt_packet obj */
 #if 0
 		if ((*sp)->obj)
 			mp_free(g_mp, (*sp)->obj);
 #endif
+		mp_free(g_mp, *sp);
 		*sp = NULL;
 	}
 
