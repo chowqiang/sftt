@@ -25,9 +25,15 @@ void test_gen_session_id(void)
 	printf("%s\n", buf);
 }
 
+void test_print_line(void)
+{
+	print_line("show mempool stat", '=');
+}
+
 int main(void)
 {
-	test_gen_session_id();
+	//test_gen_session_id();
+	test_print_line();
 
 	return 0;
 }

@@ -27,6 +27,36 @@
 
 extern struct mem_pool *g_mp;
 
+void print_line(char *str, char c)
+{
+#define LINE_LIMIT	80
+	int width = 0;
+	int i = 0, j = 0;
+	char line[LINE_LIMIT + 1];
+
+	bzero(line, sizeof(line));
+	if (str == NULL)
+		width = LINE_LIMIT / 2;
+	else
+		width = (LINE_LIMIT - strlen(str)) / 2;
+	if (width < 0)
+		width = 0;
+
+	for (i = 0; i < width; ++i)
+		line[j++] = c;
+
+	//printf("j = %d\n", j);
+	j += snprintf(line + j, LINE_LIMIT - j, "%s",  str);
+	//printf("j = %d\n", j);
+
+	for (; j < LINE_LIMIT; ++j)
+		line[j] = c;
+	line[j] = 0;
+	//printf("j = %d\n", j);
+
+	printf("%s\n", line);
+}
+
 int gen_int(int begin, int end)
 {
 	time_t t;

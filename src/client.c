@@ -1962,32 +1962,7 @@ void sftt_client_put_usage(void)
 
 int sftt_client_mps_detail(void *obj)
 {
-	int i = 0;
-	struct mem_pool_using_detail *detail;
-	struct mem_pool_stat stat;
-	struct using_node *node;
-
-	detail = get_mp_stat_detail(g_mp);
-	if (detail == NULL) {
-		printf("internal error!\n");
-		return -1;
-	}
-
-	printf("<%s, %s>\n", "purpose", "using_nodes");
-	for (i = 0; i < detail->node_count; ++i) {
-		node = &detail->nodes[i];
-		printf("<%s, %d>\n", node->purpose, node->count);
-	}
-	printf("\n");
-
-	get_mp_stat(g_mp, &stat);
-
-	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
-	printf("client\t%ld\t\t%d\t\t%d\t\t%d\n\n", stat.total_size,
-		stat.total_nodes, stat.using_nodes, stat.free_nodes);
-
-
-	return 0;
+	return mp_dump_detail(g_mp);
 }
 
 void sftt_client_directcmd_usage(void)

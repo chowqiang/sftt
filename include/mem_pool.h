@@ -91,4 +91,5 @@ void mp_destroy(struct mem_pool *mp);
 void get_mp_stat(struct mem_pool *mp, struct mem_pool_stat *stat);
 struct mem_pool_using_detail *get_mp_stat_detail(struct mem_pool *mp);
 int mp_node_cnt(struct mem_pool *mp);
+int mp_dump_detail(struct mem_pool *mp);
 #endif

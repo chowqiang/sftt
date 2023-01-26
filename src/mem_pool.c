@@ -64,6 +64,7 @@ static void __attribute__((destructor)) mem_pool_del(void)
 	if (g_mp == NULL)
 		return;
 
+	mp_dump_detail(g_mp);
 	mem_pool_destruct(g_mp);
 	g_mp = NULL;
 }
@@ -662,4 +663,35 @@ done:
 		detail->node_count = count;
 
 	return detail;
+}
+
+int mp_dump_detail(struct mem_pool *mp)
+{
+	int i = 0;
+	struct mem_pool_using_detail *detail;
+	struct mem_pool_stat stat;
+	struct using_node *node;
+
+	detail = get_mp_stat_detail(mp);
+	if (detail == NULL) {
+		printf("internal error!\n");
+		return -1;
+	}
+
+	print_line("show mempool detail", '=');
+	printf("%30s %30s\n", "purpose", "using_nodes");
+	for (i = 0; i < detail->node_count; ++i) {
+		node = &detail->nodes[i];
+		printf("%30s %30d\n", node->purpose, node->count);
+	}
+	printf("\n");
+
+	get_mp_stat(mp, &stat);
+
+	printf("\ttotal_size\ttotal_nodes\tusing_nodes\tfree_nodes\n");
+	printf("client\t%ld\t\t%d\t\t%d\t\t%d\n\n", stat.total_size,
+		stat.total_nodes, stat.using_nodes, stat.free_nodes);
+	print_line("end mempool detail", '=');
+
+	return 0;
 }

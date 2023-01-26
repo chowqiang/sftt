@@ -63,4 +63,5 @@ void gen_random_str(char buf[], int len);
 
 double get_double_time(void);
 
+void print_line(char *str, char c);
 #endif
