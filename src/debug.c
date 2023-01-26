@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "debug.h"
 
 int default_debug_level = DEBUG_WARN;
@@ -159,6 +160,6 @@ void _db_dump_(void)
 static void __attribute__((constructor)) dbug_key_init(void)
 {
 	_dbug_make_key();
-	DEBUG((DEBUG_WARN, "dbug key init done!|pid=%d|thread_id=%d\n",
+	DEBUG((DEBUG_WARN, "dbug key init done!|pid=%d|thread_id=%ld\n",
 			getpid(), pthread_self()));
 }

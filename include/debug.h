@@ -41,6 +41,8 @@ void _db_enter_(const char *_func_, const char *_file_,
 
 void _db_return_(struct _db_stack_frame_ *_stack_frame_);
 
+void _db_dump_(void);
+
 #define DBUG_DUMP _db_dump_
 
 #define DBUG_LEAVE do { \
