@@ -205,7 +205,7 @@ int get_log_msqid(int create_flag)
 void logger_exit(void)
 {
 	logger_stopped = true;
-	add_log(LOG_INFO, "log server is stop ...");
+	printf("log server is stop ...\n");
 
 	if (server_log_fp) {
 		fclose(server_log_fp);
