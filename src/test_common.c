@@ -42,6 +42,7 @@ static void sanity_check(void)
 
 struct test_context *test_context_create(const char *name)
 {
+	DBUG_ENTER(__func__);
 	struct test_context *ctx;
 	char buf[DIR_PATH_MAX_LEN];
 	int ret;
@@ -51,7 +52,7 @@ struct test_context *test_context_create(const char *name)
 
 	ctx = mp_malloc(g_mp, __func__, sizeof(struct test_context));
 	if (ctx == NULL)
-		return NULL;
+		DBUG_RETURN(NULL);
 
 	ctx->name = name;
 
@@ -68,7 +69,7 @@ struct test_context *test_context_create(const char *name)
 
 	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
 
-	return ctx;
+	DBUG_RETURN(ctx);
 
 test_context_free:
 	if (ctx && ctx->root_dir)
@@ -77,7 +78,7 @@ test_context_free:
 	if (ctx)
 		mp_free(g_mp, ctx);
 
-	return NULL;
+	DBUG_RETURN(NULL);
 }
 
 char *test_context_get_root_dir(struct test_context *ctx)
@@ -169,10 +170,17 @@ int test_context_add_process(struct test_context *ctx, char *process_name,
 
 void test_process_destroy(struct test_process *proc)
 {
+	DBUG_ENTER(__func__);
 	int i = 0;
 
 	if (proc == NULL)
-		return;
+		DBUG_VOID_RETURN;
+
+	if (proc->exec_file)
+		mp_free(g_mp, proc->exec_file);
+
+	if (proc->state_file)
+		mp_free(g_mp, proc->state_file);
 
 	if (proc->cmd_file)
 		mp_free(g_mp, proc->cmd_file);
@@ -182,6 +190,7 @@ void test_process_destroy(struct test_process *proc)
 			mp_free(g_mp, proc->argv[i]);
 
 	mp_free(g_mp, proc);
+	DBUG_VOID_RETURN;
 }
 
 static int generate_one_cmd(struct test_context *ctx, struct test_cmd *cmd,
@@ -256,8 +265,8 @@ int test_context_generate_cmd_file(struct test_context *ctx, char *process_name,
 
 	for (i = 0; process->argv[i]; ++i)
 		;
-	process->argv[i++] = "-f";
-	process->argv[i++] = process->cmd_file;
+	process->argv[i++] = __strdup("-f");
+	process->argv[i++] = __strdup(process->cmd_file);
 	process->argv[i] = NULL;
 
 	return 0;
@@ -266,17 +275,18 @@ int test_context_generate_cmd_file(struct test_context *ctx, char *process_name,
 int test_context_generate_cmp_file(struct test_context *ctx, const char *fname,
 		struct test_cmp_file_list *list)
 {
+	DBUG_ENTER(__func__);
 	char *path = NULL;
 	FILE *fp = NULL;
 	int i = 0;
 
 	if (ctx->cmp_file)
-		return -1;
+		DBUG_RETURN(-1);
 
 	ctx->cmp_file = path_join(ctx->root_dir, fname);
 	fp = fopen(ctx->cmp_file, "w");
 	if (fp == NULL)
-		return -1;
+		DBUG_RETURN(-1);
 
 	for (i = 0; list->files[i]; ++i) {
 		if (list->chroot_flags & BIT32(i)) {
@@ -295,7 +305,7 @@ int test_context_generate_cmp_file(struct test_context *ctx, const char *fname,
 
 	fclose(fp);
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int test_context_add_finish_file(struct test_context *ctx, char *finish_file)
@@ -358,7 +368,8 @@ bool is_started_default(struct test_process *proc)
 
 int test_context_run_test(struct test_context *ctx)
 {
-	struct test_process *process;
+	DBUG_ENTER(__func__);
+	struct test_process *process, *tmp;
 	time_t start;
 	bool timeout = false;
 	int ret;
@@ -389,7 +400,7 @@ int test_context_run_test(struct test_context *ctx)
 		ctx->test_error = 0;
 	}
 
-	priority_list_for_each_entry(process, &ctx->proc_list, list) {
+	priority_list_for_each_entry_safe(process, tmp, &ctx->proc_list, list) {
 		if (process->need_kill) {
 			DEBUG((DEBUG_WARN, "kill process ...|name=%s"
 					"|proc_pid=%d\n", process->name, process->pid));
@@ -404,7 +415,7 @@ int test_context_run_test(struct test_context *ctx)
 
 	DEBUG((DEBUG_WARN, "end test\n"));
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int test_context_get_result(struct test_context *ctx, bool *result,
@@ -469,6 +480,7 @@ done:
 
 int test_context_destroy(struct test_context *ctx)
 {
+	DBUG_ENTER(__func__);
 	int i = 0;
 
 	if (ctx == NULL)
@@ -487,5 +499,5 @@ int test_context_destroy(struct test_context *ctx)
 
 	mp_free(g_mp, ctx);
 
-	return 0;
+	DBUG_RETURN(0);
 }
