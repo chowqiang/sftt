@@ -19,7 +19,7 @@
 
 #include "req_resp.h"
 
-#define VERSION	"0.0.96"
+#define VERSION	"0.1.0"
 
 void show_version(void);
 
