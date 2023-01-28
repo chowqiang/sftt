@@ -112,4 +112,25 @@ get_priority(struct priority_list_head *entry)
 				list), \
 			typeof(*(pos)), \
 			member))
+#define priority_list_for_each_entry_safe(pos, tmp, head, member) \
+	for (pos = priority_container_of( \
+			container_of((head)->list.next, \
+				struct priority_list_head, \
+				list), \
+			typeof(*(pos)), \
+			member), \
+	     tmp = priority_container_of( \
+		     	container_of(pos->member.list.next, \
+				struct priority_list_head, \
+				list), \
+			typeof(*(pos)), \
+		     	member);\
+	     &pos->member != (head); \
+	     pos = tmp, \
+	     tmp = priority_container_of( \
+		     	container_of(pos->member.list.next, \
+				struct priority_list_head, \
+				list), \
+			typeof(*(pos)), \
+		     	member))
 #endif
