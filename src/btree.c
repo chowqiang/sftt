@@ -119,6 +119,7 @@ void btree_destroy(struct btree *tree)
 	btree_node_destroy(tree->root, tree->free_mode);
 	tree->size = 0;
 	tree->root = NULL;
+	mp_free(g_mp, tree);
 
 	DBUG_VOID_RETURN;
 }

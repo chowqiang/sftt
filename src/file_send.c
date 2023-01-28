@@ -266,6 +266,7 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 	}
 
 	DEBUG((DEBUG_INFO, "send dir out\n"));
+	dlist_destroy(file_list);
 
 	DBUG_RETURN(0);
 }
@@ -577,6 +578,8 @@ int send_dir_by_put_req(int fd, char *path, char *target,
 		}
 		req->data.file_idx++;
 	}
+
+	dlist_destroy(file_list);
 
 	DBUG_RETURN(ret);
 }

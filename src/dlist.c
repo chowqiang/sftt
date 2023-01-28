@@ -100,6 +100,7 @@ void dlist_destroy(struct dlist *list)
 		mp_free(g_mp, p);
 		p = q;
 	}
+	mp_free(g_mp, list);
 
 	DBUG_VOID_RETURN;
 }

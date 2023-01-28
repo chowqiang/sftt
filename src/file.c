@@ -167,6 +167,7 @@ struct dlist *get_all_file_list(char *dir)
 	list = dlist_create(FREE_MODE_MP_FREE);
 
 	if ((dp = opendir(dir)) == NULL) {
+		dlist_destroy(list);
 		return NULL;
 	}
 
@@ -183,6 +184,7 @@ struct dlist *get_all_file_list(char *dir)
 			sub_list = get_all_file_list(rp);
 			if (sub_list && !dlist_empty(sub_list))
 				dlist_merge(list, sub_list);
+			mp_free(g_mp, sub_list);
 		}
 	}
 
@@ -207,6 +209,7 @@ struct dlist *get_top_file_list(char *dir)
 	list = dlist_create(FREE_MODE_MP_FREE);
 
 	if ((dp = opendir(dir)) == NULL) {
+		dlist_destroy(list);
 		return NULL;
 	}
 
@@ -441,6 +444,7 @@ struct dlist *__get_path_entry_list(struct path_entry *root)
 			sub_list = __get_path_entry_list(entry);
 			if (sub_list && !dlist_empty(sub_list))
 				dlist_merge(list, sub_list);
+			mp_free(g_mp, sub_list);
 		} else {
 			dlist_append(list, entry);
 		}

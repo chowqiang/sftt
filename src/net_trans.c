@@ -184,6 +184,18 @@ int sftt_packet_deserialize(struct sftt_packet *sp)
 	DBUG_RETURN(false);
 }
 
+void sftt_packet_free_content(struct sftt_packet *sp)
+{
+	if (sp == NULL)
+	      return;
+
+	if (sp->content)
+		mp_free(g_mp, sp->content);
+
+	sp->content = NULL;
+	sp->data_len = 0;
+}
+
 int send_sftt_packet(int sock, struct sftt_packet *sp)
 {
 	DBUG_ENTER(__func__);
@@ -215,6 +227,7 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 				ret, sp->type));
 		DBUG_RETURN(-1);
 	}
+	sftt_packet_free_content(sp);
 
 	DEBUG((DEBUG_DEBUG, "before send|sp->data_len=%d\n", _sp->data_len));
 	sftt_packet_send_header(sock, _sp);
@@ -372,6 +385,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 		DEBUG((DEBUG_ERROR, "recv deserialize failed!\n"));
 		DBUG_RETURN(-1);
 	}
+	sftt_packet_free_content(sp);
 
 	free_sftt_packet(&_sp);
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -384,10 +398,7 @@ void free_sftt_packet(struct sftt_packet **sp)
 	DBUG_ENTER(__func__);
 
 	if (sp && *sp) {
-		if ((*sp)->content) {
-			mp_free(g_mp, (*sp)->content);
-			(*sp)->content = NULL;
-		}
+		sftt_packet_free_content(*sp);
 	/* Let user free the sftt_packet obj */
 #if 0
 		if ((*sp)->obj)
