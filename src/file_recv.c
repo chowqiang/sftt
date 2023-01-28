@@ -238,6 +238,7 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 	unsigned int mode;
 	int type;
 	int total_files = 0;
+	bool need_free = false;
 
 	/* recv file name */
 	ret = recv_sftt_packet(fd, resp_packet);
@@ -257,16 +258,20 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 	}
 
 	if (total_files == 1 && IS_FILE(resp->data.entry.type)) {
-		if (is_dir(path))
+		if (is_dir(path)) {
 			rp = path_join(path, (char *)resp->data.entry.content);
-		else
+			need_free = true;
+		} else
 			rp = path;
 
 		type = resp->data.entry.type;
 		mode = resp->data.entry.mode;
 		mp_free(g_mp, resp);
-		DBUG_RETURN(recv_file_from_get_resp(fd, rp, type,
-				mode, resp_packet));
+		ret = recv_file_from_get_resp(fd, rp, type,
+				mode, resp_packet);
+		if (need_free)
+			mp_free(g_mp, rp);
+		DBUG_RETURN(ret);
 	}
 	/* Free resp in while loop below */
 	//mp_free(g_mp, resp);
@@ -286,6 +291,7 @@ int recv_files_from_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 		mode = resp->data.entry.mode;
 		mp_free(g_mp, resp);
 		ret = recv_file_from_get_resp(fd, rp, type, mode, resp_packet);
+		mp_free(g_mp, rp);
 		if (ret == -1) {
 			DEBUG((DEBUG_ERROR, "recv file failed|idx=%d\n", recv_count));
 			DBUG_RETURN(-1);

@@ -920,6 +920,7 @@ int handle_peer_ll_req(struct client_sock_conn *conn, struct sftt_packet *req_pa
 				}
 			}
 		}
+		dlist_destroy(file_list);
 	}
 
 	if (has_more) {

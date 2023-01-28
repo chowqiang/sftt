@@ -808,6 +808,7 @@ int handle_ll_req(struct client_session *client, struct sftt_packet *req_packet,
 					resp, RESP_OK, 0);
 			}
 		}
+		dlist_destroy(file_list);
 	}
 
 	if (has_more)

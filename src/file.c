@@ -458,7 +458,8 @@ struct dlist *__get_path_entry_list(struct path_entry *root)
 struct dlist *get_path_entry_list(char *path, char *pwd)
 {
 	struct path_entry *root = NULL;
-	char *p, *rp, *base;
+	char *rp, *base;
+	bool need_free = false;
 
 	if (!is_dir(path))
 		return NULL;
@@ -473,6 +474,7 @@ struct dlist *get_path_entry_list(char *path, char *pwd)
 		rp = path;
 	} else if (pwd) {
 		rp = path_join(pwd, path);
+		need_free = true;
 	} else {
 		rp = path;
 		//return NULL;
@@ -485,6 +487,8 @@ struct dlist *get_path_entry_list(char *path, char *pwd)
 
 	base = basename(rp);
 	set_path_entry(root, rp, base);
+	if (need_free)
+		mp_free(g_mp, rp);
 
 	return __get_path_entry_list(root);
 }
@@ -596,8 +600,12 @@ int create_new_file_with_parent(char *fname, mode_t mode)
 	if (dir_name == NULL)
 		return -1;
 
-	if (try_make_dir(dir_name, DEFAULT_DIR_MODE))
+	if (try_make_dir(dir_name, DEFAULT_DIR_MODE)) {
+		mp_free(g_mp, dir_name);
 		return -1;
+	}
+
+	mp_free(g_mp, dir_name);
 
 	return create_new_file(fname, mode);
 }
@@ -623,6 +631,8 @@ void free_file_node_list(struct list_head *node_list)
 
 	list_for_each_entry_safe(p, q, node_list, list) {
 		list_del(&p->list);
+		mp_free(g_mp, p->abs_path);
+		mp_free(g_mp, p->name);
 		mp_free(g_mp, p);
 	}
 }
