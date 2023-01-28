@@ -440,18 +440,19 @@ void *mp_realloc(struct mem_pool *mp, void *addr, size_t n)
  */
 void mp_free(struct mem_pool *mp, void *p)
 {
+	DBUG_ENTER(__func__);
 	struct mem_node *m_node = NULL;
 #ifdef CONFIG_MP_FREE_DEBUG
 	bool found = false;
 #endif
 
 	if (mp == NULL || p == NULL) {
-		return ;
+		DBUG_VOID_RETURN;
 	}
 
 	if (mp->mutex->ops->lock(mp->mutex) != 0) {
 		DEBUG((DEBUG_WARN, "cannot lock mem pool\n"));
-		return ;
+		DBUG_VOID_RETURN;
 	}
 
 	list_for_each_entry(m_node, &mem_nodes, list) {
@@ -477,10 +478,12 @@ void mp_free(struct mem_pool *mp, void *p)
 #ifdef CONFIG_MP_FREE_DEBUG
 	if (!found) {
 		DEBUG((DEBUG_WARN, "illegal address!|p=%p\n", p));
+		DBUG_DUMP();
 	}
 #endif
 
 	mp->mutex->ops->unlock(mp->mutex);
+	DBUG_VOID_RETURN;
 }
 
 /*
