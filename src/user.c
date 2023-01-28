@@ -79,6 +79,8 @@ struct user_base_info *find_user_base_by_name(char *name)
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
 
+	mp_free(g_mp, db_file);
+
 	sprintf(sql, "select * from user where name='%s'", name);
 	count = db_select(db_con, sql, &data, &err_msg);
 	if (count < 1)
@@ -143,6 +145,8 @@ struct user_auth_info *find_user_auth_by_name(char *name)
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
 
+	mp_free(g_mp, db_file);
+
 	sprintf(sql, "select * from user where name='%s'", name);
 	count = db_select(db_con, sql, &data, &err_msg);
 	if (count < 1)
@@ -189,6 +193,8 @@ int user_add(char *name, char *passwd_md5)
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
 
+	mp_free(g_mp, db_file);
+
 	uid = count + 1;
 	snprintf(sql, 1023, "insert into user values(%d, '%s', '%s')", uid, name, passwd_md5);
 	db_insert(db_con, sql, &err_msg);
@@ -207,6 +213,8 @@ int get_user_count(void)
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
 
+	mp_free(g_mp, db_file);
+
 	return db_select_count(db_con, sql, &err_msg);
 }
 
@@ -223,6 +231,8 @@ int update_user_base_info(char *name, char *key, char *value)
 	db_file = get_user_db_file();
 	db_con = create_db_connect(db_file);
 	assert(db_con != NULL);
+
+	mp_free(g_mp, db_file);
 
 	type = get_col_type(&user_table, key);
 	assert(type != UNKNOWN_COL_TYPE);

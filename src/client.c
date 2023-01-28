@@ -283,7 +283,7 @@ char **parse_args(char *buf, int *argc)
 	char **argv = NULL;
 	enum cmd_args_state state = INIT;
 
-	args_list = dlist_create(FREE_MODE_NOTHING);
+	args_list = dlist_create(FREE_MODE_MP_FREE);
 	if (args_list == NULL)
 		return NULL;
 

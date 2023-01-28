@@ -45,6 +45,7 @@ struct test_context *test_context_create(const char *name)
 	struct test_context *ctx;
 	char buf[DIR_PATH_MAX_LEN];
 	int ret;
+	int i = 0;
 
 	sanity_check();
 
@@ -56,14 +57,16 @@ struct test_context *test_context_create(const char *name)
 
 	snprintf(buf, DIR_PATH_MAX_LEN, TEST_ROOT_DIR, name, (int)getpid());
 	ctx->root_dir = __strdup(buf);
-
-	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
-
 	ret = make_or_update_dir(ctx->root_dir, DEFAULT_DIR_MODE);
 	if (ret == -1) {
 		perror("create test root directory failed");
 		goto test_context_free;
 	}
+
+	for (i = 0; i < TEST_CONTEXT_MAX_DIRS_NUM; ++i)
+		ctx->dir_list[i] = NULL;
+
+	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
 
 	return ctx;
 
@@ -136,19 +139,22 @@ int test_context_add_process(struct test_context *ctx, char *process_name,
 	if (proc == NULL)
 		return -1;
 
+	for (i = 0; i < TEST_PROCESS_MAX_ARGS_NUM + 2; ++i)
+		proc->argv[i] = NULL;
+
 	strcpy(proc->name, process_name);
 	proc->exec_file = __strdup(exec_file);
 	proc->cmd_file = NULL;
 	proc->state_file = path_join(ctx->root_dir, state_file);
 	proc->is_started = is_started;
 	proc->need_kill = need_kill;
-	proc->argv[0] = get_basename(exec_file);
+	proc->argv[0] = __strdup(get_basename(exec_file));
 
 	for (i = 1, j = 0; j < argc; ++i, ++j) {
 		proc->argv[i] = __strdup(argv[j]);
 	}
-	proc->argv[i++] = "-s";
-	proc->argv[i++] = proc->state_file;
+	proc->argv[i++] = __strdup("-s");
+	proc->argv[i++] = __strdup(proc->state_file);
 	proc->argv[i] = NULL;
 
 	PRIORITY_INIT_LIST_HEAD(&proc->list, priority);
@@ -159,6 +165,23 @@ int test_context_add_process(struct test_context *ctx, char *process_name,
 	priority_list_add(&proc->list, &ctx->proc_list);
 
 	return 0;
+}
+
+void test_process_destroy(struct test_process *proc)
+{
+	int i = 0;
+
+	if (proc == NULL)
+		return;
+
+	if (proc->cmd_file)
+		mp_free(g_mp, proc->cmd_file);
+
+	for (i = 0; i < TEST_PROCESS_MAX_ARGS_NUM + 2; ++i)
+		if (proc->argv[i])
+			mp_free(g_mp, proc->argv[i]);
+
+	mp_free(g_mp, proc);
 }
 
 static int generate_one_cmd(struct test_context *ctx, struct test_cmd *cmd,
@@ -366,7 +389,7 @@ int test_context_run_test(struct test_context *ctx)
 		ctx->test_error = 0;
 	}
 
-	priority_list_for_each_entry(process, &ctx->proc_list, list)
+	priority_list_for_each_entry(process, &ctx->proc_list, list) {
 		if (process->need_kill) {
 			DEBUG((DEBUG_WARN, "kill process ...|name=%s"
 					"|proc_pid=%d\n", process->name, process->pid));
@@ -375,6 +398,9 @@ int test_context_run_test(struct test_context *ctx)
 					"|proc_pid=%d|ret=%d\n", process->name,
 					process->pid, ret));
 		}
+		// Is safe ?
+		test_process_destroy(process);
+	}
 
 	DEBUG((DEBUG_WARN, "end test\n"));
 
@@ -443,5 +469,23 @@ done:
 
 int test_context_destroy(struct test_context *ctx)
 {
+	int i = 0;
+
+	if (ctx == NULL)
+		return -1;
+
+	if (ctx->root_dir)
+		mp_free(g_mp, ctx->root_dir);
+
+	for (i = 0; i < TEST_CONTEXT_MAX_DIRS_NUM; ++i)
+		if (ctx->dir_list[i])
+			mp_free(g_mp, ctx->dir_list[i]);
+
+	mp_free(g_mp, ctx->cmp_file);
+
+	mp_free(g_mp, ctx->finish_file);
+
+	mp_free(g_mp, ctx);
+
 	return 0;
 }
