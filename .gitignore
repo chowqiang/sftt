@@ -19,5 +19,5 @@ lib/*
 xdr/gen_serialize
 xdr/gen_trans
 config/gen_config
-tool/add_copyright
+tools/add_copyright
 test/nohup.out
