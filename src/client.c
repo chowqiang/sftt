@@ -144,7 +144,6 @@ void set_cache_port(int port)
 	}
 
 	char str[8];
-	//itoa(port, str);
 	sprintf(str, "%d", port);
 	fputs(str, fp);
 }
@@ -190,7 +189,6 @@ int consult_block_size_with_server(int sock,
 
 	memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
 	sprintf((char *)buffer, "%d", client_config->block_size);
-	//printf("client block size is : %d\n", client_config.block_size);
 	sftt_encrypt_func(buffer, BUFFER_SIZE);
 
 	int ret = send(sock, buffer, BUFFER_SIZE, 0);
@@ -205,7 +203,6 @@ int consult_block_size_with_server(int sock,
 	}
 	sftt_decrypt_func(buffer, ret);
 	int consulted_block_size = atoi((char *)buffer);
-	//printf("consulted block size is: %d\n", consulted_block_size);
 
 	return consulted_block_size;
 }
@@ -1403,6 +1400,7 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 		printf("init logger failed!\n");
 	}
 
+	// Todo: how to set client sigaction ?
 #if 0
 	if (init_sftt_client_sigaction() == -1) {
 		DEBUG((DEBUG_ERROR, "init sftt client sigaction failed!\n"));
@@ -2113,12 +2111,14 @@ struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 int sftt_client_write_handler(void *obj, int argc, char *argv[],
 		bool *argv_check)
 {
-	struct sftt_packet *req_packet, *resp_packet;
+	struct sftt_packet *req_packet = NULL;
+	struct sftt_packet *resp_packet = NULL;
 	struct write_req *req_info;
 	struct write_resp *resp_info;
 	struct sftt_client *client = obj;
 	struct logged_in_user *user;
 	int user_no;
+	int ret = -1;
 
 	if (argc != 2) {
 		sftt_client_write_usage();
@@ -2135,7 +2135,7 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct write_req));
 	if (req_info == NULL) {
 		printf("alloc write_req failed!\n");
-		return -1;
+		goto done;
 	}
 
 	user_no = atoi(argv[0]);
@@ -2143,47 +2143,50 @@ int sftt_client_write_handler(void *obj, int argc, char *argv[],
 	if (user == NULL) {
 		printf("cannot find user %d, please check the user by using"
 				" command \"w\"\n", user_no);
-		return -1;
+		goto done;
 	}
 
 	req_info->user = *user;
 	strncpy(req_info->message, argv[1], WRITE_MSG_MAX_LEN - 1);
 	req_info->len = strlen(req_info->message);
 
-#if 0
-	printf("req_info->user->session_id=%s\n", req_info->user.session_id);
-	printf("req_info->user->ip=%s\n", req_info->user.ip);
-	printf("req_info->user->port=%d\n", req_info->user.port);
-	printf("req_info->user->name=%s\n", req_info->user.name);
-#endif
 	req_packet->obj = req_info;
 
-	int ret = send_sftt_packet(client->main_conn.sock, req_packet);
+	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
 		printf("%s: send sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
-#if 0
-	resp_packet = malloc_sftt_packet(WRITE_RESP_PACKET_MIN_LEN);
+	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
 		printf("allocate response packet failed!\n");
-		return -1;
+		goto done;
 	}
 
 	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("%s: recv sftt packet failed!\n", __func__);
-		return -1;
+		goto done;
 	}
 
 	resp_info = (struct write_resp *)resp_packet->obj;
+	if (resp_info->status != RESP_OK) {
+		printf("%s: write request failed!\n", __func__);
+		goto done;
+	}
 
-	free_sftt_packet(&req_packet);
-	free_sftt_packet(&resp_packet);
-#endif
+	ret = 0;
 
-	return 0;
+done:
+
+	if (req_packet)
+		free_sftt_packet(&req_packet);
+
+	if (resp_packet)
+		free_sftt_packet(&resp_packet);
+
+	return ret;
 }
 
 void get_prompt(struct sftt_client *client, char *prompt, int len)

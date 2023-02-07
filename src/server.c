@@ -132,7 +132,6 @@ int server_consult_block_size(int connect_fd, unsigned char *buff,int server_blo
 		exit(0);
 	}
 
-	//char *mybuff = sftt_decrypt_func(buff,trans_len);
 	int client_block_size = atoi((char *)buff);
 	int min_block_size = client_block_size < server_block_size ?
 		client_block_size : server_block_size;
@@ -217,7 +216,6 @@ void server_transport_data_to_file(FILE *fd, struct sftt_packet *sp)
 FILE *server_creat_file(struct sftt_packet *sp,
 	struct sftt_server_config init_conf, char *data_buff)
 {
-	//int i;
 	FILE * fd;
 	data_buff = strcat(data_buff,init_conf.store_path);
 	strcat(data_buff, (char *)sp->content);
@@ -268,12 +266,9 @@ int server_main_old(void)
 {
 	int socket_fd = 0;
 	int	connect_fd;
-	//int	trans_len;
 	pid_t   pid;
 	unsigned char	buff[BUFFER_SIZE] = {'\0'};
-	//char    quit[BUFFER_SIZE] = {'q','u','i','t'};
 	struct sftt_server_config  init_conf;
-	//init server
 	server_init_func(&init_conf);
 
 	while(1){
@@ -448,7 +443,6 @@ static int validate_user_info(struct client_session *client,
 	struct validate_resp_data *resp_data;
 	struct user_base_info *user_base;
 	struct user_auth_info *user_auth;
-	//char *md5_str;
 	int ret;
 
 	DEBUG((DEBUG_INFO, "handle validate req in ...\n"));
@@ -1548,10 +1542,15 @@ int handle_client_session(void *args)
 			DEBUG((DEBUG_WARN, "cannot recognize packet type|type=%d\n", req->type));
 			break;
 		}
-		//free_sftt_packet(&resp);
 	}
 
 exit:
+	if (req)
+		free_sftt_packet(&req);
+
+	if (resp)
+		free_sftt_packet(&resp);
+
 	put_session(client);
 
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
@@ -1878,10 +1877,10 @@ int sftt_server_restart(char *store_path, bool background, char *state_file)
 	return 0;
 }
 
-/**
+/*
  * we should wait all children exit before sftt server exits.
- * todo: fix this bug.
- **/
+ * Todo: fix this bug.
+ */
 int sftt_server_stop(void)
 {
 	if (!sftt_server_is_running()) {

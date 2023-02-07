@@ -78,11 +78,6 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 	memcpy(header, &(sp->type), PACKET_TYPE_SIZE);
 	memcpy(header + PACKET_TYPE_SIZE, &(sp->data_len), PACKET_LEN_SIZE);
 
-#if 0
-	buffer = mp_malloc(g_mp, __func__, header_len);
-	assert(buffer != NULL);
-#endif
-
 	encoded_len = sftt_buffer_encode(header, header_len, &buffer, false, false);
 	assert(encoded_len == header_len);
 
@@ -283,11 +278,6 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 		DBUG_RETURN(-1);
 	}
 
-#if 0
-	buffer = mp_malloc(g_mp, __func__, header_len);
-	assert(buffer != NULL);
-#endif
-
 	DEBUG((DEBUG_DEBUG, "before decode header\n"));
 	decoded_len = sftt_buffer_decode(header, header_len, &buffer, false, false);
 	assert(decoded_len == header_len);
@@ -331,12 +321,6 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 	}
 	DEBUG((DEBUG_DEBUG, "receive content|ret=%d|sp->data_len=%d\n",
 		ret, sp->data_len));
-
-#if 0
-	if (sp->type == PACKET_TYPE_FILE_NAME_REQ) {
-		DEBUG((DEBUG_WARN, "decrypted file name|name=%s\n", sp->content));
-	}
-#endif
 
 	DBUG_RETURN(sp->data_len);
 }
@@ -399,11 +383,12 @@ void free_sftt_packet(struct sftt_packet **sp)
 
 	if (sp && *sp) {
 		sftt_packet_free_content(*sp);
-	/* Let user free the sftt_packet obj */
-#if 0
-		if ((*sp)->obj)
-			mp_free(g_mp, (*sp)->obj);
-#endif
+		/* Notes!
+		 * Don't free sftt_packet obj, let user to free
+		 * if ((*sp)->obj)
+		 *	mp_free(g_mp, (*sp)->obj);
+		 */
+
 		mp_free(g_mp, *sp);
 		*sp = NULL;
 	}
