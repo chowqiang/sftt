@@ -126,7 +126,7 @@ int sftt_option_test(void)
 {
 	char *str = "a=12 b=12";
 	char *param = NULL, *value = NULL;
-	
+
 	char data[128];
 	strcpy(data, str);
 	next_arg(data, &param, &value);

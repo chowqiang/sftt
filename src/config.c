@@ -47,7 +47,6 @@ char *search_config(char *fname)
 int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 {
 	strip(line);
-	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
 	if (len < 1) {
 		return -1;
@@ -63,9 +62,8 @@ int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 	if (i >= len || j >= CONFIG_NAME_MAX_LEN) {
 		return -1;
 	}
-	config_name[j] = 0;	
-	//printf("config name: %s\n", config_name);
-	
+	config_name[j] = 0;
+
 	while (i < len && line[i] == ' ') {
 		++i;
 	}
@@ -82,15 +80,14 @@ int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 	}
 
 	j = 0;
-	while (i < len && j < CONFIG_VALUE_MAX_LEN && line[i] != ' ') {			
-		config_value[j++] = line[i++];	
+	while (i < len && j < CONFIG_VALUE_MAX_LEN && line[i] != ' ') {
+		config_value[j++] = line[i++];
 	}
 	if (j >= CONFIG_VALUE_MAX_LEN) {
 		return -1;
 	}
 	config_value[j] = 0;
-	//printf("config value: %s\n", config_value);
-		
+
 	if (strcmp(config_name, "store_path") == 0) {
 		strncpy(ssc->store_path, config_value, DIR_PATH_MAX_LEN);
 	} else if (strcmp(config_name, "block_size") == 0) {
@@ -100,7 +97,7 @@ int deal_server_config_line(char *line, struct sftt_server_config *ssc)
 	} else if (strcmp(config_name, "log_dir") == 0) {
 		strncpy(ssc->log_dir, config_value, DIR_PATH_MAX_LEN);
 	}
-	
+
 	return 0;
 }
 
@@ -119,7 +116,7 @@ int get_sftt_server_config(struct sftt_server_config *ssc)
 	FILE *fp = fopen(server_config_path, "r");
 	if (fp == NULL) {
 		printf("open config file failed: %s\n", server_config_path);
-		goto ERR_RET;	
+		goto ERR_RET;
 	}
 
 	char line[CONFIG_LINE_MAX_SIZE];
@@ -128,11 +125,7 @@ int get_sftt_server_config(struct sftt_server_config *ssc)
 	int i = 0;
 	while (!feof(fp)) {
 		ret = fgets(line, CONFIG_LINE_MAX_SIZE, fp);
-		//printf("%d: %s\n", i, line);
-		//++i;
 		if (ret == NULL) {
-			//printf("get empty config line!\n");
-			//break;
 			continue ;
 		}
 
@@ -143,12 +136,12 @@ int get_sftt_server_config(struct sftt_server_config *ssc)
 
 		if (line[0] == '#') {
 			continue;
-		}	
-		
+		}
+
 		if (line[len - 1] == '\n') {
 			line[--len] = 0;
 		}
-		
+
 		deal_server_config_line(line, ssc);
 	}
 
@@ -167,7 +160,6 @@ ERR_RET:
 int deal_client_config_line(char *line, struct sftt_client_config *scc)
 {
 	strip(line);
-	//printf("stripped line: %s\n", line);
 	int len = strlen(line);
 	if (len < 1) {
 		return -1;
@@ -183,9 +175,8 @@ int deal_client_config_line(char *line, struct sftt_client_config *scc)
 	if (i >= len || j >= CONFIG_NAME_MAX_LEN) {
 		return -1;
 	}
-	config_name[j] = 0;	
-	//printf("config name: %s\n", config_name);
-	
+	config_name[j] = 0;
+
 	while (i < len && line[i] == ' ') {
 		++i;
 	}
@@ -202,21 +193,20 @@ int deal_client_config_line(char *line, struct sftt_client_config *scc)
 	}
 
 	j = 0;
-	while (i < len && j < CONFIG_VALUE_MAX_LEN && line[i] != ' ') {			
-		config_value[j++] = line[i++];	
+	while (i < len && j < CONFIG_VALUE_MAX_LEN && line[i] != ' ') {
+		config_value[j++] = line[i++];
 	}
 	if (j >= CONFIG_VALUE_MAX_LEN) {
 		return -1;
 	}
 	config_value[j] = 0;
-	//printf("config value: %s\n", config_value);
-		
+
 	if (strcmp(config_name, "block_size") == 0) {
 		scc->block_size = atoi(config_value);
 	} else if (strcmp(config_name, "log_dir") == 0) {
 	    strncpy(scc->log_dir, config_value, DIR_PATH_MAX_LEN);
 	}
-	
+
 	return 0;
 }
 
@@ -236,7 +226,7 @@ int get_sftt_client_config(struct sftt_client_config *scc)
 	FILE *fp = fopen(client_config_path, "r");
 	if (fp == NULL) {
 		printf("open config file failed: %s\n", client_config_path);
-		goto ERR_RET;	
+		goto ERR_RET;
 	}
 
 	char line[CONFIG_LINE_MAX_SIZE];
@@ -245,11 +235,7 @@ int get_sftt_client_config(struct sftt_client_config *scc)
 	int i = 0;
 	while (!feof(fp)) {
 		ret = fgets(line, CONFIG_LINE_MAX_SIZE, fp);
-		//printf("%d: %s\n", i, line);
-		//++i;
 		if (ret == NULL) {
-			//printf("get empty config line!\n");
-			//break;
 			continue ;
 		}
 
@@ -260,12 +246,12 @@ int get_sftt_client_config(struct sftt_client_config *scc)
 
 		if (line[0] == '#') {
 			continue;
-		}	
-		
+		}
+
 		if (line[len - 1] == '\n') {
 			line[--len] = 0;
 		}
-		
+
 		deal_client_config_line(line, scc);
 	}
 

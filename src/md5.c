@@ -210,7 +210,7 @@ int md5_file(char *file, unsigned char *digest) {
 
 	for (;;) {
 		ret = fread(data, 1, BLOCK_SIZE, fp);
-		//DEBUG((DEBUG_INFO, "update block|idx=%d|block_size=%d\n", (i + 1), ret));
+		DEBUG((DEBUG_DEBUG, "update block|idx=%d|block_size=%d\n", (i + 1), ret));
 		MD5Update(&context, data, ret);
 		if (ret < BLOCK_SIZE) {
 			break;
@@ -246,8 +246,7 @@ int md5_str(unsigned char *str, unsigned int len, unsigned char *digest) {
 
 	for (;;) {
 		ret = len < BLOCK_SIZE ? len : BLOCK_SIZE;
-		//printf("update %d-th block, block size: %d\n", (i + 1), ret);
-		//printf("data: %s\n", str);
+		DEBUG((DEBUG_DEBUG, "update block|idx=%d|block_size=%d\n", (i + 1), ret));
 		MD5Update(&context, str, ret);
 		if (ret < BLOCK_SIZE) {
 			break;

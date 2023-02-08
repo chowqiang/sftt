@@ -22,13 +22,13 @@ struct pthread_mutex_ops pm_ops = {
 	.init = sftt_pthread_mutex_init,
 	.lock = sftt_pthread_mutex_lock,
 	.unlock = sftt_pthread_mutex_unlock,
- 	.destroy = sftt_pthread_mutex_destroy,	
+ 	.destroy = sftt_pthread_mutex_destroy,
 };
 
 struct pthread_mutex *pthread_mutex_construct(void)
 {
 	struct pthread_mutex *pm;
-	
+
 	/*
 	 * here cannot use mem_pool to alloc memory,
 	 * because mem_pool depends on pthred_mutex.
@@ -60,7 +60,7 @@ int sftt_pthread_mutex_lock(struct pthread_mutex *mutex)
 
 int sftt_pthread_mutex_unlock(struct pthread_mutex *mutex)
 {
-	return pthread_mutex_unlock(&mutex->mutex);	
+	return pthread_mutex_unlock(&mutex->mutex);
 }
 
 int sftt_pthread_mutex_destroy(struct pthread_mutex *mutex)

@@ -86,7 +86,6 @@ int map_add(struct map *m, void *key, void *value)
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
-		//printf("%s:%d, kvn->key=%s\n", kvn->key);
 		if (kvn->key == data->key) {
 			kvn->value = data->value;
 			mp_free(g_mp, data);
@@ -109,7 +108,6 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
 	struct dlist_node *ln = NULL;
 	dlist_for_each(m->list, ln) {
 		kvn = (struct kv_node *)ln->data;
-		//printf("map_key: %s\n", kvn->key);
 		if (is_equal(kvn->key, key)) {
 			if (value) {
 				*value = kvn->value;
@@ -118,7 +116,6 @@ int map_find(struct map *m, key_equal_t is_equal, void *key, void **value)
 		}
 	}
 
-	//printf("cannot find elem!\n");
 	DBUG_RETURN(-1);
 }
 

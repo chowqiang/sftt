@@ -239,7 +239,6 @@ int send_dir_by_get_resp(int fd, char *path, struct sftt_packet *req_packet,
 		entry = node->data;
 		DEBUG((DEBUG_INFO, "entry->abs_path=%s\n", entry->abs_path));
 	}
-	//DBUG_RETURN(-1);
 
 	file_count = dlist_size(file_list);
 	DEBUG((DEBUG_INFO, "file list|file_count=%d\n", file_count));
@@ -348,8 +347,6 @@ int send_file_md5_by_put_req(int fd, struct sftt_packet *req_packet, char *file,
 
 	if (is_dir(file))
 		DBUG_RETURN(0);
-
-	//req->data.entry.total_size = file_size(file);
 
 	ret = md5_file(file, req->data.entry.content);
 	if (ret == -1)

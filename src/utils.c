@@ -45,14 +45,11 @@ void print_line(char *str, char c)
 	for (i = 0; i < width; ++i)
 		line[j++] = c;
 
-	//printf("j = %d\n", j);
 	j += snprintf(line + j, LINE_LIMIT - j, "%s",  str);
-	//printf("j = %d\n", j);
 
 	for (; j < LINE_LIMIT; ++j)
 		line[j] = c;
 	line[j] = 0;
-	//printf("j = %d\n", j);
 
 	printf("%s\n", line);
 }
@@ -97,10 +94,8 @@ void simple_session_id(char *buf, int len)
 
 	for (i = 0; i < len - 1; ++i) {
 		if (i % 2) {
-			//buf[i] = gen_char('a', 'z');
 			buf[i] = rand() % ('z' - 'a') + 'a';
 		} else {
-			//buf[i] = gen_char('0', '9');
 			buf[i] = rand() % ('9' - '0') + '0';
 		}
 	}

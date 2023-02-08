@@ -42,9 +42,6 @@ struct db_connect *create_db_connect(char *db_file)
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 		return NULL;
 	}
-	//else {
-	//	fprintf(stderr, "Opened database successfully\n");
-	//}
 
 	db_con->db = db;
 
@@ -135,11 +132,8 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data,
 
 	sqlite3_get_table(db_con->db, sql, &pret, &rows, &cols, err_msg);
 	if (pret == NULL || rows == 0 || cols == 0) {
-		//printf("%s:%d, cannot find records.\n", __func__, __LINE__);
 		return -1;
 	}
-
-	//printf("select result: rows = %d, cols = %d\n", rows, cols);
 
 	tmp = mp_malloc(g_mp, __func__, rows * sizeof(struct map));
 	assert(tmp != NULL);
@@ -148,11 +142,8 @@ int db_select(struct db_connect *db_con, char *sql, struct map **data,
 		ret = map_init(&tmp[i - 1]);
 		assert(ret == 0);
 
-		//printf("cols = %d\n", cols);
 		for (j = 0; j < cols; ++j) {
-			//printf("j = %d, %s=%s\n", j, pret[j], pret[i * cols + j]);
 			ret = map_add(&tmp[i - 1], pret[j], pret[i * cols + j]);
-			//printf("j = %d, map add ret=%d\n", j, ret);
 			if (ret == -1) {
 				printf("cannot add %s to map\n", pret[j]);
 			}

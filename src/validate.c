@@ -22,7 +22,6 @@
 
 char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid)
 {
-	//printf("input dotted decimal: %s\n", p);
 	if (!is_first) {
 		if (p[0] != '.') {
 			printf("first char for dotted decimal should be '.'!\n");
@@ -37,7 +36,6 @@ char *is_valid_dotted_decimal(char *p, int is_first, int is_last, int *pvalid)
 		tmp[j] = p[j];
 		j++;
 	}
-	//printf("parsed dotted decimal block: %s\n", tmp);
 
 	if (j == 0) {
 		printf("dotted decimal length should not be zero!\n");

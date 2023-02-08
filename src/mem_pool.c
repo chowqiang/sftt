@@ -218,8 +218,6 @@ void *mp_update_stat_loop(void *arg)
 		return NULL;
 	}
 
-	//printf("%s:%d, begin to send mp stat by loop\n", __func__, __LINE__);
-
 	for (;;) {
 		if (mp->msg_queue == NULL)
 			mp->msg_queue = get_msg_queue(MEM_POOL_STAT, MSQ_TYPE_FILE);
@@ -289,7 +287,6 @@ void add_purpose(struct mem_pool *mp, const char *purpose)
 	if (p == NULL) {
 		p = purpose_node_create(purpose);
 		p->count = 1;
-		//list_add(&purposes, &p->list); // error!
 		list_add(&p->list, &purposes);
 		return;
 	} else {
@@ -359,7 +356,6 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 		if (list_empty(&mem_nodes))
 			mp->nodes = m_node;
 
-		//list_add(&mem_nodes, &m_node->list); // error!
 		list_add(&m_node->list, &mem_nodes);
 
 		mp->stat.total_nodes += 1;
@@ -381,8 +377,6 @@ void *mp_malloc(struct mem_pool *mp, const char *purpose, size_t n)
 	mp->mutex->ops->unlock(mp->mutex);
 
 	bzero(m_node->address, n);
-
-	//printf("purpose node count: %d\n", get_purpose_count(mp));
 
 	return m_node->address;
 }
@@ -467,7 +461,6 @@ void mp_free(struct mem_pool *mp, void *p)
 				break;
 			}
 			m_node->is_using = 0;
-			//m_node->used_cnt += 1;
 			mp->stat.free_nodes += 1;
 			mp->stat.using_nodes -= 1;
 			sub_purpose(mp, m_node->purpose);

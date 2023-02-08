@@ -144,7 +144,6 @@ int logger_daemon(void *args)
 			sleep(1);
 			continue;
 		}
-		//printf("received msg: length=%d\n", msg.length);
 		if (msg.length <= 0) {
 			printf("seems to be a wrong msg, length=%d\n", msg.length);
 			continue;
@@ -363,7 +362,6 @@ int do_log(struct logger *log, struct trace_info *trace,
 
 	ret += vsnprintf(buf + ret, MSG_MAX_LEN - ret - 1, fmt, args);
 
-	//printf("client log dir: %s\n", client_log_dir);
 	get_log_file_name(client_log_dir, client_log_prefix, log_file, FILE_NAME_MAX_LEN);
 
 	if (!file_existed(log_file))

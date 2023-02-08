@@ -172,7 +172,6 @@ struct dlist *get_all_file_list(char *dir)
 	}
 
 	while ((entry = readdir(dp)) != NULL) {
-		//printf("%s\n", entry->d_name);
 		if (strcmp(entry->d_name, ".") == 0 ||
 			strcmp(entry->d_name, "..") == 0)
 			continue;
@@ -332,7 +331,6 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
 				continue;
 			}
-			//printf("dir tmp path: %s\n", tmp_path);
 			sub_list = get_dir_path_entry_list(tmp_path, dir_rel_path);
 			if (sub_list == NULL) {
 				continue;
@@ -358,7 +356,6 @@ struct path_entry_list *get_dir_path_entry_list(char *file_name, char *prefix)
 
 			sprintf(node->entry.abs_path, "%s/%s", dir_abs_path, entry->d_name);
 			sprintf(node->entry.rel_path, "%s/%s", dir_rel_path, entry->d_name);
-			//printf("file: %s\n", node->entry.abs_path);
 			node->next = NULL;
 
 			if (current_entry == NULL) {
@@ -653,7 +650,6 @@ int get_file_node_list(char *path, struct list_head *node_list)
 	}
 
 	while ((item = readdir(dp)) != NULL) {
-		//printf("path = %s, d_name = %s\n", path, item->d_name);
 		if (strcmp(item->d_name, ".") == 0 ||
 			strcmp(item->d_name, "..") == 0)
 			continue;

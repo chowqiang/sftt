@@ -112,7 +112,6 @@ int get_user_command(char *prompt, struct cmd_line *cmd, int start)
 				return 1;
 			case 'C':
 			case 'D':
-				//refill_str(prompt, cmd->buf, i + 3);
 				continue;
 			}
 		}
