@@ -69,6 +69,9 @@ struct test_context *test_context_create(const char *name)
 
 	PRIORITY_INIT_LIST_HEAD(&ctx->proc_list, -1);
 
+	ctx->need_compare = false;
+	ctx->cmp_file = NULL;
+
 	DBUG_RETURN(ctx);
 
 test_context_free:
@@ -283,6 +286,7 @@ int test_context_generate_cmp_file(struct test_context *ctx, const char *fname,
 	if (ctx->cmp_file)
 		DBUG_RETURN(-1);
 
+	ctx->need_compare = true;
 	ctx->cmp_file = path_join(ctx->root_dir, fname);
 	fp = fopen(ctx->cmp_file, "w");
 	if (fp == NULL)
@@ -433,6 +437,13 @@ int test_context_get_result(struct test_context *ctx, bool *result,
 		goto done;
 	}
 
+	if (!ctx->need_compare) {
+		*result = true;
+		snprintf(message, len, "test successfully!");
+		ret = 0;
+		goto done;
+	}
+
 	if (!ctx->cmp_file) {
 		DEBUG((DEBUG_ERROR, "cannot compare files for missing cmp_file\n"));
 		goto done;
@@ -470,7 +481,6 @@ int test_context_get_result(struct test_context *ctx, bool *result,
 	}
 
 	ret = 0;
-
 done:
 	if (fp)
 		fclose(fp);

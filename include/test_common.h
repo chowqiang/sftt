@@ -58,6 +58,7 @@ struct test_context {
 	int dir_num;
 	struct test_process server;
 	struct priority_list_head proc_list;
+	bool need_compare;
 	char *cmp_file;
 	char *finish_file;
 	bool success;
