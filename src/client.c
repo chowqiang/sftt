@@ -2095,6 +2095,32 @@ void sftt_client_touch_usage(void)
 	printf("Usage: touch file\n");
 }
 
+int sftt_client_sleep_handler(void *obj, int argc, char *argv[],
+		bool *argv_check)
+{
+	int seconds = 0;
+
+	if (argc != 1) {
+		sftt_client_sleep_usage();
+		return -1;
+	}
+
+	seconds = atoi(argv[0]);
+	if (seconds < 0) {
+		sftt_client_sleep_usage();
+		return -1;
+	}
+
+	sleep(seconds);
+
+	return 0;
+}
+
+void sftt_client_sleep_usage(void)
+{
+	printf("Usage: sleep seconds\n");
+}
+
 struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no)
 {

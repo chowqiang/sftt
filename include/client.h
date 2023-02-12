@@ -281,6 +281,13 @@ int sftt_client_touch_handler(void *obj, int argc, char *argv[],
 void sftt_client_touch_usage(void);
 
 /*
+ * Sleep some seconds.
+ */
+int sftt_client_sleep_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
+void sftt_client_sleep_usage(void);
+
+/*
  * Sftt client commands supported.
  */
 static struct cmd_handler sftt_client_cmds[] = {
@@ -355,6 +362,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.fn = sftt_client_touch_handler,
 		.help = "touch a file",
 		.usage = sftt_client_touch_usage,
+	},
+	{
+		.name = "sleep",
+		.fn = sftt_client_sleep_handler,
+		.help = "sleep some seconds",
+		.usage = sftt_client_sleep_usage,
 	},
 	{
 		.name = NULL,
