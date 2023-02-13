@@ -53,4 +53,6 @@ int make_connect(char *ip, int port);
 
 pthread_t start_server(int port, void *(*func)(void *arg));
 
+int make_socket_non_blocking (int sfd);
+
 #endif

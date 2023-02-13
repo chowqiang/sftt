@@ -1487,6 +1487,10 @@ int handle_client_session(void *args)
 		DEBUG((DEBUG_ERROR, "set child sigactions failed!\n"));
 	}
 
+	if (make_socket_non_blocking(sock) == -1) {
+		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
+	}
+
 	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
 		ret = recv_sftt_packet(sock, req);
@@ -1696,7 +1700,7 @@ int create_non_block_sock(int *pport)
 		return -1;
 	}
 
-	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
+	if (make_socket_non_blocking(sockfd) == -1) {
 		perror("set sockfd to non-block failed");
 		return -1;
 	}
