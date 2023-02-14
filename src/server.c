@@ -52,6 +52,7 @@
 #include "endpoint.h"
 #include "thread_pool.h"
 #include "response.h"
+#include "rte_errno.h"
 #include "server.h"
 #include "session.h"
 #include "trans.h"
@@ -98,9 +99,9 @@ void put_session(struct client_session *s);
 
 struct client_session *find_client_session_by_id(char *session_id);
 
-void put_peer_task_conn(struct client_sock_conn *conn);
-
 struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user);
+
+#define put_peer_task_conn(conn)	put_sock_conn(conn)
 
 void init_client_session(struct client_session *session);
 
@@ -1317,10 +1318,6 @@ struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
 	return conn;
 }
 
-void put_peer_task_conn(struct client_sock_conn *conn)
-{
-	conn->is_using = false;
-}
 
 int handle_write_req(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
@@ -1467,19 +1464,21 @@ int handle_client_session(void *args)
 
 	struct client_session *client = (struct client_session *)args;
 	int sock = client->main_conn.sock;
-	struct sftt_packet *resp;
-	struct sftt_packet *req;
-	int ret;
+	struct sftt_packet *resp = NULL;
+	struct sftt_packet *req = NULL;
+	int ret = -1;
+	bool need_close = true;
 
 	DEBUG((DEBUG_INFO, "begin handle client session ...\n"));
 	req = malloc_sftt_packet();
-	if (!req) {
-		printf("cannot allocate resources from memory pool!\n");
-		DBUG_RETURN(-1);
+	if (req == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed!\n"));
+		goto exit;
 	}
 
 	resp = malloc_sftt_packet();
 	if (resp == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed!\n"));
 		goto exit;
 	}
 
@@ -1493,17 +1492,37 @@ int handle_client_session(void *args)
 
 	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
+		put_sock_conn(&client->main_conn);
+		if (server->is_updating_port) {
+			ret = 0;
+			goto exit;
+		}
+
 		ret = recv_sftt_packet(sock, req);
 		add_log(LOG_INFO, "recv ret: %d", ret);
-		if (ret == -1) {
-			add_log(LOG_ERROR, "recv from client failed, child process is exiting ...");
-			DEBUG((DEBUG_ERROR, "recv from client failed, child process is exiting ...\n"));
-			goto exit;
-		}
 		if (ret == 0) {
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
+			DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 			goto exit;
 		}
+
+		if (ret == -1) {
+			if (rte_errno == EAGAIN || rte_errno == EWOULDBLOCK) {
+				usleep(100 * 1000);
+				continue;
+			} else {
+				add_log(LOG_ERROR, "recv from client failed, child process is exiting ...");
+				DEBUG((DEBUG_ERROR, "recv from client failed, child process is exiting ...\n"));
+				goto exit;
+			}
+		}
+		get_sock_conn(&client->main_conn);
+
+		if (server->is_updating_port) {
+			ret = 0;
+			goto exit;
+		}
+
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
 			ret = validate_user_info(client, req, resp);
@@ -1514,6 +1533,7 @@ int handle_client_session(void *args)
 			break;
 		case PACKET_TYPE_APPEND_CONN_REQ:
 			handle_append_conn_req(client, req, resp);
+			need_close = false;
 			goto exit;
 		case PACKET_TYPE_PWD_REQ:
 			handle_pwd_req(client, req, resp);
@@ -1555,11 +1575,13 @@ exit:
 	if (resp)
 		free_sftt_packet(&resp);
 
+	put_sock_conn(&client->main_conn);
 	put_session(client);
 
-	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+	if (need_close)
+		close(sock);
 
-	DBUG_RETURN(-1);
+	DBUG_RETURN(ret);
 }
 
 void sync_server_stat(void)

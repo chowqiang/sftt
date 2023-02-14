@@ -45,6 +45,8 @@ struct client_sock_conn {
 	struct list_head list;
 };
 
+#define sock_conn_is_using(conn)	((conn)->is_using)
+
 struct server_context {
 	int sock;
 };
@@ -53,6 +55,10 @@ int make_connect(char *ip, int port);
 
 pthread_t start_server(int port, void *(*func)(void *arg));
 
-int make_socket_non_blocking (int sfd);
+int make_socket_non_blocking(int sfd);
+
+#define put_sock_conn(conn) do {(conn)->is_using = false;} while(0)
+
+#define get_sock_conn(conn) do {(conn)->is_using = true;} while(0)
 
 #endif

@@ -57,6 +57,7 @@ struct sftt_server {
 	struct pthread_mutex *pm;
 	struct thread_pool *thread_pool;
 	char *state_file;
+	volatile int is_updating_port;
 };
 
 struct sftt_server_stat {

@@ -28,6 +28,7 @@
 #include "log.h"
 #include "mem_pool.h"
 #include "net_trans.h"
+#include "rte_errno.h"
 #include "serialize_handler.h"
 
 extern struct mem_pool *g_mp;
@@ -260,21 +261,21 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 	int header_len = sizeof(header);
 	int decoded_len, ret;
 	unsigned char *buffer;
-	int err;
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
 	ret = recv(sock, header, header_len, 0);
-	err = errno;
+	rte_errno = errno;
 	DEBUG((DEBUG_DEBUG, "recv header|ret=%d|header_len=%d\n",
 		ret, header_len));
+	if (ret == 0)  {
+		DBUG_RETURN(ret);
+	}
+
 	if (ret != header_len) {
 		DEBUG((DEBUG_WARN, "recv failed because recv ret"
 				" not equal to header len|ret=%d|"
 				"header_len=%d|err=%s\n", ret, header_len,
-				strerror(err)));
-		if (ret == 0) {
-			DBUG_RETURN(ret);
-		}
+				strerror(rte_errno)));
 		DBUG_RETURN(-1);
 	}
 
