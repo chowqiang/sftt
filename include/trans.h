@@ -7,6 +7,9 @@
 
 #include "packet.h"
 
+int send_channel_info_resp(int fd, struct sftt_packet *resp_packet,
+	struct channel_info_resp *resp, int code, int flags);
+
 int send_validate_resp(int fd, struct sftt_packet *resp_packet,
 	struct validate_resp *resp, int code, int flags);
 
@@ -45,5 +48,8 @@ int send_who_resp(int fd, struct sftt_packet *resp_packet,
 
 int send_write_resp(int fd, struct sftt_packet *resp_packet,
 	struct write_resp *resp, int code, int flags);
+
+int send_port_update_resp(int fd, struct sftt_packet *resp_packet,
+	struct port_update_resp *resp, int code, int flags);
 
 #endif

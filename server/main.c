@@ -26,6 +26,8 @@ extern int optopt;
 extern int opterr;
 extern int optreset;
 
+struct sftt_server server_instance;
+
 int main(int argc, char **argv)
 {
 	char store_path[DIR_PATH_MAX_LEN];
@@ -33,6 +35,7 @@ int main(int argc, char **argv)
 	bool ret = false;
 	char *state_file = NULL;
 	char ch;
+	struct sftt_server *server = &server_instance;
 
 	if (argc < 2) {
 		server_usage_help(-1);
@@ -74,9 +77,9 @@ int main(int argc, char **argv)
 #endif
 
 	if (strcmp(argv[optind], "start") == 0) {
-		sftt_server_start(store_path, background, state_file);
+		sftt_server_start(server, store_path, background, state_file);
 	} else if (strcmp(argv[optind], "restart") == 0) {
-		sftt_server_restart(store_path, background, state_file);
+		sftt_server_restart(server, store_path, background, state_file);
 	} else if (strcmp(argv[optind], "stop") == 0) {
 		sftt_server_stop();
 	} else if (strcmp(argv[optind], "status") == 0) {

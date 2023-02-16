@@ -7,6 +7,14 @@
 
 #include <stdbool.h>
 
+bool channel_info_req_encode(void *req, unsigned char **buf, int *len);
+
+bool channel_info_req_decode(unsigned char *buf, int len, void **req);
+
+bool channel_info_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool channel_info_resp_decode(unsigned char *buf, int len, void **req);
+
 bool validate_req_encode(void *req, unsigned char **buf, int *len);
 
 bool validate_req_decode(unsigned char *buf, int len, void **req);
@@ -110,5 +118,13 @@ bool write_req_decode(unsigned char *buf, int len, void **req);
 bool write_resp_encode(void *req, unsigned char **buf, int *len);
 
 bool write_resp_decode(unsigned char *buf, int len, void **req);
+
+bool port_update_req_encode(void *req, unsigned char **buf, int *len);
+
+bool port_update_req_decode(unsigned char *buf, int len, void **req);
+
+bool port_update_resp_encode(void *req, unsigned char **buf, int *len);
+
+bool port_update_resp_decode(unsigned char *buf, int len, void **req);
 
 #endif

@@ -85,7 +85,7 @@ struct sftt_server *server;
 
 struct logger_init_ctx logger_ctx;
 
-int create_non_block_sock(int *pport);
+int create_non_block_sock(int port);
 
 void put_sftt_server_stat(struct sftt_server_stat *sss);
 
@@ -99,9 +99,7 @@ void put_session(struct client_session *s);
 
 struct client_session *find_client_session_by_id(char *session_id);
 
-struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user);
-
-#define put_peer_task_conn(conn)	put_sock_conn(conn)
+struct client_sock_conn *get_peer_task_conn_by_user(struct logged_in_user *user);
 
 void init_client_session(struct client_session *session);
 
@@ -406,34 +404,24 @@ bool sftt_server_is_running(void)
 	return sss->status == SERVERING;
 }
 
-void update_server(struct sftt_server *server)
+static inline bool need_update_port(struct sftt_server *server)
 {
-	int sock = 0;
-	int port;
-	char buf[128];
-	uint64_t current_ts;
+	return get_ts() - server->last_update_ts > PORT_UPDATE_INTERVAL;
+}
 
-	port = get_random_port();
-	current_ts = (uint64_t)time(NULL);
-	if (server->main_port != port) {
-		sock = create_non_block_sock(&port);
-		if (sock == -1) {
-			return ;
-		}
+bool can_update_port(struct sftt_server *server)
+{
+	int i = 0;
 
-		sprintf(buf, "update main port and main sock. "
-			"sock(%d -> %d), port(%d -> %d)", server->main_sock,
-			sock, server->main_port, port);
-		add_log(LOG_INFO, buf);
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
+		if (!client_connected(&server->sessions[i]))
+			continue;
 
-		if (sock != -1) {
-			close(server->main_sock);
-			server->main_sock = sock;
-			server->main_port = port;
-			server->last_update_ts = current_ts;
-		}
+		if (client_task_conns_num(&server->sessions[i]) != 1)
+			return false;
 	}
-	sync_server_stat();
+
+	return true;
 }
 
 static int validate_user_info(struct client_session *client,
@@ -648,7 +636,6 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 
 	int ret;
 	struct logged_in_user *user;
-	struct peer_session *peer;
 	struct ll_req *req;
 	struct ll_resp *resp;
 	struct client_sock_conn *conn = NULL;
@@ -665,7 +652,7 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 	}
 
 	// get or create peer task conn
-	conn = get_peer_task_conn(user);
+	conn = get_peer_task_conn_by_user(user);
 	if (conn == NULL) {
 		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_CNT_GET_PEER, 0));
@@ -843,7 +830,7 @@ int handle_fwd_get_req(struct client_session *client,
 	}
 
 	// get or create peer session
-	conn = get_peer_task_conn(user);
+	conn = get_peer_task_conn_by_user(user);
 
 	if (conn == NULL) {
 		DEBUG((DEBUG_INFO, "cannot get peer task conn!\n"));
@@ -979,7 +966,6 @@ int handle_fwd_put_req(struct client_session *client,
 
 	int ret;
 	struct logged_in_user *user;
-	struct peer_session *peer;
 	struct put_req *req;
 	struct put_resp *resp;
 	struct common_resp *com_resp;
@@ -1000,7 +986,7 @@ int handle_fwd_put_req(struct client_session *client,
 	}
 
 	// get or create peer task conn
-	conn = get_peer_task_conn(user);
+	conn = get_peer_task_conn_by_user(user);
 	if (conn == NULL) {
 		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
 			       resp, RESP_PEER_BUSYING, 0));
@@ -1290,7 +1276,7 @@ done:
 	return ret;
 }
 
-struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
+struct client_sock_conn *get_peer_task_conn_by_user(struct logged_in_user *user)
 {
 	struct client_session *target_session = NULL;
 	struct client_sock_conn *conn = NULL;
@@ -1302,20 +1288,7 @@ struct client_sock_conn *get_peer_task_conn(struct logged_in_user *user)
 		return NULL;
 	}
 
-	target_session->tcs_lock->ops->lock(target_session->tcs_lock);
-	list_for_each_entry(conn, &target_session->task_conns, list) {
-		if (!conn->is_using) {
-			conn->is_using = true;
-			found = true;
-			break;
-		}
-	}
-	target_session->tcs_lock->ops->unlock(target_session->tcs_lock);
-
-	if (!found)
-		return NULL;
-
-	return conn;
+	return get_peer_task_conn_by_session(target_session);
 }
 
 
@@ -1327,7 +1300,6 @@ int handle_write_req(struct client_session *client,
 	int ret;
 	struct write_req *req;
 	struct logged_in_user *user;
-	struct peer_session *peer;
 	struct client_sock_conn *conn = NULL;
 
 	req = req_packet->obj;
@@ -1337,7 +1309,7 @@ int handle_write_req(struct client_session *client,
 		DBUG_RETURN(-1);
 	}
 
-	conn = get_peer_task_conn(user);
+	conn = get_peer_task_conn_by_user(user);
 	if (conn == NULL) {
 		printf("get or create peer session failed!\n");
 		DBUG_RETURN(-1);
@@ -1650,7 +1622,32 @@ static int create_state_file(struct sftt_server *server)
 	return ret;
 }
 
-void main_loop(void)
+void respond_channel_info(int sock)
+{
+	struct sftt_packet *resp_packet;
+	struct channel_info_resp *resp;
+	int ret;
+
+	if ((resp_packet = malloc_sftt_packet()) == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed!\n"));
+		return;
+	}
+
+	if ((resp = mp_malloc(g_mp, __func__, sizeof(struct channel_info_resp))) == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc channel info resp failed!\n"));
+		return;
+	}
+
+	resp->data.main_port = server->main_port;
+	resp->data.second_port = server->second_port;
+
+	ret = send_channel_info_resp(sock, resp_packet, resp, RESP_OK, REQ_RESP_FLAG_NONE);
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "send channel info resp failed!\n"));
+	}
+}
+
+void main_channel_loop(void)
 {
 	int connect_fd = 0;
 	pid_t pid = 0;
@@ -1662,58 +1659,26 @@ void main_loop(void)
 	int len;
 
 	server->status = SERVERING;
-	init_sessions();
 
 	create_state_file(server);
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
-#ifdef CONFIG_UPDATE_CHANNEL
-		update_server(server);
-#endif
 		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
 			continue;
 		}
-		if ((session = get_new_session()) == NULL) {
-			add_log(LOG_INFO, "exceed max connection!");
-			close(connect_fd);
-			continue;
-		}
-		add_log(LOG_INFO, "a client is connecting ...");
 
-		bzero(session->ip, IPV4_MAX_LEN - 1);
-		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
-		session->main_conn.sock = connect_fd;
-		session->main_conn.port = ntohs(addr_client.sin_port);
-		session->main_conn.type = CONN_TYPE_CTRL;
-		gen_connect_id(session->main_conn.connect_id, CONNECT_ID_LEN);
-
-		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
-		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
-
-		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
-				handle_client_session, session);
-		if (ret) {
-			add_log(LOG_INFO, "create thread failed!");
-			session->status = DISCONNECTED;
-		}
+		respond_channel_info(connect_fd);
+		close(connect_fd);
 	}
 }
 
-int create_non_block_sock(int *pport)
+int create_non_block_sock(int port)
 {
 	int	sockfd;
 	struct sockaddr_in serveraddr;
-	int port;
-
-
-#ifdef CONFIG_USE_RANDOM_PORT
-	port = get_random_port();
-#else
-	port = get_default_port();
-#endif
 
 	add_log(LOG_INFO, "port is %d", port);
 
@@ -1740,10 +1705,6 @@ int create_non_block_sock(int *pport)
 	if (listen(sockfd, 10) == -1){
 		perror("listen socket error");
 		return -1;
-	}
-
-	if (pport) {
-		*pport = port;
 	}
 
 	return sockfd;
@@ -1788,9 +1749,6 @@ int init_sftt_server(char *store_path, char *state_file)
 
 	set_current_context("server");
 
-	server = (struct sftt_server *)mp_malloc(g_mp, __func__, sizeof(struct sftt_server));
-	assert(server != NULL);
-
 	server->state_file = state_file;
 
 	if (get_version_info(&server->ver) == -1) {
@@ -1807,15 +1765,30 @@ int init_sftt_server(char *store_path, char *state_file)
 		strcpy(server->conf.store_path, store_path);
 	}
 
-	if ((sockfd = create_non_block_sock(&port)) == -1) {
+#if CONFIG_USE_RANDOM_PORT
+	port = get_random_port();
+#else
+	port = get_default_port();
+#endif
+	if ((sockfd = create_non_block_sock(port)) == -1) {
 		printf("cannot create non-block socket!\n");
 		return -1;
 	}
-
-	server->status = READY;
 	server->main_sock = sockfd;
 	server->main_port = port;
-	server->last_update_ts = (uint64_t)time(NULL);
+
+	port = get_random_port();
+	if (port == server->main_port) {
+		DEBUG((DEBUG_ERROR, "get second port failed!\n"));
+		return -1;
+	}
+	if ((sockfd = create_non_block_sock(port)) == -1) {
+		printf("cannot create non-block socket!\n");
+		return -1;
+	}
+	server->second_sock = sockfd;
+	server->second_port = port;
+	server->last_update_ts = get_ts();
 
 	if (init_sftt_server_thread_pool(server) == -1) {
 		printf("cannot create thread pool!\n");
@@ -1832,7 +1805,10 @@ int init_sftt_server(char *store_path, char *state_file)
 			PROC_NAME " server info.\n");
 		return -1;
 	}
+
 	server->pm = new(pthread_mutex);
+
+	server->status = READY;
 
 	return 0;
 }
@@ -1846,8 +1822,191 @@ int install_server_sigactions(void)
 	return sigaction(SIGINT, &server_exit, NULL);
 }
 
-int sftt_server_start(char *store_path, bool background, char *state_file)
+int notify_client_after_updating(void)
 {
+	DBUG_ENTER(__func__);
+
+	int i = 0;
+	struct sftt_packet *req_packet;
+	struct client_sock_conn *conn;
+	struct port_update_req *req;
+	int tmp, ret = 0;
+
+	req_packet = malloc_sftt_packet();
+	if (req_packet == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc update port req packet failed!\n"));
+		DBUG_RETURN(-1);
+	}
+
+	req = mp_malloc(g_mp, __func__, sizeof(struct port_update_req));
+	if (req == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc update port req failed!\n"));
+		free_sftt_packet(&req_packet);
+		DBUG_RETURN(-1);
+	}
+
+	req->second_port = server->second_port;
+	req_packet->obj = req;
+
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
+		if (!client_connected(&server->sessions[i]))
+			continue;
+
+		if (client_task_conns_num(&server->sessions[i]) != 1)
+			continue;
+
+		conn = get_peer_task_conn_by_session(&server->sessions[i]);
+		if (conn == NULL) {
+			DEBUG((DEBUG_ERROR, "get or create peer session failed!\n"));
+			continue;
+		}
+
+		tmp = send_sftt_packet(conn->sock, req_packet);
+		if (ret == -1) {
+			DEBUG((DEBUG_ERROR, "send port update req faile!\n"));
+			ret = tmp;
+		}
+
+		close(conn->sock);
+		put_peer_task_conn(conn);
+	}
+
+	free_sftt_packet(&req_packet);
+	mp_free(g_mp, req);
+
+	DBUG_RETURN(ret);
+}
+
+int port_update_loop(void *arg)
+{
+	struct sftt_server *server = arg;
+	int sock = 0;
+	int port;
+	char buf[128];
+
+	for (;;) {
+		if (!need_update_port(server)) {
+			sleep(1);
+			continue;
+		}
+
+		if (!can_update_port(server)) {
+			sleep(1);
+			continue;
+		}
+
+		port = get_random_port();
+		if (server->main_port == port ||
+			server->second_port == port) {
+			sleep(1);
+			continue;
+		}
+
+		sock = create_non_block_sock(port);
+		if (sock == -1) {
+			DEBUG((DEBUG_ERROR, "create non block sock failed when update port!\n"));
+			sleep(1);
+			continue;
+		}
+
+		server->is_updating_port = true;
+		close(server->second_sock);
+
+		server->second_port = port;
+		server->second_sock = sock;
+
+		notify_client_after_updating();
+		server->is_updating_port = false;
+
+		sprintf(buf, "update second port and second sock done!\n"
+			"sock(%d -> %d), port(%d -> %d)", server->second_sock,
+			sock, server->second_port, port);
+		add_log(LOG_INFO, buf);
+
+		server->last_update_ts = get_ts();
+		sync_server_stat();
+	}
+
+	return -1;
+}
+
+int start_port_update_thread(void)
+{
+	int ret;
+
+	ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
+			port_update_loop, server);
+
+	return ret;
+}
+
+int second_channel_loop(void *arg)
+{
+	int connect_fd = 0;
+	pid_t pid = 0;
+	int idx = 0;
+	int ret;
+	pthread_t child;
+	struct client_session *session;
+	struct sockaddr_in addr_client;
+	int len;
+
+	init_sessions();
+
+	len = sizeof(struct sockaddr_in);
+	while (1) {
+		if (server->is_updating_port) {
+			sleep(1);
+			continue;
+		}
+
+		connect_fd = accept(server->second_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+		if (connect_fd == -1) {
+			usleep(100 * 1000);
+			continue;
+		}
+
+		if ((session = get_new_session()) == NULL) {
+			add_log(LOG_INFO, "exceed max connection!");
+			close(connect_fd);
+			continue;
+		}
+		add_log(LOG_INFO, "a client is connecting ...");
+
+		bzero(session->ip, IPV4_MAX_LEN - 1);
+		strncpy(session->ip, inet_ntoa(addr_client.sin_addr), IPV4_MAX_LEN - 1);
+		session->main_conn.sock = connect_fd;
+		session->main_conn.port = ntohs(addr_client.sin_port);
+		session->main_conn.type = CONN_TYPE_CTRL;
+		gen_connect_id(session->main_conn.connect_id, CONNECT_ID_LEN);
+
+		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
+		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
+
+		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
+				handle_client_session, session);
+		if (ret) {
+			add_log(LOG_INFO, "create thread failed!");
+			session->status = DISCONNECTED;
+		}
+	}
+
+}
+
+int start_second_channel(void)
+{
+	int ret;
+
+	ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
+			second_channel_loop, server);
+
+	return ret;
+}
+
+int sftt_server_start(struct sftt_server *ser, char *store_path, bool background, char *state_file)
+{
+	server = ser;
+
 	if (sftt_server_is_running()) {
 		printf("cannot start " PROC_NAME ", because it has been running.\n");
 		exit(-1);
@@ -1870,16 +2029,27 @@ int sftt_server_start(char *store_path, bool background, char *state_file)
 		exit(-1);
 	}
 
+#ifdef CONFIG_UPDATE_CHANNEL
+	if (start_port_update_thread() == -1) {
+		DEBUG((DEBUG_ERROR, "start port updating thread failed!\n"));
+	}
+#endif
+
 	add_log(LOG_INFO, PROC_NAME " is going to start in the background ...");
 
 	install_server_sigactions();
 
-	main_loop();
+	if (start_second_channel() == -1) {
+		DEBUG((DEBUG_ERROR, "start second channel failed!\n"));
+		exit(-1);
+	}
+
+	main_channel_loop();
 
 	return 0;
 }
 
-int sftt_server_restart(char *store_path, bool background, char *state_file)
+int sftt_server_restart(struct sftt_server *ser, char *store_path, bool background, char *state_file)
 {
 #if 0
 	if (!sftt_server_is_running()) {
@@ -1896,7 +2066,7 @@ int sftt_server_restart(char *store_path, bool background, char *state_file)
 	}
 
 	sftt_server_stop();
-	sftt_server_start(store_path, background, state_file);
+	sftt_server_start(ser, store_path, background, state_file);
 
 	add_log(LOG_INFO, PROC_NAME " is going to restart ...");
 

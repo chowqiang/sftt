@@ -14,6 +14,94 @@
 
 extern struct mem_pool *g_mp;
 
+bool channel_info_req_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_channel_info_req(&xdr, (struct channel_info_req *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool channel_info_req_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct channel_info_req *_req = (struct channel_info_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct channel_info_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_channel_info_req(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool channel_info_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_channel_info_resp(&xdr, (struct channel_info_resp *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool channel_info_resp_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct channel_info_resp *_req = (struct channel_info_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct channel_info_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_channel_info_resp(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
 bool validate_req_encode(void *req, unsigned char **buf, int *len)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
@@ -1148,6 +1236,94 @@ bool write_resp_decode(unsigned char *buf, int len, void **req)
 	xdrstdio_create(&xdr, fp, XDR_DECODE);
 
 	bool ret = xdr_write_resp(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool port_update_req_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_port_update_req(&xdr, (struct port_update_req *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool port_update_req_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct port_update_req *_req = (struct port_update_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct port_update_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_port_update_req(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool port_update_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_port_update_resp(&xdr, (struct port_update_resp *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool port_update_resp_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct port_update_resp *_req = (struct port_update_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct port_update_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_port_update_resp(&xdr, _req);
 	fflush(fp);
 	fclose(fp);
 

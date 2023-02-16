@@ -26,6 +26,22 @@ struct version_info {
 	short revision;
 };
 
+struct channel_info_req {
+	int flags;
+};
+
+struct channel_info_resp_data {
+	int main_port;
+	int second_port;
+};
+
+struct channel_info_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
+	struct channel_info_resp_data data;
+};
+
 struct validate_req {
 	int name_len;
 	int passwd_len;
@@ -284,4 +300,14 @@ struct write_resp {
 	int flags;
 	char message[XDR_RESP_MESSAGE_MAX_LEN];
 	struct write_resp_data data;
+};
+
+struct port_update_req {
+	int second_port;
+};
+
+struct port_update_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
 };

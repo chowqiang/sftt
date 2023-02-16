@@ -37,6 +37,8 @@ do {	\
 
 #define SFTT_SERVER_SHM_SIZE	4096
 
+#define PORT_UPDATE_INTERVAL	30
+
 enum sftt_server_status {
 	READY,
 	SERVERING,
@@ -48,8 +50,10 @@ enum sftt_server_status {
 struct sftt_server {
 	int main_sock;
 	int main_port;
+	volatile int second_sock;
+	int second_port;
 	pthread_t log_tid;
-	uint64_t last_update_ts;
+	time_t last_update_ts;
 	enum sftt_server_status status;
 	struct version_info ver;
 	struct sftt_server_config conf;
@@ -84,8 +88,10 @@ void server_transport_data_to_file(FILE * fd, struct sftt_packet * sp);
 
 void is_exit(char * filepath);
 
-int sftt_server_start(char *store_path, bool background, char *state_file);
-int sftt_server_restart(char *store_path, bool background, char *state_file);
+int sftt_server_start(struct sftt_server *ser, char *store_path, bool background,
+		char *state_file);
+int sftt_server_restart(struct sftt_server *ser, char *store_path, bool background,
+		char *state_file);
 int sftt_server_stop(void);
 
 bool parse_store_path(char *optarg, char *store_path, int max_len);

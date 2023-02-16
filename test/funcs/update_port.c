@@ -45,9 +45,34 @@ const char *dirs[] = {
 
 struct file_gen_attr attrs[] = {
 	{"a/e.txt", FILE_TYPE_FILE, 100000, DEFAULT_FILE_MODE},
-	{"c/g.txt", FILE_TYPE_FILE, 200000, DEFAULT_FILE_MODE},
-	{"a/d/h.txt", FILE_TYPE_FILE, 300000, DEFAULT_FILE_MODE},
-	{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, DEFAULT_FILE_MODE}
+};
+
+struct test_cmd cmds_1[] = {
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "show",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "sleep",
+		.args = {"40", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
+	},
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "show",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
 };
 
 struct test_cmd cmds_2[] = {
@@ -57,9 +82,24 @@ struct test_cmd cmds_2[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "get",
-		.args = {"0", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.cmd = "show",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "sleep",
+		.args = {"45", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
+	},
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "show",
+		.args = {NULL},
+		.chroot_flags = 0
 	},
 	{
 		.cmd = "touch",
@@ -129,6 +169,9 @@ int test_fwd_get(int argc, char *argv[])
 			TEST_PROCESS_PRIORITY_CLIENT_2, TEST_STATE_FILE_CLIENT_2,
 			is_started_default, true, client_args,
 			ARRAY_SIZE(client_args));
+
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_1, TEST_CMD_FILE,
+			cmds_1, ARRAY_SIZE(cmds_1));
 
 	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE,
 			cmds_2, ARRAY_SIZE(cmds_2));

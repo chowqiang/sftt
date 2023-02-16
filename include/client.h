@@ -114,6 +114,7 @@ struct sftt_client {
 	char *state_file;
     	struct sftt_client_config config;
 	struct list_head friends;
+	volatile bool is_updating_port;
 };
 
 struct thread_input_params {
@@ -288,6 +289,13 @@ int sftt_client_sleep_handler(void *obj, int argc, char *argv[],
 void sftt_client_sleep_usage(void);
 
 /*
+ * Show the enviroment info.
+ */
+int sftt_client_env_handler(void *obj, int argc, char *argv[],
+		bool *argv_check);
+void sftt_client_env_usage(void);
+
+/*
  * Sftt client commands supported.
  */
 static struct cmd_handler sftt_client_cmds[] = {
@@ -368,6 +376,12 @@ static struct cmd_handler sftt_client_cmds[] = {
 		.fn = sftt_client_sleep_handler,
 		.help = "sleep some seconds",
 		.usage = sftt_client_sleep_usage,
+	},
+	{
+		.name = "env",
+		.fn = sftt_client_env_handler,
+		.help = "show the environment info",
+		.usage = sftt_client_env_usage,
 	},
 	{
 		.name = NULL,

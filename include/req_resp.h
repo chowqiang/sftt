@@ -42,6 +42,25 @@ struct version_info {
 };
 typedef struct version_info version_info;
 
+struct channel_info_req {
+	int flags;
+};
+typedef struct channel_info_req channel_info_req;
+
+struct channel_info_resp_data {
+	int main_port;
+	int second_port;
+};
+typedef struct channel_info_resp_data channel_info_resp_data;
+
+struct channel_info_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
+	struct channel_info_resp_data data;
+};
+typedef struct channel_info_resp channel_info_resp;
+
 struct validate_req {
 	int name_len;
 	int passwd_len;
@@ -343,10 +362,25 @@ struct write_resp {
 };
 typedef struct write_resp write_resp;
 
+struct port_update_req {
+	int second_port;
+};
+typedef struct port_update_req port_update_req;
+
+struct port_update_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
+};
+typedef struct port_update_resp port_update_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_version_info (XDR *, version_info*);
+extern  bool_t xdr_channel_info_req (XDR *, channel_info_req*);
+extern  bool_t xdr_channel_info_resp_data (XDR *, channel_info_resp_data*);
+extern  bool_t xdr_channel_info_resp (XDR *, channel_info_resp*);
 extern  bool_t xdr_validate_req (XDR *, validate_req*);
 extern  bool_t xdr_validate_resp_data (XDR *, validate_resp_data*);
 extern  bool_t xdr_validate_resp (XDR *, validate_resp*);
@@ -388,9 +422,14 @@ extern  bool_t xdr_who_resp (XDR *, who_resp*);
 extern  bool_t xdr_write_req (XDR *, write_req*);
 extern  bool_t xdr_write_resp_data (XDR *, write_resp_data*);
 extern  bool_t xdr_write_resp (XDR *, write_resp*);
+extern  bool_t xdr_port_update_req (XDR *, port_update_req*);
+extern  bool_t xdr_port_update_resp (XDR *, port_update_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_version_info ();
+extern bool_t xdr_channel_info_req ();
+extern bool_t xdr_channel_info_resp_data ();
+extern bool_t xdr_channel_info_resp ();
 extern bool_t xdr_validate_req ();
 extern bool_t xdr_validate_resp_data ();
 extern bool_t xdr_validate_resp ();
@@ -432,6 +471,8 @@ extern bool_t xdr_who_resp ();
 extern bool_t xdr_write_req ();
 extern bool_t xdr_write_resp_data ();
 extern bool_t xdr_write_resp ();
+extern bool_t xdr_port_update_req ();
+extern bool_t xdr_port_update_resp ();
 
 #endif /* K&R C */
 

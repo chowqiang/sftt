@@ -9,6 +9,18 @@
 
 extern const char *resp_messages[];
 
+int send_channel_info_resp(int fd, struct sftt_packet *resp_packet,
+	struct channel_info_resp *resp, int code, int flags)
+{
+	resp->status = code;
+	strncpy(resp->message, resp_messages[code], RESP_MESSAGE_MAX_LEN - 1);
+	resp->flags = flags;
+
+	resp_packet->obj = resp;
+	resp_packet->type = PACKET_TYPE_CHANNEL_INFO_RESP;
+	return send_sftt_packet(fd, resp_packet);
+}
+
 int send_validate_resp(int fd, struct sftt_packet *resp_packet,
 	struct validate_resp *resp, int code, int flags)
 {
@@ -162,5 +174,17 @@ int send_write_resp(int fd, struct sftt_packet *resp_packet,
 
 	resp_packet->obj = resp;
 	resp_packet->type = PACKET_TYPE_WRITE_RESP;
+	return send_sftt_packet(fd, resp_packet);
+}
+
+int send_port_update_resp(int fd, struct sftt_packet *resp_packet,
+	struct port_update_resp *resp, int code, int flags)
+{
+	resp->status = code;
+	strncpy(resp->message, resp_messages[code], RESP_MESSAGE_MAX_LEN - 1);
+	resp->flags = flags;
+
+	resp_packet->obj = resp;
+	resp_packet->type = PACKET_TYPE_PORT_UPDATE_RESP;
 	return send_sftt_packet(fd, resp_packet);
 }

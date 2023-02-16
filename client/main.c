@@ -30,6 +30,8 @@ extern int optopt;
 extern int opterr;
 extern int optreset;
 
+struct sftt_client client_instance;
+
 int main(int argc, char **argv)
 {
 	char user_name[USER_NAME_MAX_LEN];
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
 	enum run_mode mode = RUN_MODE_LOGIN;
 
 	struct trans_info trans;
-	struct sftt_client client;
+	struct sftt_client *client = &client_instance;
 
 	memset(user_name, 0, sizeof(user_name));
 	memset(password, 0, sizeof(password));
@@ -154,7 +156,7 @@ int main(int argc, char **argv)
 	show_options(host, user_name, password);
 #endif
 
-	if (init_sftt_client(&client, host, port, user_name, password,
+	if (init_sftt_client(client, host, port, user_name, password,
 				state_file) == -1) {
 		printf("init sftt client failed!\n");
 		exit(-1);
@@ -163,13 +165,13 @@ int main(int argc, char **argv)
 	add_log(LOG_INFO, "client validate successfully!");
 
 	if (mode == RUN_MODE_LOGIN) {
-		reader_loop(&client);
+		reader_loop(client);
 	} else if (mode == RUN_MODE_BUILTIN) {
-		return do_builtin(&client, builtin);
+		return do_builtin(client, builtin);
 	} else if (mode == RUN_MODE_TRANS) {
-		return do_trans(&client, &trans);
+		return do_trans(client, &trans);
 	} else if (mode == RUN_MODE_CMD_FILE) {
-		return do_cmd_file(&client, cmd_file);
+		return do_cmd_file(client, cmd_file);
 	} else {
 		printf("unknown run mode!\n");
 	}

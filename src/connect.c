@@ -94,7 +94,7 @@ pthread_t start_server(int port, void *(*func)(void *arg))
 	return thread_id;
 }
 
-int make_socket_non_blocking (int sfd)
+int make_socket_non_blocking(int sfd)
 {
 	int flags, s;
 

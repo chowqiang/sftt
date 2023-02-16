@@ -87,6 +87,8 @@ const char *directcmds[] = {
 	NULL
 };
 
+struct sftt_client *client_obj = NULL;
+
 int consult_block_size_with_server(int sock,
 	struct sftt_client_config *client_config);
 
@@ -563,6 +565,20 @@ int execute_cmd(struct sftt_client *client, char *buf, int flag)
 	int i = 0, ret = 0;
 	bool found = false;
 	struct user_cmd *cmd = NULL;
+	bool timeout = false;
+	time_t ts;
+
+	if (client->is_updating_port) {
+		ts = get_ts();
+		while (!timeout) {
+			sleep(1);
+			timeout = (get_ts() - ts) > 10;
+			if (!client->is_updating_port)
+				break;
+		}
+		if (client->is_updating_port)
+			return -1;
+	}
 
 	add_log(LOG_INFO, "input command: %s", buf);
 
@@ -647,6 +663,17 @@ void client_usage_help(int exitcode)
 
 static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 {
+	struct sftt_packet *resp_packet;
+	struct channel_info_resp *resp;
+	int sock = -1;
+	int ret = -1;
+
+	resp_packet = malloc_sftt_packet();
+	if (!resp_packet) {
+		printf("allocate request packet failed!\n");
+		return -1;
+	}
+
 	if (port == -1) {
 #ifdef CONFIG_USE_RANDOM_PORT
 		port = get_random_port();
@@ -657,15 +684,33 @@ static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 
 	DEBUG((DEBUG_DEBUG, "port of connecting: %d\n", port));
 
-	client->main_conn.sock = make_connect(client->host, port);
-	if (client->main_conn.sock == -1) {
-		return -1;
+	sock = make_connect(client->host, port);
+	if (sock == -1) {
+		goto done;
 	}
 
-	client->main_conn.type = CONN_TYPE_CTRL;
-	client->main_conn.port = port;
+	ret = recv_sftt_packet(sock, resp_packet);
+	if (ret == -1) {
+		goto done;
+	}
 
-	return 0;
+	resp = resp_packet->obj;
+	port = resp->data.second_port;
+
+	client->main_conn.sock = make_connect(client->host, port);
+	if (client->main_conn.sock == -1) {
+		goto done;
+	}
+
+	client->main_conn.port = port;
+	client->main_conn.type = CONN_TYPE_CTRL;
+
+	ret = 0;
+done:
+	if (sock != -1)
+		close(sock);
+
+	return ret;
 }
 
 static int validate_user_base_info(struct sftt_client *client, char *passwd)
@@ -1106,6 +1151,32 @@ int init_friend_list(struct sftt_client *client)
 	return 0;
 }
 
+int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
+		struct sftt_packet *resp_packet)
+{
+	struct sftt_client *client = client_obj;
+	struct port_update_req *req;
+	int port;
+
+	client->is_updating_port = true;
+
+	req = req_packet->obj;
+	port = req->second_port;
+
+	client->main_conn.sock = make_connect(client->host, port);
+	if (client->main_conn.sock == -1) {
+		return -1;
+	}
+
+	client->main_conn.port = port;
+
+	clear_friend_list(client);
+
+	client->is_updating_port = false;
+
+	return 0;
+}
+
 int do_task_handler(void *arg)
 {
 	struct client_sock_conn *conn = arg;
@@ -1155,6 +1226,11 @@ int do_task_handler(void *arg)
 		case PACKET_TYPE_PUT_REQ:
 			handle_peer_put_req(conn, req, resp);
 			break;
+		case PACKET_TYPE_PORT_UPDATE_REQ:
+			ret = handle_port_update_req(conn, req, resp);
+			if (ret == 0)
+				goto exit;
+			break;
 		default:
 			break;
 		}
@@ -1165,7 +1241,7 @@ exit:
 	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
-	return -1;
+	return ret;
 }
 
 int start_task_handler(struct sftt_client *client, struct client_sock_conn *conn)
@@ -1197,11 +1273,7 @@ int add_task_connect(struct sftt_client *client)
 		return -1;
 	}
 
-#ifdef CONFIG_USE_RANDOM_PORT
-	port = get_random_port();
-#else
-	port = get_default_port();
-#endif
+	port = client->main_conn.port;
 	conn->sock = make_connect(client->host, port);
 	if (conn->sock == -1) {
 		printf("make client sock connect failed!\n");
@@ -1278,6 +1350,11 @@ int do_connect_manager(void *arg)
 	int ret;
 
 	while (!force_quit) {
+		if (client->is_updating_port) {
+			sleep(1);
+			continue;
+		}
+
 		conns = 0;
 		idle_conns = 0;
 
@@ -1373,6 +1450,7 @@ int init_sftt_client_sigaction(void)
 int init_sftt_client(struct sftt_client *client, char *host, int port,
 	char *user, char *passwd, char *state_file)
 {
+	client_obj = client;
 	/*
 	 * set client context globally
 	 */
@@ -2121,11 +2199,36 @@ void sftt_client_sleep_usage(void)
 	printf("Usage: sleep seconds\n");
 }
 
+int sftt_client_env_handler(void *obj, int argc, char *argv[],
+		bool *argv_check)
+{
+	struct sftt_client *client = obj;
+
+	printf("client env info:\n"
+		"channel: {port: %d, sock: %d}\n",
+			client->main_conn.port,
+			client->main_conn.sock);
+
+	return 0;
+}
+
+void sftt_client_env_usage(void)
+{
+	printf("Usage: env\n");
+}
+
 struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no)
 {
 	int i = 0;
 	struct friend_user *p;
+
+	if (list_empty(&client->friends)) {
+		if (get_friend_list(client) == -1) {
+			printf("get user list failed!\n");
+			return NULL;
+		}
+	}
 
 	list_for_each_entry(p, &client->friends, list)
 		if (i++ == user_no)
@@ -2369,22 +2472,26 @@ int do_trans(struct sftt_client *client, struct trans_info *trans)
 	char *args[2];
 	bool argv_check = true;
 	int ret;
+	char cmd[1024];
 
 	if (trans->type == TRANS_GET) {
 		args[0] = trans->src;
 		args[1] = trans->dest;
 
-		return sftt_client_get_handler(client, 2, args, &argv_check);
+		snprintf(cmd, sizeof(cmd), "get %s %s", args[0], args[1]);
+
+		return execute_cmd(client, cmd, -1);
 	} else {
 		args[0] = trans->dest;
-
-		ret = sftt_client_cd_handler(client, 1, args, &argv_check);
+		snprintf(cmd, sizeof(cmd), "cd %s", args[0]);
+		ret = execute_cmd(client, cmd, -1);
 		if (ret)
 			return ret;
 
 		args[0] = trans->src;
+		snprintf(cmd, sizeof(cmd), "put %s", args[0]);
 
-		return sftt_client_put_handler(client, 1, args, &argv_check);
+		return execute_cmd(client, cmd, -1);
 	}
 }
 
@@ -2435,6 +2542,7 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 	char *hint;
 
 	clear_friend_list(client);
+
 	if (get_friend_list(client) == -1) {
 		printf("get user list failed!\n");
 		return -1;
