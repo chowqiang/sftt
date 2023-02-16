@@ -116,6 +116,7 @@ struct sftt_client {
     	struct sftt_client_config config;
 	struct list_head friends;
 	volatile bool is_updating_port;
+	volatile bool need_validate;
 };
 
 struct thread_input_params {

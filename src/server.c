@@ -435,6 +435,8 @@ bool can_update_port(struct sftt_server *server)
 static int validate_user_info(struct client_session *client,
 	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
 {
+	DBUG_ENTER(__func__);
+
 	struct validate_req *req;
 	struct validate_resp *resp;
 	struct validate_resp_data *resp_data;
@@ -442,7 +444,7 @@ static int validate_user_info(struct client_session *client,
 	struct user_auth_info *user_auth;
 	int ret;
 
-	DEBUG((DEBUG_INFO, "handle validate req in ...\n"));
+	DEBUG((DEBUG_WARN, "handle validate req in ...\n"));
 
 	req = (struct validate_req *)req_packet->obj;
 	DEBUG((DEBUG_INFO, "req: name=%s|name_len=%d|"
@@ -457,8 +459,8 @@ static int validate_user_info(struct client_session *client,
 
 	if (check_version(&req->ver, &server->ver, resp->message,
 		RESP_MESSAGE_MAX_LEN - 1) == -1) {
-		return send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_BAD_VER, 0);
+		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_BAD_VER, 0));
 	}
 
 	user_base = find_user_base_by_name(req->name);
@@ -466,18 +468,18 @@ static int validate_user_info(struct client_session *client,
 	if (user_base == NULL) {
 		DEBUG((DEBUG_INFO, "cannot find user!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		return send_validate_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_UVS_NTFD, 0);
+		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
+			       resp, RESP_UVS_NTFD, 0));
 	} else if (strcmp(user_auth->passwd_md5, req->passwd_md5)) {
 		DEBUG((DEBUG_INFO, "passwd not correct!\n"));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		return send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_INVALID, 0);
+		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_INVALID, 0));
 	} else if (!file_existed(user_base->home_dir)) {
 		DEBUG((DEBUG_INFO, "cannot find user's home dir: %s\n", user_base->home_dir));
 		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		return send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_MISSHOME, 0);
+		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_MISSHOME, 0));
 	} else {
 		client->status = ACTIVE;
 		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
@@ -504,12 +506,12 @@ static int validate_user_info(struct client_session *client,
 	ret = send_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
 		printf("send validate response failed!\n");
-		return -1;
+		DBUG_RETURN(-1);
 	}
 
 	DEBUG((DEBUG_INFO, "handle validate req out\n"));
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 void child_process_exception_handler(int sig)
@@ -1213,7 +1215,7 @@ int handle_who_req(struct client_session *client,
 	int total, num, count;
 	int ret, i = 0;
 
-	DEBUG((DEBUG_INFO, "handle who req in ...\n"));
+	DEBUG((DEBUG_WARN, "handle who req in ...\n"));
 	resp = (struct who_resp *)mp_malloc(g_mp, __func__,
 			sizeof(struct who_resp));
 
@@ -1362,7 +1364,7 @@ int handle_append_conn_req(struct client_session *client,
 	struct client_sock_conn *conn;
 	int ret;
 
-	DEBUG((DEBUG_INFO, "handle append_conn req in ...\n"));
+	DEBUG((DEBUG_WARN, "handle append_conn req in ...\n"));
 
 	req = req_packet->obj;
 	assert(req != NULL);
@@ -1888,6 +1890,8 @@ int notify_client_after_updating(void)
 		// close(conn->sock);
 		put_peer_task_conn(conn);
 
+		// Let client to close ?
+		//close(session->main_conn.sock);
 		put_session(session);
 	}
 
@@ -2004,8 +2008,9 @@ int second_channel_loop(void *arg)
 		session->main_conn.type = CONN_TYPE_CTRL;
 		gen_connect_id(session->main_conn.connect_id, CONNECT_ID_LEN);
 
-		DEBUG((DEBUG_INFO, "a client is connecting ...\n"));
-		DEBUG((DEBUG_INFO, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
+		DEBUG((DEBUG_WARN, "a client is connecting ...|second_sock=%d|second_port=%d\n",
+					server->second_sock, server->second_port));
+		DEBUG((DEBUG_WARN, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
 
 		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
 				handle_client_session, session);

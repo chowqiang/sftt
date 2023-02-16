@@ -37,7 +37,7 @@ do {	\
 
 #define SFTT_SERVER_SHM_SIZE	4096
 
-#define PORT_UPDATE_INTERVAL	30
+#define PORT_UPDATE_INTERVAL	12
 
 enum sftt_server_status {
 	READY,

@@ -801,10 +801,13 @@ static int validate_user_base_info(struct sftt_client *client)
 	}
 
 	client->uinfo.uid = resp_info->data.uid;
-	add_log(LOG_INFO, "uid: %d", client->uinfo.uid);
+	add_log(LOG_INFO, "uid: %ld", client->uinfo.uid);
+	DEBUG((DEBUG_WARN, "validate user|uid=%ld\n", client->uinfo.uid));
 
 	strncpy(client->session_id, resp_info->data.session_id, SESSION_ID_LEN - 1);
 	strncpy(client->pwd, resp_info->data.pwd, DIR_PATH_MAX_LEN - 1);
+	DEBUG((DEBUG_WARN, "validate user|seesion_id=%s|pwd=%s\n",
+				client->session_id, client->pwd));
 
 done:
 
@@ -819,6 +822,9 @@ done:
 
 	if (resp_packet)
 		free_sftt_packet(&resp_packet);
+
+	if (ret == 0)
+		client->need_validate = false;
 
 	return ret;
 }
@@ -1061,6 +1067,14 @@ int get_friend_list(struct sftt_client *client)
 	struct who_resp_data *data;
 	int ret, i = 0, total = 0;
 
+#if 0
+	if (client->need_validate) {
+		ret = validate_user_base_info(client);
+		if (ret == -1)
+			DEBUG((DEBUG_ERROR, "validate failed!\n"));
+	}
+#endif
+
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
@@ -1166,6 +1180,8 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 
 	DEBUG((DEBUG_WARN, "client update port|new_port=%d\n", port));
 
+	close(client->main_conn.sock);
+
 	client->main_conn.sock = make_connect(client->host, port);
 	if (client->main_conn.sock == -1) {
 		return -1;
@@ -1175,9 +1191,9 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 
 	clear_friend_list(client);
 
-	validate_user_base_info(client);
-
 	client->is_updating_port = false;
+
+	client->need_validate = true;
 
 	return 0;
 }
@@ -1475,6 +1491,7 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 	client->password = __strdup(passwd);
 
 	client->state_file = state_file;
+	client->need_validate = true;
 
 	if (get_sftt_client_config(&client->config) == -1) {
 		printf("get sftt client config failed!\n");

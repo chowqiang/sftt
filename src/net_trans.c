@@ -84,7 +84,10 @@ void sftt_packet_send_header(int sock, struct sftt_packet *sp)
 
 	ret = send(sock, buffer, encoded_len, 0);
 	if (ret != encoded_len) {
-		DEBUG((DEBUG_ERROR, "send header failed|err=%s\n", strerror(errno)));
+		DEBUG((DEBUG_ERROR, "send header failed|err=%s"
+					"|ret=%d|encoded_len=%d\n", strerror(errno),
+					ret, encoded_len));
+		DBUG_DUMP();
 	}
 	assert(ret == encoded_len);
 
@@ -166,7 +169,7 @@ int sftt_packet_deserialize(struct sftt_packet *sp)
 					"sp->type=%d|ret=%d|sp->data_len=%d|"
 					"sp->obj=%p\n", sp->type, ret,
 					sp->data_len, sp->obj));
-			if (!ret) {
+			if (!ret || sp->obj == NULL) {
 				DEBUG((DEBUG_WARN, "deserialization failed|"
 						"sp->type=%d|ret=%d|"
 						"sp->data_len=%d|sp->obj=%p\n",
@@ -304,6 +307,10 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 	int ret, err;
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
+	if (sp->data_len > (1 << 20)) {
+		DEBUG((DEBUG_ERROR, "data len is too large|data_len=%d\n",
+					sp->data_len));
+	}
 	sp->content = mp_malloc(g_mp, __func__, sp->data_len * sizeof(unsigned char));
 
 	ret = recv(sock, sp->content, sp->data_len, 0 | MSG_WAITALL);
@@ -315,6 +322,7 @@ int sftt_packet_recv_content(int sock, struct sftt_packet *sp)
 				" not equal to data len|ret=%d|"
 				"data_len=%d|err=%s\n", ret, sp->data_len,
 				strerror(err)));
+		DBUG_DUMP();
 		if (ret == 0) {
 			DBUG_RETURN(ret);
 		}

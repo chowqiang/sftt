@@ -61,7 +61,7 @@ struct test_cmd cmds_1[] = {
 	},
 	{
 		.cmd = "sleep",
-		.args = {"40", NULL},
+		.args = {"15", NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{
@@ -89,7 +89,7 @@ struct test_cmd cmds_2[] = {
 	},
 	{
 		.cmd = "sleep",
-		.args = {"45", NULL},
+		.args = {"17", NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{

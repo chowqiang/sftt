@@ -64,7 +64,9 @@ static void __attribute__((destructor)) mem_pool_del(void)
 	if (g_mp == NULL)
 		return;
 
+#ifdef CONFIG_MP_STAT_DEBUG
 	mp_dump_detail(g_mp);
+#endif
 	mem_pool_destruct(g_mp);
 	g_mp = NULL;
 }

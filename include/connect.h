@@ -38,8 +38,8 @@ enum connect_type {
 
 struct client_sock_conn {
 	bool is_using;
-	int sock;
-	int port;
+	volatile int sock;
+	volatile int port;
 	enum connect_type type;
 	char connect_id[CONNECT_ID_LEN];
 	struct list_head list;
