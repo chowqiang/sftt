@@ -30,7 +30,7 @@ int get_default_port(void)
 	return SFTT_DEFAULT_PORT;
 }
 
-int get_random_port(void)
+int get_pseudo_random_port(void)
 {
 	time_t t;
 	int port;
@@ -44,6 +44,11 @@ int get_random_port(void)
 	port = t % (65535 - 1025) + 1025;
 
 	return port;
+}
+
+int get_real_random_port(void)
+{
+	return gen_random_num(1025, 65535);
 }
 
 int make_client(char *host, int port)

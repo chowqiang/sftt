@@ -22,7 +22,8 @@
 
 int get_default_port();
 
-int get_random_port();
+int get_pseudo_random_port(void);
+int get_real_random_port(void);
 
 int make_client(char *host, int port);
 

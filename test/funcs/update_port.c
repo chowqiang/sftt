@@ -30,7 +30,8 @@
 #define TEST_STATE_FILE_CLIENT_1	"client1.st"
 #define TEST_STATE_FILE_CLIENT_2	"client2.st"
 
-#define TEST_CMD_FILE			"cmd_file"
+#define TEST_CMD_FILE_1			"cmd_file_1"
+#define TEST_CMD_FILE_2			"cmd_file_2"
 #define TEST_FINISH_FILE		"done"
 
 #define SERVER_PROCESS			"server"
@@ -54,13 +55,13 @@ struct test_cmd cmds_1[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "show",
+		.cmd = "env",
 		.args = {NULL},
 		.chroot_flags = 0
 	},
 	{
 		.cmd = "sleep",
-		.args = {"40", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.args = {"40", NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{
@@ -69,7 +70,7 @@ struct test_cmd cmds_1[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "show",
+		.cmd = "env",
 		.args = {NULL},
 		.chroot_flags = 0
 	},
@@ -82,13 +83,13 @@ struct test_cmd cmds_2[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "show",
+		.cmd = "env",
 		.args = {NULL},
 		.chroot_flags = 0
 	},
 	{
 		.cmd = "sleep",
-		.args = {"45", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
+		.args = {"45", NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
 	},
 	{
@@ -97,7 +98,7 @@ struct test_cmd cmds_2[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "show",
+		.cmd = "env",
 		.args = {NULL},
 		.chroot_flags = 0
 	},
@@ -123,7 +124,6 @@ static const char *client_args[] = {
 };
 
 static const char *server_args[] = {
-	"-d",
 	"start",
 };
 
@@ -170,10 +170,10 @@ int test_fwd_get(int argc, char *argv[])
 			is_started_default, true, client_args,
 			ARRAY_SIZE(client_args));
 
-	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_1, TEST_CMD_FILE,
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_1, TEST_CMD_FILE_1,
 			cmds_1, ARRAY_SIZE(cmds_1));
 
-	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE,
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE_2,
 			cmds_2, ARRAY_SIZE(cmds_2));
 
 	test_context_add_finish_file(ctx, TEST_FINISH_FILE);

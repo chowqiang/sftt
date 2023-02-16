@@ -676,7 +676,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 
 	if (port == -1) {
 #ifdef CONFIG_USE_RANDOM_PORT
-		port = get_random_port();
+		port = get_pseudo_random_port();
 #else
 		port = get_default_port();
 #endif
@@ -1163,6 +1163,8 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 	req = req_packet->obj;
 	port = req->second_port;
 
+	DEBUG((DEBUG_WARN, "client update port|new_port=%d\n", port));
+
 	client->main_conn.sock = make_connect(client->host, port);
 	if (client->main_conn.sock == -1) {
 		return -1;
@@ -1238,6 +1240,7 @@ int do_task_handler(void *arg)
 
 exit:
 	conn->is_using = false;
+	close(sock);
 	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 

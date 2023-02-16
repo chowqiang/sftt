@@ -412,13 +412,21 @@ static inline bool need_update_port(struct sftt_server *server)
 bool can_update_port(struct sftt_server *server)
 {
 	int i = 0;
+	struct client_session *session;
+	int conns_num = 0;
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
-		if (!client_connected(&server->sessions[i]))
+		session = &server->sessions[i];
+		if (!client_connected(session))
 			continue;
 
-		if (client_task_conns_num(&server->sessions[i]) != 1)
+		conns_num = client_task_conns_num(session);
+		if (conns_num != 1) {
+			DEBUG((DEBUG_WARN, "there are multi client task conn"
+				"|num=%d|session_id=%s\n", conns_num,
+				session->session_id));
 			return false;
+		}
 	}
 
 	return true;
@@ -1699,6 +1707,7 @@ int create_non_block_sock(int port)
 
 	if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1){
 		perror("bind socket error");
+		DEBUG((DEBUG_ERROR, "bind socket error|port=%d\n", port));
 		return -1;
 	}
 
@@ -1766,24 +1775,24 @@ int init_sftt_server(char *store_path, char *state_file)
 	}
 
 #if CONFIG_USE_RANDOM_PORT
-	port = get_random_port();
+	port = get_pseudo_random_port();
 #else
 	port = get_default_port();
 #endif
 	if ((sockfd = create_non_block_sock(port)) == -1) {
-		printf("cannot create non-block socket!\n");
+		DEBUG((DEBUG_ERROR, "cannot create main socket!\n"));
 		return -1;
 	}
 	server->main_sock = sockfd;
 	server->main_port = port;
 
-	port = get_random_port();
+	port = get_real_random_port();
 	if (port == server->main_port) {
 		DEBUG((DEBUG_ERROR, "get second port failed!\n"));
 		return -1;
 	}
 	if ((sockfd = create_non_block_sock(port)) == -1) {
-		printf("cannot create non-block socket!\n");
+		DEBUG((DEBUG_ERROR, "cannot create second socket!\n"));
 		return -1;
 	}
 	server->second_sock = sockfd;
@@ -1831,6 +1840,7 @@ int notify_client_after_updating(void)
 	struct client_sock_conn *conn;
 	struct port_update_req *req;
 	int tmp, ret = 0;
+	struct client_session *session;
 
 	req_packet = malloc_sftt_packet();
 	if (req_packet == NULL) {
@@ -1847,27 +1857,31 @@ int notify_client_after_updating(void)
 
 	req->second_port = server->second_port;
 	req_packet->obj = req;
+	req_packet->type = PACKET_TYPE_PORT_UPDATE_REQ;
 
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
-		if (!client_connected(&server->sessions[i]))
+		session = &server->sessions[i];
+		if (!client_connected(session))
 			continue;
 
-		if (client_task_conns_num(&server->sessions[i]) != 1)
+		if (client_task_conns_num(session) != 1)
 			continue;
 
-		conn = get_peer_task_conn_by_session(&server->sessions[i]);
+		conn = get_peer_task_conn_by_session(session);
 		if (conn == NULL) {
 			DEBUG((DEBUG_ERROR, "get or create peer session failed!\n"));
 			continue;
 		}
 
+		DEBUG((DEBUG_WARN, "send new port to client|port=%d|session_id=%s\n",
+					req->second_port, session->session_id));
 		tmp = send_sftt_packet(conn->sock, req_packet);
 		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "send port update req faile!\n"));
+			DEBUG((DEBUG_ERROR, "send port update req failed!\n"));
 			ret = tmp;
 		}
-
-		close(conn->sock);
+		// Let client to close ?
+		// close(conn->sock);
 		put_peer_task_conn(conn);
 	}
 
@@ -1895,9 +1909,12 @@ int port_update_loop(void *arg)
 			continue;
 		}
 
-		port = get_random_port();
+		port = get_real_random_port();
 		if (server->main_port == port ||
 			server->second_port == port) {
+			DEBUG((DEBUG_WARN, "new port equal to old port|main_port=%d|second_port=%d"
+					"|new_port=%d\n", server->main_port, server->second_port,
+					port));
 			sleep(1);
 			continue;
 		}

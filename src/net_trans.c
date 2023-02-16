@@ -267,7 +267,7 @@ int sftt_packet_recv_header(int sock, struct sftt_packet *sp)
 	rte_errno = errno;
 	DEBUG((DEBUG_DEBUG, "recv header|ret=%d|header_len=%d\n",
 		ret, header_len));
-	if (ret == 0)  {
+	if (!(ret > 0))  {
 		DBUG_RETURN(ret);
 	}
 
@@ -338,8 +338,8 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	ret = sftt_packet_recv_header(sock, _sp);
 	if (!(ret > 0)) {
-		DEBUG((DEBUG_ERROR, "recv header failed!\n"));
-		DBUG_RETURN(-1);
+		//DEBUG((DEBUG_ERROR, "recv header failed!\n"));
+		DBUG_RETURN(ret);
 	}
 
 	recv_len += ret;

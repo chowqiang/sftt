@@ -49,7 +49,7 @@ int run_client(int port, char *user_name)
 	struct validate_resp_data *data;
 
 	if (port == -1)
-		port = get_random_port();
+		port = get_pseudo_random_port();
 
 	sock = make_client(host, port);
 	assert(sock != -1);
@@ -117,7 +117,7 @@ int run_server(void)
 	struct user_base_info *user;
 	char session_id[32];
 
-	port = get_random_port();
+	port = get_pseudo_random_port();
 	socket_fd = make_server(port);
 	assert(ret != -1);
 	printf("server is running on 127.0.0.1:%d ...\n", port);

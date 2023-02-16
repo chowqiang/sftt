@@ -7,7 +7,7 @@
 
 #define CONFIG_DEBUG 1
 /* CONFIG_USE_RANDOM_PORT is not set */
-/* CONFIG_UPDATE_CHANNEL is not set */
+#define CONFIG_UPDATE_CHANNEL 1
 #define CONFIG_GET_OVERLAP 1
 /* CONFIG_MP_STAT_DEBUG is not set */
 #define CONFIG_MP_FREE_DEBUG 1
