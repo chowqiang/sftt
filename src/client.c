@@ -713,12 +713,13 @@ done:
 	return ret;
 }
 
-static int validate_user_base_info(struct sftt_client *client, char *passwd)
+static int validate_user_base_info(struct sftt_client *client)
 {
 	struct sftt_packet *req_packet = NULL;
 	struct sftt_packet *resp_packet = NULL;
 	struct validate_req *req_info = NULL;
 	struct validate_resp *resp_info = NULL;
+	char *passwd = client->password;
 	int ret = 0;
 
 	req_packet = malloc_sftt_packet();
@@ -1174,6 +1175,8 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 
 	clear_friend_list(client);
 
+	validate_user_base_info(client);
+
 	client->is_updating_port = false;
 
 	return 0;
@@ -1469,6 +1472,7 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 
 	client->mp = get_singleton_mp();
 	strncpy(client->uinfo.name, user, USER_NAME_MAX_LEN - 1);
+	client->password = __strdup(passwd);
 
 	client->state_file = state_file;
 
@@ -1504,7 +1508,7 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 		return -1;
 	}
 
-	if (validate_user_base_info(client, passwd) == -1) {
+	if (validate_user_base_info(client) == -1) {
 		printf("cannot validate user and password!\n");
 		return -1;
 	}

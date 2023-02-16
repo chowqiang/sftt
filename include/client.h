@@ -108,6 +108,7 @@ struct sftt_client {
 	struct mem_pool *mp;
 	struct version_info ver;
 	struct user_base_info uinfo;
+	char *password;
 	char session_id[SESSION_ID_LEN];
 	char host[HOST_MAX_LEN];
 	char pwd[DIR_PATH_MAX_LEN];

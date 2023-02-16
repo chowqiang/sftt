@@ -1859,6 +1859,9 @@ int notify_client_after_updating(void)
 	req_packet->obj = req;
 	req_packet->type = PACKET_TYPE_PORT_UPDATE_REQ;
 
+	// Let second channel loop to start accept()
+	sleep(2);
+
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
 		if (!client_connected(session))
@@ -1880,9 +1883,12 @@ int notify_client_after_updating(void)
 			DEBUG((DEBUG_ERROR, "send port update req failed!\n"));
 			ret = tmp;
 		}
+
 		// Let client to close ?
 		// close(conn->sock);
 		put_peer_task_conn(conn);
+
+		put_session(session);
 	}
 
 	free_sftt_packet(&req_packet);
@@ -1927,13 +1933,14 @@ int port_update_loop(void *arg)
 		}
 
 		server->is_updating_port = true;
-		close(server->second_sock);
 
+		close(server->second_sock);
 		server->second_port = port;
 		server->second_sock = sock;
 
-		notify_client_after_updating();
 		server->is_updating_port = false;
+
+		notify_client_after_updating();
 
 		sprintf(buf, "update second port and second sock done!\n"
 			"sock(%d -> %d), port(%d -> %d)", server->second_sock,
