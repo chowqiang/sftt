@@ -2139,13 +2139,23 @@ void notify_all_child_to_exit(void)
 	}
 }
 
+void close_channels(void)
+{
+	close(server->main_sock);
+	close(server->second_sock);
+}
+
 void sftt_server_exit(int sig)
 {
 	printf(PROC_NAME " is exit ...!\n");
 
 	notify_all_child_to_exit();
-	logger_exit();
+
+	close_channels();
+
 	free_sftt_server_stat();
+
+	logger_exit();
 
 	exit(-1);
 }
