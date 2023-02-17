@@ -1830,7 +1830,9 @@ int install_server_sigactions(void)
 
 	server_exit.sa_handler = sftt_server_exit;
 
-	return sigaction(SIGINT, &server_exit, NULL);
+	sigaction(SIGINT, &server_exit, NULL);
+
+	return sigaction(SIGTERM, &server_exit, NULL);
 }
 
 int notify_client_after_updating(void)
@@ -2141,13 +2143,15 @@ void notify_all_child_to_exit(void)
 
 void close_channels(void)
 {
+	DEBUG((DEBUG_WARN, "close channels|main_sock=%d|second_sock=%d\n",
+				server->main_sock, server->second_sock));
 	close(server->main_sock);
 	close(server->second_sock);
 }
 
 void sftt_server_exit(int sig)
 {
-	printf(PROC_NAME " is exit ...!\n");
+	DEBUG((DEBUG_WARN, "is exit ...!\n"));
 
 	notify_all_child_to_exit();
 
