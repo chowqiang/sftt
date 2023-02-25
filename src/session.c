@@ -30,15 +30,3 @@ void client_session_deconstruct(struct client_session *ptr)
 {
 	mp_free(g_mp, ptr);
 }
-
-struct server_session *server_session_construct(void)
-{
-	struct server_session *session = mp_malloc(g_mp, __func__, sizeof(struct server_session));
-
-	return session;
-}
-
-void server_session_deconstruct(struct server_session *ptr)
-{
-	mp_free(g_mp, ptr);
-}

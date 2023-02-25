@@ -52,4 +52,7 @@ int send_write_resp(int fd, struct sftt_packet *resp_packet,
 int send_port_update_resp(int fd, struct sftt_packet *resp_packet,
 	struct port_update_resp *resp, int code, int flags);
 
+int send_reconnect_resp(int fd, struct sftt_packet *resp_packet,
+	struct reconnect_resp *resp, int code, int flags);
+
 #endif

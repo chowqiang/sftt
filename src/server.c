@@ -44,6 +44,7 @@
 #include "encrypt.h"
 #include "file.h"
 #include "file_trans.h"
+#include "list.h"
 #include "lock.h"
 #include "log.h"
 #include "mem_pool.h"
@@ -53,6 +54,7 @@
 #include "thread_pool.h"
 #include "response.h"
 #include "rte_errno.h"
+#include "rwlock.h"
 #include "server.h"
 #include "session.h"
 #include "trans.h"
@@ -421,8 +423,8 @@ bool can_update_port(struct sftt_server *server)
 			continue;
 
 		conns_num = client_task_conns_num(session);
-		if (conns_num != 1) {
-			DEBUG((DEBUG_WARN, "there are multi client task conn"
+		if (conns_num < 1) {
+			DEBUG((DEBUG_WARN, "there is no client task conn"
 				"|num=%d|session_id=%s\n", conns_num,
 				session->session_id));
 			return false;
@@ -1402,10 +1404,10 @@ int handle_append_conn_req(struct client_session *client,
 		*conn = client->main_conn;
 		DEBUG((DEBUG_INFO, "conn->connect_id=%s\n", conn->connect_id));
 		conn->type = CONN_TYPE_TASK;
-		conn->is_using = false;
+		atomic16_set(&conn->is_using, 0);
 
-		DEBUG((DEBUG_INFO, "conn->type=%d, conn->is_using=%d\n",
-				conn->type, conn->is_using));
+		DEBUG((DEBUG_INFO, "append task conn|conn->type=%d|conn->is_using=%d\n",
+				conn->type, atomic16_read(&conn->is_using)));
 		list_add(&conn->list, &real_session->task_conns);
 
 		DEBUG((DEBUG_INFO, "before copy connect_id\n"));
@@ -1423,6 +1425,48 @@ int handle_append_conn_req(struct client_session *client,
 	DEBUG((DEBUG_INFO, "handle append_conn req out ...\n"));
 
 	DBUG_RETURN(ret);
+}
+
+struct client_sock_conn *find_connect_by_id(struct client_session *session,
+	char *connect_id)
+{
+	struct client_sock_conn *conn = NULL;
+
+	if (strcmp(session->main_conn.connect_id, connect_id) == 0)
+		return &session->main_conn;
+
+	list_for_each_entry(conn, &session->task_conns, list) {
+		if (strcmp(conn->connect_id, connect_id) == 0)
+			return conn;
+	}
+
+	return NULL;
+}
+
+int handle_reconnect_req(struct client_session *client,
+	struct sftt_packet *req_packet, struct sftt_packet *resp_packet)
+{
+	struct client_session *target_session = NULL;
+	struct client_sock_conn *conn = NULL;
+	struct reconnect_req *req;
+
+	req = req_packet->obj;
+	target_session = find_client_session_by_id(req->session_id);
+	if (target_session == NULL) {
+		DEBUG((DEBUG_ERROR, "invalid session id: %s\n", req->session_id));
+		return -1;
+	}
+
+	conn = find_connect_by_id(target_session, req->connect_id);
+	if (conn == NULL) {
+		DEBUG((DEBUG_ERROR, "invalid connect id: %s\n", req->connect_id));
+		return -1;
+	}
+
+	conn->sock = client->main_conn.sock;
+	clear_conn_updating(conn);
+
+	return 0;
 }
 
 int install_child_sigactions(void)
@@ -1445,7 +1489,6 @@ int handle_client_session(void *args)
 	DBUG_ENTER(__func__);
 
 	struct client_session *client = (struct client_session *)args;
-	int sock = client->main_conn.sock;
 	struct sftt_packet *resp = NULL;
 	struct sftt_packet *req = NULL;
 	int ret = -1;
@@ -1468,20 +1511,22 @@ int handle_client_session(void *args)
 		DEBUG((DEBUG_ERROR, "set child sigactions failed!\n"));
 	}
 
-	if (make_socket_non_blocking(sock) == -1) {
+	if (make_socket_non_blocking(client->main_conn.sock) == -1) {
 		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
 	}
 
 	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
-		put_sock_conn(&client->main_conn);
-		if (server->is_updating_port) {
-			ret = 0;
-			goto exit;
+		if (rwlock_read_trylock(&server->update_lock)) {
+			sleep(1);
+		}
+		while (is_conn_updating(&client->main_conn)) {
+			sleep(1);
 		}
 
-		ret = recv_sftt_packet(sock, req);
-		add_log(LOG_INFO, "recv ret: %d", ret);
+		get_sock_conn(&client->main_conn);
+		ret = recv_sftt_packet(client->main_conn.sock, req);
+		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
 		if (ret == 0) {
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
 			DEBUG((DEBUG_INFO, "a client is disconnected\n"));
@@ -1498,20 +1543,12 @@ int handle_client_session(void *args)
 				goto exit;
 			}
 		}
-		get_sock_conn(&client->main_conn);
-
-		if (server->is_updating_port) {
-			ret = 0;
-			goto exit;
-		}
 
 		switch (req->type) {
 		case PACKET_TYPE_VALIDATE_REQ:
 			ret = validate_user_info(client, req, resp);
-			if (ret == -1) {
-				free_sftt_packet(&resp);
+			if (ret == -1)
 				goto exit;
-			}
 			break;
 		case PACKET_TYPE_APPEND_CONN_REQ:
 			handle_append_conn_req(client, req, resp);
@@ -1544,10 +1581,14 @@ int handle_client_session(void *args)
 		case PACKET_TYPE_WRITE_REQ:
 			handle_write_req(client, req, resp);
 			break;
+		case PACKET_TYPE_RECONNECT_REQ:
+			handle_reconnect_req(client, req, resp);
+			goto exit;
 		default:
 			DEBUG((DEBUG_WARN, "cannot recognize packet type|type=%d\n", req->type));
 			break;
 		}
+		put_sock_conn(&client->main_conn);
 	}
 
 exit:
@@ -1561,7 +1602,7 @@ exit:
 	put_session(client);
 
 	if (need_close)
-		close(sock);
+		close(client->main_conn.sock);
 
 	DBUG_RETURN(ret);
 }
@@ -1674,6 +1715,7 @@ void main_channel_loop(void)
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
+		rwlock_read_lock(&server->update_lock);
 		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
@@ -1682,6 +1724,7 @@ void main_channel_loop(void)
 
 		respond_channel_info(connect_fd);
 		close(connect_fd);
+		rwlock_read_unlock(&server->update_lock);
 	}
 }
 
@@ -1863,38 +1906,23 @@ int notify_client_after_updating(void)
 	req_packet->obj = req;
 	req_packet->type = PACKET_TYPE_PORT_UPDATE_REQ;
 
-	// Let second channel loop to start accept()
-	sleep(2);
-
 	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
 		session = &server->sessions[i];
 		if (!client_connected(session))
 			continue;
 
-		if (client_task_conns_num(session) != 1)
-			continue;
-
-		conn = get_peer_task_conn_by_session(session);
-		if (conn == NULL) {
-			DEBUG((DEBUG_ERROR, "get or create peer session failed!\n"));
-			continue;
+		list_for_each_entry(conn, &session->task_conns, list) {
+			DEBUG((DEBUG_WARN, "send new port to client|port=%d|session_id=%s|"
+					"connect_id=%s\n",req->second_port,
+					session->session_id, conn->connect_id));
+			tmp = send_sftt_packet(conn->sock, req_packet);
+			if (tmp == -1) {
+				DEBUG((DEBUG_ERROR, "send port update req failed!\n"));
+				ret = tmp;
+			}
+			//close(conn->sock);
 		}
-
-		DEBUG((DEBUG_WARN, "send new port to client|port=%d|session_id=%s\n",
-					req->second_port, session->session_id));
-		tmp = send_sftt_packet(conn->sock, req_packet);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "send port update req failed!\n"));
-			ret = tmp;
-		}
-
-		// Let client to close ?
-		// close(conn->sock);
-		put_peer_task_conn(conn);
-
-		// Let client to close ?
-		//close(session->main_conn.sock);
-		put_session(session);
+		close(session->main_conn.sock);
 	}
 
 	free_sftt_packet(&req_packet);
@@ -1903,6 +1931,49 @@ int notify_client_after_updating(void)
 	DBUG_RETURN(ret);
 }
 
+void set_all_conns_updating(void)
+{
+	int i = 0;
+	struct client_session *session;
+	int conns_num = 0;
+	struct client_sock_conn *conn;
+
+	for (i = 0; i < MAX_CLIENT_NUM; ++i) {
+		session = &server->sessions[i];
+		if (!client_connected(session))
+			continue;
+
+		list_for_each_entry(conn, &session->task_conns, list) {
+			set_conn_updating(conn);
+		}
+	}
+}
+
+/**
+ * Suppose there are some kinds of threads
+ * S1: server main thread
+ * S2: derived from S1, used to accept connects from the main port
+ *     and reply the second port
+ * S3: derived from S1, used to accept connects from the second port
+ * S4: derived from S3, used to handle requests from the clinet
+ * S5: derived from S3, used to send requests to client
+ * S6: derived from S3, same to S5
+ * S7: derived from S3, same to S5
+ * U:  derived from S1, used to update the second port
+ *
+ * When need to update port:
+ * U:  get write lock on server->update_lock, use channels of S5, S6, S7 to send
+ *     the new second port
+ * S2: get read lock on server->update_lock, wait for the new second port if
+ *     blocked
+ * S3: get read lock on server->update_lock, wait for the new socket of the
+ *     new second port if blocked
+ * S4: try get read lock, sleep X seconds for U to set conn->is_updating as one,
+ *     and period to check the conn->is_updating until it equals to zero
+ * S5: same to S4
+ * S6: same to S4
+ * S7: same to S4
+ */
 int port_update_loop(void *arg)
 {
 	struct sftt_server *server = arg;
@@ -1921,12 +1992,18 @@ int port_update_loop(void *arg)
 			continue;
 		}
 
+		if (rwlock_write_trylock(&server->update_lock)) {
+			sleep(1);
+			continue;
+		}
+
 		port = get_real_random_port();
 		if (server->main_port == port ||
 			server->second_port == port) {
 			DEBUG((DEBUG_WARN, "new port equal to old port|main_port=%d|second_port=%d"
 					"|new_port=%d\n", server->main_port, server->second_port,
 					port));
+			rwlock_write_unlock(&server->update_lock);
 			sleep(1);
 			continue;
 		}
@@ -1934,17 +2011,16 @@ int port_update_loop(void *arg)
 		sock = create_non_block_sock(port);
 		if (sock == -1) {
 			DEBUG((DEBUG_ERROR, "create non block sock failed when update port!\n"));
+			rwlock_write_unlock(&server->update_lock);
 			sleep(1);
 			continue;
 		}
 
-		server->is_updating_port = true;
+		set_all_conns_updating();
 
 		close(server->second_sock);
 		server->second_port = port;
 		server->second_sock = sock;
-
-		server->is_updating_port = false;
 
 		notify_client_after_updating();
 
@@ -1955,6 +2031,7 @@ int port_update_loop(void *arg)
 
 		server->last_update_ts = get_ts();
 		sync_server_stat();
+		rwlock_write_unlock(&server->update_lock);
 	}
 
 	return -1;
@@ -1985,11 +2062,7 @@ int second_channel_loop(void *arg)
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
-		if (server->is_updating_port) {
-			sleep(1);
-			continue;
-		}
-
+		rwlock_read_lock(&server->update_lock);
 		connect_fd = accept(server->second_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
@@ -2010,9 +2083,9 @@ int second_channel_loop(void *arg)
 		session->main_conn.type = CONN_TYPE_CTRL;
 		gen_connect_id(session->main_conn.connect_id, CONNECT_ID_LEN);
 
-		DEBUG((DEBUG_WARN, "a client is connecting ...|second_sock=%d|second_port=%d\n",
-					server->second_sock, server->second_port));
-		DEBUG((DEBUG_WARN, "ip=%s|port=%d\n", session->ip, session->main_conn.port));
+		DEBUG((DEBUG_WARN, "a client is connecting ...|second_sock=%d|second_port=%d|"
+				   "ip=%s|port=%d\n", server->second_sock, server->second_port,
+				   session->ip, session->main_conn.port));
 
 		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
 				handle_client_session, session);
@@ -2020,6 +2093,7 @@ int second_channel_loop(void *arg)
 			add_log(LOG_INFO, "create thread failed!");
 			session->status = DISCONNECTED;
 		}
+		rwlock_read_unlock(&server->update_lock);
 	}
 
 }

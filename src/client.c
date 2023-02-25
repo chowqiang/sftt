@@ -33,11 +33,12 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "base.h"
+#include "client.h"
+#include "cmdline.h"
 #include "command.h"
 #include "common.h"
 #include "config.h"
 #include "context.h"
-#include "client.h"
 #include "debug.h"
 #include "encrypt.h"
 #include "endpoint.h"
@@ -46,16 +47,15 @@
 #include "log.h"
 #include "mkdirp.h"
 #include "net_trans.h"
-#include "validate.h"
-#include "cmdline.h"
 #include "packet.h"
-#include "thread_pool.h"
-#include "debug.h"
 #include "response.h"
+#include "rte_errno.h"
 #include "state.h"
+#include "thread_pool.h"
 #include "trans.h"
 #include "user.h"
 #include "utils.h"
+#include "validate.h"
 #include "version.h"
 
 extern int errno;
@@ -96,6 +96,8 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp);
 
 struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no);
+
+int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn);
 
 int file_get_next_buffer(struct file_input_stream *fis,
 	char *buffer, size_t size)
@@ -568,16 +570,13 @@ int execute_cmd(struct sftt_client *client, char *buf, int flag)
 	bool timeout = false;
 	time_t ts;
 
-	if (client->is_updating_port) {
-		ts = get_ts();
-		while (!timeout) {
-			sleep(1);
-			timeout = (get_ts() - ts) > 10;
-			if (!client->is_updating_port)
-				break;
-		}
-		if (client->is_updating_port)
+	if (atomic16_read(&client->need_reconnect)) {
+		ret = do_reconnect(client, &client->main_conn);
+		if (ret == -1) {
+			DEBUG((DEBUG_ERROR, "do reconnect failed!\n"));
 			return -1;
+		}
+		atomic16_set(&client->need_reconnect, 0);
 	}
 
 	add_log(LOG_INFO, "input command: %s", buf);
@@ -823,9 +822,6 @@ done:
 	if (resp_packet)
 		free_sftt_packet(&resp_packet);
 
-	if (ret == 0)
-		client->need_validate = false;
-
 	return ret;
 }
 
@@ -1067,14 +1063,6 @@ int get_friend_list(struct sftt_client *client)
 	struct who_resp_data *data;
 	int ret, i = 0, total = 0;
 
-#if 0
-	if (client->need_validate) {
-		ret = validate_user_base_info(client);
-		if (ret == -1)
-			DEBUG((DEBUG_ERROR, "validate failed!\n"));
-	}
-#endif
-
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
 		printf("allocate request packet failed!\n");
@@ -1166,74 +1154,114 @@ int init_friend_list(struct sftt_client *client)
 	return 0;
 }
 
+int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn)
+{
+	struct reconnect_req *reconn_req;
+	struct sftt_packet *req_packet;
+	int ret = 0;
+
+	close(conn->sock);
+	conn->sock = make_connect(client->host, conn->port);
+
+	reconn_req = mp_malloc(g_mp, __func__, sizeof(struct reconnect_req));
+	if (reconn_req == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc reconnect req failed!\n"));
+		return -1;
+	}
+
+	req_packet = malloc_sftt_packet();
+	if (req_packet == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed!\n"));
+		return -1;
+	}
+
+	strcpy(reconn_req->session_id, client->session_id);
+	strcpy(reconn_req->connect_id, conn->connect_id);
+
+	req_packet->obj = reconn_req;
+	req_packet->type = PACKET_TYPE_RECONNECT_REQ;
+	ret = send_sftt_packet(conn->sock, req_packet);
+	if (ret == -1) {
+		DEBUG((DEBUG_ERROR, "send reconnect req failed!\n"));
+	}
+
+	return ret;
+}
+
 int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *req_packet,
 		struct sftt_packet *resp_packet)
 {
 	struct sftt_client *client = client_obj;
 	struct port_update_req *req;
 	int port;
-
-	client->is_updating_port = true;
+	int ret = -1;
 
 	req = req_packet->obj;
 	port = req->second_port;
-
 	DEBUG((DEBUG_WARN, "client update port|new_port=%d\n", port));
 
-	close(client->main_conn.sock);
+	rwlock_write_lock(&client->update_lock);
 
-	client->main_conn.sock = make_connect(client->host, port);
-	if (client->main_conn.sock == -1) {
-		return -1;
+	set_conn_updating(conn);
+	conn->port = client->main_conn.port = port;
+	atomic16_set(&client->need_reconnect, 1);
+
+	rwlock_write_unlock(&client->update_lock);
+
+	ret = do_reconnect(client, conn);
+	if (make_socket_non_blocking(client->main_conn.sock) == -1) {
+		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
 	}
+	clear_conn_updating(conn);
 
-	client->main_conn.port = port;
-
-	clear_friend_list(client);
-
-	client->is_updating_port = false;
-
-	client->need_validate = true;
-
-	return 0;
+	return ret;
 }
 
 int do_task_handler(void *arg)
 {
 	struct client_sock_conn *conn = arg;
-	int sock = conn->sock;
 	struct sftt_packet *resp;
 	struct sftt_packet *req;
 	int ret;
 
 	req = malloc_sftt_packet();
-	if (!req) {
-		printf("cannot allocate resources from memory pool!\n");
+	if (req == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed\n"));
 		return -1;
 	}
 
 	resp = malloc_sftt_packet();
 	if (resp == NULL) {
+		DEBUG((DEBUG_ERROR, "alloc sftt packet failed\n"));
 		goto exit;
 	}
 
+	if (make_socket_non_blocking(conn->sock) == -1) {
+		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
+	}
 	DEBUG((DEBUG_INFO, "begin to communicate with peer ...\n"));
 
 	while (1) {
-		conn->is_using = false;
-
-		ret = recv_sftt_packet(sock, req);
+		get_sock_conn(conn);
+		ret = recv_sftt_packet(conn->sock, req);
 		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
-		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "recv return -1 and task handler is exiting ...\n"));
-			goto exit;
-		}
 		if (ret == 0) {
-			DEBUG((DEBUG_WARN, "recv return 0 and task handler is exiting ...\n"));
+			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
+			DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 			goto exit;
 		}
 
-		conn->is_using = true;
+		if (ret == -1) {
+			if (rte_errno == EAGAIN || rte_errno == EWOULDBLOCK) {
+				usleep(100 * 1000);
+				continue;
+			} else {
+				add_log(LOG_ERROR, "recv from client failed, child process is exiting ...");
+				DEBUG((DEBUG_ERROR, "recv from client failed, child process is exiting ...\n"));
+				goto exit;
+			}
+		}
+
 		switch (req->type) {
 		case PACKET_TYPE_WRITE_REQ:
 			handle_peer_write_req(conn, req, resp);
@@ -1248,18 +1276,17 @@ int do_task_handler(void *arg)
 			handle_peer_put_req(conn, req, resp);
 			break;
 		case PACKET_TYPE_PORT_UPDATE_REQ:
-			ret = handle_port_update_req(conn, req, resp);
-			if (ret == 0)
-				goto exit;
+			handle_port_update_req(conn, req, resp);
 			break;
 		default:
 			break;
 		}
+		put_sock_conn(conn);
 	}
 
 exit:
-	conn->is_using = false;
-	close(sock);
+	put_sock_conn(conn);
+	close(conn->sock);
 	free_sftt_packet(&resp);
 	DEBUG((DEBUG_INFO, "a client is disconnected\n"));
 
@@ -1295,13 +1322,12 @@ int add_task_connect(struct sftt_client *client)
 		return -1;
 	}
 
-	port = client->main_conn.port;
-	conn->sock = make_connect(client->host, port);
+	conn->sock = make_connect(client->host, client->main_conn.port);
 	if (conn->sock == -1) {
 		printf("make client sock connect failed!\n");
 		return -1;
 	}
-	conn->port = port;
+	conn->port = client->main_conn.port;
 
 	req_packet = malloc_sftt_packet();
 	if (!req_packet) {
@@ -1370,25 +1396,24 @@ int do_connect_manager(void *arg)
 	struct client_sock_conn *conn;
 	int conns = 0;
 	int ret;
+	bool is_updating = false;
 
 	while (!force_quit) {
-		if (client->is_updating_port) {
-			sleep(1);
-			continue;
-		}
-
 		conns = 0;
 		idle_conns = 0;
+		is_updating = false;
 
 		client->tcs_lock->ops->lock(client->tcs_lock);
 		list_for_each_entry(conn, &client->task_conns, list) {
-			if (!conn->is_using)
+			if (!is_conn_using(conn))
 				idle_conns++;
+			if (is_conn_updating(conn))
+				is_updating = true;
 			conns++;
 		}
 		client->tcs_lock->ops->unlock(client->tcs_lock);
 
-		if (conns < CLIENT_MAX_TASK_CONN && idle_conns == 0) {
+		if (!is_updating && conns < CLIENT_MAX_TASK_CONN && idle_conns == 0) {
 			ret = add_task_connect(client);
 			if (ret == -1) {
 				printf("add task connect failed!\n");
@@ -1491,7 +1516,7 @@ int init_sftt_client(struct sftt_client *client, char *host, int port,
 	client->password = __strdup(passwd);
 
 	client->state_file = state_file;
-	client->need_validate = true;
+	atomic16_set(&client->need_reconnect, 0);
 
 	if (get_sftt_client_config(&client->config) == -1) {
 		printf("get sftt client config failed!\n");

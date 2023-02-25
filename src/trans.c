@@ -188,3 +188,15 @@ int send_port_update_resp(int fd, struct sftt_packet *resp_packet,
 	resp_packet->type = PACKET_TYPE_PORT_UPDATE_RESP;
 	return send_sftt_packet(fd, resp_packet);
 }
+
+int send_reconnect_resp(int fd, struct sftt_packet *resp_packet,
+	struct reconnect_resp *resp, int code, int flags)
+{
+	resp->status = code;
+	strncpy(resp->message, resp_messages[code], RESP_MESSAGE_MAX_LEN - 1);
+	resp->flags = flags;
+
+	resp_packet->obj = resp;
+	resp_packet->type = PACKET_TYPE_RECONNECT_RESP;
+	return send_sftt_packet(fd, resp_packet);
+}

@@ -1333,3 +1333,91 @@ bool port_update_resp_decode(unsigned char *buf, int len, void **req)
 
 	return ret;
 }
+
+bool reconnect_req_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_reconnect_req(&xdr, (struct reconnect_req *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool reconnect_req_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct reconnect_req *_req = (struct reconnect_req *)mp_malloc(g_mp,
+		__func__, sizeof(struct reconnect_req));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_reconnect_req(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool reconnect_resp_encode(void *req, unsigned char **buf, int *len)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	size_t size = 0;
+	FILE *fp = open_memstream((char **)buf, &size);
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_ENCODE);
+
+	bool ret = xdr_reconnect_resp(&xdr, (struct reconnect_resp *)req);
+
+	fflush(fp);
+	fclose(fp);
+
+	*len = size;
+	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
+		ret, *len));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}
+
+bool reconnect_resp_decode(unsigned char *buf, int len, void **req)
+{
+	DEBUG((DEBUG_DEBUG, "in\n"));
+	struct reconnect_resp *_req = (struct reconnect_resp *)mp_malloc(g_mp,
+		__func__, sizeof(struct reconnect_resp));
+
+	FILE *fp = fmemopen(buf, len, "r");
+
+	XDR xdr;
+	xdrstdio_create(&xdr, fp, XDR_DECODE);
+
+	bool ret = xdr_reconnect_resp(&xdr, _req);
+	fflush(fp);
+	fclose(fp);
+
+	*req = _req;
+	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
+	DEBUG((DEBUG_DEBUG, "out\n"));
+
+	return ret;
+}

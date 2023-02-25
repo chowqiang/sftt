@@ -374,6 +374,19 @@ struct port_update_resp {
 };
 typedef struct port_update_resp port_update_resp;
 
+struct reconnect_req {
+	char session_id[XDR_SESSION_ID_LEN];
+	char connect_id[XDR_CONNECT_ID_LEN];
+};
+typedef struct reconnect_req reconnect_req;
+
+struct reconnect_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
+};
+typedef struct reconnect_resp reconnect_resp;
+
 /* the xdr functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -424,6 +437,8 @@ extern  bool_t xdr_write_resp_data (XDR *, write_resp_data*);
 extern  bool_t xdr_write_resp (XDR *, write_resp*);
 extern  bool_t xdr_port_update_req (XDR *, port_update_req*);
 extern  bool_t xdr_port_update_resp (XDR *, port_update_resp*);
+extern  bool_t xdr_reconnect_req (XDR *, reconnect_req*);
+extern  bool_t xdr_reconnect_resp (XDR *, reconnect_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_version_info ();
@@ -473,6 +488,8 @@ extern bool_t xdr_write_resp_data ();
 extern bool_t xdr_write_resp ();
 extern bool_t xdr_port_update_req ();
 extern bool_t xdr_port_update_resp ();
+extern bool_t xdr_reconnect_req ();
+extern bool_t xdr_reconnect_resp ();
 
 #endif /* K&R C */
 

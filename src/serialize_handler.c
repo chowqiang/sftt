@@ -49,5 +49,7 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_CHANNEL_INFO_RESP, channel_info_resp_encode, channel_info_resp_decode},
 	{PACKET_TYPE_PORT_UPDATE_REQ, port_update_req_encode, port_update_req_decode},
 	{PACKET_TYPE_PORT_UPDATE_RESP, port_update_resp_encode, port_update_resp_decode},
+	{PACKET_TYPE_RECONNECT_REQ, reconnect_req_encode, reconnect_req_decode},
+	{PACKET_TYPE_RECONNECT_RESP, reconnect_resp_encode, reconnect_resp_decode},
 	{-1, NULL, NULL},
 };

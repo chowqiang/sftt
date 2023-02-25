@@ -28,6 +28,7 @@
 #include "mem_pool.h"
 #include "option.h"
 #include "packet.h"
+#include "rwlock.h"
 #include "session.h"
 #include "user.h"
 
@@ -115,8 +116,8 @@ struct sftt_client {
 	char *state_file;
     	struct sftt_client_config config;
 	struct list_head friends;
-	volatile bool is_updating_port;
-	volatile bool need_validate;
+	rwlock_t update_lock;
+	atomic16_t need_reconnect;
 };
 
 struct thread_input_params {

@@ -18,6 +18,7 @@
 #define _CONNECT_H_
 
 #include <pthread.h>
+#include "atomic.h"
 #include "common.h"
 #include "list.h"
 
@@ -37,12 +38,13 @@ enum connect_type {
 };
 
 struct client_sock_conn {
-	bool is_using;
 	volatile int sock;
 	volatile int port;
 	enum connect_type type;
 	char connect_id[CONNECT_ID_LEN];
 	struct list_head list;
+	atomic16_t is_using;
+	atomic16_t is_updating;
 };
 
 #define sock_conn_is_using(conn)	((conn)->is_using)
@@ -57,8 +59,15 @@ pthread_t start_server(int port, void *(*func)(void *arg));
 
 int make_socket_non_blocking(int sfd);
 
-#define put_sock_conn(conn) do {(conn)->is_using = false;} while(0)
+#define put_sock_conn(conn) do {atomic16_set(&((conn)->is_using), 0);} while(0)
 
-#define get_sock_conn(conn) do {(conn)->is_using = true;} while(0)
+#define get_sock_conn(conn) do {atomic16_set(&((conn)->is_using), 1);} while(0)
 
+#define is_conn_using(conn) ({atomic16_read(&((conn)->is_using)) == 1;})
+
+#define set_conn_updating(conn) do {atomic16_set(&((conn)->is_updating), 1);} while(0)
+
+#define clear_conn_updating(conn) do {atomic16_set(&((conn)->is_updating), 0);} while(0)
+
+#define is_conn_updating(conn) ({atomic16_read(&((conn)->is_updating)) == 1;})
 #endif

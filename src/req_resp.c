@@ -916,3 +916,34 @@ xdr_port_update_resp (XDR *xdrs, port_update_resp *objp)
 		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
 	return TRUE;
 }
+
+bool_t
+xdr_reconnect_req (XDR *xdrs, reconnect_req *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_vector (xdrs, (char *)objp->session_id, XDR_SESSION_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_vector (xdrs, (char *)objp->connect_id, XDR_CONNECT_ID_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	return TRUE;
+}
+
+bool_t
+xdr_reconnect_resp (XDR *xdrs, reconnect_resp *objp)
+{
+	register int32_t *buf;
+
+	int i;
+	 if (!xdr_int (xdrs, &objp->status))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_int (xdrs, &objp->flags))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	 if (!xdr_vector (xdrs, (char *)objp->message, XDR_RESP_MESSAGE_MAX_LEN,
+		sizeof (char), (xdrproc_t) xdr_char))
+		 {printf("%s:%d\n", __func__, __LINE__); return FALSE;}
+	return TRUE;
+}

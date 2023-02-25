@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "net_trans.h"
+#include "rwlock.h"
 #include "option.h"
 #include "db.h"
 #include "version.h"
@@ -61,7 +62,7 @@ struct sftt_server {
 	struct pthread_mutex *pm;
 	struct thread_pool *thread_pool;
 	char *state_file;
-	volatile int is_updating_port;
+	rwlock_t update_lock;
 };
 
 struct sftt_server_stat {

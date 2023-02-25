@@ -18,6 +18,7 @@
 #define _SESSION_H_
 
 #include <stdbool.h>
+#include "atomic.h"
 #include "config.h"
 #include "connect.h"
 #include "list.h"
@@ -44,19 +45,8 @@ struct client_session {
 	struct user_base_info user;
 };
 
-struct server_session {
-	char session_id[SESSION_ID_LEN];
-	bool is_validate;
-	struct user_base_info *user;
-	char pwd[DIR_PATH_MAX_LEN];
-
-};
-
 struct client_session *client_session_construct(void);
 void client_session_deconstruct(struct client_session *ptr);
-
-struct server_session *server_session_construct(void);
-void server_session_deconstruct(struct server_session *ptr);
 
 #define set_client_active(session) ((session)->status = ACTIVE)
 #define set_client_inactive(session) ((session)->status = INACTIVE)
@@ -84,8 +74,8 @@ void server_session_deconstruct(struct server_session *ptr);
 										\
 		(session)->tcs_lock->ops->lock((session)->tcs_lock);		\
 		list_for_each_entry(__conn, &(session)->task_conns, list) {	\
-			if (!__conn->is_using) {				\
-				__conn->is_using = true;			\
+			if (!atomic16_read(&__conn->is_using)) {			\
+				atomic16_set(&__conn->is_using, 1);		\
 				__ret = __conn;					\
 				break;						\
 			}							\

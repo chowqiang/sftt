@@ -311,3 +311,14 @@ struct port_update_resp {
 	int flags;
 	char message[XDR_RESP_MESSAGE_MAX_LEN];
 };
+
+struct reconnect_req {
+	char session_id[XDR_SESSION_ID_LEN];
+	char connect_id[XDR_CONNECT_ID_LEN];
+};
+
+struct reconnect_resp {
+	int status;
+	int flags;
+	char message[XDR_RESP_MESSAGE_MAX_LEN];
+};
