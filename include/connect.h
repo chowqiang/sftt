@@ -47,7 +47,7 @@ struct client_sock_conn {
 	atomic16_t is_updating;
 };
 
-#define sock_conn_is_using(conn)	((conn)->is_using)
+#define sock_conn_is_using(conn) ({atomic16_read(&((conn)->is_using)) == 1;})
 
 struct server_context {
 	int sock;

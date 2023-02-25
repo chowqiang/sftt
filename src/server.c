@@ -461,27 +461,43 @@ static int validate_user_info(struct client_session *client,
 
 	if (check_version(&req->ver, &server->ver, resp->message,
 		RESP_MESSAGE_MAX_LEN - 1) == -1) {
-		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_BAD_VER, 0));
+		ret = send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_BAD_VER, 0);
+		if (ret) {
+			DEBUG((DEBUG_ERROR, "send validate resp failed!\n"));
+		}
+		DBUG_RETURN(ret);
 	}
 
 	user_base = find_user_base_by_name(req->name);
 	user_auth = find_user_auth_by_name(req->name);
 	if (user_base == NULL) {
-		DEBUG((DEBUG_INFO, "cannot find user!\n"));
-		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_UVS_NTFD, 0));
+		DEBUG((DEBUG_WARN, "cannot find user!\n"));
+		DEBUG((DEBUG_WARN, "validate user info failed!\n"));
+		ret = send_validate_resp(client->main_conn.sock, resp_packet,
+			       resp, RESP_UVS_NTFD, 0);
+		if (ret) {
+			DEBUG((DEBUG_ERROR, "send validate resp failed!\n"));
+		}
+		DBUG_RETURN(ret);
 	} else if (strcmp(user_auth->passwd_md5, req->passwd_md5)) {
-		DEBUG((DEBUG_INFO, "passwd not correct!\n"));
-		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_INVALID, 0));
+		DEBUG((DEBUG_WARN, "passwd not correct!\n"));
+		DEBUG((DEBUG_WARN, "validate user info failed!\n"));
+		ret = send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_INVALID, 0);
+		if (ret) {
+			DEBUG((DEBUG_ERROR, "send validate resp failed!\n"));
+		}
+		DBUG_RETURN(ret);
 	} else if (!file_existed(user_base->home_dir)) {
-		DEBUG((DEBUG_INFO, "cannot find user's home dir: %s\n", user_base->home_dir));
-		DEBUG((DEBUG_INFO, "validate user info failed!\n"));
-		DBUG_RETURN(send_validate_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_UVS_MISSHOME, 0));
+		DEBUG((DEBUG_WARN, "cannot find user's home dir: %s\n", user_base->home_dir));
+		DEBUG((DEBUG_WARN, "validate user info failed!\n"));
+		ret = send_validate_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_UVS_MISSHOME, 0);
+		if (ret) {
+			DEBUG((DEBUG_ERROR, "send validate resp failed!\n"));
+		}
+		DBUG_RETURN(ret);
 	} else {
 		client->status = ACTIVE;
 		strncpy(client->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
@@ -495,6 +511,7 @@ static int validate_user_info(struct client_session *client,
 		strncpy(resp_data->name, req->name, USER_NAME_MAX_LEN - 1);
 		strncpy(resp_data->pwd, user_base->home_dir, DIR_PATH_MAX_LEN - 1);
 		strncpy(resp_data->session_id, client->session_id, SESSION_ID_LEN);
+		strncpy(resp_data->connect_id, client->main_conn.connect_id, CONNECT_ID_LEN);
 
 		DEBUG((DEBUG_INFO, "validate user info successfully!\n"));
 		DEBUG((DEBUG_INFO, "user_name=%s|uid=%ld|status=%d|home_dir=%s|"
@@ -507,7 +524,7 @@ static int validate_user_info(struct client_session *client,
 
 	ret = send_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
-		printf("send validate response failed!\n");
+		DEBUG((DEBUG_ERROR, "send validate response failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
@@ -1371,7 +1388,7 @@ int handle_append_conn_req(struct client_session *client,
 	req = req_packet->obj;
 	assert(req != NULL);
 
-	DEBUG((DEBUG_INFO, "req->session_id=%s|req->type=%d\n",
+	DEBUG((DEBUG_WARN, "req->session_id=%s|req->type=%d\n",
 			req->session_id, req->type));
 
 	if (req->type != CONN_TYPE_TASK) {
@@ -1381,7 +1398,7 @@ int handle_append_conn_req(struct client_session *client,
 
 	real_session = find_client_session_by_id(req->session_id);
 	if (real_session == NULL) {
-		DEBUG((DEBUG_INFO, "invalid session id: %s\n", req->session_id));
+		DEBUG((DEBUG_WARN, "invalid session id: %s\n", req->session_id));
 		DBUG_RETURN(-1);
 	}
 	DEBUG((DEBUG_INFO, "find client session: session_id=%s\n",
@@ -1389,14 +1406,14 @@ int handle_append_conn_req(struct client_session *client,
 
 	resp = mp_malloc(g_mp, "append_conn_resp", sizeof(struct append_conn_resp));
 	if (resp == NULL) {
-		DEBUG((DEBUG_INFO, "alloc append_conn_resp failed!\n"));
+		DEBUG((DEBUG_ERROR, "alloc append_conn_resp failed!\n"));
 		DBUG_RETURN(-1);
 	}
 
 	if (req->type == CONN_TYPE_TASK) {
 		conn = mp_malloc(g_mp, "task_conn", sizeof(struct client_sock_conn));
 		if (conn == NULL) {
-			DEBUG((DEBUG_INFO, "alloc task_conn failed!\n"));
+			DEBUG((DEBUG_ERROR, "alloc task_conn failed!\n"));
 			DBUG_RETURN(-1);
 		}
 
@@ -1404,7 +1421,7 @@ int handle_append_conn_req(struct client_session *client,
 		*conn = client->main_conn;
 		DEBUG((DEBUG_INFO, "conn->connect_id=%s\n", conn->connect_id));
 		conn->type = CONN_TYPE_TASK;
-		atomic16_set(&conn->is_using, 0);
+		put_sock_conn(conn);
 
 		DEBUG((DEBUG_INFO, "append task conn|conn->type=%d|conn->is_using=%d\n",
 				conn->type, atomic16_read(&conn->is_using)));
@@ -1451,6 +1468,9 @@ int handle_reconnect_req(struct client_session *client,
 	struct reconnect_req *req;
 
 	req = req_packet->obj;
+	DEBUG((DEBUG_WARN, "handle reconnect req in|session_id=%s|connect_id=%s\n",
+				req->session_id, req->connect_id));
+
 	target_session = find_client_session_by_id(req->session_id);
 	if (target_session == NULL) {
 		DEBUG((DEBUG_ERROR, "invalid session id: %s\n", req->session_id));
@@ -1526,10 +1546,11 @@ int handle_client_session(void *args)
 
 		get_sock_conn(&client->main_conn);
 		ret = recv_sftt_packet(client->main_conn.sock, req);
+		rwlock_read_unlock(&server->update_lock);
 		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
 		if (ret == 0) {
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
-			DEBUG((DEBUG_INFO, "a client is disconnected\n"));
+			DEBUG((DEBUG_WARN, "a client is disconnected\n"));
 			goto exit;
 		}
 
@@ -1583,6 +1604,7 @@ int handle_client_session(void *args)
 			break;
 		case PACKET_TYPE_RECONNECT_REQ:
 			handle_reconnect_req(client, req, resp);
+			need_close = false;
 			goto exit;
 		default:
 			DEBUG((DEBUG_WARN, "cannot recognize packet type|type=%d\n", req->type));
@@ -1599,10 +1621,15 @@ exit:
 		free_sftt_packet(&resp);
 
 	put_sock_conn(&client->main_conn);
+	if (strlen(client->session_id))
+		DEBUG((DEBUG_WARN, "put session|session_id=%s\n", client->session_id));
 	put_session(client);
 
-	if (need_close)
+	if (need_close) {
+		DEBUG((DEBUG_WARN, "close main_conn sock|connect_id=%s\n",
+					client->main_conn.connect_id));
 		close(client->main_conn.sock);
+	}
 
 	DBUG_RETURN(ret);
 }
@@ -1715,13 +1742,13 @@ void main_channel_loop(void)
 
 	len = sizeof(struct sockaddr_in);
 	while (1) {
-		rwlock_read_lock(&server->update_lock);
 		connect_fd = accept(server->main_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
 			usleep(100 * 1000);
 			continue;
 		}
 
+		rwlock_read_lock(&server->update_lock);
 		respond_channel_info(connect_fd);
 		close(connect_fd);
 		rwlock_read_unlock(&server->update_lock);
@@ -1922,7 +1949,7 @@ int notify_client_after_updating(void)
 			}
 			//close(conn->sock);
 		}
-		close(session->main_conn.sock);
+		//close(session->main_conn.sock);
 	}
 
 	free_sftt_packet(&req_packet);
@@ -2021,6 +2048,7 @@ int port_update_loop(void *arg)
 		close(server->second_sock);
 		server->second_port = port;
 		server->second_sock = sock;
+		rwlock_write_unlock(&server->update_lock);
 
 		notify_client_after_updating();
 
@@ -2031,7 +2059,6 @@ int port_update_loop(void *arg)
 
 		server->last_update_ts = get_ts();
 		sync_server_stat();
-		rwlock_write_unlock(&server->update_lock);
 	}
 
 	return -1;
@@ -2065,11 +2092,13 @@ int second_channel_loop(void *arg)
 		rwlock_read_lock(&server->update_lock);
 		connect_fd = accept(server->second_sock, (struct sockaddr *)&addr_client, (socklen_t *)&len);
 		if (connect_fd == -1) {
+			rwlock_read_unlock(&server->update_lock);
 			usleep(100 * 1000);
 			continue;
 		}
 
 		if ((session = get_new_session()) == NULL) {
+			rwlock_read_unlock(&server->update_lock);
 			add_log(LOG_INFO, "exceed max connection!");
 			close(connect_fd);
 			continue;

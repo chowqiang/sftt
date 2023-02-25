@@ -97,7 +97,8 @@ int send_complete_end_packet(int sock, struct sftt_packet *sp);
 struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 		int user_no);
 
-int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn);
+int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn,
+		bool is_main_conn);
 
 int file_get_next_buffer(struct file_input_stream *fis,
 	char *buffer, size_t size)
@@ -571,7 +572,8 @@ int execute_cmd(struct sftt_client *client, char *buf, int flag)
 	time_t ts;
 
 	if (atomic16_read(&client->need_reconnect)) {
-		ret = do_reconnect(client, &client->main_conn);
+		DEBUG((DEBUG_WARN, "do reconnect before execute cmd!\n"));
+		ret = do_reconnect(client, &client->main_conn, true);
 		if (ret == -1) {
 			DEBUG((DEBUG_ERROR, "do reconnect failed!\n"));
 			return -1;
@@ -804,9 +806,10 @@ static int validate_user_base_info(struct sftt_client *client)
 	DEBUG((DEBUG_WARN, "validate user|uid=%ld\n", client->uinfo.uid));
 
 	strncpy(client->session_id, resp_info->data.session_id, SESSION_ID_LEN - 1);
+	strncpy(client->main_conn.connect_id, resp_info->data.connect_id, CONNECT_ID_LEN);
 	strncpy(client->pwd, resp_info->data.pwd, DIR_PATH_MAX_LEN - 1);
-	DEBUG((DEBUG_WARN, "validate user|seesion_id=%s|pwd=%s\n",
-				client->session_id, client->pwd));
+	DEBUG((DEBUG_WARN, "validate user|seesion_id=%s|pwd=%s|connect_id=%s\n",
+				client->session_id, client->pwd, client->main_conn.connect_id));
 
 done:
 
@@ -1064,15 +1067,15 @@ int get_friend_list(struct sftt_client *client)
 	int ret, i = 0, total = 0;
 
 	req_packet = malloc_sftt_packet();
-	if (!req_packet) {
-		printf("allocate request packet failed!\n");
+	if (req_packet == NULL) {
+		DEBUG((DEBUG_ERROR, "allocate request packet failed!\n"));
 		return -1;
 	}
 	req_packet->type = PACKET_TYPE_WHO_REQ;
 
 	req_info = mp_malloc(g_mp, "get_friend_list_req", sizeof(struct who_req));
 	if (req_info == NULL) {
-		printf("alloc get_friend_list_req failed!\n");
+		DEBUG((DEBUG_ERROR, "alloc get_friend_list_req failed!\n"));
 		return -1;
 	}
 
@@ -1082,19 +1085,19 @@ int get_friend_list(struct sftt_client *client)
 
 	ret = send_sftt_packet(client->main_conn.sock, req_packet);
 	if (ret == -1) {
-		printf("%s: send sftt packet failed!\n", __func__);
+		DEBUG((DEBUG_ERROR, "send sftt packet failed!\n"));
 		return -1;
 	}
 
 	resp_packet = malloc_sftt_packet();
 	if (!resp_packet) {
-		printf("allocate response packet failed!\n");
+		DEBUG((DEBUG_ERROR, "allocate response packet failed!\n"));
 		return -1;
 	}
 
 	ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 	if (ret == -1) {
-		printf("%s: recv sftt packet failed!\n", __func__);
+		DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 		return -1;
 	}
 
@@ -1107,7 +1110,7 @@ int get_friend_list(struct sftt_client *client)
 			friend = mp_malloc(g_mp, "get_friend_list_resp_friend",
 					sizeof(struct friend_user));
 			if (friend == NULL) {
-				printf("alloc get_friend_list_resp failed!\n");
+				DEBUG((DEBUG_ERROR, "alloc get_friend_list_resp failed!\n"));
 				return -1;
 			}
 			friend->info = data->users[i];
@@ -1121,7 +1124,7 @@ int get_friend_list(struct sftt_client *client)
 
 		ret = recv_sftt_packet(client->main_conn.sock, resp_packet);
 		if (ret == -1) {
-			printf("%s: recv sftt packet failed!\n", __func__);
+			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 			return -1;
 		}
 
@@ -1154,35 +1157,53 @@ int init_friend_list(struct sftt_client *client)
 	return 0;
 }
 
-int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn)
+int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn,
+		bool is_main_conn)
 {
-	struct reconnect_req *reconn_req;
-	struct sftt_packet *req_packet;
-	int ret = 0;
+	struct reconnect_req *reconn_req = NULL;
+	struct sftt_packet *req_packet = NULL;
+	int ret = -1;
+	int old_sock = conn->sock;
 
-	close(conn->sock);
+	if (!is_main_conn) {
+		close(conn->sock);
+	}
 	conn->sock = make_connect(client->host, conn->port);
 
 	reconn_req = mp_malloc(g_mp, __func__, sizeof(struct reconnect_req));
 	if (reconn_req == NULL) {
 		DEBUG((DEBUG_ERROR, "alloc reconnect req failed!\n"));
-		return -1;
+		goto exit;
 	}
 
 	req_packet = malloc_sftt_packet();
 	if (req_packet == NULL) {
 		DEBUG((DEBUG_ERROR, "alloc sftt packet failed!\n"));
-		return -1;
+		goto exit;
 	}
 
-	strcpy(reconn_req->session_id, client->session_id);
-	strcpy(reconn_req->connect_id, conn->connect_id);
+	DEBUG((DEBUG_WARN, "session_id=%s|connect_id=%s\n", client->session_id,
+				conn->connect_id));
+	strncpy(reconn_req->session_id, client->session_id, SESSION_ID_LEN - 1);
+	strncpy(reconn_req->connect_id, conn->connect_id, CONNECT_ID_LEN);
 
 	req_packet->obj = reconn_req;
 	req_packet->type = PACKET_TYPE_RECONNECT_REQ;
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
 		DEBUG((DEBUG_ERROR, "send reconnect req failed!\n"));
+	}
+
+exit:
+	if (reconn_req)
+		mp_free(g_mp, reconn_req);
+
+	if (req_packet)
+		free_sftt_packet(&req_packet);
+
+	if (is_main_conn) {
+		sleep(1);
+		close(old_sock);
 	}
 
 	return ret;
@@ -1208,7 +1229,7 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 
 	rwlock_write_unlock(&client->update_lock);
 
-	ret = do_reconnect(client, conn);
+	ret = do_reconnect(client, conn, false);
 	if (make_socket_non_blocking(client->main_conn.sock) == -1) {
 		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
 	}
@@ -2274,7 +2295,7 @@ struct logged_in_user *find_logged_in_user(struct sftt_client *client,
 
 	if (list_empty(&client->friends)) {
 		if (get_friend_list(client) == -1) {
-			printf("get user list failed!\n");
+			DEBUG((DEBUG_ERROR, "get user list failed!\n"));
 			return NULL;
 		}
 	}
@@ -2593,7 +2614,7 @@ int sftt_client_who_handler(void *obj, int argc, char *argv[],
 	clear_friend_list(client);
 
 	if (get_friend_list(client) == -1) {
-		printf("get user list failed!\n");
+		DEBUG((DEBUG_ERROR, "get user list failed!\n"));
 		return -1;
 	}
 
