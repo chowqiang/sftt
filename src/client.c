@@ -703,7 +703,7 @@ static int init_sftt_client_ctrl_conn(struct sftt_client *client, int port)
 		goto done;
 	}
 
-	client->main_conn.port = port;
+	client->main_conn.last_port = client->main_conn.port = port;
 	client->main_conn.type = CONN_TYPE_CTRL;
 
 	ret = 0;
@@ -1165,6 +1165,10 @@ int do_reconnect(struct sftt_client *client, struct client_sock_conn *conn,
 	int ret = -1;
 	int old_sock = conn->sock;
 
+	/* Is needed ? */
+	if (conn->last_port == conn->port)
+		return 0;
+
 	if (!is_main_conn) {
 		close(conn->sock);
 	}
@@ -1206,6 +1210,8 @@ exit:
 		close(old_sock);
 	}
 
+	conn->last_port = conn->port;
+
 	return ret;
 }
 
@@ -1225,7 +1231,8 @@ int handle_port_update_req(struct client_sock_conn *conn, struct sftt_packet *re
 
 	set_conn_updating(conn);
 	conn->port = client->main_conn.port = port;
-	atomic16_set(&client->need_reconnect, 1);
+	if (client->main_conn.last_port != port)
+		atomic16_set(&client->need_reconnect, 1);
 
 	rwlock_write_unlock(&client->update_lock);
 

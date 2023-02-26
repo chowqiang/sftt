@@ -40,6 +40,7 @@ enum connect_type {
 struct client_sock_conn {
 	volatile int sock;
 	volatile int port;
+	volatile int last_port;
 	enum connect_type type;
 	char connect_id[CONNECT_ID_LEN];
 	struct list_head list;
