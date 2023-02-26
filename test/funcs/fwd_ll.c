@@ -20,7 +20,7 @@
 #include "test_common.h"
 #include "utils.h"
 
-#define TEST_NAME			"update_port"
+#define TEST_NAME			"fwd_ll"
 
 #define SERVER_DIR			"server"
 #define CLIENT_DIR_1			"client_1"
@@ -30,8 +30,8 @@
 #define TEST_STATE_FILE_CLIENT_1	"client1.st"
 #define TEST_STATE_FILE_CLIENT_2	"client2.st"
 
-#define TEST_CMD_FILE_1			"cmd_file_1"
-#define TEST_CMD_FILE_2			"cmd_file_2"
+#define TEST_CMD_FILE			"cmd_file"
+#define TEST_CMP_FILE			"cmp_file"
 #define TEST_FINISH_FILE		"done"
 
 #define SERVER_PROCESS			"server"
@@ -46,49 +46,9 @@ const char *dirs[] = {
 
 struct file_gen_attr attrs[] = {
 	{"a/e.txt", FILE_TYPE_FILE, 100000, DEFAULT_FILE_MODE},
-};
-
-struct test_cmd cmds_1[] = {
-	{
-		.cmd = "w",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "env",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "sleep",
-		.args = {"18", NULL},
-		.chroot_flags = BIT32(1) | BIT32(2)
-	},
-	{
-		.cmd = "w",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "env",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "sleep",
-		.args = {"18", NULL},
-		.chroot_flags = BIT32(1) | BIT32(2)
-	},
-	{
-		.cmd = "w",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "env",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
+	{"c/g.txt", FILE_TYPE_FILE, 200000, DEFAULT_FILE_MODE},
+	{"a/d/h.txt", FILE_TYPE_FILE, 300000, DEFAULT_FILE_MODE},
+	{"b/f/i/j.txt", FILE_TYPE_FILE, 400000, DEFAULT_FILE_MODE}
 };
 
 struct test_cmd cmds_2[] = {
@@ -118,19 +78,9 @@ struct test_cmd cmds_2[] = {
 		.chroot_flags = 0
 	},
 	{
-		.cmd = "sleep",
-		.args = {"20", NULL},
+		.cmd = "ll",
+		.args = {"0", CLIENT_DIR_1, NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
-	},
-	{
-		.cmd = "w",
-		.args = {NULL},
-		.chroot_flags = 0
-	},
-	{
-		.cmd = "env",
-		.args = {NULL},
-		.chroot_flags = 0
 	},
 	{
 		.cmd = "touch",
@@ -154,6 +104,7 @@ static const char *client_args[] = {
 };
 
 static const char *server_args[] = {
+	"-d",
 	"start",
 };
 
@@ -169,7 +120,7 @@ static const char *server_args[] = {
  * 9. Check dir between peer random dir and client gotten dir
  * 10. Give checked results
  */
-int test_update_port(int argc, char *argv[])
+int test_fwd_ll(int argc, char *argv[])
 {
 	struct test_context *ctx = NULL;
 	char *root = NULL;
@@ -200,11 +151,10 @@ int test_update_port(int argc, char *argv[])
 			is_started_default, true, client_args,
 			ARRAY_SIZE(client_args));
 
-	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_1, TEST_CMD_FILE_1,
-			cmds_1, ARRAY_SIZE(cmds_1));
-
-	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE_2,
+	test_context_generate_cmd_file(ctx, CLIENT_PROCESS_2, TEST_CMD_FILE,
 			cmds_2, ARRAY_SIZE(cmds_2));
+
+	//test_context_generate_cmp_file(ctx, TEST_CMP_FILE, &cmp_file_list);
 
 	test_context_add_finish_file(ctx, TEST_FINISH_FILE);
 
@@ -230,7 +180,7 @@ done:
 
 int main(int argc, char *argv[])
 {
-	test_update_port(argc, argv);
+	test_fwd_ll(argc, argv);
 
 	return 0;
 }
