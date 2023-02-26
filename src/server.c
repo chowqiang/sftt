@@ -672,25 +672,28 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 	resp = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
 	assert(resp != NULL);
 
+	make_socket_blocking(client->main_conn.sock);
 	// check user info
 	req = req_packet->obj;
 	user = &req->user;
 	if (check_user(user) == -1) {
-		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0));
+		ret = send_ll_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0);
+		goto done;
 	}
 
 	// get or create peer task conn
 	conn = get_peer_task_conn_by_user(user);
 	if (conn == NULL) {
-		DBUG_RETURN(send_ll_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_GET_PEER, 0));
+		ret = send_ll_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_GET_PEER, 0);
+		goto done;
 	}
 
 	// send ll req packet to peer task conn
 	ret = send_sftt_packet(conn->sock, req_packet);
 	if (ret == -1) {
-		DEBUG((DEBUG_INFO, "send ll req to peer failed!\n"));
+		DEBUG((DEBUG_ERROR, "send ll req to peer failed!\n"));
 		ret = send_ll_resp(client->main_conn.sock, resp_packet,
 				resp, RESP_SEND_PEER_ERR, 0);
 		goto done;
@@ -700,7 +703,7 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 		// recv ll resp packet
 		ret = recv_sftt_packet(conn->sock, resp_packet);
 		if (ret == -1) {
-			DEBUG((DEBUG_INFO, "recv sftt packet failed!\n"));
+			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
 			break;
 		}
 
@@ -714,6 +717,8 @@ int handle_fwd_ll_req(struct client_session *client, struct sftt_packet *req_pac
 done:
 	if (conn)
 		put_peer_task_conn(conn);
+
+	make_socket_non_blocking(client->main_conn.sock);
 
 	DBUG_RETURN(ret);
 }
@@ -851,20 +856,22 @@ int handle_fwd_get_req(struct client_session *client,
 	resp = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 	assert(resp != NULL);
 
+	make_socket_blocking(client->main_conn.sock);
 	// check user info
 	user = &req->user;
 	if (check_user(user) == -1) {
-		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0));
+		ret = send_get_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0);
+		goto done;
 	}
 
 	// get or create peer session
 	conn = get_peer_task_conn_by_user(user);
-
 	if (conn == NULL) {
-		DEBUG((DEBUG_INFO, "cannot get peer task conn!\n"));
-		DBUG_RETURN(send_get_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_PEER_BUSYING, 0));
+		DEBUG((DEBUG_WARN, "cannot get peer task conn!\n"));
+		ret = send_get_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_PEER_BUSYING, 0);
+		goto done;
 	}
 
 	DEBUG((DEBUG_INFO, "get peer task conn|connect_id=%s\n",
@@ -890,7 +897,8 @@ int handle_fwd_get_req(struct client_session *client,
 		// recv get resp packet from peer
 		ret = recv_sftt_packet(conn->sock, resp_packet);
 		if (ret == -1) {
-			DEBUG((DEBUG_ERROR, "recv sftt packet failed!\n"));
+			DEBUG((DEBUG_ERROR, "recv sftt packet failed!|err=%s\n",
+						strerror(rte_errno)));
 			goto done;
 		}
 		resp = (struct get_resp *)resp_packet->obj;
@@ -933,6 +941,8 @@ int handle_fwd_get_req(struct client_session *client,
 done:
 	if (conn)
 		put_peer_task_conn(conn);
+
+	make_socket_non_blocking(client->main_conn.sock);
 
 	DBUG_RETURN(ret);
 }
@@ -993,7 +1003,7 @@ int handle_fwd_put_req(struct client_session *client,
 {
 	DBUG_ENTER(__func__);
 
-	int ret;
+	int ret = -1;
 	struct logged_in_user *user;
 	struct put_req *req;
 	struct put_resp *resp;
@@ -1002,23 +1012,26 @@ int handle_fwd_put_req(struct client_session *client,
 
 	resp = mp_malloc(g_mp, __func__, sizeof(put_resp));
 	if (resp == NULL) {
-		DEBUG((DEBUG_INFO, "alloc put_resp failed!\n"));
-		DBUG_RETURN(-1);
+		DEBUG((DEBUG_ERROR, "alloc put_resp failed!\n"));
+		goto done;
 	}
 
+	make_socket_blocking(client->main_conn.sock);
 	req = req_packet->obj;
 	// check user info
 	user = &req->user;
 	if (check_user(user) == -1) {
-		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
-				resp, RESP_CNT_CHECK_USER, 0));
+		ret = send_put_resp(client->main_conn.sock, resp_packet,
+				resp, RESP_CNT_CHECK_USER, 0);
+		goto done;
 	}
 
 	// get or create peer task conn
 	conn = get_peer_task_conn_by_user(user);
 	if (conn == NULL) {
-		DBUG_RETURN(send_put_resp(client->main_conn.sock, resp_packet,
-			       resp, RESP_PEER_BUSYING, 0));
+		ret = send_put_resp(client->main_conn.sock, resp_packet,
+			       resp, RESP_PEER_BUSYING, 0);
+		goto done;
 	}
 
 	do {
@@ -1037,7 +1050,6 @@ int handle_fwd_put_req(struct client_session *client,
 				goto done;
 			}
 			resp = (struct put_resp *)resp_packet->obj;
-			assert(resp != NULL);
 			ret = send_put_resp(client->main_conn.sock, resp_packet, resp, resp->status, 0);
 		}
 
@@ -1056,7 +1068,9 @@ done:
 	if (conn)
 		put_peer_task_conn(conn);
 
-	DBUG_RETURN(0);
+	make_socket_non_blocking(client->main_conn.sock);
+
+	DBUG_RETURN(ret);
 }
 
 int handle_put_req(struct client_session *client,
@@ -1421,7 +1435,9 @@ int handle_append_conn_req(struct client_session *client,
 		*conn = client->main_conn;
 		DEBUG((DEBUG_INFO, "conn->connect_id=%s\n", conn->connect_id));
 		conn->type = CONN_TYPE_TASK;
+		make_socket_blocking(conn->sock);
 		put_sock_conn(conn);
+		clear_conn_updating(conn);
 
 		DEBUG((DEBUG_INFO, "append task conn|conn->type=%d|conn->is_using=%d\n",
 				conn->type, atomic16_read(&conn->is_using)));
@@ -1484,6 +1500,10 @@ int handle_reconnect_req(struct client_session *client,
 	}
 
 	conn->sock = client->main_conn.sock;
+
+	if (conn->type == CONN_TYPE_TASK)
+		make_socket_blocking(conn->sock);
+
 	clear_conn_updating(conn);
 
 	return 0;
@@ -1531,9 +1551,11 @@ int handle_client_session(void *args)
 		DEBUG((DEBUG_ERROR, "set child sigactions failed!\n"));
 	}
 
+#if 1
 	if (make_socket_non_blocking(client->main_conn.sock) == -1) {
 		DEBUG((DEBUG_ERROR, "set sock non blocking failed!\n"));
 	}
+#endif
 
 	add_log(LOG_INFO, "begin to communicate with client ...");
 	while (1) {
@@ -1621,15 +1643,16 @@ exit:
 		free_sftt_packet(&resp);
 
 	put_sock_conn(&client->main_conn);
-	if (strlen(client->session_id))
-		DEBUG((DEBUG_WARN, "put session|session_id=%s\n", client->session_id));
-	put_session(client);
 
 	if (need_close) {
 		DEBUG((DEBUG_WARN, "close main_conn sock|connect_id=%s\n",
 					client->main_conn.connect_id));
 		close(client->main_conn.sock);
 	}
+
+	if (strlen(client->session_id))
+		DEBUG((DEBUG_WARN, "put session|session_id=%s\n", client->session_id));
+	put_session(client);
 
 	DBUG_RETURN(ret);
 }

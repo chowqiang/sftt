@@ -60,6 +60,8 @@ pthread_t start_server(int port, void *(*func)(void *arg));
 
 int make_socket_non_blocking(int sfd);
 
+int make_socket_blocking(int sfd);
+
 #define put_sock_conn(conn) do {atomic16_set(&((conn)->is_using), 0);} while(0)
 
 #define get_sock_conn(conn) do {atomic16_set(&((conn)->is_using), 1);} while(0)

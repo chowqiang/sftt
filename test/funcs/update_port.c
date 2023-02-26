@@ -74,9 +74,39 @@ struct test_cmd cmds_1[] = {
 		.args = {NULL},
 		.chroot_flags = 0
 	},
+	{
+		.cmd = "sleep",
+		.args = {"18", NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
+	},
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "env",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
 };
 
 struct test_cmd cmds_2[] = {
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "env",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "sleep",
+		.args = {"20", NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
+	},
 	{
 		.cmd = "w",
 		.args = {NULL},

@@ -58,6 +58,26 @@ struct test_cmd cmds_2[] = {
 		.chroot_flags = 0
 	},
 	{
+		.cmd = "env",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "sleep",
+		.args = {"20", NULL},
+		.chroot_flags = BIT32(1) | BIT32(2)
+	},
+	{
+		.cmd = "w",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
+		.cmd = "env",
+		.args = {NULL},
+		.chroot_flags = 0
+	},
+	{
 		.cmd = "get",
 		.args = {"0", CLIENT_DIR_1, CLIENT_DIR_2, NULL},
 		.chroot_flags = BIT32(1) | BIT32(2)
