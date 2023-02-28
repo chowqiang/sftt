@@ -440,7 +440,7 @@ static int run_command(struct sftt_client *client,
 void add_cmd_log(struct user_cmd *cmd)
 {
 	int i = 0, ret = 0;
-	char *buf = mp_malloc(g_mp, __func__, sizeof(char) * 1024);
+	static char buf[1024];
 
 	if (cmd->argc == 0) {
 		ret = sprintf(buf, "exec name: %s, argc: %d", cmd->name, cmd->argc);
@@ -454,7 +454,6 @@ void add_cmd_log(struct user_cmd *cmd)
 	buf[ret] = 0;
 
 	add_log(LOG_INFO, "%s", buf);
-	mp_free(g_mp, buf);
 }
 
 int execute_directcmd(struct sftt_client *client, char *buf)
@@ -802,7 +801,7 @@ static int validate_user_base_info(struct sftt_client *client)
 	}
 
 	client->uinfo.uid = resp_info->data.uid;
-	add_log(LOG_INFO, "uid: %ld", client->uinfo.uid);
+	add_log(LOG_INFO, "%s, uid=%ld", __func__, client->uinfo.uid);
 	DEBUG((DEBUG_WARN, "validate user|uid=%ld\n", client->uinfo.uid));
 
 	strncpy(client->session_id, resp_info->data.session_id, SESSION_ID_LEN - 1);
@@ -1272,7 +1271,7 @@ int do_task_handler(void *arg)
 	while (1) {
 		get_sock_conn(conn);
 		ret = recv_sftt_packet(conn->sock, req);
-		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
+		//add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
 		if (ret == 0) {
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
 			DEBUG((DEBUG_INFO, "a client is disconnected\n"));

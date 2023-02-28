@@ -1569,7 +1569,7 @@ int handle_client_session(void *args)
 		get_sock_conn(&client->main_conn);
 		ret = recv_sftt_packet(client->main_conn.sock, req);
 		rwlock_read_unlock(&server->update_lock);
-		add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
+		//add_log(LOG_INFO, "%s: recv return|ret=%d", __func__, ret);
 		if (ret == 0) {
 			add_log(LOG_INFO, "client disconnected, child process is exiting ...");
 			DEBUG((DEBUG_WARN, "a client is disconnected\n"));
@@ -2075,7 +2075,7 @@ int port_update_loop(void *arg)
 
 		notify_client_after_updating();
 
-		sprintf(buf, "update second port and second sock done!\n"
+		sprintf(buf, "update second port and second sock done!|"
 			"sock(%d -> %d), port(%d -> %d)", server->second_sock,
 			sock, server->second_port, port);
 		add_log(LOG_INFO, buf);
@@ -2122,7 +2122,7 @@ int second_channel_loop(void *arg)
 
 		if ((session = get_new_session()) == NULL) {
 			rwlock_read_unlock(&server->update_lock);
-			add_log(LOG_INFO, "exceed max connection!");
+			add_log(LOG_ERROR, "exceed max connection!");
 			close(connect_fd);
 			continue;
 		}
@@ -2142,7 +2142,7 @@ int second_channel_loop(void *arg)
 		ret = launch_thread_in_pool(server->thread_pool, THREAD_INDEX_ANY,
 				handle_client_session, session);
 		if (ret) {
-			add_log(LOG_INFO, "create thread failed!");
+			add_log(LOG_ERROR, "create thread failed!");
 			session->status = DISCONNECTED;
 		}
 		rwlock_read_unlock(&server->update_lock);
