@@ -16,6 +16,7 @@
 
 #include "packet.h"
 #include "serialize.h"
+#include "serialize_raw.h"
 #include "serialize_handler.h"
 
 struct serialize_handler serializables[] = {
@@ -51,5 +52,41 @@ struct serialize_handler serializables[] = {
 	{PACKET_TYPE_PORT_UPDATE_RESP, port_update_resp_encode, port_update_resp_decode},
 	{PACKET_TYPE_RECONNECT_REQ, reconnect_req_encode, reconnect_req_decode},
 	{PACKET_TYPE_RECONNECT_RESP, reconnect_resp_encode, reconnect_resp_decode},
+	{-1, NULL, NULL},
+};
+
+struct serialize_handler serializables_raw[] = {
+	{PACKET_TYPE_VALIDATE_REQ, validate_req_raw_encode, validate_req_raw_decode},
+	{PACKET_TYPE_VALIDATE_RESP, validate_resp_raw_encode, validate_resp_raw_decode},
+	{PACKET_TYPE_PWD_REQ, pwd_req_raw_encode, pwd_req_raw_decode},
+	{PACKET_TYPE_PWD_RESP, pwd_resp_raw_encode, pwd_resp_raw_decode},
+	{PACKET_TYPE_CD_REQ, cd_req_raw_encode, cd_req_raw_decode},
+	{PACKET_TYPE_CD_RESP, cd_resp_raw_encode, cd_resp_raw_decode},
+	{PACKET_TYPE_LL_REQ, ll_req_raw_encode, ll_req_raw_decode},
+	{PACKET_TYPE_LL_RESP, ll_resp_raw_encode, ll_resp_raw_decode},
+	{PACKET_TYPE_GET_REQ, get_req_raw_encode, get_req_raw_decode},
+	{PACKET_TYPE_GET_RESP, get_resp_raw_encode, get_resp_raw_decode},
+	{PACKET_TYPE_PUT_REQ, put_req_raw_encode, put_req_raw_decode},
+	{PACKET_TYPE_PUT_RESP, put_resp_raw_encode, put_resp_raw_decode},
+	{PACKET_TYPE_COMMON_RESP, common_resp_raw_encode, common_resp_raw_decode},
+	{PACKET_TYPE_WRITE_MSG_REQ, write_msg_req_raw_encode, write_msg_req_raw_decode},
+	{PACKET_TYPE_READ_MSG_REQ, read_msg_req_raw_encode, read_msg_req_raw_decode},
+	{PACKET_TYPE_READ_MSG_RESP, read_msg_resp_raw_encode, read_msg_resp_raw_decode},
+	{PACKET_TYPE_MP_STAT_REQ, mp_stat_req_raw_encode, mp_stat_req_raw_decode},
+	{PACKET_TYPE_MP_STAT_RESP, mp_stat_resp_raw_encode, mp_stat_resp_raw_decode},
+	{PACKET_TYPE_DIRECTCMD_REQ, directcmd_req_raw_encode, directcmd_req_raw_decode},
+	{PACKET_TYPE_DIRECTCMD_RESP, directcmd_resp_raw_encode, directcmd_resp_raw_decode},
+	{PACKET_TYPE_WHO_REQ, who_req_raw_encode, who_req_raw_decode},
+	{PACKET_TYPE_WHO_RESP, who_resp_raw_encode, who_resp_raw_decode},
+	{PACKET_TYPE_WRITE_REQ, write_req_raw_encode, write_req_raw_decode},
+	{PACKET_TYPE_WRITE_RESP, write_resp_raw_encode, write_resp_raw_decode},
+	{PACKET_TYPE_APPEND_CONN_REQ, append_conn_req_raw_encode, append_conn_req_raw_decode},
+	{PACKET_TYPE_APPEND_CONN_RESP, append_conn_resp_raw_encode, append_conn_resp_raw_decode},
+	{PACKET_TYPE_CHANNEL_INFO_REQ, channel_info_req_raw_encode, channel_info_req_raw_decode},
+	{PACKET_TYPE_CHANNEL_INFO_RESP, channel_info_resp_raw_encode, channel_info_resp_raw_decode},
+	{PACKET_TYPE_PORT_UPDATE_REQ, port_update_req_raw_encode, port_update_req_raw_decode},
+	{PACKET_TYPE_PORT_UPDATE_RESP, port_update_resp_raw_encode, port_update_resp_raw_decode},
+	{PACKET_TYPE_RECONNECT_REQ, reconnect_req_raw_encode, reconnect_req_raw_decode},
+	{PACKET_TYPE_RECONNECT_RESP, reconnect_resp_raw_encode, reconnect_resp_raw_decode},
 	{-1, NULL, NULL},
 };

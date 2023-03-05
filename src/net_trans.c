@@ -33,6 +33,9 @@
 
 extern struct mem_pool *g_mp;
 extern struct serialize_handler serializables[];
+#ifdef CONFIG_SERIALIZE_RAW
+extern struct serialize_handler serializables_raw[];
+#endif
 
 struct sftt_packet *malloc_sftt_packet(void)
 {
@@ -124,11 +127,16 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 	int i = 0, len = 0;
 	unsigned char *buf = NULL;
 	bool ret = false;
+#ifdef CONFIG_SERIALIZE_RAW
+	struct serialize_handler *handlers = serializables_raw;
+#else
+	struct serialize_handler *handlers = serializables;
+#endif
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
-	for (i = 0; serializables[i].packet_type != -1; ++i) {
-		if (sp->type == serializables[i].packet_type) {
-			ret = serializables[i].serialize(sp->obj, &buf, &len);
+	for (i = 0; handlers[i].packet_type != -1; ++i) {
+		if (sp->type == handlers[i].packet_type) {
+			ret = handlers[i].serialize(sp->obj, &buf, &len);
 			DEBUG((DEBUG_DEBUG, "serialization done|"
 					"sp->type=%d|ret=%d|buf=%p|len=%d\n",
 					sp->type, ret, buf, len));
@@ -159,11 +167,16 @@ int sftt_packet_deserialize(struct sftt_packet *sp)
 	DBUG_ENTER(__func__);
 
 	int i = 0, ret = 0;
+#ifdef CONFIG_SERIALIZE_RAW
+	struct serialize_handler *handlers = serializables_raw;
+#else
+	struct serialize_handler *handlers = serializables;
+#endif
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
-	for (i = 0; serializables[i].packet_type != -1; ++i) {
-		if (sp->type == serializables[i].packet_type) {
-			ret = serializables[i].deserialize(sp->content,
+	for (i = 0; handlers[i].packet_type != -1; ++i) {
+		if (sp->type == handlers[i].packet_type) {
+			ret = handlers[i].deserialize(sp->content,
 				sp->data_len, &(sp->obj));
 			DEBUG((DEBUG_DEBUG, "deserialization done|"
 					"sp->type=%d|ret=%d|sp->data_len=%d|"
@@ -200,32 +213,39 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 	DBUG_ENTER(__func__);
 
 	int ret = 0;
-	struct sftt_packet *_sp;
+	static struct sftt_packet *_sp = NULL;
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
 	DEBUG((DEBUG_DEBUG, "before serialize|sp->data_len=%d\n", sp->data_len));
 
+	/* Firstly, serialize sp->obj to sp->content */
 	if (!sftt_packet_serialize(sp)) {
 		DEBUG((DEBUG_ERROR, "sftt packet serialize failed!\n"));
 		DBUG_RETURN(-1);
 	}
 	DEBUG((DEBUG_DEBUG, "after serialize|sp->data_len=%d\n", sp->data_len));
 
-	_sp = malloc_sftt_packet();
 	if (_sp == NULL) {
-		DEBUG((DEBUG_ERROR, "malloc sftt packet failed\n"));
-		DBUG_RETURN(-1);
+		_sp = malloc_sftt_packet();
+		if (_sp == NULL) {
+			DEBUG((DEBUG_ERROR, "malloc sftt packet failed\n"));
+			DBUG_RETURN(-1);
+		}
 	}
 
 	DEBUG((DEBUG_DEBUG, "before encode content|sp->data_len=%d\n", sp->data_len));
 
+	/* Used in sending packet header, including _sp->type and _sp->data_len */
 	_sp->type = sp->type;
+
+	/* Second, encode sp->content to _sp->content and _sp->data_len */
 	ret = sftt_packet_encode_content(sp, _sp);
 	if (!(ret > 0)) {
 		DEBUG((DEBUG_ERROR, "encode content failed|ret=%d|sp->type=%d\n",
 				ret, sp->type));
 		DBUG_RETURN(-1);
 	}
+	/* Free sp->content, because it is never unused */
 	sftt_packet_free_content(sp);
 
 	DEBUG((DEBUG_DEBUG, "before send|sp->data_len=%d\n", _sp->data_len));
@@ -233,7 +253,11 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 	sftt_packet_send_content(sock, _sp);
 	DEBUG((DEBUG_DEBUG, "send packet done\n"));
 
-	free_sftt_packet(&_sp);
+	/*
+	 * There a little memory leak
+	 * free_sftt_packet(&_sp);
+	 */
+
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	DBUG_RETURN(0);
@@ -346,7 +370,7 @@ int recv_sftt_packet(int sock, struct sftt_packet *sp)
 
 	ret = sftt_packet_recv_header(sock, _sp);
 	if (!(ret > 0)) {
-		//DEBUG((DEBUG_ERROR, "recv header failed!\n"));
+		/* Don't warn because the socket may be non-blocked */
 		DBUG_RETURN(ret);
 	}
 
@@ -392,10 +416,9 @@ void free_sftt_packet(struct sftt_packet **sp)
 
 	if (sp && *sp) {
 		sftt_packet_free_content(*sp);
-		/* Notes!
-		 * Don't free sftt_packet obj, let user to free
-		 * if ((*sp)->obj)
-		 *	mp_free(g_mp, (*sp)->obj);
+		/*
+		 * Don't free sftt_packet obj, let user do it in advance.
+		 * mp_free(g_mp, (*sp)->obj);
 		 */
 
 		mp_free(g_mp, *sp);

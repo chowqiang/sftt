@@ -19,4 +19,5 @@
 #define CONFIG_DEFAULT_DEBUG_LEVEL "warn"
 #define CONFIG_SERVER_DEBUG_LEVEL "warn"
 #define CONFIG_CLIENT_DEBUG_LEVEL "warn"
+#define CONFIG_SERIALIZE_RAW 1
 #endif
