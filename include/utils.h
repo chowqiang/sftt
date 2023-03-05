@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <inttypes.h>
 
 #ifndef bzero
 #define bzero(addr, size)	memset(addr, 0, size)
@@ -64,4 +66,14 @@ void gen_random_str(char buf[], int len);
 double get_double_time(void);
 
 void print_line(char *str, char c);
+
+static inline uint64_t htonll(uint64_t val)
+{
+    return (((uint64_t) htonl(val)) << 32) + htonl(val >> 32);
+}
+
+static inline uint64_t ntohll(uint64_t val)
+{
+    return (((uint64_t) ntohl(val)) << 32) + ntohl(val >> 32);
+}
 #endif
