@@ -22,9 +22,11 @@ bool version_info_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct version_info *_req = req;
+
 	_req->major = htons(_req->major);
 	_req->minor = htons(_req->minor);
 	_req->revision = htons(_req->revision);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct version_info));
 		memcpy(*buf, req, sizeof(struct version_info));
@@ -42,11 +44,12 @@ void __version_info_raw_decode(struct version_info *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct version_info *_req = req;
+
 	_req->major = ntohs(_req->major);
 	_req->minor = ntohs(_req->minor);
 	_req->revision = ntohs(_req->revision);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool version_info_raw_decode(unsigned char *buf, int len, void **req,
@@ -62,6 +65,7 @@ bool version_info_raw_decode(unsigned char *buf, int len, void **req,
 	_req->major = ntohs(_req->major);
 	_req->minor = ntohs(_req->minor);
 	_req->revision = ntohs(_req->revision);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -79,7 +83,9 @@ bool channel_info_req_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct channel_info_req *_req = req;
+
 	_req->flags = htonl(_req->flags);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct channel_info_req));
 		memcpy(*buf, req, sizeof(struct channel_info_req));
@@ -97,9 +103,10 @@ void __channel_info_req_raw_decode(struct channel_info_req *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct channel_info_req *_req = req;
-	_req->flags = ntohl(_req->flags);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	_req->flags = ntohl(_req->flags);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool channel_info_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -113,6 +120,7 @@ bool channel_info_req_raw_decode(unsigned char *buf, int len, void **req,
 
 	memcpy(_req, buf, len);
 	_req->flags = ntohl(_req->flags);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -130,8 +138,10 @@ bool channel_info_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct channel_info_resp_data *_req = req;
+
 	_req->main_port = htonl(_req->main_port);
 	_req->second_port = htonl(_req->second_port);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct channel_info_resp_data));
 		memcpy(*buf, req, sizeof(struct channel_info_resp_data));
@@ -149,10 +159,11 @@ void __channel_info_resp_data_raw_decode(struct channel_info_resp_data *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct channel_info_resp_data *_req = req;
+
 	_req->main_port = ntohl(_req->main_port);
 	_req->second_port = ntohl(_req->second_port);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool channel_info_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -167,6 +178,7 @@ bool channel_info_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	memcpy(_req, buf, len);
 	_req->main_port = ntohl(_req->main_port);
 	_req->second_port = ntohl(_req->second_port);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -183,11 +195,13 @@ bool channel_info_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct channel_info_resp *_req = req;
 	int i = 0;
+	struct channel_info_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	channel_info_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct channel_info_resp));
 		memcpy(*buf, req, sizeof(struct channel_info_resp));
@@ -204,13 +218,14 @@ void __channel_info_resp_raw_decode(struct channel_info_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct channel_info_resp *_req = req;
 	int i = 0;
+	struct channel_info_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__channel_info_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool channel_info_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -219,14 +234,15 @@ bool channel_info_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct channel_info_resp *_req = (struct channel_info_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct channel_info_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__channel_info_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -243,11 +259,13 @@ bool validate_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct validate_req *_req = req;
 	int i = 0;
+	struct validate_req *_req = req;
+
 	_req->name_len = htonl(_req->name_len);
 	_req->passwd_len = htonl(_req->passwd_len);
 	version_info_raw_encode(&_req->ver, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 		memcpy(*buf, req, sizeof(struct validate_req));
@@ -264,13 +282,14 @@ void __validate_req_raw_decode(struct validate_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct validate_req *_req = req;
 	int i = 0;
+	struct validate_req *_req = req;
+
 	_req->name_len = ntohl(_req->name_len);
 	_req->passwd_len = ntohl(_req->passwd_len);
 	__version_info_raw_decode(&_req->ver);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool validate_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -279,14 +298,15 @@ bool validate_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct validate_req *_req = (struct validate_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct validate_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->name_len = ntohl(_req->name_len);
 	_req->passwd_len = ntohl(_req->passwd_len);
 	__version_info_raw_decode(&_req->ver);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -303,9 +323,11 @@ bool validate_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct validate_resp_data *_req = req;
 	int i = 0;
+	struct validate_resp_data *_req = req;
+
 	_req->uid = htonl(_req->uid);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct validate_resp_data));
 		memcpy(*buf, req, sizeof(struct validate_resp_data));
@@ -322,11 +344,12 @@ void __validate_resp_data_raw_decode(struct validate_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct validate_resp_data *_req = req;
 	int i = 0;
-	_req->uid = ntohl(_req->uid);
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct validate_resp_data *_req = req;
 
+	_req->uid = ntohl(_req->uid);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool validate_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -335,12 +358,13 @@ bool validate_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct validate_resp_data *_req = (struct validate_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct validate_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->uid = ntohl(_req->uid);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -357,11 +381,13 @@ bool validate_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct validate_resp *_req = req;
 	int i = 0;
+	struct validate_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	validate_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 		memcpy(*buf, req, sizeof(struct validate_resp));
@@ -378,13 +404,14 @@ void __validate_resp_raw_decode(struct validate_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct validate_resp *_req = req;
 	int i = 0;
+	struct validate_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__validate_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool validate_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -393,14 +420,15 @@ bool validate_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct validate_resp *_req = (struct validate_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct validate_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__validate_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -417,9 +445,11 @@ bool append_conn_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct append_conn_req *_req = req;
 	int i = 0;
+	struct append_conn_req *_req = req;
+
 	_req->type = htonl(_req->type);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct append_conn_req));
 		memcpy(*buf, req, sizeof(struct append_conn_req));
@@ -436,11 +466,12 @@ void __append_conn_req_raw_decode(struct append_conn_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct append_conn_req *_req = req;
 	int i = 0;
-	_req->type = ntohl(_req->type);
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct append_conn_req *_req = req;
 
+	_req->type = ntohl(_req->type);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool append_conn_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -449,12 +480,13 @@ bool append_conn_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct append_conn_req *_req = (struct append_conn_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct append_conn_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->type = ntohl(_req->type);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -471,8 +503,9 @@ bool append_conn_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct append_conn_resp_data *_req = req;
 	int i = 0;
+	struct append_conn_resp_data *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct append_conn_resp_data));
 		memcpy(*buf, req, sizeof(struct append_conn_resp_data));
@@ -489,10 +522,10 @@ void __append_conn_resp_data_raw_decode(struct append_conn_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct append_conn_resp_data *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct append_conn_resp_data *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool append_conn_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -501,11 +534,11 @@ bool append_conn_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct append_conn_resp_data *_req = (struct append_conn_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct append_conn_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -522,11 +555,13 @@ bool append_conn_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct append_conn_resp *_req = req;
 	int i = 0;
+	struct append_conn_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	append_conn_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct append_conn_resp));
 		memcpy(*buf, req, sizeof(struct append_conn_resp));
@@ -543,13 +578,14 @@ void __append_conn_resp_raw_decode(struct append_conn_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct append_conn_resp *_req = req;
 	int i = 0;
+	struct append_conn_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__append_conn_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool append_conn_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -558,14 +594,15 @@ bool append_conn_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct append_conn_resp *_req = (struct append_conn_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct append_conn_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__append_conn_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -582,9 +619,11 @@ bool logged_in_user_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct logged_in_user *_req = req;
 	int i = 0;
+	struct logged_in_user *_req = req;
+
 	_req->port = htonl(_req->port);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct logged_in_user));
 		memcpy(*buf, req, sizeof(struct logged_in_user));
@@ -601,11 +640,12 @@ void __logged_in_user_raw_decode(struct logged_in_user *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct logged_in_user *_req = req;
 	int i = 0;
-	_req->port = ntohl(_req->port);
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct logged_in_user *_req = req;
 
+	_req->port = ntohl(_req->port);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool logged_in_user_raw_decode(unsigned char *buf, int len, void **req,
@@ -614,12 +654,13 @@ bool logged_in_user_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct logged_in_user *_req = (struct logged_in_user *)mp_malloc(g_mp, __func__,
 		sizeof(struct logged_in_user));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->port = ntohl(_req->port);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -636,8 +677,9 @@ bool pwd_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct pwd_req *_req = req;
 	int i = 0;
+	struct pwd_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct pwd_req));
 		memcpy(*buf, req, sizeof(struct pwd_req));
@@ -654,10 +696,10 @@ void __pwd_req_raw_decode(struct pwd_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct pwd_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct pwd_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool pwd_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -666,11 +708,11 @@ bool pwd_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct pwd_req *_req = (struct pwd_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct pwd_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -687,8 +729,9 @@ bool pwd_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct pwd_resp_data *_req = req;
 	int i = 0;
+	struct pwd_resp_data *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct pwd_resp_data));
 		memcpy(*buf, req, sizeof(struct pwd_resp_data));
@@ -705,10 +748,10 @@ void __pwd_resp_data_raw_decode(struct pwd_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct pwd_resp_data *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct pwd_resp_data *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool pwd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -717,11 +760,11 @@ bool pwd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct pwd_resp_data *_req = (struct pwd_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct pwd_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -738,11 +781,13 @@ bool pwd_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct pwd_resp *_req = req;
 	int i = 0;
+	struct pwd_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	pwd_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct pwd_resp));
 		memcpy(*buf, req, sizeof(struct pwd_resp));
@@ -759,13 +804,14 @@ void __pwd_resp_raw_decode(struct pwd_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct pwd_resp *_req = req;
 	int i = 0;
+	struct pwd_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__pwd_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool pwd_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -774,14 +820,15 @@ bool pwd_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct pwd_resp *_req = (struct pwd_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct pwd_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__pwd_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -798,10 +845,12 @@ bool ll_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct ll_req *_req = req;
 	int i = 0;
+	struct ll_req *_req = req;
+
 	_req->to_peer = htonl(_req->to_peer);
 	logged_in_user_raw_encode(&_req->user, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct ll_req));
 		memcpy(*buf, req, sizeof(struct ll_req));
@@ -818,12 +867,13 @@ void __ll_req_raw_decode(struct ll_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct ll_req *_req = req;
 	int i = 0;
+	struct ll_req *_req = req;
+
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool ll_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -832,13 +882,14 @@ bool ll_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct ll_req *_req = (struct ll_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct ll_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -855,14 +906,16 @@ bool file_entry_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct file_entry *_req = req;
 	int i = 0;
+	struct file_entry *_req = req;
+
 	_req->type = htonl(_req->type);
 	_req->size = htonl(_req->size);
 	_req->c_time = htonl(_req->c_time);
 	_req->a_time = htonl(_req->a_time);
 	_req->m_time = htonl(_req->m_time);
 	_req->mode = htonl(_req->mode);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct file_entry));
 		memcpy(*buf, req, sizeof(struct file_entry));
@@ -879,16 +932,17 @@ void __file_entry_raw_decode(struct file_entry *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct file_entry *_req = req;
 	int i = 0;
+	struct file_entry *_req = req;
+
 	_req->type = ntohl(_req->type);
 	_req->size = ntohl(_req->size);
 	_req->c_time = ntohl(_req->c_time);
 	_req->a_time = ntohl(_req->a_time);
 	_req->m_time = ntohl(_req->m_time);
 	_req->mode = ntohl(_req->mode);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool file_entry_raw_decode(unsigned char *buf, int len, void **req,
@@ -897,17 +951,18 @@ bool file_entry_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct file_entry *_req = (struct file_entry *)mp_malloc(g_mp, __func__,
 		sizeof(struct file_entry));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->type = ntohl(_req->type);
 	_req->size = ntohl(_req->size);
 	_req->c_time = ntohl(_req->c_time);
 	_req->a_time = ntohl(_req->a_time);
 	_req->m_time = ntohl(_req->m_time);
 	_req->mode = ntohl(_req->mode);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -924,13 +979,15 @@ bool ll_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct ll_resp_data *_req = req;
 	int i = 0;
+	struct ll_resp_data *_req = req;
+
 	_req->total = htonl(_req->total);
 	_req->this_nr = htonl(_req->this_nr);
 	for (i = 0; i < XDR_FILE_ENTRY_MAX_CNT; ++i) {
 		file_entry_raw_encode(&_req->entries[i], NULL, NULL, NULL);
 	}
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct ll_resp_data));
 		memcpy(*buf, req, sizeof(struct ll_resp_data));
@@ -947,15 +1004,16 @@ void __ll_resp_data_raw_decode(struct ll_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct ll_resp_data *_req = req;
 	int i = 0;
+	struct ll_resp_data *_req = req;
+
 	_req->total = ntohl(_req->total);
 	_req->this_nr = ntohl(_req->this_nr);
 	for (i = 0; i < XDR_FILE_ENTRY_MAX_CNT; ++i) {
 		__file_entry_raw_decode(&_req->entries[i]);
 	}
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool ll_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -964,16 +1022,17 @@ bool ll_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct ll_resp_data *_req = (struct ll_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct ll_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->total = ntohl(_req->total);
 	_req->this_nr = ntohl(_req->this_nr);
 	for (i = 0; i < XDR_FILE_ENTRY_MAX_CNT; ++i) {
 		__file_entry_raw_decode(&_req->entries[i]);
 	}
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -990,11 +1049,13 @@ bool ll_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct ll_resp *_req = req;
 	int i = 0;
+	struct ll_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	ll_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct ll_resp));
 		memcpy(*buf, req, sizeof(struct ll_resp));
@@ -1011,13 +1072,14 @@ void __ll_resp_raw_decode(struct ll_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct ll_resp *_req = req;
 	int i = 0;
+	struct ll_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__ll_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool ll_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1026,14 +1088,15 @@ bool ll_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct ll_resp *_req = (struct ll_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct ll_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__ll_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1050,8 +1113,9 @@ bool cd_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct cd_req *_req = req;
 	int i = 0;
+	struct cd_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct cd_req));
 		memcpy(*buf, req, sizeof(struct cd_req));
@@ -1068,10 +1132,10 @@ void __cd_req_raw_decode(struct cd_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct cd_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct cd_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool cd_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1080,11 +1144,11 @@ bool cd_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct cd_req *_req = (struct cd_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct cd_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1101,8 +1165,9 @@ bool cd_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct cd_resp_data *_req = req;
 	int i = 0;
+	struct cd_resp_data *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct cd_resp_data));
 		memcpy(*buf, req, sizeof(struct cd_resp_data));
@@ -1119,10 +1184,10 @@ void __cd_resp_data_raw_decode(struct cd_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct cd_resp_data *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct cd_resp_data *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool cd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -1131,11 +1196,11 @@ bool cd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct cd_resp_data *_req = (struct cd_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct cd_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1152,11 +1217,13 @@ bool cd_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct cd_resp *_req = req;
 	int i = 0;
+	struct cd_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	cd_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct cd_resp));
 		memcpy(*buf, req, sizeof(struct cd_resp));
@@ -1173,13 +1240,14 @@ void __cd_resp_raw_decode(struct cd_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct cd_resp *_req = req;
 	int i = 0;
+	struct cd_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__cd_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool cd_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1188,14 +1256,15 @@ bool cd_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct cd_resp *_req = (struct cd_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct cd_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__cd_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1212,10 +1281,12 @@ bool get_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct get_req *_req = req;
 	int i = 0;
+	struct get_req *_req = req;
+
 	_req->to_peer = htonl(_req->to_peer);
 	logged_in_user_raw_encode(&_req->user, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct get_req));
 		memcpy(*buf, req, sizeof(struct get_req));
@@ -1232,12 +1303,13 @@ void __get_req_raw_decode(struct get_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct get_req *_req = req;
 	int i = 0;
+	struct get_req *_req = req;
+
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool get_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1246,13 +1318,14 @@ bool get_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct get_req *_req = (struct get_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct get_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1269,12 +1342,14 @@ bool trans_entry_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct trans_entry *_req = req;
 	int i = 0;
+	struct trans_entry *_req = req;
+
 	_req->type = htonl(_req->type);
 	_req->this_size = htonl(_req->this_size);
 	_req->mode = htonl(_req->mode);
 	_req->total_size = htonl(_req->total_size);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct trans_entry));
 		memcpy(*buf, req, sizeof(struct trans_entry));
@@ -1291,14 +1366,15 @@ void __trans_entry_raw_decode(struct trans_entry *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct trans_entry *_req = req;
 	int i = 0;
+	struct trans_entry *_req = req;
+
 	_req->type = ntohl(_req->type);
 	_req->this_size = ntohl(_req->this_size);
 	_req->mode = ntohl(_req->mode);
 	_req->total_size = ntohl(_req->total_size);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool trans_entry_raw_decode(unsigned char *buf, int len, void **req,
@@ -1307,15 +1383,16 @@ bool trans_entry_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct trans_entry *_req = (struct trans_entry *)mp_malloc(g_mp, __func__,
 		sizeof(struct trans_entry));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->type = ntohl(_req->type);
 	_req->this_size = ntohl(_req->this_size);
 	_req->mode = ntohl(_req->mode);
 	_req->total_size = ntohl(_req->total_size);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1333,9 +1410,11 @@ bool get_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct get_resp_data *_req = req;
+
 	_req->total_files = htonl(_req->total_files);
 	_req->file_idx = htonl(_req->file_idx);
 	trans_entry_raw_encode(&_req->entry, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct get_resp_data));
 		memcpy(*buf, req, sizeof(struct get_resp_data));
@@ -1353,11 +1432,12 @@ void __get_resp_data_raw_decode(struct get_resp_data *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct get_resp_data *_req = req;
+
 	_req->total_files = ntohl(_req->total_files);
 	_req->file_idx = ntohl(_req->file_idx);
 	__trans_entry_raw_decode(&_req->entry);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool get_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -1373,6 +1453,7 @@ bool get_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	_req->total_files = ntohl(_req->total_files);
 	_req->file_idx = ntohl(_req->file_idx);
 	__trans_entry_raw_decode(&_req->entry);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1389,12 +1470,14 @@ bool get_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct get_resp *_req = req;
 	int i = 0;
+	struct get_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	get_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
 	_req->need_reply = htonl(_req->need_reply);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct get_resp));
 		memcpy(*buf, req, sizeof(struct get_resp));
@@ -1411,14 +1494,15 @@ void __get_resp_raw_decode(struct get_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct get_resp *_req = req;
 	int i = 0;
+	struct get_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__get_resp_data_raw_decode(&_req->data);
 	_req->need_reply = ntohl(_req->need_reply);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool get_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1427,15 +1511,16 @@ bool get_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct get_resp *_req = (struct get_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct get_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__get_resp_data_raw_decode(&_req->data);
 	_req->need_reply = ntohl(_req->need_reply);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1453,9 +1538,11 @@ bool put_req_data_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct put_req_data *_req = req;
+
 	_req->total_files = htonl(_req->total_files);
 	_req->file_idx = htonl(_req->file_idx);
 	trans_entry_raw_encode(&_req->entry, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct put_req_data));
 		memcpy(*buf, req, sizeof(struct put_req_data));
@@ -1473,11 +1560,12 @@ void __put_req_data_raw_decode(struct put_req_data *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct put_req_data *_req = req;
+
 	_req->total_files = ntohl(_req->total_files);
 	_req->file_idx = ntohl(_req->file_idx);
 	__trans_entry_raw_decode(&_req->entry);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool put_req_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -1493,6 +1581,7 @@ bool put_req_data_raw_decode(unsigned char *buf, int len, void **req,
 	_req->total_files = ntohl(_req->total_files);
 	_req->file_idx = ntohl(_req->file_idx);
 	__trans_entry_raw_decode(&_req->entry);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1509,13 +1598,15 @@ bool put_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct put_req *_req = req;
 	int i = 0;
+	struct put_req *_req = req;
+
 	_req->to_peer = htonl(_req->to_peer);
 	logged_in_user_raw_encode(&_req->user, NULL, NULL, NULL);
 	put_req_data_raw_encode(&_req->data, NULL, NULL, NULL);
 	_req->flags = htonl(_req->flags);
 	_req->need_reply = htonl(_req->need_reply);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct put_req));
 		memcpy(*buf, req, sizeof(struct put_req));
@@ -1532,15 +1623,16 @@ void __put_req_raw_decode(struct put_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct put_req *_req = req;
 	int i = 0;
+	struct put_req *_req = req;
+
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
 	__put_req_data_raw_decode(&_req->data);
 	_req->flags = ntohl(_req->flags);
 	_req->need_reply = ntohl(_req->need_reply);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool put_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1549,16 +1641,17 @@ bool put_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct put_req *_req = (struct put_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct put_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->to_peer = ntohl(_req->to_peer);
 	__logged_in_user_raw_decode(&_req->user);
 	__put_req_data_raw_decode(&_req->data);
 	_req->flags = ntohl(_req->flags);
 	_req->need_reply = ntohl(_req->need_reply);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1575,10 +1668,12 @@ bool put_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct put_resp *_req = req;
 	int i = 0;
+	struct put_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct put_resp));
 		memcpy(*buf, req, sizeof(struct put_resp));
@@ -1595,12 +1690,13 @@ void __put_resp_raw_decode(struct put_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct put_resp *_req = req;
 	int i = 0;
+	struct put_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool put_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1609,13 +1705,14 @@ bool put_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct put_resp *_req = (struct put_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct put_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1632,10 +1729,12 @@ bool common_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct common_resp *_req = req;
 	int i = 0;
+	struct common_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct common_resp));
 		memcpy(*buf, req, sizeof(struct common_resp));
@@ -1652,12 +1751,13 @@ void __common_resp_raw_decode(struct common_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct common_resp *_req = req;
 	int i = 0;
+	struct common_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool common_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1666,13 +1766,14 @@ bool common_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct common_resp *_req = (struct common_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct common_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1689,11 +1790,13 @@ bool write_msg_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct write_msg_req *_req = req;
 	int i = 0;
+	struct write_msg_req *_req = req;
+
 	_req->mtype = htonl(_req->mtype);
 	_req->pid = htonl(_req->pid);
 	_req->length = htonl(_req->length);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct write_msg_req));
 		memcpy(*buf, req, sizeof(struct write_msg_req));
@@ -1710,13 +1813,14 @@ void __write_msg_req_raw_decode(struct write_msg_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct write_msg_req *_req = req;
 	int i = 0;
+	struct write_msg_req *_req = req;
+
 	_req->mtype = ntohl(_req->mtype);
 	_req->pid = ntohl(_req->pid);
 	_req->length = ntohl(_req->length);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool write_msg_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1725,14 +1829,15 @@ bool write_msg_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct write_msg_req *_req = (struct write_msg_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct write_msg_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->mtype = ntohl(_req->mtype);
 	_req->pid = ntohl(_req->pid);
 	_req->length = ntohl(_req->length);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1750,7 +1855,9 @@ bool read_msg_req_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct read_msg_req *_req = req;
+
 	_req->mtype = htonl(_req->mtype);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct read_msg_req));
 		memcpy(*buf, req, sizeof(struct read_msg_req));
@@ -1768,9 +1875,10 @@ void __read_msg_req_raw_decode(struct read_msg_req *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct read_msg_req *_req = req;
-	_req->mtype = ntohl(_req->mtype);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	_req->mtype = ntohl(_req->mtype);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool read_msg_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1784,6 +1892,7 @@ bool read_msg_req_raw_decode(unsigned char *buf, int len, void **req,
 
 	memcpy(_req, buf, len);
 	_req->mtype = ntohl(_req->mtype);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1800,11 +1909,13 @@ bool read_msg_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct read_msg_resp_data *_req = req;
 	int i = 0;
+	struct read_msg_resp_data *_req = req;
+
 	_req->mtype = htonl(_req->mtype);
 	_req->pid = htonl(_req->pid);
 	_req->length = htonl(_req->length);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct read_msg_resp_data));
 		memcpy(*buf, req, sizeof(struct read_msg_resp_data));
@@ -1821,13 +1932,14 @@ void __read_msg_resp_data_raw_decode(struct read_msg_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct read_msg_resp_data *_req = req;
 	int i = 0;
+	struct read_msg_resp_data *_req = req;
+
 	_req->mtype = ntohl(_req->mtype);
 	_req->pid = ntohl(_req->pid);
 	_req->length = ntohl(_req->length);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool read_msg_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -1836,14 +1948,15 @@ bool read_msg_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct read_msg_resp_data *_req = (struct read_msg_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct read_msg_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->mtype = ntohl(_req->mtype);
 	_req->pid = ntohl(_req->pid);
 	_req->length = ntohl(_req->length);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1860,11 +1973,13 @@ bool read_msg_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct read_msg_resp *_req = req;
 	int i = 0;
+	struct read_msg_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	read_msg_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct read_msg_resp));
 		memcpy(*buf, req, sizeof(struct read_msg_resp));
@@ -1881,13 +1996,14 @@ void __read_msg_resp_raw_decode(struct read_msg_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct read_msg_resp *_req = req;
 	int i = 0;
+	struct read_msg_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__read_msg_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool read_msg_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -1896,14 +2012,15 @@ bool read_msg_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct read_msg_resp *_req = (struct read_msg_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct read_msg_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__read_msg_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1920,8 +2037,9 @@ bool mp_stat_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct mp_stat_req *_req = req;
 	int i = 0;
+	struct mp_stat_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct mp_stat_req));
 		memcpy(*buf, req, sizeof(struct mp_stat_req));
@@ -1938,10 +2056,10 @@ void __mp_stat_req_raw_decode(struct mp_stat_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct mp_stat_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct mp_stat_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool mp_stat_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -1950,11 +2068,11 @@ bool mp_stat_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct mp_stat_req *_req = (struct mp_stat_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct mp_stat_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -1972,10 +2090,12 @@ bool mp_stat_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct mp_stat_resp_data *_req = req;
+
 	_req->total_size = htonl(_req->total_size);
 	_req->total_nodes = htonl(_req->total_nodes);
 	_req->using_nodes = htonl(_req->using_nodes);
 	_req->free_nodes = htonl(_req->free_nodes);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct mp_stat_resp_data));
 		memcpy(*buf, req, sizeof(struct mp_stat_resp_data));
@@ -1993,12 +2113,13 @@ void __mp_stat_resp_data_raw_decode(struct mp_stat_resp_data *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct mp_stat_resp_data *_req = req;
+
 	_req->total_size = ntohl(_req->total_size);
 	_req->total_nodes = ntohl(_req->total_nodes);
 	_req->using_nodes = ntohl(_req->using_nodes);
 	_req->free_nodes = ntohl(_req->free_nodes);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool mp_stat_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -2015,6 +2136,7 @@ bool mp_stat_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	_req->total_nodes = ntohl(_req->total_nodes);
 	_req->using_nodes = ntohl(_req->using_nodes);
 	_req->free_nodes = ntohl(_req->free_nodes);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2031,11 +2153,13 @@ bool mp_stat_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct mp_stat_resp *_req = req;
 	int i = 0;
+	struct mp_stat_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	mp_stat_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct mp_stat_resp));
 		memcpy(*buf, req, sizeof(struct mp_stat_resp));
@@ -2052,13 +2176,14 @@ void __mp_stat_resp_raw_decode(struct mp_stat_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct mp_stat_resp *_req = req;
 	int i = 0;
+	struct mp_stat_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__mp_stat_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool mp_stat_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2067,14 +2192,15 @@ bool mp_stat_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct mp_stat_resp *_req = (struct mp_stat_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct mp_stat_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__mp_stat_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2091,8 +2217,9 @@ bool directcmd_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct directcmd_req *_req = req;
 	int i = 0;
+	struct directcmd_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct directcmd_req));
 		memcpy(*buf, req, sizeof(struct directcmd_req));
@@ -2109,10 +2236,10 @@ void __directcmd_req_raw_decode(struct directcmd_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct directcmd_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct directcmd_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool directcmd_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -2121,11 +2248,11 @@ bool directcmd_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct directcmd_req *_req = (struct directcmd_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct directcmd_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2142,10 +2269,12 @@ bool directcmd_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct directcmd_resp_data *_req = req;
 	int i = 0;
+	struct directcmd_resp_data *_req = req;
+
 	_req->total_len = htonl(_req->total_len);
 	_req->this_len = htonl(_req->this_len);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct directcmd_resp_data));
 		memcpy(*buf, req, sizeof(struct directcmd_resp_data));
@@ -2162,12 +2291,13 @@ void __directcmd_resp_data_raw_decode(struct directcmd_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct directcmd_resp_data *_req = req;
 	int i = 0;
+	struct directcmd_resp_data *_req = req;
+
 	_req->total_len = ntohl(_req->total_len);
 	_req->this_len = ntohl(_req->this_len);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool directcmd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -2176,13 +2306,14 @@ bool directcmd_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct directcmd_resp_data *_req = (struct directcmd_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct directcmd_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->total_len = ntohl(_req->total_len);
 	_req->this_len = ntohl(_req->this_len);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2199,11 +2330,13 @@ bool directcmd_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct directcmd_resp *_req = req;
 	int i = 0;
+	struct directcmd_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	directcmd_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct directcmd_resp));
 		memcpy(*buf, req, sizeof(struct directcmd_resp));
@@ -2220,13 +2353,14 @@ void __directcmd_resp_raw_decode(struct directcmd_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct directcmd_resp *_req = req;
 	int i = 0;
+	struct directcmd_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__directcmd_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool directcmd_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2235,14 +2369,15 @@ bool directcmd_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct directcmd_resp *_req = (struct directcmd_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct directcmd_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__directcmd_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2259,8 +2394,9 @@ bool who_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct who_req *_req = req;
 	int i = 0;
+	struct who_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct who_req));
 		memcpy(*buf, req, sizeof(struct who_req));
@@ -2277,10 +2413,10 @@ void __who_req_raw_decode(struct who_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct who_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct who_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool who_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -2289,11 +2425,11 @@ bool who_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct who_req *_req = (struct who_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct who_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2310,13 +2446,15 @@ bool who_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct who_resp_data *_req = req;
 	int i = 0;
+	struct who_resp_data *_req = req;
+
 	_req->total = htonl(_req->total);
 	_req->this_nr = htonl(_req->this_nr);
 	for (i = 0; i < XDR_LOGGED_IN_USER_MAX_CNT; ++i) {
 		logged_in_user_raw_encode(&_req->users[i], NULL, NULL, NULL);
 	}
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct who_resp_data));
 		memcpy(*buf, req, sizeof(struct who_resp_data));
@@ -2333,15 +2471,16 @@ void __who_resp_data_raw_decode(struct who_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct who_resp_data *_req = req;
 	int i = 0;
+	struct who_resp_data *_req = req;
+
 	_req->total = ntohl(_req->total);
 	_req->this_nr = ntohl(_req->this_nr);
 	for (i = 0; i < XDR_LOGGED_IN_USER_MAX_CNT; ++i) {
 		__logged_in_user_raw_decode(&_req->users[i]);
 	}
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool who_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -2350,16 +2489,17 @@ bool who_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct who_resp_data *_req = (struct who_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct who_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->total = ntohl(_req->total);
 	_req->this_nr = ntohl(_req->this_nr);
 	for (i = 0; i < XDR_LOGGED_IN_USER_MAX_CNT; ++i) {
 		__logged_in_user_raw_decode(&_req->users[i]);
 	}
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2376,11 +2516,13 @@ bool who_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct who_resp *_req = req;
 	int i = 0;
+	struct who_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	who_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct who_resp));
 		memcpy(*buf, req, sizeof(struct who_resp));
@@ -2397,13 +2539,14 @@ void __who_resp_raw_decode(struct who_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct who_resp *_req = req;
 	int i = 0;
+	struct who_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__who_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool who_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2412,14 +2555,15 @@ bool who_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct who_resp *_req = (struct who_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct who_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__who_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2436,10 +2580,12 @@ bool write_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct write_req *_req = req;
 	int i = 0;
+	struct write_req *_req = req;
+
 	logged_in_user_raw_encode(&_req->user, NULL, NULL, NULL);
 	_req->len = htonl(_req->len);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct write_req));
 		memcpy(*buf, req, sizeof(struct write_req));
@@ -2456,12 +2602,13 @@ void __write_req_raw_decode(struct write_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct write_req *_req = req;
 	int i = 0;
+	struct write_req *_req = req;
+
 	__logged_in_user_raw_decode(&_req->user);
 	_req->len = ntohl(_req->len);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool write_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -2470,13 +2617,14 @@ bool write_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct write_req *_req = (struct write_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct write_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	__logged_in_user_raw_decode(&_req->user);
 	_req->len = ntohl(_req->len);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2493,8 +2641,9 @@ bool write_resp_data_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct write_resp_data *_req = req;
 	int i = 0;
+	struct write_resp_data *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct write_resp_data));
 		memcpy(*buf, req, sizeof(struct write_resp_data));
@@ -2511,10 +2660,10 @@ void __write_resp_data_raw_decode(struct write_resp_data *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct write_resp_data *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct write_resp_data *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool write_resp_data_raw_decode(unsigned char *buf, int len, void **req,
@@ -2523,11 +2672,11 @@ bool write_resp_data_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct write_resp_data *_req = (struct write_resp_data *)mp_malloc(g_mp, __func__,
 		sizeof(struct write_resp_data));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2544,11 +2693,13 @@ bool write_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct write_resp *_req = req;
 	int i = 0;
+	struct write_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
 	write_resp_data_raw_encode(&_req->data, NULL, NULL, NULL);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct write_resp));
 		memcpy(*buf, req, sizeof(struct write_resp));
@@ -2565,13 +2716,14 @@ void __write_resp_raw_decode(struct write_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct write_resp *_req = req;
 	int i = 0;
+	struct write_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__write_resp_data_raw_decode(&_req->data);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool write_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2580,14 +2732,15 @@ bool write_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct write_resp *_req = (struct write_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct write_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
 	__write_resp_data_raw_decode(&_req->data);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2605,7 +2758,9 @@ bool port_update_req_raw_encode(void *req, unsigned char **buf, int *len,
 
 	bool ret = true;
 	struct port_update_req *_req = req;
+
 	_req->second_port = htonl(_req->second_port);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct port_update_req));
 		memcpy(*buf, req, sizeof(struct port_update_req));
@@ -2623,9 +2778,10 @@ void __port_update_req_raw_decode(struct port_update_req *req)
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	struct port_update_req *_req = req;
-	_req->second_port = ntohl(_req->second_port);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	_req->second_port = ntohl(_req->second_port);
+
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool port_update_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -2639,6 +2795,7 @@ bool port_update_req_raw_decode(unsigned char *buf, int len, void **req,
 
 	memcpy(_req, buf, len);
 	_req->second_port = ntohl(_req->second_port);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2655,10 +2812,12 @@ bool port_update_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct port_update_resp *_req = req;
 	int i = 0;
+	struct port_update_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct port_update_resp));
 		memcpy(*buf, req, sizeof(struct port_update_resp));
@@ -2675,12 +2834,13 @@ void __port_update_resp_raw_decode(struct port_update_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct port_update_resp *_req = req;
 	int i = 0;
+	struct port_update_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool port_update_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2689,13 +2849,14 @@ bool port_update_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct port_update_resp *_req = (struct port_update_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct port_update_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2712,8 +2873,9 @@ bool reconnect_req_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct reconnect_req *_req = req;
 	int i = 0;
+	struct reconnect_req *_req = req;
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct reconnect_req));
 		memcpy(*buf, req, sizeof(struct reconnect_req));
@@ -2730,10 +2892,10 @@ void __reconnect_req_raw_decode(struct reconnect_req *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct reconnect_req *_req = req;
 	int i = 0;
-	DEBUG((DEBUG_DEBUG, "out\n"));
+	struct reconnect_req *_req = req;
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool reconnect_req_raw_decode(unsigned char *buf, int len, void **req,
@@ -2742,11 +2904,11 @@ bool reconnect_req_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct reconnect_req *_req = (struct reconnect_req *)mp_malloc(g_mp, __func__,
 		sizeof(struct reconnect_req));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;
@@ -2763,10 +2925,12 @@ bool reconnect_resp_raw_encode(void *req, unsigned char **buf, int *len,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
-	struct reconnect_resp *_req = req;
 	int i = 0;
+	struct reconnect_resp *_req = req;
+
 	_req->status = htonl(_req->status);
 	_req->flags = htonl(_req->flags);
+
 	if (buf && len) {
 		*buf = mp_malloc(g_mp, __func__, sizeof(struct reconnect_resp));
 		memcpy(*buf, req, sizeof(struct reconnect_resp));
@@ -2783,12 +2947,13 @@ void __reconnect_resp_raw_decode(struct reconnect_resp *req)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
-	struct reconnect_resp *_req = req;
 	int i = 0;
+	struct reconnect_resp *_req = req;
+
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
-	DEBUG((DEBUG_DEBUG, "out\n"));
 
+	DEBUG((DEBUG_DEBUG, "out\n"));
 }
 
 bool reconnect_resp_raw_decode(unsigned char *buf, int len, void **req,
@@ -2797,13 +2962,14 @@ bool reconnect_resp_raw_decode(unsigned char *buf, int len, void **req,
 	DEBUG((DEBUG_DEBUG, "in\n"));
 
 	bool ret = true;
+	int i = 0;
 	struct reconnect_resp *_req = (struct reconnect_resp *)mp_malloc(g_mp, __func__,
 		sizeof(struct reconnect_resp));
 
 	memcpy(_req, buf, len);
-	int i = 0;
 	_req->status = ntohl(_req->status);
 	_req->flags = ntohl(_req->flags);
+
 	if (req) {
 		*req = _req;
 		*mode = FREE_MODE_MP_FREE;

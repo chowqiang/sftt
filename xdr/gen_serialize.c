@@ -307,7 +307,7 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tfflush(fp);\n");
 	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*req = _req;\n");
-	fprintf(fp, "*mode = FREE_MODE_MP_FREE;\n");
+	fprintf(fp, "\t*mode = FREE_MODE_MP_FREE;\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"decode done|ret=%%d\\n\", ret));\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
 	fprintf(fp, "\treturn ret;\n");

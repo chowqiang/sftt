@@ -57,7 +57,7 @@ bool channel_info_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -107,7 +107,7 @@ bool channel_info_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -157,7 +157,7 @@ bool validate_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -207,7 +207,7 @@ bool validate_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -257,7 +257,7 @@ bool append_conn_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -307,7 +307,7 @@ bool append_conn_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -357,7 +357,7 @@ bool pwd_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -407,7 +407,7 @@ bool pwd_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -457,7 +457,7 @@ bool ll_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -507,7 +507,7 @@ bool ll_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -557,7 +557,7 @@ bool cd_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -607,7 +607,7 @@ bool cd_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -657,7 +657,7 @@ bool get_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -707,7 +707,7 @@ bool get_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -757,7 +757,7 @@ bool put_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -807,7 +807,7 @@ bool put_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -857,7 +857,7 @@ bool common_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -907,7 +907,7 @@ bool write_msg_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -957,7 +957,7 @@ bool read_msg_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1007,7 +1007,7 @@ bool read_msg_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1057,7 +1057,7 @@ bool mp_stat_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1107,7 +1107,7 @@ bool mp_stat_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1157,7 +1157,7 @@ bool directcmd_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1207,7 +1207,7 @@ bool directcmd_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1257,7 +1257,7 @@ bool who_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1307,7 +1307,7 @@ bool who_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1357,7 +1357,7 @@ bool write_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1407,7 +1407,7 @@ bool write_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1457,7 +1457,7 @@ bool port_update_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1507,7 +1507,7 @@ bool port_update_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1557,7 +1557,7 @@ bool reconnect_req_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
@@ -1607,7 +1607,7 @@ bool reconnect_resp_decode(unsigned char *buf, int len, void **req,
 	fclose(fp);
 
 	*req = _req;
-*mode = FREE_MODE_MP_FREE;
+	*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 

@@ -436,6 +436,7 @@ void output_encode(FILE *fp, struct st *st)
 	int max_dims = get_max_dims_in_elems(st);
 	struct elem *p = NULL;
 	int d = 0;
+	bool write = false;
 
 	fprintf(fp, "bool %s_raw_encode(void *req, unsigned char **buf, int *len,\n", st->name);
 	fprintf(fp, "\t\t\tenum free_mode *mode)\n");
@@ -443,7 +444,6 @@ void output_encode(FILE *fp, struct st *st)
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
 
 	fprintf(fp, "\tbool ret = true;\n");
-	fprintf(fp, "\tstruct %s *_req = req;\n", st->name);
 
 	switch (max_dims) {
 		case 5:
@@ -464,11 +464,13 @@ void output_encode(FILE *fp, struct st *st)
 		default:
 			break;
 	}
+	fprintf(fp, "\tstruct %s *_req = req;\n\n", st->name);
 
 	list_for_each_entry(p, &st->elems, list) {
 		if (!((p->type & ELEM_TYPE_SHORT) || (p->type & ELEM_TYPE_INT)
 					|| (p->type & ELEM_TYPE_STRUCT)))
 			continue;
+		write = true;
 		d = get_elem_dims(p);
 		switch (d) {
 		case 5:
@@ -583,6 +585,8 @@ void output_encode(FILE *fp, struct st *st)
 		}
 	}
 
+	if (write)
+		fprintf(fp, "\n");
 	fprintf(fp, "\tif (buf && len) {\n");
 	fprintf(fp, "\t\t*buf = mp_malloc(g_mp, __func__, sizeof(struct %s));\n",
 			st->name);
@@ -601,6 +605,7 @@ void output_decode(FILE *fp, struct st *st)
 	int max_dims = get_max_dims_in_elems(st);
 	struct elem *p = NULL;
 	int d = 0;
+	bool write = false;
 
 	fprintf(fp, "bool %s_raw_decode(unsigned char *buf, int len, void **req,\n", st->name);
 	fprintf(fp, "\t\t\tenum free_mode *mode)\n");
@@ -608,9 +613,6 @@ void output_decode(FILE *fp, struct st *st)
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
 
 	fprintf(fp, "\tbool ret = true;\n");
-	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp, __func__,\n"
-			"\t\tsizeof(struct %s));\n\n", st->name, st->name, st->name);
-	fprintf(fp, "\tmemcpy(_req, buf, len);\n");
 
 	switch (max_dims) {
 		case 5:
@@ -631,11 +633,15 @@ void output_decode(FILE *fp, struct st *st)
 		default:
 			break;
 	}
+	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp, __func__,\n"
+			"\t\tsizeof(struct %s));\n\n", st->name, st->name, st->name);
+	fprintf(fp, "\tmemcpy(_req, buf, len);\n");
 
 	list_for_each_entry(p, &st->elems, list) {
 		if (!((p->type & ELEM_TYPE_SHORT) || (p->type & ELEM_TYPE_INT)
 					|| (p->type & ELEM_TYPE_STRUCT)))
 			continue;
+		write = true;
 		d = get_elem_dims(p);
 		switch (d) {
 		case 5:
@@ -748,6 +754,8 @@ void output_decode(FILE *fp, struct st *st)
 		}
 	}
 
+	if (write)
+		fprintf(fp, "\n");
 	fprintf(fp, "\tif (req) {\n");
 	fprintf(fp, "\t\t*req = _req;\n");
 	fprintf(fp, "\t\t*mode = FREE_MODE_MP_FREE;\n");
@@ -763,12 +771,11 @@ void output_native_decode(FILE *fp, struct st *st)
 	int max_dims = get_max_dims_in_elems(st);
 	struct elem *p = NULL;
 	int d = 0;
+	bool write = false;
 
 	fprintf(fp, "void __%s_raw_decode(struct %s *req)\n", st->name, st->name);
 	fprintf(fp, "{\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
-
-	fprintf(fp, "\tstruct %s *_req = req;\n", st->name);
 
 	switch (max_dims) {
 		case 5:
@@ -789,11 +796,13 @@ void output_native_decode(FILE *fp, struct st *st)
 		default:
 			break;
 	}
+	fprintf(fp, "\tstruct %s *_req = req;\n\n", st->name);
 
 	list_for_each_entry(p, &st->elems, list) {
 		if (!((p->type & ELEM_TYPE_SHORT) || (p->type & ELEM_TYPE_INT)
 					|| (p->type & ELEM_TYPE_STRUCT)))
 			continue;
+		write = true;
 		d = get_elem_dims(p);
 		switch (d) {
 		case 5:
@@ -906,7 +915,9 @@ void output_native_decode(FILE *fp, struct st *st)
 		}
 	}
 
-	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
+	if (write)
+		fprintf(fp, "\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n");
 	fprintf(fp, "}\n\n");
 }
 
