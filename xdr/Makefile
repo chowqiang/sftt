@@ -1,4 +1,4 @@
-all: gen_serialize req_resp.h req_resp.c gen_trans
+all: gen_serialize gen_serialize_raw req_resp.h req_resp.c gen_trans
 
 ROOT_DIR = ..
 req_resp.h: req_resp.x
@@ -14,6 +14,10 @@ req_resp.c: req_resp.x
 gen_serialize: gen_serialize.c req_resp.x
 	gcc -o $@ $<
 	./$@ req_resp.x $(ROOT_DIR)/include/serialize.h $(ROOT_DIR)/src/serialize.c
+
+gen_serialize_raw: gen_serialize_raw.c req_resp.x
+	gcc -o $@ $<
+	./$@ req_resp.x $(ROOT_DIR)/include/serialize_raw.h $(ROOT_DIR)/src/serialize_raw.c
 
 gen_trans: gen_trans.c req_resp.x
 	gcc -o $@ $<

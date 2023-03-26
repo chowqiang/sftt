@@ -14,9 +14,11 @@
 
 extern struct mem_pool *g_mp;
 
-bool channel_info_req_encode(void *req, unsigned char **buf, int *len)
+bool channel_info_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -29,6 +31,7 @@ bool channel_info_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -36,9 +39,11 @@ bool channel_info_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool channel_info_req_decode(unsigned char *buf, int len, void **req)
+bool channel_info_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct channel_info_req *_req = (struct channel_info_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct channel_info_req));
 
@@ -52,15 +57,18 @@ bool channel_info_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool channel_info_resp_encode(void *req, unsigned char **buf, int *len)
+bool channel_info_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -73,6 +81,7 @@ bool channel_info_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -80,9 +89,11 @@ bool channel_info_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool channel_info_resp_decode(unsigned char *buf, int len, void **req)
+bool channel_info_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct channel_info_resp *_req = (struct channel_info_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct channel_info_resp));
 
@@ -96,15 +107,18 @@ bool channel_info_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool validate_req_encode(void *req, unsigned char **buf, int *len)
+bool validate_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -117,6 +131,7 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -124,9 +139,11 @@ bool validate_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool validate_req_decode(unsigned char *buf, int len, void **req)
+bool validate_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct validate_req *_req = (struct validate_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct validate_req));
 
@@ -140,15 +157,18 @@ bool validate_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool validate_resp_encode(void *req, unsigned char **buf, int *len)
+bool validate_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -161,6 +181,7 @@ bool validate_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -168,9 +189,11 @@ bool validate_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool validate_resp_decode(unsigned char *buf, int len, void **req)
+bool validate_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct validate_resp *_req = (struct validate_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct validate_resp));
 
@@ -184,15 +207,18 @@ bool validate_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
+bool append_conn_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -205,6 +231,7 @@ bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -212,9 +239,11 @@ bool append_conn_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool append_conn_req_decode(unsigned char *buf, int len, void **req)
+bool append_conn_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct append_conn_req *_req = (struct append_conn_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct append_conn_req));
 
@@ -228,15 +257,18 @@ bool append_conn_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
+bool append_conn_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -249,6 +281,7 @@ bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -256,9 +289,11 @@ bool append_conn_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool append_conn_resp_decode(unsigned char *buf, int len, void **req)
+bool append_conn_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct append_conn_resp *_req = (struct append_conn_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct append_conn_resp));
 
@@ -272,15 +307,18 @@ bool append_conn_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool pwd_req_encode(void *req, unsigned char **buf, int *len)
+bool pwd_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -293,6 +331,7 @@ bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -300,9 +339,11 @@ bool pwd_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool pwd_req_decode(unsigned char *buf, int len, void **req)
+bool pwd_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct pwd_req *_req = (struct pwd_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct pwd_req));
 
@@ -316,15 +357,18 @@ bool pwd_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
+bool pwd_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -337,6 +381,7 @@ bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -344,9 +389,11 @@ bool pwd_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool pwd_resp_decode(unsigned char *buf, int len, void **req)
+bool pwd_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct pwd_resp *_req = (struct pwd_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct pwd_resp));
 
@@ -360,15 +407,18 @@ bool pwd_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool ll_req_encode(void *req, unsigned char **buf, int *len)
+bool ll_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -381,6 +431,7 @@ bool ll_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -388,9 +439,11 @@ bool ll_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool ll_req_decode(unsigned char *buf, int len, void **req)
+bool ll_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct ll_req *_req = (struct ll_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct ll_req));
 
@@ -404,15 +457,18 @@ bool ll_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool ll_resp_encode(void *req, unsigned char **buf, int *len)
+bool ll_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -425,6 +481,7 @@ bool ll_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -432,9 +489,11 @@ bool ll_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool ll_resp_decode(unsigned char *buf, int len, void **req)
+bool ll_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct ll_resp *_req = (struct ll_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct ll_resp));
 
@@ -448,15 +507,18 @@ bool ll_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool cd_req_encode(void *req, unsigned char **buf, int *len)
+bool cd_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -469,6 +531,7 @@ bool cd_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -476,9 +539,11 @@ bool cd_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool cd_req_decode(unsigned char *buf, int len, void **req)
+bool cd_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct cd_req *_req = (struct cd_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct cd_req));
 
@@ -492,15 +557,18 @@ bool cd_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool cd_resp_encode(void *req, unsigned char **buf, int *len)
+bool cd_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -513,6 +581,7 @@ bool cd_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -520,9 +589,11 @@ bool cd_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool cd_resp_decode(unsigned char *buf, int len, void **req)
+bool cd_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct cd_resp *_req = (struct cd_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct cd_resp));
 
@@ -536,15 +607,18 @@ bool cd_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool get_req_encode(void *req, unsigned char **buf, int *len)
+bool get_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -557,6 +631,7 @@ bool get_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -564,9 +639,11 @@ bool get_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool get_req_decode(unsigned char *buf, int len, void **req)
+bool get_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct get_req *_req = (struct get_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct get_req));
 
@@ -580,15 +657,18 @@ bool get_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool get_resp_encode(void *req, unsigned char **buf, int *len)
+bool get_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -601,6 +681,7 @@ bool get_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -608,9 +689,11 @@ bool get_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool get_resp_decode(unsigned char *buf, int len, void **req)
+bool get_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct get_resp *_req = (struct get_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct get_resp));
 
@@ -624,15 +707,18 @@ bool get_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool put_req_encode(void *req, unsigned char **buf, int *len)
+bool put_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -645,6 +731,7 @@ bool put_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -652,9 +739,11 @@ bool put_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool put_req_decode(unsigned char *buf, int len, void **req)
+bool put_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct put_req *_req = (struct put_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct put_req));
 
@@ -668,15 +757,18 @@ bool put_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool put_resp_encode(void *req, unsigned char **buf, int *len)
+bool put_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -689,6 +781,7 @@ bool put_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -696,9 +789,11 @@ bool put_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool put_resp_decode(unsigned char *buf, int len, void **req)
+bool put_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct put_resp *_req = (struct put_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct put_resp));
 
@@ -712,15 +807,18 @@ bool put_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool common_resp_encode(void *req, unsigned char **buf, int *len)
+bool common_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -733,6 +831,7 @@ bool common_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -740,9 +839,11 @@ bool common_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool common_resp_decode(unsigned char *buf, int len, void **req)
+bool common_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct common_resp *_req = (struct common_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct common_resp));
 
@@ -756,15 +857,18 @@ bool common_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool write_msg_req_encode(void *req, unsigned char **buf, int *len)
+bool write_msg_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -777,6 +881,7 @@ bool write_msg_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -784,9 +889,11 @@ bool write_msg_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool write_msg_req_decode(unsigned char *buf, int len, void **req)
+bool write_msg_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct write_msg_req *_req = (struct write_msg_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct write_msg_req));
 
@@ -800,15 +907,18 @@ bool write_msg_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool read_msg_req_encode(void *req, unsigned char **buf, int *len)
+bool read_msg_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -821,6 +931,7 @@ bool read_msg_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -828,9 +939,11 @@ bool read_msg_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool read_msg_req_decode(unsigned char *buf, int len, void **req)
+bool read_msg_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct read_msg_req *_req = (struct read_msg_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct read_msg_req));
 
@@ -844,15 +957,18 @@ bool read_msg_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool read_msg_resp_encode(void *req, unsigned char **buf, int *len)
+bool read_msg_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -865,6 +981,7 @@ bool read_msg_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -872,9 +989,11 @@ bool read_msg_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool read_msg_resp_decode(unsigned char *buf, int len, void **req)
+bool read_msg_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct read_msg_resp *_req = (struct read_msg_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct read_msg_resp));
 
@@ -888,15 +1007,18 @@ bool read_msg_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool mp_stat_req_encode(void *req, unsigned char **buf, int *len)
+bool mp_stat_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -909,6 +1031,7 @@ bool mp_stat_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -916,9 +1039,11 @@ bool mp_stat_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool mp_stat_req_decode(unsigned char *buf, int len, void **req)
+bool mp_stat_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct mp_stat_req *_req = (struct mp_stat_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct mp_stat_req));
 
@@ -932,15 +1057,18 @@ bool mp_stat_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len)
+bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -953,6 +1081,7 @@ bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -960,9 +1089,11 @@ bool mp_stat_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool mp_stat_resp_decode(unsigned char *buf, int len, void **req)
+bool mp_stat_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct mp_stat_resp *_req = (struct mp_stat_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct mp_stat_resp));
 
@@ -976,15 +1107,18 @@ bool mp_stat_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
+bool directcmd_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -997,6 +1131,7 @@ bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1004,9 +1139,11 @@ bool directcmd_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool directcmd_req_decode(unsigned char *buf, int len, void **req)
+bool directcmd_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct directcmd_req *_req = (struct directcmd_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct directcmd_req));
 
@@ -1020,15 +1157,18 @@ bool directcmd_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
+bool directcmd_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1041,6 +1181,7 @@ bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1048,9 +1189,11 @@ bool directcmd_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool directcmd_resp_decode(unsigned char *buf, int len, void **req)
+bool directcmd_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct directcmd_resp *_req = (struct directcmd_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct directcmd_resp));
 
@@ -1064,15 +1207,18 @@ bool directcmd_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool who_req_encode(void *req, unsigned char **buf, int *len)
+bool who_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1085,6 +1231,7 @@ bool who_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1092,9 +1239,11 @@ bool who_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool who_req_decode(unsigned char *buf, int len, void **req)
+bool who_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct who_req *_req = (struct who_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct who_req));
 
@@ -1108,15 +1257,18 @@ bool who_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool who_resp_encode(void *req, unsigned char **buf, int *len)
+bool who_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1129,6 +1281,7 @@ bool who_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1136,9 +1289,11 @@ bool who_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool who_resp_decode(unsigned char *buf, int len, void **req)
+bool who_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct who_resp *_req = (struct who_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct who_resp));
 
@@ -1152,15 +1307,18 @@ bool who_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool write_req_encode(void *req, unsigned char **buf, int *len)
+bool write_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1173,6 +1331,7 @@ bool write_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1180,9 +1339,11 @@ bool write_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool write_req_decode(unsigned char *buf, int len, void **req)
+bool write_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct write_req *_req = (struct write_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct write_req));
 
@@ -1196,15 +1357,18 @@ bool write_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool write_resp_encode(void *req, unsigned char **buf, int *len)
+bool write_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1217,6 +1381,7 @@ bool write_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1224,9 +1389,11 @@ bool write_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool write_resp_decode(unsigned char *buf, int len, void **req)
+bool write_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct write_resp *_req = (struct write_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct write_resp));
 
@@ -1240,15 +1407,18 @@ bool write_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool port_update_req_encode(void *req, unsigned char **buf, int *len)
+bool port_update_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1261,6 +1431,7 @@ bool port_update_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1268,9 +1439,11 @@ bool port_update_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool port_update_req_decode(unsigned char *buf, int len, void **req)
+bool port_update_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct port_update_req *_req = (struct port_update_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct port_update_req));
 
@@ -1284,15 +1457,18 @@ bool port_update_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool port_update_resp_encode(void *req, unsigned char **buf, int *len)
+bool port_update_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1305,6 +1481,7 @@ bool port_update_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1312,9 +1489,11 @@ bool port_update_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool port_update_resp_decode(unsigned char *buf, int len, void **req)
+bool port_update_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct port_update_resp *_req = (struct port_update_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct port_update_resp));
 
@@ -1328,15 +1507,18 @@ bool port_update_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool reconnect_req_encode(void *req, unsigned char **buf, int *len)
+bool reconnect_req_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1349,6 +1531,7 @@ bool reconnect_req_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1356,9 +1539,11 @@ bool reconnect_req_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool reconnect_req_decode(unsigned char *buf, int len, void **req)
+bool reconnect_req_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct reconnect_req *_req = (struct reconnect_req *)mp_malloc(g_mp,
 		__func__, sizeof(struct reconnect_req));
 
@@ -1372,15 +1557,18 @@ bool reconnect_req_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 
 	return ret;
 }
 
-bool reconnect_resp_encode(void *req, unsigned char **buf, int *len)
+bool reconnect_resp_encode(void *req, unsigned char **buf, int *len,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	size_t size = 0;
 	FILE *fp = open_memstream((char **)buf, &size);
 
@@ -1393,6 +1581,7 @@ bool reconnect_resp_encode(void *req, unsigned char **buf, int *len)
 	fclose(fp);
 
 	*len = size;
+	*mode = FREE_MODE_FREE;
 	DEBUG((DEBUG_DEBUG, "encode done|ret=%d|encode_len=%d\n",
 		ret, *len));
 	DEBUG((DEBUG_DEBUG, "out\n"));
@@ -1400,9 +1589,11 @@ bool reconnect_resp_encode(void *req, unsigned char **buf, int *len)
 	return ret;
 }
 
-bool reconnect_resp_decode(unsigned char *buf, int len, void **req)
+bool reconnect_resp_decode(unsigned char *buf, int len, void **req,
+			enum free_mode *mode)
 {
 	DEBUG((DEBUG_DEBUG, "in\n"));
+
 	struct reconnect_resp *_req = (struct reconnect_resp *)mp_malloc(g_mp,
 		__func__, sizeof(struct reconnect_resp));
 
@@ -1416,6 +1607,7 @@ bool reconnect_resp_decode(unsigned char *buf, int len, void **req)
 	fclose(fp);
 
 	*req = _req;
+*mode = FREE_MODE_MP_FREE;
 	DEBUG((DEBUG_DEBUG, "decode done|ret=%d\n", ret));
 	DEBUG((DEBUG_DEBUG, "out\n"));
 

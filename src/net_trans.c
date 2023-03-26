@@ -132,11 +132,12 @@ bool sftt_packet_serialize(struct sftt_packet *sp)
 #else
 	struct serialize_handler *handlers = serializables;
 #endif
+	enum free_mode mode;
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
 	for (i = 0; handlers[i].packet_type != -1; ++i) {
 		if (sp->type == handlers[i].packet_type) {
-			ret = handlers[i].serialize(sp->obj, &buf, &len);
+			ret = handlers[i].serialize(sp->obj, &buf, &len, &mode);
 			DEBUG((DEBUG_DEBUG, "serialization done|"
 					"sp->type=%d|ret=%d|buf=%p|len=%d\n",
 					sp->type, ret, buf, len));
@@ -172,12 +173,13 @@ int sftt_packet_deserialize(struct sftt_packet *sp)
 #else
 	struct serialize_handler *handlers = serializables;
 #endif
+	enum free_mode mode;
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
 	for (i = 0; handlers[i].packet_type != -1; ++i) {
 		if (sp->type == handlers[i].packet_type) {
 			ret = handlers[i].deserialize(sp->content,
-				sp->data_len, &(sp->obj));
+				sp->data_len, &(sp->obj), &mode);
 			DEBUG((DEBUG_DEBUG, "deserialization done|"
 					"sp->type=%d|ret=%d|sp->data_len=%d|"
 					"sp->obj=%p\n", sp->type, ret,
@@ -213,7 +215,9 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 	DBUG_ENTER(__func__);
 
 	int ret = 0;
-	static struct sftt_packet *_sp = NULL;
+	/* It's not multi-threads safe !!! */
+	//static struct sftt_packet *_sp = NULL;
+	struct sftt_packet *_sp = NULL;
 
 	DEBUG((DEBUG_DEBUG, "in\n"));
 	DEBUG((DEBUG_DEBUG, "before serialize|sp->data_len=%d\n", sp->data_len));
@@ -225,12 +229,10 @@ int send_sftt_packet(int sock, struct sftt_packet *sp)
 	}
 	DEBUG((DEBUG_DEBUG, "after serialize|sp->data_len=%d\n", sp->data_len));
 
+	_sp = malloc_sftt_packet();
 	if (_sp == NULL) {
-		_sp = malloc_sftt_packet();
-		if (_sp == NULL) {
-			DEBUG((DEBUG_ERROR, "malloc sftt packet failed\n"));
-			DBUG_RETURN(-1);
-		}
+		DEBUG((DEBUG_ERROR, "malloc sftt packet failed\n"));
+		DBUG_RETURN(-1);
 	}
 
 	DEBUG((DEBUG_DEBUG, "before encode content|sp->data_len=%d\n", sp->data_len));

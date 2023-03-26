@@ -17,11 +17,7 @@
 #ifndef _DLIST_H_
 #define _DLIST_H_
 
-enum free_mode {
-	FREE_MODE_NOTHING,
-	FREE_MODE_MP_FREE,
-	FREE_MODE_FREE
-};
+#include "common.h"
 
 /*
  * The node of double list

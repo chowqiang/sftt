@@ -28,6 +28,7 @@ extern struct mem_pool *g_mp;
 void test_validate_req(void)
 {
 	struct validate_req *req_info, *req_info2;
+	enum free_mode mode;
 
 	req_info = mp_malloc(g_mp, __func__, sizeof(struct validate_req));
 	assert(req_info != NULL);
@@ -42,11 +43,11 @@ void test_validate_req(void)
 	int len = 0;
 	bool ret = false;
 
-	ret = validate_req_encode(req_info, &buf, &len);
+	ret = validate_req_encode(req_info, &buf, &len, &mode);
 	printf("encode ret = %d, buf = %p, len = %d\n", ret, buf, len);
 
 
-	ret = validate_req_decode(buf, len, (void *)&req_info2);
+	ret = validate_req_decode(buf, len, (void *)&req_info2, &mode);
 	printf("decode ret = %d\n", ret);
 	printf("name: %s, passwd: %s\n", req_info2->name, req_info2->passwd_md5);
 }
@@ -55,6 +56,7 @@ void test_validate_resp(void)
 {
 	struct validate_resp *resp_info, *resp_info2;
 	struct validate_resp_data *data, *data2;
+	enum free_mode mode;
 
 	resp_info = mp_malloc(g_mp, __func__, sizeof(struct validate_resp));
 	assert(resp_info != NULL);
@@ -75,11 +77,11 @@ void test_validate_resp(void)
 	int len = 0;
 	bool ret = false;
 
-	ret = validate_resp_encode(resp_info, &buf, &len);
+	ret = validate_resp_encode(resp_info, &buf, &len, &mode);
 	printf("encode ret = %d, buf = %p, len = %d\n", ret, buf, len);
 
 
-	ret = validate_resp_decode(buf, len, (void *)&resp_info2);
+	ret = validate_resp_decode(buf, len, (void *)&resp_info2, &mode);
 	printf("decode ret = %d\n", ret);
 	data2 = &resp_info2->data;
 	printf("name: %s, uid: %d\n", data2->name, data2->uid);
@@ -106,15 +108,16 @@ void test_ll_resp(void)
 		},
 	};
 	struct ll_resp *_resp = NULL;
+	enum free_mode mode;
 
 	unsigned char *buf = NULL;
 	bool ret = 0;
 	int len = 0;
 
-	ret = ll_resp_encode(&resp, &buf, &len);
+	ret = ll_resp_encode(&resp, &buf, &len, &mode);
 	printf("ll resp encode: ret=%d, len=%d\n", ret, len);
 
-	ret = ll_resp_decode(buf, len, (void **)&_resp);
+	ret = ll_resp_decode(buf, len, (void **)&_resp, &mode);
 	printf("ll resp decode: ret=%d, total=%d, this_nr=%d\n",
 		ret, _resp->data.total, _resp->data.this_nr);
 	printf("file list: %s, %s, %s\n", _resp->data.entries[0].name,
@@ -128,16 +131,17 @@ void test_ll_req(void)
 		"/home/zhoumin"
 	};
 	struct ll_req *_req = NULL;
+	enum free_mode mode;
 
 	unsigned char *buf = NULL;
 	bool ret = 0;
 	int len = 0;
 
 	printf("path=%s\n", req.path);
-	ret = ll_req_encode(&req, &buf, &len);
+	ret = ll_req_encode(&req, &buf, &len, &mode);
 	printf("ll req encode: ret=%d, len=%d\n", ret, len);
 
-	ret = ll_req_decode(buf, len, (void **)&_req);
+	ret = ll_req_decode(buf, len, (void **)&_req, &mode);
 	printf("ll req decode: ret=%d, path=%s\n", ret, _req->path);
 }
 
@@ -164,13 +168,14 @@ void test_get_resp(void) {
 	unsigned char *buf = NULL;
 	bool ret = 0;
 	int len = 0;
+	enum free_mode mode;
 
 	printf("message: %s\n", resp.message);
 	printf("content: %s\n", resp.data.entry.content);
-	ret = get_resp_encode(&resp, &buf, &len);
+	ret = get_resp_encode(&resp, &buf, &len, &mode);
 	printf("get resp encode: ret=%d, len=%d\n", ret, len);
 
-	ret = get_resp_decode(buf, len, (void **)&_resp);
+	ret = get_resp_decode(buf, len, (void **)&_resp, &mode);
 	printf("get resp decode: ret=%d, len=%d\n", ret, len);
 	printf("message: %s\n", _resp->message);
 	printf("content: %s\n", _resp->data.entry.content);
@@ -194,13 +199,14 @@ void test_get_req(void)
 	unsigned char *buf = NULL;
 	bool ret = 0;
 	int len = 0;
+	enum free_mode mode;
 
 	printf("session_id: %s\n", req.session_id);
 	printf("user.session_id: %s\n", req.user.session_id);
-	ret = get_req_encode(&req, &buf, &len);
+	ret = get_req_encode(&req, &buf, &len, &mode);
 	printf("get req encode: ret=%d, len=%d\n", ret, len);
 
-	ret = get_req_decode(buf, len, (void **)&_req);
+	ret = get_req_decode(buf, len, (void **)&_req, &mode);
 	printf("get req decode: ret=%d, len=%d\n", ret, len);
 	printf("session_id: %s\n", _req->session_id);
 	printf("user.session_id: %s\n", _req->user.session_id);

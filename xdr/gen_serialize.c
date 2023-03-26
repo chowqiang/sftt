@@ -252,10 +252,13 @@ int gen_h_file(struct st_list *head, char *h_file)
 	fprintf(fp, "#ifndef _SERIALIZE_H_\n");
 	fprintf(fp, "#define _SERIALIZE_H_\n\n");
 
-	fprintf(fp, "#include <stdbool.h>\n\n");
+	fprintf(fp, "#include <stdbool.h>\n");
+	fprintf(fp, "#include \"common.h\"\n\n");
 	while (p) {
-		fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len);\n\n", p->struct_name);
-		fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req);\n\n", p->struct_name);
+		fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len,\n", p->struct_name);
+		fprintf(fp, "\t\t\tenum free_mode *mode);\n\n");
+		fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req,\n", p->struct_name);
+		fprintf(fp, "\t\t\tenum free_mode *mode);\n\n");
 		p = p->next;
 	}
 	fprintf(fp, "#endif\n");
@@ -267,9 +270,10 @@ int gen_h_file(struct st_list *head, char *h_file)
 
 void output_encode(FILE *fp, char *struct_name)
 {
-	fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len)\n", struct_name);
+	fprintf(fp, "bool %s_encode(void *req, unsigned char **buf, int *len,\n", struct_name);
+	fprintf(fp, "\t\t\tenum free_mode *mode)\n");
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
 	fprintf(fp, "\tsize_t size = 0;\n");
 	fprintf(fp, "\tFILE *fp = open_memstream((char **)buf, &size);\n\n");
 	fprintf(fp, "\tXDR xdr;\n");
@@ -278,6 +282,7 @@ void output_encode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tfflush(fp);\n");
 	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*len = size;\n");
+	fprintf(fp, "\t*mode = FREE_MODE_FREE;\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"encode done|ret=%%d|encode_len=%%d\\n\",\n"
 			"\t\tret, *len));\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
@@ -288,9 +293,10 @@ void output_encode(FILE *fp, char *struct_name)
 
 void output_decode(FILE *fp, char *struct_name)
 {
-	fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req)\n", struct_name);
+	fprintf(fp, "bool %s_decode(unsigned char *buf, int len, void **req,\n", struct_name);
+	fprintf(fp, "\t\t\tenum free_mode *mode)\n");
 	fprintf(fp, "{\n");
-	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n");
+	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
 	fprintf(fp, "\tstruct %s *_req = (struct %s *)mp_malloc(g_mp,\n"
 			"\t\t__func__, sizeof(struct %s));\n\n",
 			struct_name, struct_name, struct_name);
@@ -301,6 +307,7 @@ void output_decode(FILE *fp, char *struct_name)
 	fprintf(fp, "\tfflush(fp);\n");
 	fprintf(fp, "\tfclose(fp);\n\n");
 	fprintf(fp, "\t*req = _req;\n");
+	fprintf(fp, "*mode = FREE_MODE_MP_FREE;\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"decode done|ret=%%d\\n\", ret));\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"out\\n\"));\n\n");
 	fprintf(fp, "\treturn ret;\n");

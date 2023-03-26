@@ -19,8 +19,10 @@
 
 struct serialize_handler {
 	int packet_type;
-	bool (*serialize)(void *obj, unsigned char **buf, int *len);
-	bool (*deserialize)(unsigned char *buf, int len, void **obj);
+	bool (*serialize)(void *obj, unsigned char **buf, int *len,
+			enum free_mode *mode);
+	bool (*deserialize)(unsigned char *buf, int len, void **obj,
+			enum free_mode *mode);
 };
 
 #endif
