@@ -17,6 +17,7 @@ debug/*
 logs/*
 lib/*
 xdr/gen_serialize
+xdr/gen_serialize_raw
 xdr/gen_trans
 config/gen_config
 tools/add_copyright
