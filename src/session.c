@@ -17,8 +17,6 @@
 #include "mem_pool.h"
 #include "session.h"
 
-extern struct mem_pool *g_mp;
-
 struct client_session *client_session_construct(void)
 {
 	struct client_session *session = mp_malloc(g_mp, __func__, sizeof(struct client_session));

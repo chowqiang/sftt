@@ -23,8 +23,6 @@
 #include "queue.h"
 #include "destroy.h"
 
-extern struct mem_pool *g_mp;
-
 struct btree_node *btree_node_create(void *data)
 {
 	DBUG_ENTER(__func__);

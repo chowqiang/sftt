@@ -31,7 +31,6 @@
 #include "rte_errno.h"
 #include "serialize_handler.h"
 
-extern struct mem_pool *g_mp;
 extern struct serialize_handler serializables[];
 #ifdef CONFIG_SERIALIZE_RAW
 extern struct serialize_handler serializables_raw[];

@@ -23,8 +23,6 @@
 #include "sds.h"
 #include "trace.h"
 
-extern struct mem_pool *g_mp;
-
 struct trace_info_ops ti_ops = {
 	.set_user = trace_info_set_user,
 	.to_str = trace_info_to_str,

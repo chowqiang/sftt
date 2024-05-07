@@ -25,8 +25,6 @@
 #include "req_resp.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 char *config_search_pathes[] = {"/etc/sftt", "./config", ".",
 	"/root/sftt/config", NULL};
 

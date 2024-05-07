@@ -22,8 +22,6 @@
 #include "ratelimit.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 struct ratelimit_state *ratelimit_state_construct(int interval,
 	int burst)
 {

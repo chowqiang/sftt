@@ -33,8 +33,6 @@ struct char_stat_node {
 	int freq;
 };
 
-extern struct mem_pool *g_mp;
-
 struct char_stat_node *create_char_stat_node(int ch, int freq)
 {
 	DBUG_ENTER(__func__);

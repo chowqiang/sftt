@@ -31,8 +31,6 @@
 #include "trans.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 int send_file_content_by_get_resp(int fd, struct sftt_packet *resp_packet,
 	struct get_resp *resp, int flags)
 {

@@ -31,8 +31,6 @@
 #include "trans.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 int recv_file_from_get_resp(int fd, char *path, int type, unsigned int mode, struct sftt_packet *resp_packet)
 {
 	DBUG_ENTER(__func__);

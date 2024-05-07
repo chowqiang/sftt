@@ -81,8 +81,6 @@ struct sftt_option sftt_server_opts[] = {
 	{NULL, -1, NO_ARG}
 };
 
-extern struct mem_pool *g_mp;
-
 struct sftt_server *server;
 
 struct logger_init_ctx logger_ctx;

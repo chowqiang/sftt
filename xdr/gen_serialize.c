@@ -336,7 +336,6 @@ int gen_c_file(struct st_list *head, char *c_file)
 	fprintf(fp, "#include \"log.h\"\n");
 	fprintf(fp, "#include \"mem_pool.h\"\n");
 	fprintf(fp, "#include \"serialize.h\"\n\n");
-	fprintf(fp, "extern struct mem_pool *g_mp;\n\n");
 
 	while (p) {
 		output_encode(fp, p->struct_name);

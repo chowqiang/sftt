@@ -25,6 +25,8 @@
 
 #define MEM_POOL_STAT "mem_pool_stat"
 
+extern struct mem_pool *g_mp;
+
 struct batch_reserved {
 	const char *purpose;
 	int size;

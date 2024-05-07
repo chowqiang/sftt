@@ -22,8 +22,6 @@
 #include "mem_pool.h"
 #include "show.h"
 
-extern struct mem_pool *g_mp;
-
 /*
  * Create a node of dlist
  * @data: the data for the node

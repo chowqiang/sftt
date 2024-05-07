@@ -23,8 +23,6 @@
 #include "mem_pool.h"
 #include "sds.h"
 
-extern struct mem_pool *g_mp;
-
 int sds_init(struct sds *str, int size)
 {
 	char *tmp;

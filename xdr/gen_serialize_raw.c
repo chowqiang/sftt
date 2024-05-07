@@ -943,7 +943,6 @@ int gen_c_file(char *c_file)
 	fprintf(fp, "#include \"log.h\"\n");
 	fprintf(fp, "#include \"mem_pool.h\"\n");
 	fprintf(fp, "#include \"serialize.h\"\n\n");
-	fprintf(fp, "extern struct mem_pool *g_mp;\n\n");
 
 	list_for_each_entry(p, &st_list, list) {
 		output_encode(fp, p);

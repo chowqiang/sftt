@@ -33,8 +33,6 @@
 #include "mkdirp.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 /*
  * Get the size of file in bytes.
  */

@@ -23,8 +23,6 @@
 #include "serialize.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 void test_validate_req(void)
 {
 	struct validate_req *req_info, *req_info2;

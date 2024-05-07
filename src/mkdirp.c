@@ -21,8 +21,6 @@
 #define PATH_SEPARATOR   '/'
 #endif
 
-extern struct mem_pool *g_mp;
-
 /*
  * Recursively `mkdir(path, mode)`
  */

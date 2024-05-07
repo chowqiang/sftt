@@ -23,7 +23,6 @@
 #include "mem_pool.h"
 #include "thread_pool.h"
 
-extern struct mem_pool *g_mp;
 void
 worker_thread_wait_command(struct thread_instance *thread)
 {

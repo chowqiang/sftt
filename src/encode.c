@@ -24,8 +24,6 @@
 #include "encode.h"
 #include "mem_pool.h"
 
-extern struct mem_pool *g_mp;
-
 /*
  * Encode a sftt packet.
  */

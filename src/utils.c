@@ -25,8 +25,6 @@
 #include "mem_pool.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 void print_line(char *str, char c)
 {
 #define LINE_LIMIT	80

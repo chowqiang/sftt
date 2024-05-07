@@ -29,8 +29,6 @@
 
 #define PROG	"net_trans"
 
-extern struct mem_pool *g_mp;
-
 void help(void)
 {
 	printf("Usage: \t" PROG " -c port name\n"

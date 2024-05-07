@@ -35,8 +35,6 @@
 #include "req_resp.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 static enum log_type type = UNKNOWN_LOG;
 int verbose_level = 0;
 bool logger_stopped = false;

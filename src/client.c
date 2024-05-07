@@ -59,7 +59,6 @@
 #include "version.h"
 
 extern int errno;
-extern struct mem_pool *g_mp;
 
 bool directcmd = false;
 bool force_quit = false;

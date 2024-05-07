@@ -22,8 +22,6 @@
 #include "md5.h"
 #include "mem_pool.h"
 
-extern struct mem_pool *g_mp;
-
 char dec_to_hex_char(int dec);
 
 unsigned char PADDING[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

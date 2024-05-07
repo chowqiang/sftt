@@ -23,8 +23,6 @@
 #include "show.h"
 #include "stack.h"
 
-extern struct mem_pool *g_mp;
-
 struct stack *stack_create(enum free_mode mode)
 {
 	DBUG_ENTER(__func__);

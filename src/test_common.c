@@ -31,8 +31,6 @@
 #include "test_common.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 #define TEST_ROOT_DIR "/tmp/sftt_test_%s_%d"
 
 static void sanity_check(void)

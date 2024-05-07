@@ -22,8 +22,6 @@
 #include "queue.h"
 #include "show.h"
 
-extern struct mem_pool *g_mp;
-
 struct queue *queue_create(enum free_mode mode)
 {
 	DBUG_ENTER(__func__);

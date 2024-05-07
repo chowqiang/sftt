@@ -21,8 +21,6 @@
 #include "map.h"
 #include "mem_pool.h"
 
-extern struct mem_pool *g_mp;
-
 struct database *create_db(char *db_name)
 {
 	return NULL;

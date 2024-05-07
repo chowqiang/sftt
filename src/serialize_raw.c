@@ -13,8 +13,6 @@
 #include "mem_pool.h"
 #include "serialize.h"
 
-extern struct mem_pool *g_mp;
-
 bool version_info_raw_encode(void *req, unsigned char **buf, int *len,
 			enum free_mode *mode)
 {

@@ -24,8 +24,6 @@
 #include "user.h"
 #include "utils.h"
 
-extern struct mem_pool *g_mp;
-
 struct col_info user_cols[] = {
 	{"uid", INTEGER},
 	{"name", TEXT},
