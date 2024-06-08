@@ -49,7 +49,7 @@
 
 struct elem {
 	char name[ELEM_NAME_LEN];
-	int type;
+	unsigned int type;
 	char st_name[ST_NAME_LEN];
 	char *dims[DIMS_MAX_NUM];
 	struct list_head list;
@@ -81,7 +81,7 @@ static size_t file_size(char *filename) {
 
 static bool endswith(char *src, char *foo)
 {
-	int src_len = 0, foo_len = 0;
+	size_t src_len = 0, foo_len = 0;
 	char *pos = NULL;
 
 	if (src == NULL || foo == NULL)
@@ -130,16 +130,15 @@ int parse_name_and_dims(struct elem *elem, char *p)
 {
 	char *tmp = NULL;
 	int cnt = 0;
-	char *q = NULL;
 
 	tmp = strchr(p, '[');
 	if (tmp == NULL) {
-		strncpy(elem->name, p, ELEM_NAME_LEN);
+		strncpy(elem->name, p, ELEM_NAME_LEN - 1);
 		return 0;
 	}
 
 	*tmp = 0;
-	strncpy(elem->name, p, ELEM_NAME_LEN);
+	strncpy(elem->name, p, ELEM_NAME_LEN - 1);
 
 	while (*p && tmp) {
 		assert(cnt < DIMS_MAX_NUM);
@@ -207,7 +206,7 @@ int parse_struct(struct st *st, char **str)
 			p = fetch_next_str(&q);
 			assert(p);
 
-			strncpy(elem->st_name, p, ST_NAME_LEN);
+			strncpy(elem->st_name, p, ST_NAME_LEN - 1);
 		} else {
 			printf("unknown type: %s\n", p);
 			BUG();
@@ -265,7 +264,7 @@ struct st *fetch_next_struct(char **str)
 
 	p = fetch_next_str(&q);
 	assert(p);
-	strncpy(st->name, p, ST_NAME_LEN);
+	strncpy(st->name, p, ST_NAME_LEN - 1);
 
 #if DEBUG
 	printf("%s\n", st->name);
@@ -304,7 +303,7 @@ int get_struct_list(char *xdr_file)
 	char *content = NULL;
 	char *p = NULL;
 	size_t size = 0;
-	int ret = 0;
+	size_t ret = 0;
 	struct st *st = NULL;
 
 	if ((size = file_size(xdr_file)) > SZ_1MB) {
@@ -356,6 +355,27 @@ int get_elem_dims(struct elem *elem)
 	return d;
 }
 
+const char* get_type_name(unsigned int type) {
+	switch (type) {
+		case ELEM_TYPE_CHAR:
+			return "char";
+		case ELEM_TYPE_INT:
+			return "int";
+		case ELEM_TYPE_SHORT:
+			return "short";
+		case ELEM_TYPE_STRUCT:
+			return "struct";
+		case ELEM_TYPE_UNSIGNED_CHAR:
+			return "unsigned char";
+		case ELEM_TYPE_UNSIGNED_INT:
+			return "unsigned int";
+		case ELEM_TYPE_UNSIGNED_SHORT:
+			return "unsigned short";
+		default:
+			return "unknown";
+	}
+}
+
 void show_elem_list(struct st *st)
 {
 	struct elem *p = NULL;
@@ -364,9 +384,9 @@ void show_elem_list(struct st *st)
 	list_for_each_entry(p, &st->elems, list) {
 		d = get_elem_dims(p);
 		if (d)
-			printf("%s@%d, ", p->name, d);
+			printf("%s %s@%d, ", get_type_name(p->type), p->name, d);
 		else
-			printf("%s, ", p->name);
+			printf("%s %s, ", get_type_name(p->type), p->name);
 		++cnt;
 	}
 	printf("%d\n", cnt);
@@ -423,9 +443,12 @@ int get_max_dims_in_elems(struct st *st)
 	int max_dims = 0, d = 0;
 
 	list_for_each_entry(p, &st->elems, list) {
+		if (p->type == ELEM_TYPE_CHAR || p->type == ELEM_TYPE_UNSIGNED_CHAR)
+			continue;
 		d = get_elem_dims(p);
-		if (d > max_dims)
+		if (d > max_dims) {
 			max_dims = d;
+		}
 	}
 
 	return max_dims;
@@ -560,7 +583,7 @@ void output_encode(FILE *fp, struct st *st)
 				fprintf(fp, "\t\t%s_raw_encode(&_req->%s[i], NULL, NULL, NULL);\n", p->st_name, p->name);
 
 			} else {
-				printf("unknown type: 0x%0lx\n", p->type);
+				printf("unknown type: 0x%0x\n", p->type);
 				BUG();
 			}
 			fprintf(fp, "\t}\n");
@@ -590,7 +613,7 @@ void output_encode(FILE *fp, struct st *st)
 	fprintf(fp, "\tif (buf && len) {\n");
 	fprintf(fp, "\t\t*buf = mp_malloc(g_mp, __func__, sizeof(struct %s));\n",
 			st->name);
-	fprintf(fp, "\t\tmemcpy(*buf, req, sizeof(struct %s));\n", st->name);
+	fprintf(fp, "\t\tmemcpy(*buf, _req, sizeof(struct %s));\n", st->name);
 	fprintf(fp, "\t\t*len = sizeof(struct %s);\n", st->name);
 	fprintf(fp, "\t\t*mode = FREE_MODE_MP_FREE;\n");
 	fprintf(fp, "\t}\n\n");
@@ -773,7 +796,21 @@ void output_native_decode(FILE *fp, struct st *st)
 	int d = 0;
 	bool write = false;
 
-	fprintf(fp, "void __%s_raw_decode(struct %s *req)\n", st->name, st->name);
+	bool only_char = true;
+	list_for_each_entry(p, &st->elems, list) {
+		if (p->type == ELEM_TYPE_INT || p->type == ELEM_TYPE_SHORT ||
+			p->type == ELEM_TYPE_STRUCT || p->type == ELEM_TYPE_UNSIGNED_INT ||
+			p->type == ELEM_TYPE_UNSIGNED_SHORT) {
+			only_char = false;
+			break;
+		}
+	}
+
+	if (only_char)
+		fprintf(fp, "void __%s_raw_decode(__attribute__((unused)) struct %s *req)\n", st->name, st->name);
+	else
+		fprintf(fp, "void __%s_raw_decode(struct %s *req)\n", st->name, st->name);
+
 	fprintf(fp, "{\n");
 	fprintf(fp, "\tDEBUG((DEBUG_DEBUG, \"in\\n\"));\n\n");
 
@@ -796,7 +833,9 @@ void output_native_decode(FILE *fp, struct st *st)
 		default:
 			break;
 	}
-	fprintf(fp, "\tstruct %s *_req = req;\n\n", st->name);
+
+	if (!only_char)
+		fprintf(fp, "\tstruct %s *_req = req;\n\n", st->name);
 
 	list_for_each_entry(p, &st->elems, list) {
 		if (!((p->type & ELEM_TYPE_SHORT) || (p->type & ELEM_TYPE_INT)
@@ -957,8 +996,6 @@ int gen_c_file(char *c_file)
 
 int gen_serialize(char *h_file, char *c_file)
 {
-	FILE *fp = NULL;
-
 	if (gen_h_file(h_file) == -1) {
 		printf("gen header file failed!\n");
 		return -1;
